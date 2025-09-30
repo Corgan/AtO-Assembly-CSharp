@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CombatData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using UnityEngine;
@@ -23,6 +23,10 @@ public class CombatData : ScriptableObject
   private Enums.CombatStepSound stepSound;
   [SerializeField]
   private NPCData[] npcList;
+  [SerializeField]
+  private NPCData npcToSummonOnNpcKilled;
+  [SerializeField]
+  private bool randomizeNpcPosition;
   [SerializeField]
   private int npcRemoveInMadness0Index = -1;
   [Header("Thermometer")]
@@ -146,5 +150,17 @@ public class CombatData : ScriptableObject
   {
     get => this.isRift;
     set => this.isRift = value;
+  }
+
+  public bool RandomizeNpcPosition
+  {
+    get => this.randomizeNpcPosition;
+    set => this.randomizeNpcPosition = value;
+  }
+
+  public NPCData NpcToSummonOnNpcKilled
+  {
+    get => this.npcToSummonOnNpcKilled;
+    set => this.npcToSummonOnNpcKilled = value;
   }
 }

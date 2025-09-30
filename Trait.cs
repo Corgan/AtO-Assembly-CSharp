@@ -1,11 +1,12 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Trait
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
@@ -19,6 +20,8 @@ public class Trait
   private int auxInt;
   private string auxString = "";
   private CardData castedCard;
+  private string trait = "";
+  private int leechAppliedByBloodBound;
 
   public void DoTrait(
     Enums.EventActivation _theEvent,
@@ -31,16 +34,192 @@ public class Trait
   {
     if ((UnityEngine.Object) MatchManager.Instance == (UnityEngine.Object) null)
       return;
+    UnityEngine.Random.InitState(DateTime.Now.Millisecond);
     this.character = _character;
     this.target = _target;
     this.theEvent = _theEvent;
     this.auxInt = _auxInt;
     this.auxString = _auxString;
     this.castedCard = _castedCard;
+    this.trait = _trait;
     MethodInfo method = this.GetType().GetMethod(_trait);
     if (!(method != (MethodInfo) null))
       return;
     method.Invoke((object) this, (object[]) null);
+  }
+
+  public void bloodbound()
+  {
+    if (!(this.auxString.ToLower() == "bleed") || this.target.IsHero)
+      return;
+    this.target.SetAuraTrait(this.character, "leech", 1);
+  }
+
+  public void runeweaver()
+  {
+    if (this.auxInt < 2)
+      return;
+    CardData cardData = MatchManager.Instance.GetCardData(this.auxString);
+    if (this.isAttackCard(cardData))
+    {
+      this.character.SetAuraTrait(this.character, "runered", this.auxInt / 2);
+      EffectsManager.Instance.PlayEffectAC("runered", true, this.character.HeroItem.CharImageT, false, casterInCenter: cardData.MoveToCenter);
+    }
+    if (cardData.CardType == Enums.CardType.Defense || ((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Defense))
+    {
+      this.character.SetAuraTrait(this.character, "runeblue", this.auxInt / 2);
+      EffectsManager.Instance.PlayEffectAC("runeblue", true, this.character.HeroItem.CharImageT, false);
+    }
+    if (cardData.CardType != Enums.CardType.Healing_Spell && !((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Healing_Spell))
+      return;
+    this.character.SetAuraTrait(this.character, "runegreen", this.auxInt / 2);
+    EffectsManager.Instance.PlayEffectAC("runegreen", true, this.character.HeroItem.CharImageT, false);
+  }
+
+  private bool isAttackCard(CardData cardData)
+  {
+    return (bool) (UnityEngine.Object) cardData && (cardData.CardType == Enums.CardType.Attack || ((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Attack) || cardData.CardType == Enums.CardType.Lightning_Spell || ((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Lightning_Spell) || cardData.CardType == Enums.CardType.Fire_Spell || ((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Fire_Spell) || cardData.CardType == Enums.CardType.Cold_Spell || ((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Cold_Spell) || cardData.CardType == Enums.CardType.Shadow_Spell || ((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Shadow_Spell) || cardData.CardType == Enums.CardType.Curse_Spell || ((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Curse_Spell));
+  }
+
+  private bool isHealCard(CardData cardData)
+  {
+    return (bool) (UnityEngine.Object) cardData && (cardData.CardType == Enums.CardType.Healing_Spell || ((IEnumerable<Enums.CardType>) cardData.CardTypeAux).Contains<Enums.CardType>(Enums.CardType.Healing_Spell));
+  }
+
+  public void crimsonripple()
+  {
+    if (!(this.auxString.ToLower() == "bleed") || this.target.IsHero)
+      return;
+    foreach (NPC npcSide in MatchManager.Instance.GetNPCSides(this.target.Position))
+    {
+      npcSide.SetAuraTrait(this.character, "burn", 1);
+      npcSide.SetAuraTrait(this.character, "dark", 1);
+    }
+  }
+
+  public void wrathfulresonance()
+  {
+    this.DeathKnightResonance("runered", new Func<CardData, bool>(this.isAttackCard));
+  }
+
+  private void DeathKnightResonance(string rune, Func<CardData, bool> CardTypeCondition)
+  {
+    TraitData traitData = Globals.Instance.GetTraitData(this.trait);
+    if (MatchManager.Instance.activatedTraits.ContainsKey(this.trait) && MatchManager.Instance.activatedTraits[this.trait] >= traitData.TimesPerTurn)
+      return;
+    if (this.theEvent == Enums.EventActivation.DrawCard)
+    {
+      CardData cardData = MatchManager.Instance.GetCardData(this.auxString, false);
+      if (CardTypeCondition(cardData) && this.character.GetAuraCharges(rune) >= 3)
+      {
+        ++cardData.EnergyReductionTemporal;
+        MatchManager.Instance.UpdateHandCards();
+        CardItem fromTableByIndex = MatchManager.Instance.GetCardFromTableByIndex(this.auxString);
+        if ((bool) (UnityEngine.Object) fromTableByIndex)
+        {
+          fromTableByIndex.PlayDissolveParticle();
+          fromTableByIndex.ShowEnergyModification(-1);
+        }
+      }
+    }
+    if (this.theEvent == Enums.EventActivation.CastCard)
+    {
+      CardData cardData = Globals.Instance.GetCardData(this.auxString, false);
+      if (CardTypeCondition(cardData) && this.character.GetAuraCharges(rune) >= 3)
+      {
+        if (!MatchManager.Instance.activatedTraits.ContainsKey(this.trait))
+          MatchManager.Instance.activatedTraits.Add(this.trait, 1);
+        else
+          MatchManager.Instance.activatedTraits[this.trait]++;
+      }
+      if (MatchManager.Instance.activatedTraits.ContainsKey(this.trait) && MatchManager.Instance.activatedTraits[this.trait] >= traitData.TimesPerTurn)
+        this.ReduceDeckCost(-1, false, CardTypeCondition);
+    }
+    if (this.theEvent == Enums.EventActivation.BeginTurn)
+    {
+      if (!MatchManager.Instance.activatedTraits.ContainsKey(this.trait))
+        MatchManager.Instance.activatedTraits.Add(this.trait, 0);
+      else
+        MatchManager.Instance.activatedTraits[this.trait] = 0;
+    }
+    if ((this.theEvent == traitData.Activation && this.character.GetAuraCharges(rune) >= 3 || this.theEvent == Enums.EventActivation.AuraCurseSet && this.auxString == rune && this.character.GetAuraCharges(rune) == 2) && MatchManager.Instance.activatedTraits[this.trait] <= traitData.TimesPerTurn)
+      this.ReduceDeckCost(1, true, CardTypeCondition);
+    MatchManager.Instance.SetTraitInfoText();
+  }
+
+  private void ReduceDeckCost(
+    int reduction,
+    bool playParticles,
+    Func<CardData, bool> CardTypeCondition)
+  {
+    List<string> heroDeck = MatchManager.Instance.GetHeroDeck(this.character.HeroIndex);
+    List<string> heroHand = MatchManager.Instance.GetHeroHand(this.character.HeroIndex);
+    List<CardData> cardDataList = new List<CardData>();
+    for (int index = 0; index < heroDeck.Count; ++index)
+    {
+      CardData cardData = MatchManager.Instance.GetCardData(heroDeck[index]);
+      if (cardData.GetCardFinalCost() > 0)
+        cardDataList.Add(cardData);
+    }
+    for (int index = 0; index < heroHand.Count; ++index)
+    {
+      CardData cardData = MatchManager.Instance.GetCardData(heroHand[index]);
+      if (cardData.GetCardFinalCost() > 0)
+        cardDataList.Add(cardData);
+    }
+    for (int index = 0; index < cardDataList.Count; ++index)
+    {
+      CardData cardData = cardDataList[index];
+      if (CardTypeCondition(cardData))
+      {
+        cardData.EnergyReductionTemporal += reduction;
+        MatchManager.Instance.UpdateHandCards();
+        CardItem fromTableByIndex = MatchManager.Instance.GetCardFromTableByIndex(cardData.InternalId);
+        if (playParticles && (bool) (UnityEngine.Object) fromTableByIndex)
+        {
+          fromTableByIndex.PlayDissolveParticle();
+          fromTableByIndex.ShowEnergyModification(-reduction);
+        }
+        this.character.HeroItem.ScrollCombatText(Texts.Instance.GetText(this.trait == "wrathfulresonance" ? "traits_Wrathful Resonance" : "traits_Vital Resonance"), Enums.CombatScrollEffectType.Trait);
+        MatchManager.Instance.CreateLogCardModification(cardData.InternalId, MatchManager.Instance.GetHero(this.character.HeroIndex));
+      }
+    }
+  }
+
+  public void vitalresonance()
+  {
+    this.DeathKnightResonance("runegreen", new Func<CardData, bool>(this.isHealCard));
+  }
+
+  public void ApplyVitalResonance()
+  {
+    Hero[] teamHero = MatchManager.Instance.GetTeamHero();
+    EffectsManager.Instance.PlayEffectAC("healerself", true, this.character.HeroItem.CharImageT, false);
+    foreach (Hero hero in teamHero)
+    {
+      if (hero != null && hero.Alive)
+      {
+        if (hero.CacheGetTraitHealReceivedPercentBonus.Count > 0)
+          hero.CacheGetTraitHealReceivedPercentBonus[0] += 20f;
+        else
+          hero.CacheGetTraitHealReceivedPercentBonus.Add(20f);
+        hero.SetAuraTrait(this.character, "block", 10);
+        hero.SetAuraTrait(this.character, "vitality", 2);
+        EffectsManager.Instance.PlayEffectAC("shield2", true, hero.HeroItem.CharImageT, false);
+      }
+    }
+  }
+
+  public void bloodpact()
+  {
+  }
+
+  public void runicfocus() => Globals.Instance.GetTraitData("wrathfulresonance").TimesPerTurn = 4;
+
+  public void runicpower() => Globals.Instance.GetTraitData("vitalresonance").TimesPerTurn = 4;
+
+  public void satiatingblood()
+  {
   }
 
   public void accurateshots()
@@ -78,6 +257,36 @@ public class Trait
       return;
     this.target.SetAuraTrait(this.character, "bleed", 2);
     this.character.HeroItem.ScrollCombatText(Texts.Instance.GetText("traits_Bloody"), Enums.CombatScrollEffectType.Trait);
+  }
+
+  public void broodmother()
+  {
+    Hero[] teamHero = MatchManager.Instance.GetTeamHero();
+    string _id = "spiderling";
+    for (int index = 0; index < teamHero.Length; ++index)
+    {
+      if (this.character.HaveTrait("templelurkers"))
+      {
+        _id = !this.character.HaveTrait("spiderqueen") ? "templelurker" : "templelurkerrare";
+        break;
+      }
+      if (this.character.HaveTrait("mentalscavengers"))
+      {
+        _id = !this.character.HaveTrait("spiderqueen") ? "mentalscavengers" : "mentalscavengersrare";
+        break;
+      }
+    }
+    for (int index = 0; index < teamHero.Length; ++index)
+    {
+      if (teamHero[index] != null && (UnityEngine.Object) teamHero[index].HeroData != (UnityEngine.Object) null && teamHero[index].Alive)
+      {
+        string cardInDictionary = MatchManager.Instance.CreateCardInDictionary(_id);
+        MatchManager.Instance.GetCardData(cardInDictionary);
+        MatchManager.Instance.GenerateNewCard(1, cardInDictionary, false, Enums.CardPlace.RandomDeck, heroIndex: teamHero[index].HeroIndex);
+      }
+    }
+    this.character.HeroItem.ScrollCombatText(Texts.Instance.GetText("traits_BroodMother"), Enums.CombatScrollEffectType.Trait);
+    MatchManager.Instance.ItemTraitActivated();
   }
 
   public void butcher()
@@ -1962,6 +2171,24 @@ public class Trait
 
   public void weaponexpert()
   {
+  }
+
+  public void webweaver()
+  {
+    if (!((UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null) || MatchManager.Instance.GetCurrentRound() != 1)
+      return;
+    NPC[] teamNpc = MatchManager.Instance.GetTeamNPC();
+    for (int index = 0; index < teamNpc.Length; ++index)
+    {
+      if (teamNpc[index] != null && teamNpc[index].Alive)
+      {
+        teamNpc[index].SetAuraTrait(this.character, "insane", 6);
+        teamNpc[index].SetAuraTrait(this.character, "poison", 6);
+        teamNpc[index].SetAuraTrait(this.character, "shackle", 1);
+        EffectsManager.Instance.PlayEffectAC("poisonneuro", true, teamNpc[index].NPCItem.CharImageT, false);
+      }
+    }
+    this.character.HeroItem.ScrollCombatText(Texts.Instance.GetText("traits_Webweaver"), Enums.CombatScrollEffectType.Trait);
   }
 
   public void welltrained()

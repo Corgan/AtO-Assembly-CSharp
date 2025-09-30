@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CharPopup
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -71,6 +71,7 @@ public class CharPopup : MonoBehaviour
   public TMP_Text _Trait3B;
   public TMP_Text _Trait4A;
   public TMP_Text _Trait4B;
+  public TMP_Text traitListTxt;
   private TraitRollOver _Trait0RO;
   private TraitRollOver _Trait1ARO;
   private TraitRollOver _Trait1BRO;
@@ -127,6 +128,8 @@ public class CharPopup : MonoBehaviour
   private List<Transform> _controllerVerticalList = new List<Transform>();
   private Color botColorEnabled;
   private Color botColorDisabled;
+  [SerializeField]
+  private Transform movableElements;
 
   public bool MoveThis
   {
@@ -136,6 +139,8 @@ public class CharPopup : MonoBehaviour
 
   private void Awake()
   {
+    if (Globals.Instance?.CurrentLang == "zh-CN" || Globals.Instance?.CurrentLang == "zh-TW")
+      this.traitListTxt.lineSpacing = 16f;
     this.botColorEnabled = new Color(0.25f, 0.25f, 0.25f, 1f);
     this.botColorDisabled = new Color(0.96f, 0.62f, 0.05f, 1f);
     this.groupStats.gameObject.SetActive(true);
@@ -171,7 +176,7 @@ public class CharPopup : MonoBehaviour
       component.cardmakebig = true;
       component.TopLayeringOrder("UI");
       Transform transform = gameObject.transform;
-      transform.localPosition = new Vector3((float) (index % 5) * 1.75f, -2.7f * (float) (index / 5), (float) -(1.0 + (double) index * 0.0099999997764825821));
+      transform.localPosition = new Vector3((float) (index % 8) * 1.75f, -2.7f * (float) (index / 8), (float) -(1.0 + (double) index * 0.0099999997764825821));
       transform.localScale = new Vector3(0.9f, 0.9f, 1f);
       this.cardsSING[index] = component;
     }
@@ -215,10 +220,10 @@ public class CharPopup : MonoBehaviour
   {
     if (!this.moveThis)
       return;
-    this.transform.position = Vector3.Lerp(this.transform.position, this.destination, Time.deltaTime * 15f);
-    if ((double) Vector3.Distance(this.transform.position, this.destination) >= 0.019999999552965164)
+    this.movableElements.position = Vector3.Lerp(this.movableElements.position, this.destination, Time.deltaTime * 15f);
+    if ((double) Vector3.Distance(this.movableElements.position, this.destination) >= 0.019999999552965164)
       return;
-    this.transform.position = this.destination;
+    this.movableElements.position = this.destination;
     this.moveThis = false;
     if (this.closeThis)
     {
@@ -263,7 +268,7 @@ public class CharPopup : MonoBehaviour
 
   public void RefreshBecauseOfPerks() => this.Init(this.SCD, false);
 
-  public void Init(SubClassData _scd, bool doStats = true)
+  public void Init(SubClassData _scd, bool doStats = true, bool showNothing = false)
   {
     if ((UnityEngine.Object) _scd == (UnityEngine.Object) null)
       return;
@@ -284,6 +289,13 @@ public class CharPopup : MonoBehaviour
     {
       stringBuilder.Append("<size=2><voffset=.5><color=#444>|</color></voffset></size>  <sprite name=");
       stringBuilder.Append(Functions.ClassIconFromString(Enum.GetName(typeof (Enums.HeroClass), (object) _scd.HeroClassSecondary)));
+      stringBuilder.Append(">");
+    }
+    if (_scd.HeroClassThird != Enums.HeroClass.None)
+    {
+      stringBuilder.Append("</size>");
+      stringBuilder.Append("<size=2><voffset=.5><color=#444>|</color></voffset></size>  <sprite name=");
+      stringBuilder.Append(Functions.ClassIconFromString(Enum.GetName(typeof (Enums.HeroClass), (object) _scd.HeroClassThird)));
       stringBuilder.Append(">");
     }
     stringBuilder.Append("</size>");
@@ -457,10 +469,13 @@ public class CharPopup : MonoBehaviour
       this.SetHeroAnimated();
     }
     this.SetButtonPerkPoints();
-    if (doStats)
-      this.ShowStats();
-    else
-      this.ShowPerks();
+    if (!showNothing)
+    {
+      if (doStats)
+        this.ShowStats();
+      else
+        this.ShowPerks();
+    }
     if (!_scd.Sku.IsNullOrEmpty())
     {
       this.dlcCharacter.gameObject.SetActive(true);
@@ -492,16 +507,24 @@ public class CharPopup : MonoBehaviour
     }
     UnityEngine.Object.Destroy((UnityEngine.Object) this.heroAnimated);
     GameObject original = heroSkin;
+    float num1 = 1f;
     if ((UnityEngine.Object) heroSkin == (UnityEngine.Object) null)
     {
       SkinData skinData = Globals.Instance.GetSkinData(PlayerManager.Instance.GetActiveSkin(this.SCD.Id));
-      original = !((UnityEngine.Object) skinData != (UnityEngine.Object) null) ? this.SCD.GameObjectAnimated : skinData.SkinGo;
+      if ((UnityEngine.Object) skinData != (UnityEngine.Object) null)
+      {
+        num1 = skinData.HeroSelectionScreenScale;
+        original = skinData.SkinGo;
+      }
+      else
+        original = this.SCD.GameObjectAnimated;
     }
     if ((UnityEngine.Object) original != (UnityEngine.Object) null)
     {
       this._SpriteSubstitution.transform.gameObject.SetActive(false);
       Vector3 vector3 = new Vector3(original.transform.localPosition.x, original.transform.localPosition.y, 0.0f);
       this.heroAnimated = UnityEngine.Object.Instantiate<GameObject>(original, Vector3.zero, Quaternion.identity, this._HeroParent);
+      this._HeroParent.transform.localScale = new Vector3(num1, num1, num1);
       this.heroAnimated.name = original.name;
       this.heroAnimated.GetComponent<BoxCollider2D>().enabled = false;
       this.heroAnim = this.heroAnimated.GetComponent<Animator>();
@@ -534,6 +557,11 @@ public class CharPopup : MonoBehaviour
         this.heroAnimated.transform.localScale = new Vector3(0.95f, 0.95f, 1f);
         this.heroAnimated.transform.localPosition = new Vector3(0.0f, -0.1f, 0.0f);
       }
+      else if (this.SCD.SubClassName.ToLower() == "death knight")
+      {
+        this.heroAnimated.transform.localPosition = new Vector3(-0.38f, 0.0f, 0.0f);
+        this.heroAnimated.transform.localScale = new Vector3(0.9f, 0.9f, 0.9f);
+      }
       else if (this.SCD.HeroClass == Enums.HeroClass.Warrior)
       {
         this.heroAnimated.transform.localPosition = new Vector3(0.0f, -0.15f, 0.0f);
@@ -548,14 +576,14 @@ public class CharPopup : MonoBehaviour
       this.animatedSprites = new List<SpriteRenderer>();
       this.animatedSpritesOutOfCharacter = new List<SetSpriteLayerFromBase>();
       this.GetSpritesFromAnimated(this.heroAnimated);
-      int num = 2000;
+      int num2 = 2000;
       if (this.animatedSprites != null)
       {
         for (int index = 0; index < this.animatedSprites.Count; ++index)
         {
           if ((UnityEngine.Object) this.animatedSprites[index] != (UnityEngine.Object) null)
           {
-            this.animatedSprites[index].sortingOrder = num - index;
+            this.animatedSprites[index].sortingOrder = num2 - index;
             this.animatedSprites[index].sortingLayerName = "UI";
           }
         }
@@ -619,20 +647,20 @@ public class CharPopup : MonoBehaviour
   {
     this.SetPositions();
     if (this.opened)
-      this.transform.position = this.destinationCenter;
+      this.movableElements.position = this.destinationCenter;
     else
-      this.transform.position = this.destinationOut;
+      this.movableElements.position = this.destinationOut;
   }
 
   public void SetPositions()
   {
-    this.destinationCenter = new Vector3((float) ((double) Globals.Instance.sizeW * 0.5 - 9.6999998092651367), 0.0f, -1f);
-    this.destinationOut = new Vector3((float) ((double) Globals.Instance.sizeW * 0.5 + 2.5 * (double) Globals.Instance.scale), 0.0f, -1f);
+    this.destinationCenter = new Vector3((float) ((double) Globals.Instance.sizeW * 0.5 - 9.6999998092651367), -0.5f, -1f);
+    this.destinationOut = new Vector3(Globals.Instance.sizeW + 2.5f * Globals.Instance.scale, -0.5f, -1f);
   }
 
   public void HideNow()
   {
-    this.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, -100f);
+    this.movableElements.position = new Vector3(this.movableElements.position.x, this.movableElements.position.y, -100f);
   }
 
   public void Close()
@@ -647,6 +675,34 @@ public class CharPopup : MonoBehaviour
     this.moveThis = true;
     this.opened = false;
     HeroSelectionManager.Instance.ShowMask(false);
+    this.EnableCharButton(this.buttonStats, true);
+    this.EnableCharButton(this.buttonSkins, true);
+    this.EnableCharButton(this.buttonCardback, true);
+    this.EnableCharButton(this.buttonPerks, true);
+    this.EnableCharButton(this.buttonRank, true);
+    this.EnableCharButton(this.buttonSingularityCards, true, true);
+    if (HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].blocked || HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].DlcBlocked)
+      this.DisableBlockedElements();
+    if (!GameManager.Instance.IsObeliskChallenge())
+      return;
+    this.buttonPerks.Disable();
+    this.buttonRank.Disable();
+  }
+
+  public void AllowAllButtons()
+  {
+    this.EnableCharButton(this.buttonStats, true);
+    this.EnableCharButton(this.buttonSkins, true);
+    this.EnableCharButton(this.buttonCardback, true);
+    this.EnableCharButton(this.buttonPerks, true);
+    this.EnableCharButton(this.buttonRank, true);
+    this.EnableCharButton(this.buttonSingularityCards, true, true);
+    if (HeroSelectionManager.Instance.heroSelectionDictionary.ContainsKey(this.SCD.Id) && (HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].blocked || HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].DlcBlocked))
+      this.DisableBlockedElements();
+    if (!GameManager.Instance.IsObeliskChallenge())
+      return;
+    this.buttonPerks.Disable();
+    this.buttonRank.Disable();
   }
 
   public void Show()
@@ -658,7 +714,7 @@ public class CharPopup : MonoBehaviour
     this.destination = this.destinationCenter;
     if (!this.moveThis)
     {
-      this.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, -1f);
+      this.movableElements.position = new Vector3(this.movableElements.position.x, this.movableElements.position.y, -1f);
       this.StartCoroutine(this.moveWindow());
     }
     this.opened = true;
@@ -710,7 +766,7 @@ public class CharPopup : MonoBehaviour
     this.groupCardback.gameObject.SetActive(false);
     this.groupSingularityCards.gameObject.SetActive(false);
     this.perksNotAvailable.gameObject.SetActive(false);
-    if (!HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].blocked && !HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].DlcBlocked)
+    if (HeroSelectionManager.Instance.heroSelectionDictionary == null || !HeroSelectionManager.Instance.heroSelectionDictionary.ContainsKey(this.SCD.Id) || !HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].blocked && !HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].DlcBlocked)
       return;
     this.DisableBlockedElements();
   }
@@ -783,6 +839,13 @@ public class CharPopup : MonoBehaviour
     this.EnableCharButton(this.buttonPerks, true);
     this.EnableCharButton(this.buttonRank, true);
     this.EnableCharButton(this.buttonSingularityCards, false);
+    if (HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].blocked || HeroSelectionManager.Instance.heroSelectionDictionary[this.SCD.Id].DlcBlocked)
+      this.DisableBlockedElements();
+    if (GameManager.Instance.IsObeliskChallenge())
+    {
+      this.buttonPerks.Disable();
+      this.buttonRank.Disable();
+    }
     this.groupCharacter.gameObject.SetActive(false);
     this.groupStats.gameObject.SetActive(false);
     this.groupPerks.gameObject.SetActive(false);
@@ -816,36 +879,20 @@ public class CharPopup : MonoBehaviour
 
   public void ShowCardbacks()
   {
-    this.EnableCharButton(this.buttonStats, true);
-    this.EnableCharButton(this.buttonSkins, true);
-    this.EnableCharButton(this.buttonCardback, false);
-    this.EnableCharButton(this.buttonPerks, true);
-    this.EnableCharButton(this.buttonRank, true);
-    this.EnableCharButton(this.buttonSingularityCards, true, true);
-    if (GameManager.Instance.IsObeliskChallenge())
-    {
-      this.buttonPerks.Disable();
-      this.buttonRank.Disable();
-    }
-    this.groupCharacter.gameObject.SetActive(false);
-    this.groupStats.gameObject.SetActive(false);
-    this.groupPerks.gameObject.SetActive(false);
-    this.groupSkins.gameObject.SetActive(false);
-    this.groupRank.gameObject.SetActive(false);
-    this.groupCardback.gameObject.SetActive(true);
-    this.groupSingularityCards.gameObject.SetActive(false);
-    this.perksNotAvailable.gameObject.SetActive(false);
+    if (!this.opened)
+      this.ShowStats();
+    HeroSelectionManager.Instance.CardBacksPopUp.SetActive(true);
     this.DoCardbacks();
   }
 
-  public void DoCardbacks()
+  public void DoCardbacks(bool RefreshPage = false)
   {
-    foreach (Component component in this.groupCardbackGOsCharacter)
-      UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
-    foreach (Component component in this.groupCardbackGOsGeneral)
-      UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
-    foreach (Component component in this.groupCardbackGOsMisc)
-      UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
+    CardBackSelectionPanel component = HeroSelectionManager.Instance.CardBacksPopUp.GetComponent<CardBackSelectionPanel>();
+    foreach (CardBackSelectionPanel.CardStartingPositions startingPosition in component.cardStartingPositions)
+    {
+      for (int index = startingPosition.refTransform.childCount - 1; index >= 0; --index)
+        UnityEngine.Object.Destroy((UnityEngine.Object) startingPosition.refTransform.GetChild(index).gameObject);
+    }
     string id = this.SCD.Id;
     int perkRank = PlayerManager.Instance.GetPerkRank(this.SCD.Id);
     SortedDictionary<string, CardbackData> sortedDictionary = new SortedDictionary<string, CardbackData>();
@@ -864,28 +911,7 @@ public class CharPopup : MonoBehaviour
         flag2 = true;
       if (flag2)
       {
-        int cardbackOrder;
-        string str;
-        if (keyValuePair.Value.CardbackOrder < 10)
-        {
-          cardbackOrder = keyValuePair.Value.CardbackOrder;
-          str = "000" + cardbackOrder.ToString();
-        }
-        else if (keyValuePair.Value.CardbackOrder < 100)
-        {
-          cardbackOrder = keyValuePair.Value.CardbackOrder;
-          str = "00" + cardbackOrder.ToString();
-        }
-        else if (keyValuePair.Value.CardbackOrder < 1000)
-        {
-          cardbackOrder = keyValuePair.Value.CardbackOrder;
-          str = "0" + cardbackOrder.ToString();
-        }
-        else
-        {
-          cardbackOrder = keyValuePair.Value.CardbackOrder;
-          str = cardbackOrder.ToString();
-        }
+        string str = keyValuePair.Value.CardbackOrder >= 10 ? (keyValuePair.Value.CardbackOrder >= 100 ? (keyValuePair.Value.CardbackOrder >= 1000 ? keyValuePair.Value.CardbackOrder.ToString() : "0" + keyValuePair.Value.CardbackOrder.ToString()) : "00" + keyValuePair.Value.CardbackOrder.ToString()) : "000" + keyValuePair.Value.CardbackOrder.ToString();
         string key = (!keyValuePair.Value.BaseCardback ? "1" + str : "0" + str) + "_" + keyValuePair.Value.CardbackName;
         sortedDictionary.Add(key, keyValuePair.Value);
         if (flag1)
@@ -899,44 +925,71 @@ public class CharPopup : MonoBehaviour
       if ((UnityEngine.Object) cardbackData != (UnityEngine.Object) null)
         PlayerManager.Instance.SetCardback(id, cardbackData.CardbackId);
     }
-    float num1 = 0.85f;
-    int num2 = 8;
-    float num3 = 1.24f;
-    float num4 = 2.12f;
-    int num5 = 0;
-    int num6 = 0;
+    float cardSize = component.cardSize;
+    int cardPerRow = component.cardPerRow;
+    float distX = component.distX;
+    float distY = component.distY;
+    Dictionary<string, List<KeyValuePair<string, CardbackData>>> dictionary = new Dictionary<string, List<KeyValuePair<string, CardbackData>>>()
+    {
+      {
+        "character",
+        new List<KeyValuePair<string, CardbackData>>()
+      },
+      {
+        "general",
+        new List<KeyValuePair<string, CardbackData>>()
+      },
+      {
+        "others",
+        new List<KeyValuePair<string, CardbackData>>()
+      }
+    };
     foreach (KeyValuePair<string, CardbackData> keyValuePair in sortedDictionary)
     {
-      int num7 = int.Parse(keyValuePair.Key.Split('_', StringSplitOptions.None)[0]);
-      GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.goCardback, Vector3.zero, Quaternion.identity);
-      if (num7 < 10010)
-        gameObject.transform.parent = this.groupCardbackGOsCharacter;
-      else if (num7 < 10050)
-      {
-        if (num6 == 0)
-        {
-          num6 = 1;
-          num5 = 0;
-        }
-        gameObject.transform.parent = this.groupCardbackGOsGeneral;
-      }
+      int num = int.Parse(keyValuePair.Key.Split('_', StringSplitOptions.None)[0]);
+      if (num < 10010)
+        dictionary["character"].Add(keyValuePair);
+      else if (num < 10050)
+        dictionary["general"].Add(keyValuePair);
       else
+        dictionary["others"].Add(keyValuePair);
+    }
+    int num1 = 3;
+    int num2 = cardPerRow * num1;
+    foreach (KeyValuePair<string, List<KeyValuePair<string, CardbackData>>> keyValuePair1 in dictionary)
+    {
+      string key = keyValuePair1.Key;
+      List<KeyValuePair<string, CardbackData>> keyValuePairList = keyValuePair1.Value;
+      Transform startingRefTransform = component.GetStartingRefTransform(key);
+      for (int index = startingRefTransform.childCount - 1; index >= 0; --index)
+        UnityEngine.Object.Destroy((UnityEngine.Object) startingRefTransform.GetChild(index).gameObject);
+      int count = keyValuePairList.Count;
+      int num3 = Mathf.CeilToInt((float) count / (float) num2);
+      int num4 = 0;
+      for (int index1 = 0; index1 < num3; ++index1)
       {
-        if (num6 == 1)
+        GameObject gameObject1 = new GameObject(string.Format("Page_{0}", (object) (index1 + 1)));
+        gameObject1.transform.SetParent(startingRefTransform, false);
+        RectTransform rectTransform = gameObject1.AddComponent<RectTransform>();
+        rectTransform.localPosition = Vector3.zero;
+        rectTransform.localScale = Vector3.one;
+        gameObject1.SetActive(index1 == 0);
+        for (int index2 = 0; index2 < num1; ++index2)
         {
-          num6 = 2;
-          num5 = 0;
+          for (int index3 = 0; index3 < cardPerRow && num4 < count; ++index3)
+          {
+            KeyValuePair<string, CardbackData> keyValuePair2 = keyValuePairList[num4++];
+            GameObject gameObject2 = UnityEngine.Object.Instantiate<GameObject>(this.goCardback, Vector3.zero, Quaternion.identity, gameObject1.transform);
+            Vector3 vector3 = new Vector3(distX * (float) index3, -distY * (float) index2, -1f);
+            gameObject2.transform.localScale = new Vector3(cardSize, cardSize, 1f);
+            gameObject2.transform.localPosition = vector3;
+            bool _unlocked = stringList.Contains(keyValuePair2.Key);
+            gameObject2.GetComponent<BotonCardback>().SetCardbackData(keyValuePair2.Value.CardbackId, _unlocked, id);
+          }
         }
-        gameObject.transform.parent = this.groupCardbackGOsMisc;
       }
-      Vector3 vector3 = new Vector3(num3 * (float) (num5 % num2), -num4 * Mathf.Floor((float) num5 / (float) num2), 0.0f);
-      gameObject.transform.localScale = new Vector3(num1, num1, 1f);
-      gameObject.transform.localPosition = vector3;
-      if (stringList.Contains(keyValuePair.Key))
-        gameObject.GetComponent<BotonCardback>().SetCardbackData(keyValuePair.Value.CardbackId, true, id);
-      else
-        gameObject.GetComponent<BotonCardback>().SetCardbackData(keyValuePair.Value.CardbackId, false, id);
-      ++num5;
+      component.UpdateButtonText(key);
+      int num5 = RefreshPage ? 1 : 0;
     }
   }
 
@@ -971,11 +1024,16 @@ public class CharPopup : MonoBehaviour
       this.useSuppliesButton.Disable();
     else
       this.useSuppliesButton.Enable();
+    if (!GameManager.Instance.GetDeveloperMode())
+      return;
+    this.useSuppliesButton.Enable();
   }
 
   private void DoPerks()
   {
     Enum.GetName(typeof (Enums.HeroClass), (object) this.SCD.HeroClass);
+    if (!this.opened)
+      this.ShowStats();
     PerkTree.Instance.Show(this.SCD.Id);
   }
 

@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: GameTurnData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -16,10 +16,12 @@ public class GameTurnData
   private string turnCombatDictionaryKeys = "";
   private string turnCombatDictionaryValues = "";
   private string turnHeroItems = "";
+  private string turnNPCParams = "";
   private string turnCombatStatsEffects = "";
   private string turnCombatStatsCurrent = "";
   private string turnHeroLifeArr = "";
   private string itemExecutionInCombat = "";
+  private int currentSpecialCardsUsedInMatch;
 
   public void FillData()
   {
@@ -34,6 +36,8 @@ public class GameTurnData
     this.turnCombatStatsCurrent = MatchManager.Instance.GetCombatStatsCurrentForTurnSave();
     this.turnHeroLifeArr = MatchManager.Instance.GetHeroLifeArrForTurnSave();
     this.itemExecutionInCombat = MatchManager.Instance.GetItemExecutionInCombatForTurnSave();
+    this.currentSpecialCardsUsedInMatch = MatchManager.Instance.MindSpikeAbility.CurrentSpecialCardsUsedInMatch;
+    this.turnNPCParams = MatchManager.Instance.GetNPCParamsForTurnSave();
   }
 
   public void LoadData()
@@ -43,6 +47,6 @@ public class GameTurnData
     CombatData currentCombatData = AtOManager.Instance.GetCurrentCombatData();
     if ((UnityEngine.Object) currentCombatData == (UnityEngine.Object) null && this.turnCombatData != "" || (UnityEngine.Object) currentCombatData != (UnityEngine.Object) null && currentCombatData.CombatId != this.turnCombatData)
       return;
-    MatchManager.Instance.SetLoadTurn(this.turnData, this.turnCombatDictionaryKeys, this.turnCombatDictionaryValues, this.turnHeroItems, this.turnCombatStatsEffects, this.turnCombatStatsCurrent, this.turnHeroLifeArr, this.itemExecutionInCombat);
+    MatchManager.Instance.SetLoadTurn(this.turnData, this.turnCombatDictionaryKeys, this.turnCombatDictionaryValues, this.turnHeroItems, this.turnCombatStatsEffects, this.turnCombatStatsCurrent, this.turnHeroLifeArr, this.itemExecutionInCombat, this.currentSpecialCardsUsedInMatch.ToString(), this.turnNPCParams);
   }
 }

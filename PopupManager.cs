@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: PopupManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -989,6 +989,11 @@ public class PopupManager : MonoBehaviour
                 str1 = str1 + "<br3>" + Texts.Instance.GetText("allResistancesNegative");
             }
           }
+          else if (acData.Id == "shackle")
+          {
+            if (!theChar.IsHero && AtOManager.Instance.TeamHaveTrait("webweaver"))
+              str1 = Texts.Instance.GetText("shackleWebweaver_description", "auracurse");
+          }
           else if (acData.Id == "sharp")
           {
             if (AtOManager.Instance.CharacterHavePerk(theChar.SubclassName, "mainperkSharp1a"))
@@ -1388,7 +1393,14 @@ public class PopupManager : MonoBehaviour
         "transfer",
         "steal",
         "escapes",
-        "metamorph"
+        "metamorph",
+        "nightmareecho",
+        "nightmareechoa",
+        "nightmareechob",
+        "corruptedecho",
+        "transferpain",
+        "nightmareimage",
+        "mindspike"
       };
       for (int index2 = 0; index2 < keyNotesDataArray.Length; ++index2)
       {

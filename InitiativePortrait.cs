@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: InitiativePortrait
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System.Collections;
@@ -85,7 +85,7 @@ public class InitiativePortrait : MonoBehaviour
     if (this.Hero != null)
       this.charSprite.sprite = this.Hero.SpriteSpeed;
     else if ((Object) this.NpcData != (Object) null)
-      this.charSprite.sprite = this.NpcData.SpriteSpeed;
+      this.charSprite.sprite = this.npcItem.NPC.TransformedModel ? this.NpcData.SpriteSpeedAlternate : this.NpcData.SpriteSpeed;
     this.position = _position;
     Vector3 vector3 = this.CalcVectorPosition(this.position);
     if (this.destinationLocalPosition == Vector3.zero)

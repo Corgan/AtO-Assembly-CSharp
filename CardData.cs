@@ -1,14 +1,16 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CardData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
+using Cards;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using WebSocketSharp;
 
 #nullable disable
 [CreateAssetMenu(fileName = "New Card", menuName = "Card Data", order = 51)]
@@ -38,6 +40,8 @@ public class CardData : ScriptableObject
   private string baseCard = "";
   [SerializeField]
   private int cardNumber;
+  [SerializeField]
+  private SpecialCardEnum specialCardEnum;
   [SerializeField]
   private CardData upgradesToRare;
   [Header("Description and Image")]
@@ -69,7 +73,19 @@ public class CardData : ScriptableObject
   private string sku;
   [Header("Description CUSTOM")]
   [SerializeField]
+  private string preDescriptionId = "";
+  [SerializeField]
   private string descriptionId = "";
+  [SerializeField]
+  private string postDescriptionId = "";
+  [SerializeField]
+  private bool useDescriptionFromCard;
+  [SerializeField]
+  private string[] preDescriptionArgs;
+  [SerializeField]
+  private string[] descriptionArgs;
+  [SerializeField]
+  private string[] postDescriptionArgs;
   [Header("PET Data")]
   [SerializeField]
   private GameObject petModel;
@@ -89,6 +105,19 @@ public class CardData : ScriptableObject
   [Header("Kill PET")]
   [SerializeField]
   private bool killPet;
+  [Header("Temporal PET")]
+  [SerializeField]
+  private bool petTemporal;
+  [SerializeField]
+  private bool petTemporalAttack;
+  [SerializeField]
+  private bool petTemporalCast;
+  [SerializeField]
+  private bool petTemporalMoveToCenter;
+  [SerializeField]
+  private bool petTemporalMoveToBack;
+  [SerializeField]
+  private float petTemporalFadeOutDelay;
   [Header("Game Parameters")]
   [SerializeField]
   private int maxInDeck;
@@ -337,6 +366,8 @@ public class CardData : ScriptableObject
   private bool energyRechargeSpecialValueGlobal;
   [Header("Aura / Buffs")]
   [SerializeField]
+  private bool chooseOneOfAvailableAuras;
+  [SerializeField]
   private AuraCurseData aura;
   [SerializeField]
   private AuraCurseData auraSelf;
@@ -372,6 +403,8 @@ public class CardData : ScriptableObject
   private bool auraCharges3SpecialValue1;
   [SerializeField]
   private bool auraCharges3SpecialValue2;
+  [SerializeField]
+  private CardData.AuraBuffs[] auras;
   [Header("Curse / DeBuffs")]
   [SerializeField]
   private AuraCurseData curse;
@@ -379,6 +412,8 @@ public class CardData : ScriptableObject
   private AuraCurseData curseSelf;
   [SerializeField]
   private int curseCharges;
+  [SerializeField]
+  private int curseChargesSides;
   [SerializeField]
   private bool curseChargesSpecialValueGlobal;
   [SerializeField]
@@ -409,6 +444,8 @@ public class CardData : ScriptableObject
   private bool curseCharges3SpecialValue1;
   [SerializeField]
   private bool curseCharges3SpecialValue2;
+  [SerializeField]
+  private CardData.CurseDebuffs[] curses;
   [Header("Character Interation")]
   [SerializeField]
   private int pushTarget;
@@ -436,7 +473,13 @@ public class CardData : ScriptableObject
   [SerializeField]
   private Enums.CardType addCardType;
   [SerializeField]
+  private bool addCardOnlyCheckAuxTypes;
+  [SerializeField]
+  public List<CardData.CardToGainTypeBasedOnHeroClass> AddCardTypeBasedOnHeroClass;
+  [SerializeField]
   private Enums.CardType[] addCardTypeAux;
+  [SerializeField]
+  public List<CardData.CardToGainListBasedOnHeroClass> AddCardListBasedOnHeroClass;
   [SerializeField]
   private CardData[] addCardList;
   [SerializeField]
@@ -451,6 +494,10 @@ public class CardData : ScriptableObject
   private bool addCardCostTurn;
   [SerializeField]
   private bool addCardVanish;
+  [SerializeField]
+  private CardIdProvider addCardForModify;
+  [SerializeField]
+  private CopyConfig copyConfig;
   [Header("Look cards")]
   [SerializeField]
   private int lookCards;
@@ -458,6 +505,9 @@ public class CardData : ScriptableObject
   private int lookCardsDiscardUpTo;
   [SerializeField]
   private int lookCardsVanishUpTo;
+  [Header("Vanish cards")]
+  [SerializeField]
+  private bool addVanishToDeck;
   [Header("Summon Units")]
   [SerializeField]
   private NPCData summonUnit;
@@ -545,7 +595,10 @@ public class CardData : ScriptableObject
   private string target = "";
   [SerializeField]
   [HideInInspector]
-  private int enchantDamagePreCalculated;
+  private int enchantDamagePreCalculated1;
+  [SerializeField]
+  [HideInInspector]
+  private int enchantDamagePreCalculated2;
   private string colorUpgradePlain = "5E3016";
   private string colorUpgradeGold = "875700";
   private string colorUpgradeBlue = "215382";
@@ -554,6 +607,24 @@ public class CardData : ScriptableObject
   private string colorUpgradeBlueLight = "99DEFB";
   private string colorUpgradeGoldLight = "E5B04D";
   private string colorUpgradeRareLight = "E08BFF";
+  private bool _tempAttackSelf;
+  public static readonly Dictionary<string, Func<CardData, string>> CardValues;
+
+  public bool TempAttackSelf
+  {
+    get => this._tempAttackSelf;
+    set => this._tempAttackSelf = value;
+  }
+
+  public CardIdProvider AddCardForModify => this.addCardForModify;
+
+  public CopyConfig CopyConfig => this.copyConfig;
+
+  public SpecialCardEnum SpecialCardEnum
+  {
+    get => this.specialCardEnum;
+    set => this.specialCardEnum = value;
+  }
 
   public void Init(string newId) => this.id = newId;
 
@@ -573,9 +644,15 @@ public class CardData : ScriptableObject
     this.damageSelfPreCalculated2 = this.damageSelf2;
     this.effectRequired = this.effectRequired.ToLower();
     if ((UnityEngine.Object) this.itemEnchantment != (UnityEngine.Object) null)
-      this.enchantDamagePreCalculated = this.itemEnchantment.DamageToTarget;
+    {
+      this.enchantDamagePreCalculated1 = this.itemEnchantment.DamageToTarget1;
+      this.enchantDamagePreCalculated2 = this.itemEnchantment.DamageToTarget2;
+    }
     else if ((UnityEngine.Object) this.item != (UnityEngine.Object) null)
-      this.enchantDamagePreCalculated = this.item.DamageToTarget;
+    {
+      this.enchantDamagePreCalculated1 = this.item.DamageToTarget1;
+      this.enchantDamagePreCalculated2 = this.item.DamageToTarget2;
+    }
     this.healPreCalculated = this.heal;
     this.healSelfPreCalculated = this.healSelf;
     if (this.innate)
@@ -599,24 +676,56 @@ public class CardData : ScriptableObject
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.aura2.Id));
     if ((UnityEngine.Object) this.aura3 != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.aura3.Id));
+    if (this.auras != null && this.auras.Length != 0)
+    {
+      foreach (CardData.AuraBuffs aura in this.auras)
+      {
+        if (aura != null && (UnityEngine.Object) aura.aura != (UnityEngine.Object) null)
+          this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(aura.aura.Id));
+      }
+    }
     if ((UnityEngine.Object) this.auraSelf != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.auraSelf.Id));
     if ((UnityEngine.Object) this.auraSelf2 != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.auraSelf2.Id));
     if ((UnityEngine.Object) this.auraSelf3 != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.auraSelf3.Id));
+    if (this.auras != null && this.auras.Length != 0)
+    {
+      foreach (CardData.AuraBuffs aura in this.auras)
+      {
+        if (aura != null && (UnityEngine.Object) aura.auraSelf != (UnityEngine.Object) null)
+          this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(aura.auraSelf.Id));
+      }
+    }
     if ((UnityEngine.Object) this.curse != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.curse.Id));
     if ((UnityEngine.Object) this.curse2 != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.curse2.Id));
     if ((UnityEngine.Object) this.curse3 != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.curse3.Id));
+    if (this.curses != null && this.curses.Length != 0)
+    {
+      foreach (CardData.CurseDebuffs curse in this.curses)
+      {
+        if (curse != null && (UnityEngine.Object) curse.curse != (UnityEngine.Object) null)
+          this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(curse.curse.Id));
+      }
+    }
     if ((UnityEngine.Object) this.curseSelf != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.curseSelf.Id));
     if ((UnityEngine.Object) this.curseSelf2 != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.curseSelf2.Id));
     if ((UnityEngine.Object) this.curseSelf3 != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.curseSelf3.Id));
+    if (this.curses != null && this.curses.Length != 0)
+    {
+      foreach (CardData.CurseDebuffs curse in this.curses)
+      {
+        if (curse != null && (UnityEngine.Object) curse.curseSelf != (UnityEngine.Object) null)
+          this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(curse.curseSelf.Id));
+      }
+    }
     if ((UnityEngine.Object) this.healAuraCurseSelf != (UnityEngine.Object) null)
       this.KeyNotes.Add(Globals.Instance.GetKeyNotesData(this.healAuraCurseSelf.Id));
     if ((UnityEngine.Object) this.healAuraCurseName != (UnityEngine.Object) null)
@@ -659,7 +768,15 @@ public class CardData : ScriptableObject
     }
   }
 
-  public void SetEnchantDamagePrecalculated(int damage) => this.enchantDamagePreCalculated = damage;
+  public void SetEnchantDamagePrecalculated1(int damage)
+  {
+    this.enchantDamagePreCalculated1 = damage;
+  }
+
+  public void SetEnchantDamagePrecalculated2(int damage)
+  {
+    this.enchantDamagePreCalculated2 = damage;
+  }
 
   public void SetDamagePrecalculated(int damage) => this.damagePreCalculated = damage;
 
@@ -808,7 +925,7 @@ public class CardData : ScriptableObject
     }
   }
 
-  private void SetTarget()
+  public void SetTarget()
   {
     if (this.autoplayDraw)
       this.target = Texts.Instance.GetText("onDraw");
@@ -847,2077 +964,2531 @@ public class CardData : ScriptableObject
   {
     if (forceDescription || !Globals.Instance.CardsDescriptionNormalized.ContainsKey(this.id))
     {
-      StringBuilder stringBuilder1 = new StringBuilder();
-      StringBuilder stringBuilder2 = new StringBuilder();
-      string str1 = "<line-height=15%><br></line-height>";
-      string str2 = "<color=#444><size=-.15>";
-      string str3 = "</size></color>";
-      string str4 = "<color=#5E3016><size=-.15>";
-      int num1 = 0;
-      if (this.descriptionId != "")
-        stringBuilder1.Append(Functions.FormatStringCard(Texts.Instance.GetText(this.descriptionId)));
-      else if ((UnityEngine.Object) this.item == (UnityEngine.Object) null && (UnityEngine.Object) this.itemEnchantment == (UnityEngine.Object) null)
-      {
-        string str5 = "";
-        string str6 = "";
-        string str7 = "";
-        float num2 = 0.0f;
-        string str8 = "";
-        bool flag1 = false;
-        bool flag2 = false;
-        bool flag3 = true;
-        StringBuilder stringBuilder3 = new StringBuilder();
-        if (this.damage > 0 || this.damage2 > 0 || this.damageSelf > 0 || this.DamageSelf2 > 0)
-          flag3 = false;
-        if (this.drawCard != 0 && !this.drawCardSpecialValueGlobal)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDraw"), (object) this.ColorTextArray("", this.NumFormat(this.drawCard), this.SpriteText("card"))));
-          stringBuilder1.Append("<br>");
-        }
-        if (this.specialValueGlobal == Enums.CardSpecialValue.DiscardedCards)
-        {
-          if (this.discardCardPlace == Enums.CardPlace.Vanish)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsVanish"), (object) this.ColorTextArray("", "X", this.SpriteText("card"))));
-          else
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDiscard"), (object) this.ColorTextArray("", "X", this.SpriteText("card"))));
-          stringBuilder1.Append("\n");
-        }
-        if (this.drawCardSpecialValueGlobal)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDraw"), (object) this.ColorTextArray("aura", "X", this.SpriteText("card"))));
-          stringBuilder1.Append("<br>");
-        }
-        if (this.addCard != 0)
-        {
-          string str9;
-          if (this.addCardId != "")
-          {
-            stringBuilder2.Append(this.ColorTextArray("", this.NumFormat(this.addCard), this.SpriteText("card")));
-            CardData cardData = Globals.Instance.GetCardData(this.addCardId, false);
-            if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
-            {
-              stringBuilder2.Append(this.ColorFromCardDataRarity(cardData));
-              stringBuilder2.Append(cardData.CardName);
-              stringBuilder2.Append("</color>");
-            }
-            str9 = stringBuilder2.ToString();
-            stringBuilder2.Clear();
-          }
-          else
-          {
-            if (this.addCardChoose > 0)
-              stringBuilder2.Append(this.ColorTextArray("", this.NumFormat(this.addCardChoose), this.SpriteText("card")));
-            else
-              stringBuilder2.Append(this.ColorTextArray("", this.NumFormat(this.addCard), this.SpriteText("card")));
-            if (this.addCardType != Enums.CardType.None)
-            {
-              stringBuilder2.Append("<color=#5E3016>");
-              stringBuilder2.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) this.addCardType)));
-              stringBuilder2.Append("</color>");
-            }
-            str9 = stringBuilder2.ToString();
-            stringBuilder2.Clear();
-          }
-          string str10 = "";
-          if (this.addCardReducedCost == -1)
-            str10 = !this.addCardVanish ? (!this.addCardCostTurn ? string.Format(Texts.Instance.GetText("cardsAddCost"), (object) 0) : string.Format(Texts.Instance.GetText("cardsAddCostTurn"), (object) 0)) : (!this.addCardCostTurn ? string.Format(Texts.Instance.GetText("cardsAddCostVanish"), (object) 0) : string.Format(Texts.Instance.GetText("cardsAddCostVanish"), (object) 0));
-          else if (this.addCardReducedCost > 0)
-            str10 = !this.addCardVanish ? (!this.addCardCostTurn ? string.Format(Texts.Instance.GetText("cardsAddCostReduced"), (object) this.addCardReducedCost) : string.Format(Texts.Instance.GetText("cardsAddCostReducedTurn"), (object) this.addCardReducedCost)) : (!this.addCardCostTurn ? string.Format(Texts.Instance.GetText("cardsAddCostReducedVanish"), (object) this.addCardReducedCost) : string.Format(Texts.Instance.GetText("cardsAddCostReducedVanishTurn"), (object) this.addCardReducedCost));
-          string _id = "";
-          if (this.addCardId != "")
-          {
-            if (this.addCardPlace == Enums.CardPlace.RandomDeck)
-              _id = this.targetSide == Enums.CardTargetSide.Self || this.targetSide == Enums.CardTargetSide.Enemy && this.cardClass != Enums.CardClass.Monster ? "cardsIDShuffleDeck" : "cardsIDShuffleTargetDeck";
-            else if (this.addCardPlace == Enums.CardPlace.Hand)
-              _id = "cardsIDPlaceHand";
-            else if (this.addCardPlace == Enums.CardPlace.TopDeck)
-              _id = this.targetSide != Enums.CardTargetSide.Self ? "cardsIDPlaceTargetTopDeck" : "cardsIDPlaceTopDeck";
-            else if (this.addCardPlace == Enums.CardPlace.Discard)
-              _id = this.targetSide == Enums.CardTargetSide.Self || this.targetSide == Enums.CardTargetSide.Enemy && this.cardClass != Enums.CardClass.Monster ? "cardsIDPlaceDiscard" : "cardsIDPlaceTargetDiscard";
-          }
-          else if (this.addCardFrom == Enums.CardFrom.Game)
-          {
-            if (this.addCardPlace == Enums.CardPlace.RandomDeck)
-              _id = this.addCardChoose != 0 ? "cardsDiscoverNumberToDeck" : "cardsDiscoverToDeck";
-            else if (this.addCardPlace == Enums.CardPlace.Hand)
-              _id = this.addCardChoose != 0 ? "cardsDiscoverNumberToHand" : "cardsDiscoverToHand";
-            else if (this.addCardPlace == Enums.CardPlace.TopDeck && this.addCardChoose != 0)
-              _id = "cardsDiscoverNumberToTopDeck";
-          }
-          else if (this.addCardFrom == Enums.CardFrom.Deck)
-          {
-            if (this.addCardPlace == Enums.CardPlace.Hand)
-              _id = this.addCardChoose <= 0 ? (this.addCard <= 1 ? "cardsRevealItToHand" : "cardsRevealThemToHand") : "cardsRevealNumberToHand";
-            else if (this.addCardPlace == Enums.CardPlace.TopDeck)
-              _id = this.addCardChoose <= 0 ? (this.addCard <= 1 ? "cardsRevealItToTopDeck" : "cardsRevealThemToTopDeck") : "cardsRevealNumberToTopDeck";
-          }
-          else if (this.addCardFrom == Enums.CardFrom.Discard)
-          {
-            if (this.addCardPlace == Enums.CardPlace.TopDeck)
-              _id = "cardsPickToTop";
-            else if (this.addCardPlace == Enums.CardPlace.Hand)
-              _id = "cardsPickToHand";
-          }
-          else if (this.addCardFrom == Enums.CardFrom.Hand)
-          {
-            if (this.targetSide == Enums.CardTargetSide.Friend)
-            {
-              if (this.addCardPlace == Enums.CardPlace.TopDeck)
-                _id = "cardsDuplicateToTargetTopDeck";
-              else if (this.addCardPlace == Enums.CardPlace.RandomDeck)
-                _id = "cardsDuplicateToTargetRandomDeck";
-            }
-            else if (this.addCardPlace == Enums.CardPlace.Hand)
-              _id = "cardsDuplicateToHand";
-          }
-          else if (this.addCardFrom == Enums.CardFrom.Vanish)
-          {
-            if (this.addCardPlace == Enums.CardPlace.TopDeck)
-              _id = "cardsFromVanishToTop";
-            else if (this.addCardPlace == Enums.CardPlace.Hand)
-              _id = "cardsFromVanishToHand";
-          }
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText(_id), (object) str9, (object) this.ColorTextArray("", this.NumFormat(this.addCard))));
-          if (str10 != "")
-          {
-            stringBuilder1.Append(" ");
-            stringBuilder1.Append(str2);
-            stringBuilder1.Append(str10);
-            stringBuilder1.Append(str3);
-          }
-          stringBuilder1.Append("\n");
-        }
-        if (this.discardCard != 0)
-        {
-          if (this.discardCardType != Enums.CardType.None)
-          {
-            stringBuilder2.Append("<color=#5E3016>");
-            stringBuilder2.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) this.discardCardType)));
-            stringBuilder2.Append("</color>");
-          }
-          if (this.discardCardPlace == Enums.CardPlace.Discard)
-          {
-            if (!this.discardCardAutomatic)
-            {
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDiscard"), (object) this.ColorTextArray("", this.NumFormat(this.discardCard), this.SpriteText("card"))));
-              stringBuilder1.Append(stringBuilder2);
-              stringBuilder1.Append("\n");
-            }
-            else
-            {
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDiscard"), (object) this.ColorTextArray("", this.NumFormat(this.discardCard), this.SpriteText("cardrandom"))));
-              stringBuilder1.Append(stringBuilder2);
-              stringBuilder1.Append("\n");
-            }
-          }
-          else if (this.discardCardPlace == Enums.CardPlace.TopDeck)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPlaceToTop"), (object) this.ColorTextArray("", this.NumFormat(this.discardCard), this.SpriteText("card"), stringBuilder2.ToString().Trim())));
-            stringBuilder1.Append("\n");
-          }
-          else if (this.discardCardPlace == Enums.CardPlace.Vanish)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsVanish"), (object) this.ColorTextArray("", this.NumFormat(this.discardCard), this.SpriteText("card"), stringBuilder2.ToString().Trim())));
-            stringBuilder1.Append("\n");
-          }
-          stringBuilder2.Clear();
-        }
-        if (this.lookCards != 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsLook"), (object) this.ColorTextArray("", this.NumFormat(this.lookCards), this.SpriteText("card"))));
-          stringBuilder1.Append("\n");
-          if (this.lookCardsDiscardUpTo == -1)
-          {
-            stringBuilder1.Append(Texts.Instance.GetText("cardsDiscardAny"));
-            stringBuilder1.Append("\n");
-          }
-          else if (this.lookCardsDiscardUpTo > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDiscardUpTo"), (object) this.ColorTextArray("", this.NumFormat(this.lookCardsDiscardUpTo))));
-            stringBuilder1.Append("\n");
-          }
-          else if (this.lookCardsVanishUpTo > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsVanishUpTo"), (object) this.ColorTextArray("", this.NumFormat(this.lookCardsVanishUpTo))));
-            stringBuilder1.Append("\n");
-          }
-        }
-        num1 = 0;
-        if ((UnityEngine.Object) this.summonUnit != (UnityEngine.Object) null && this.summonUnitNum > 0)
-        {
-          stringBuilder2.Append("\n<color=#5E3016>");
-          if (this.summonUnitNum > 1)
-          {
-            stringBuilder2.Append(this.summonUnitNum);
-            stringBuilder2.Append(" ");
-          }
-          NPCData npc = Globals.Instance.GetNPC(this.summonUnit?.Id);
-          if ((UnityEngine.Object) npc != (UnityEngine.Object) null)
-            stringBuilder2.Append(npc.NPCName);
-          if (this.metamorph)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsMetamorph"), (object) stringBuilder2.ToString()));
-          else if (this.evolve)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsEvolve"), (object) stringBuilder2.ToString()));
-          else
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSummon"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("</color>\n");
-          stringBuilder2.Clear();
-        }
-        if (this.dispelAuras > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) this.ColorTextArray("aura", this.dispelAuras.ToString())));
-          stringBuilder1.Append("\n");
-        }
-        else if (this.dispelAuras == -1)
-        {
-          stringBuilder1.Append(Texts.Instance.GetText("cardsPurgeAll"));
-          stringBuilder1.Append("\n");
-        }
-        num1 = 0;
-        if (this.specialValueGlobal == Enums.CardSpecialValue.None && this.specialValue1 == Enums.CardSpecialValue.None && this.specialValue2 == Enums.CardSpecialValue.None)
-        {
-          StringBuilder stringBuilder4 = new StringBuilder();
-          StringBuilder stringBuilder5 = new StringBuilder();
-          if ((UnityEngine.Object) this.healAuraCurseName != (UnityEngine.Object) null)
-          {
-            if (this.healAuraCurseName.IsAura)
-              stringBuilder4.Append(this.SpriteText(this.healAuraCurseName.ACName));
-            else
-              stringBuilder5.Append(this.SpriteText(this.healAuraCurseName.ACName));
-          }
-          if ((UnityEngine.Object) this.healAuraCurseName2 != (UnityEngine.Object) null)
-          {
-            if (this.healAuraCurseName2.IsAura)
-              stringBuilder4.Append(this.SpriteText(this.healAuraCurseName2.ACName));
-            else
-              stringBuilder5.Append(this.SpriteText(this.healAuraCurseName2.ACName));
-          }
-          if ((UnityEngine.Object) this.healAuraCurseName3 != (UnityEngine.Object) null)
-          {
-            if (this.healAuraCurseName3.IsAura)
-              stringBuilder4.Append(this.SpriteText(this.healAuraCurseName3.ACName));
-            else
-              stringBuilder5.Append(this.SpriteText(this.healAuraCurseName3.ACName));
-          }
-          if ((UnityEngine.Object) this.healAuraCurseName4 != (UnityEngine.Object) null)
-          {
-            if (this.healAuraCurseName4.IsAura)
-              stringBuilder4.Append(this.SpriteText(this.healAuraCurseName4.ACName));
-            else
-              stringBuilder5.Append(this.SpriteText(this.healAuraCurseName4.ACName));
-          }
-          if (stringBuilder4.Length > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) stringBuilder4.ToString()));
-            stringBuilder1.Append("\n");
-          }
-          if (stringBuilder5.Length > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) stringBuilder5.ToString()));
-            stringBuilder1.Append("\n");
-          }
-          if (this.healCurses > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) this.ColorTextArray("curse", this.healCurses.ToString())));
-            stringBuilder1.Append("\n");
-          }
-          if (this.healCurses == -1)
-          {
-            stringBuilder1.Append(Texts.Instance.GetText("cardsDispelAll"));
-            stringBuilder1.Append("\n");
-          }
-          if ((UnityEngine.Object) this.healAuraCurseSelf != (UnityEngine.Object) null)
-          {
-            if (this.healAuraCurseSelf.IsAura)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPurgeYour"), (object) this.SpriteText(this.healAuraCurseSelf.ACName)));
-            else
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispelYour"), (object) this.SpriteText(this.healAuraCurseSelf.ACName)));
-            stringBuilder1.Append("\n");
-          }
-        }
-        else
-        {
-          if (this.healCurses > 0)
-          {
-            if (this.targetSide == Enums.CardTargetSide.Enemy)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) this.healCurses));
-            else
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) this.healCurses));
-            stringBuilder1.Append("\n");
-          }
-          if ((UnityEngine.Object) this.healAuraCurseName4 != (UnityEngine.Object) null && (UnityEngine.Object) this.healAuraCurseName3 == (UnityEngine.Object) null)
-          {
-            StringBuilder stringBuilder6 = new StringBuilder();
-            StringBuilder stringBuilder7 = new StringBuilder();
-            if (this.healAuraCurseName4.IsAura)
-              stringBuilder6.Append(this.SpriteText(this.healAuraCurseName4.ACName));
-            else
-              stringBuilder7.Append(this.SpriteText(this.healAuraCurseName4.ACName));
-            if (stringBuilder6.Length > 0)
-            {
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) stringBuilder6.ToString()));
-              stringBuilder1.Append("\n");
-            }
-            if (stringBuilder7.Length > 0)
-            {
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) stringBuilder7.ToString()));
-              stringBuilder1.Append("\n");
-            }
-          }
-        }
-        if (this.transferCurses > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTransferCurse"), (object) this.transferCurses.ToString()));
-          stringBuilder1.Append("\n");
-        }
-        if (this.stealAuras > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsStealAuras"), (object) this.stealAuras.ToString()));
-          stringBuilder1.Append("\n");
-        }
-        if (this.increaseAuras > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsIncreaseAura"), (object) this.increaseAuras.ToString()));
-          stringBuilder1.Append("\n");
-        }
-        if (this.increaseCurses > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsIncreaseCurse"), (object) this.increaseCurses.ToString()));
-          stringBuilder1.Append("\n");
-        }
-        if (this.reduceAuras > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsReduceAura"), (object) this.reduceAuras.ToString()));
-          stringBuilder1.Append("\n");
-        }
-        if (this.reduceCurses > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsReduceCurse"), (object) this.reduceCurses.ToString()));
-          stringBuilder1.Append("\n");
-        }
-        bool flag4 = false;
-        if (this.damage > 0)
-        {
-          if (this.damage > 0 && this.damage2 > 0 && this.damageType == this.damageType2 && !this.damageSpecialValueGlobal && !this.damageSpecialValue1 && !this.damageSpecialValue2 && !this.damage2SpecialValueGlobal && !this.damage2SpecialValue1 && !this.damage2SpecialValue2)
-          {
-            stringBuilder2.Append(this.ColorTextArray("damage", this.NumFormat(this.damagePreCalculatedCombined), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
-            flag4 = true;
-          }
-          else
-          {
-            if (this.damage == 1 && (this.damageSpecialValueGlobal || this.damageSpecialValue1 || this.damageSpecialValue2))
-              stringBuilder2.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
-            else
-              stringBuilder2.Append(this.ColorTextArray("damage", this.NumFormat(this.damagePreCalculated), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
-            if (this.damage2 > 0)
-            {
-              flag4 = true;
-              if (this.damage2 == 1 && (this.damage2SpecialValue1 || this.damage2SpecialValue2 || this.damage2SpecialValueGlobal))
-              {
-                if (this.damageType == this.damageType2)
-                {
-                  stringBuilder2.Append("<space=-.3>");
-                  stringBuilder2.Append("+");
-                  stringBuilder2.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
-                }
-                else
-                  stringBuilder2.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
-              }
-              else
-                stringBuilder2.Append(this.ColorTextArray("damage", this.NumFormat(this.damagePreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
-            }
-          }
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDealDamage"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (!flag4 && this.damage2 > 0)
-        {
-          if (this.damage2 == 1 && (this.damage2SpecialValueGlobal || this.damage2SpecialValue1 || this.damage2SpecialValue2))
-            stringBuilder2.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
-          else
-            stringBuilder2.Append(this.ColorTextArray("damage", this.NumFormat(this.damagePreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDealDamage"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        int num3 = 0;
-        if (this.damageSelf > 0)
-        {
-          ++num3;
-          if (this.damageSpecialValueGlobal || this.damageSpecialValue1 || this.damageSpecialValue2)
-            stringBuilder2.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
-          else
-            stringBuilder2.Append(this.ColorTextArray("damage", this.NumFormat(this.damageSelfPreCalculated), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
-        }
-        if (this.damageSelf2 > 0)
-        {
-          ++num3;
-          if (this.damage2SpecialValueGlobal || this.damage2SpecialValue1 || this.damage2SpecialValue2)
-            stringBuilder2.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
-          else
-            stringBuilder2.Append(this.ColorTextArray("damage", this.NumFormat(this.damageSelfPreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
-        }
-        if (num3 > 0)
-        {
-          if (num3 > 2)
-          {
-            stringBuilder2.Insert(0, str1);
-            stringBuilder2.Insert(0, "\n");
-          }
-          if (this.targetSide == Enums.CardTargetSide.Self)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("\n");
-          }
-          else
-          {
-            stringBuilder3.Append(string.Format(Texts.Instance.GetText("cardsYouSuffer"), (object) stringBuilder2.ToString()));
-            stringBuilder3.Append("\n");
-          }
-          stringBuilder2.Clear();
-        }
-        if (stringBuilder3.Length > 0)
-        {
-          stringBuilder1.Append(stringBuilder3.ToString());
-          stringBuilder3.Clear();
-        }
-        if ((double) this.healSelfPerDamageDonePercent > 0.0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsHealSelfPerDamage"), (object) this.healSelfPerDamageDonePercent.ToString()));
-          stringBuilder1.Append("\n");
-        }
-        if (this.selfHealthLoss != 0 && !this.selfHealthLossSpecialGlobal)
-        {
-          if (this.selfHealthLossSpecialValue1)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsLoseHp"), (object) this.ColorTextArray("damage", "X HP")));
-          else
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsLoseHp"), (object) this.ColorTextArray("damage", this.NumFormat(this.selfHealthLoss), "HP")));
-          stringBuilder1.Append("\n");
-        }
-        if ((this.targetSide == Enums.CardTargetSide.Friend || this.targetSide == Enums.CardTargetSide.FriendNotSelf) && this.SpecialValueGlobal == Enums.CardSpecialValue.AuraCurseYours && (UnityEngine.Object) this.SpecialAuraCurseNameGlobal != (UnityEngine.Object) null && (double) this.SpecialValueModifierGlobal > 0.0)
-        {
-          flag1 = true;
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsShareYour"), (object) this.SpriteText(this.SpecialAuraCurseNameGlobal.ACName)));
-          stringBuilder1.Append("\n");
-        }
-        if (!this.Damage2SpecialValue1 && !flag1 && (this.specialValueGlobal != Enums.CardSpecialValue.None || this.specialValue1 != Enums.CardSpecialValue.None || this.specialValue2 != Enums.CardSpecialValue.None))
-        {
-          if (!this.damageSpecialValueGlobal && !this.damageSpecialValue1 && !this.damageSpecialValue2)
-          {
-            if (this.targetSide == Enums.CardTargetSide.Self && (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseTarget || this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseYours))
-            {
-              if ((UnityEngine.Object) this.specialAuraCurseNameGlobal != (UnityEngine.Object) null)
-                str5 = this.SpriteText(this.specialAuraCurseNameGlobal.ACName);
-              if (this.auraChargesSpecialValueGlobal)
-              {
-                if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null)
-                  str6 = this.SpriteText(this.aura.ACName);
-                if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && this.auraCharges2SpecialValueGlobal)
-                  str7 = this.SpriteText(this.aura2.ACName);
-              }
-              else if (this.curseChargesSpecialValueGlobal)
-              {
-                if ((UnityEngine.Object) this.curse != (UnityEngine.Object) null)
-                  str6 = this.SpriteText(this.curse.ACName);
-                if ((UnityEngine.Object) this.curse2 != (UnityEngine.Object) null && this.curseCharges2SpecialValueGlobal)
-                  str7 = this.SpriteText(this.curse2.ACName);
-              }
-            }
-            else if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseTarget)
-            {
-              if ((UnityEngine.Object) this.specialAuraCurseName1 != (UnityEngine.Object) null)
-                str5 = this.SpriteText(this.specialAuraCurseName1.ACName);
-              if (this.auraChargesSpecialValue1)
-              {
-                if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null)
-                  str6 = this.SpriteText(this.aura.ACName);
-                if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && this.auraCharges2SpecialValue1)
-                  str7 = this.SpriteText(this.aura2.ACName);
-              }
-              else if (this.curseChargesSpecialValue1)
-              {
-                if ((UnityEngine.Object) this.curse != (UnityEngine.Object) null)
-                  str6 = this.SpriteText(this.curse.ACName);
-                if ((UnityEngine.Object) this.curse2 != (UnityEngine.Object) null && this.CurseCharges2SpecialValue1)
-                  str7 = this.SpriteText(this.curse2.ACName);
-              }
-            }
-            if (str5 != "" && str6 != "")
-            {
-              flag2 = true;
-              if (str5 == str6)
-              {
-                if (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseTarget)
-                {
-                  if ((double) this.specialValueModifierGlobal == 100.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDoubleTarget"), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else if ((double) this.specialValueModifierGlobal == 200.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTripleTarget"), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else if ((double) this.specialValueModifierGlobal < 100.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsLosePercentTarget"), (object) (float) (100.0 - (double) this.specialValueModifierGlobal), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                }
-                else if (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseYours)
-                {
-                  if ((double) this.specialValueModifierGlobal == 100.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDoubleYour"), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else if ((double) this.specialValueModifierGlobal == 200.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTripleYour"), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else if ((double) this.specialValueModifierGlobal < 100.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsLosePercentYour"), (object) (float) (100.0 - (double) this.specialValueModifierGlobal), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                }
-                else if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseTarget)
-                {
-                  if ((double) this.specialValueModifier1 == 100.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDoubleTarget"), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else if ((double) this.specialValueModifier1 == 200.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTripleTarget"), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else if ((double) this.specialValueModifier1 < 100.0 && (UnityEngine.Object) this.healAuraCurseName != (UnityEngine.Object) null)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsLosePercentTarget"), (object) (float) (100.0 - (double) this.specialValueModifier1), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else
-                    flag2 = false;
-                }
-                else if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseYours)
-                {
-                  if ((double) this.specialValueModifier1 == 100.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDoubleYour"), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else if ((double) this.specialValueModifier1 == 200.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTripleYour"), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                  else if ((double) this.specialValueModifier1 < 100.0)
-                  {
-                    stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsLosePercentYour"), (object) (float) (100.0 - (double) this.specialValueModifier1), (object) str5));
-                    stringBuilder1.Append("\n");
-                  }
-                }
-              }
-              else
-              {
-                stringBuilder2.Append(str6);
-                if ((double) this.specialValueModifier1 > 0.0)
-                  num2 = this.specialValueModifier1 / 100f;
-                if ((double) num2 > 0.0 && (double) num2 != 1.0)
-                  str8 = "x " + num2.ToString();
-                if (str8 != "")
-                {
-                  stringBuilder2.Append(" <c>");
-                  stringBuilder2.Append(str8);
-                  stringBuilder2.Append("</c>");
-                }
-                if (str7 != "")
-                  stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTransformIntoAnd"), (object) str5, (object) stringBuilder2.ToString(), (object) str7));
-                else
-                  stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTransformInto"), (object) str5, (object) stringBuilder2.ToString()));
-                stringBuilder1.Append("\n");
-                stringBuilder2.Clear();
-                num2 = 0.0f;
-                str8 = "";
-              }
-            }
-          }
-        }
-        if (this.energyRechargeSpecialValueGlobal)
-          stringBuilder2.Append(this.ColorTextArray("aura", "X", this.SpriteText("energy")));
-        AuraCurseData auraCurseData = (AuraCurseData) null;
-        if (!flag1 && !flag2)
-        {
-          int num4 = 0;
-          if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null && (this.auraChargesSpecialValue1 || this.auraChargesSpecialValueGlobal))
-          {
-            ++num4;
-            stringBuilder2.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.aura.ACName)));
-            auraCurseData = this.aura;
-          }
-          if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && (this.auraCharges2SpecialValue1 || this.auraCharges2SpecialValueGlobal))
-          {
-            ++num4;
-            if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null && (UnityEngine.Object) this.aura == (UnityEngine.Object) this.aura2)
-            {
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura.Id, this.auraCharges, character)), this.SpriteText(this.aura.ACName)));
-              stringBuilder2.Append("+");
-            }
-            stringBuilder2.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.aura2.ACName)));
-            auraCurseData = this.aura2;
-          }
-          if ((UnityEngine.Object) this.aura3 != (UnityEngine.Object) null && (this.auraCharges3SpecialValue1 || this.auraCharges3SpecialValueGlobal))
-          {
-            ++num4;
-            if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null && (UnityEngine.Object) this.aura == (UnityEngine.Object) this.aura3)
-            {
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura.Id, this.auraCharges, character)), this.SpriteText(this.aura.ACName)));
-              stringBuilder2.Append("+");
-            }
-            if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && (UnityEngine.Object) this.aura == (UnityEngine.Object) this.aura3)
-            {
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura2.Id, this.auraCharges2, character)), this.SpriteText(this.aura3.ACName)));
-              stringBuilder2.Append("+");
-            }
-            stringBuilder2.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.aura3.ACName)));
-            auraCurseData = this.aura3;
-          }
-          if (num4 > 0)
-          {
-            if (this.targetSide == Enums.CardTargetSide.Self)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) stringBuilder2.ToString()));
-            else
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGrant"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("\n");
-            stringBuilder2.Clear();
-          }
-        }
-        if (!flag1 && !flag2)
-        {
-          int num5 = 0;
-          if ((UnityEngine.Object) this.curse != (UnityEngine.Object) null && (this.curseChargesSpecialValue1 || this.curseChargesSpecialValueGlobal))
-          {
-            ++num5;
-            stringBuilder2.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curse.ACName)));
-          }
-          if ((UnityEngine.Object) this.curse2 != (UnityEngine.Object) null && (this.curseCharges2SpecialValue1 || this.curseCharges2SpecialValueGlobal))
-          {
-            ++num5;
-            stringBuilder2.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curse2.ACName)));
-          }
-          if ((UnityEngine.Object) this.curse3 != (UnityEngine.Object) null && (this.curseCharges3SpecialValue1 || this.curseCharges3SpecialValueGlobal))
-          {
-            ++num5;
-            stringBuilder2.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curse3.ACName)));
-          }
-          if (num5 > 0)
-          {
-            if (this.targetSide == Enums.CardTargetSide.Self)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-            else
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("\n");
-            stringBuilder2.Clear();
-          }
-          int num6 = 0;
-          if ((UnityEngine.Object) this.curseSelf != (UnityEngine.Object) null && (this.curseChargesSpecialValue1 || this.curseChargesSpecialValueGlobal))
-          {
-            ++num6;
-            stringBuilder2.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curseSelf.ACName)));
-          }
-          if ((UnityEngine.Object) this.curseSelf2 != (UnityEngine.Object) null && (this.curseCharges2SpecialValue1 || this.curseCharges2SpecialValueGlobal))
-          {
-            ++num6;
-            stringBuilder2.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curseSelf2.ACName)));
-          }
-          if ((UnityEngine.Object) this.curseSelf3 != (UnityEngine.Object) null && (this.curseCharges3SpecialValue1 || this.curseCharges3SpecialValueGlobal))
-          {
-            ++num6;
-            stringBuilder2.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curseSelf3.ACName)));
-          }
-          if (num6 > 0)
-          {
-            if (this.targetSide == Enums.CardTargetSide.Self || (UnityEngine.Object) this.curseSelf != (UnityEngine.Object) null || (UnityEngine.Object) this.curseSelf2 != (UnityEngine.Object) null || (UnityEngine.Object) this.curseSelf3 != (UnityEngine.Object) null)
-            {
-              if (this.targetSide == Enums.CardTargetSide.Self)
-              {
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-                stringBuilder1.Append("\n");
-              }
-              else if (!flag3)
-              {
-                stringBuilder3.Append(string.Format(Texts.Instance.GetText("cardsYouSuffer"), (object) stringBuilder2.ToString()));
-                stringBuilder3.Append("\n");
-              }
-              else
-              {
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsYouSuffer"), (object) stringBuilder2.ToString()));
-                stringBuilder1.Append("\n");
-              }
-            }
-            else
-            {
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) stringBuilder2.ToString()));
-              stringBuilder1.Append("\n");
-            }
-            stringBuilder2.Clear();
-          }
-        }
-        int num7 = 0;
-        if (this.heal > 0 && (this.healSpecialValue1 || this.healSpecialValueGlobal))
-        {
-          stringBuilder2.Append(this.ColorTextArray("heal", "X", this.SpriteText("heal")));
-          num1 = num7 + 1;
-        }
-        if (stringBuilder2.Length > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsHeal"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        int num8 = 0;
-        if (this.healSelf > 0 && (this.healSelfSpecialValue1 || this.healSelfSpecialValueGlobal))
-        {
-          stringBuilder2.Append(this.ColorTextArray("heal", "X", this.SpriteText("heal")));
-          num1 = num8 + 1;
-        }
-        if (stringBuilder2.Length > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsHealSelf"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (!flag1 && !flag2)
-        {
-          if ((double) this.specialValueModifierGlobal > 0.0)
-            num2 = this.specialValueModifierGlobal / 100f;
-          else if ((double) this.specialValueModifier1 > 0.0)
-            num2 = this.specialValueModifier1 / 100f;
-          if ((double) num2 > 0.0 && (double) num2 != 1.0)
-            str8 = "x" + num2.ToString();
-          if (str8 == "")
-            str8 = "<space=-.1>";
-          if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseYours)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYour"), (object) this.SpriteText(this.SpecialAuraCurseName1.ACName), (object) str8));
-          else if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseTarget)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTarget"), (object) this.SpriteText(this.SpecialAuraCurseName1.ACName), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseYours)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYour"), (object) this.SpriteText(this.SpecialAuraCurseNameGlobal.ACName), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseTarget)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTarget"), (object) this.SpriteText(this.SpecialAuraCurseNameGlobal.ACName), (object) str8));
-          if (this.specialValueGlobal == Enums.CardSpecialValue.HealthYours)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourHp"), (object) str8));
-          else if (this.specialValue1 == Enums.CardSpecialValue.HealthYours)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourHp"), (object) str8));
-          else if (this.specialValue1 == Enums.CardSpecialValue.HealthTarget)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetHp"), (object) str8));
-          if (this.specialValueGlobal == Enums.CardSpecialValue.SpeedYours)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourSpeed"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.SpeedTarget)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetSpeed"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.SpeedDifference || this.specialValue1 == Enums.CardSpecialValue.SpeedDifference)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsDifferenceSpeed"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.DiscardedCards)
-          {
-            if (this.discardCardPlace == Enums.CardPlace.Vanish)
-              stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourVanishedCards"), (object) str8));
-            else
-              stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourDiscardedCards"), (object) str8));
-          }
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.VanishedCards)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourVanishedCards"), (object) str8));
-          if (this.specialValueGlobal == Enums.CardSpecialValue.CardsHand || this.specialValue1 == Enums.CardSpecialValue.CardsHand || this.specialValue2 == Enums.CardSpecialValue.CardsHand)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourHand"), (object) this.SpriteText("card"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsDeck || this.specialValue1 == Enums.CardSpecialValue.CardsDeck || this.specialValue2 == Enums.CardSpecialValue.CardsDeck)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourDeck"), (object) this.SpriteText("card"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsDiscard || this.specialValue1 == Enums.CardSpecialValue.CardsDiscard || this.specialValue2 == Enums.CardSpecialValue.CardsDiscard)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourDiscard"), (object) this.SpriteText("card"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsVanish || this.specialValue1 == Enums.CardSpecialValue.CardsVanish || this.specialValue2 == Enums.CardSpecialValue.CardsVanish)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourVanish"), (object) this.SpriteText("card"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsDeckTarget || this.specialValue1 == Enums.CardSpecialValue.CardsDeckTarget || this.specialValue2 == Enums.CardSpecialValue.CardsDeckTarget)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetDeck"), (object) this.SpriteText("card"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsDiscardTarget || this.specialValue1 == Enums.CardSpecialValue.CardsDiscardTarget || this.specialValue2 == Enums.CardSpecialValue.CardsDiscardTarget)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetDiscard"), (object) this.SpriteText("card"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsVanishTarget || this.specialValue1 == Enums.CardSpecialValue.CardsVanishTarget || this.specialValue2 == Enums.CardSpecialValue.CardsVanishTarget)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetVanish"), (object) this.SpriteText("card"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.MissingHealthYours || this.specialValue1 == Enums.CardSpecialValue.MissingHealthYours)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourMissingHealth"), (object) str8));
-          else if (this.specialValueGlobal == Enums.CardSpecialValue.MissingHealthTarget || this.specialValue1 == Enums.CardSpecialValue.MissingHealthTarget)
-            stringBuilder2.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetMissingHealth"), (object) str8));
-          if (stringBuilder2.Length > 0)
-          {
-            stringBuilder1.Append(str4);
-            stringBuilder1.Append(stringBuilder2);
-            stringBuilder1.Append(str3);
-            stringBuilder1.Append("\n");
-            stringBuilder2.Clear();
-            if ((UnityEngine.Object) this.healAuraCurseName != (UnityEngine.Object) null)
-            {
-              if (this.targetSide == Enums.CardTargetSide.Self)
-              {
-                if (this.healAuraCurseName.IsAura)
-                  stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPurgeYour"), (object) this.SpriteText(this.healAuraCurseName.ACName)));
-                else
-                  stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispelYour"), (object) this.SpriteText(this.healAuraCurseName.ACName)));
-              }
-              else if (this.healAuraCurseName.IsAura)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) this.SpriteText(this.healAuraCurseName.ACName)));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) this.SpriteText(this.healAuraCurseName.ACName)));
-              stringBuilder1.Append("\n");
-            }
-            if ((UnityEngine.Object) this.healAuraCurseSelf != (UnityEngine.Object) null)
-            {
-              if (this.healAuraCurseSelf.IsAura)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsPurgeYour"), (object) this.SpriteText(this.healAuraCurseSelf.ACName)));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispelYour"), (object) this.SpriteText(this.healAuraCurseSelf.ACName)));
-              stringBuilder1.Append("\n");
-            }
-          }
-          num2 = 0.0f;
-        }
-        if (this.selfHealthLoss > 0 && this.selfHealthLossSpecialGlobal)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsYouLose"), (object) this.ColorTextArray("damage", "X", "HP")));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        int num9 = 0;
-        if ((UnityEngine.Object) this.curseSelf != (UnityEngine.Object) null && this.curseCharges > 0)
-        {
-          ++num9;
-          stringBuilder2.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curseSelf.Id, this.curseCharges, character)), this.SpriteText(this.curseSelf.ACName)));
-        }
-        if ((UnityEngine.Object) this.curseSelf2 != (UnityEngine.Object) null && this.curseCharges2 > 0)
-        {
-          ++num9;
-          stringBuilder2.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curseSelf2.Id, this.curseCharges2, character)), this.SpriteText(this.curseSelf2.ACName)));
-        }
-        if ((UnityEngine.Object) this.curseSelf3 != (UnityEngine.Object) null && this.curseCharges3 > 0)
-        {
-          ++num9;
-          stringBuilder2.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curseSelf3.Id, this.curseCharges3, character)), this.SpriteText(this.curseSelf3.ACName)));
-        }
-        if (num9 > 0)
-        {
-          if (num9 > 2)
-          {
-            stringBuilder2.Insert(0, str1);
-            stringBuilder2.Insert(0, "\n");
-          }
-          if (this.targetSide == Enums.CardTargetSide.Self)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("\n");
-          }
-          else
-          {
-            stringBuilder3.Append(string.Format(Texts.Instance.GetText("cardsYouSuffer"), (object) stringBuilder2.ToString()));
-            stringBuilder3.Append("\n");
-          }
-          stringBuilder2.Clear();
-        }
-        int num10 = 0;
-        if (this.energyRecharge < 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsLoseHp"), (object) stringBuilder2.Append(this.ColorTextArray("system", this.NumFormat(Mathf.Abs(this.energyRecharge)), this.SpriteText("energy")))));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (this.energyRecharge > 0)
-        {
-          ++num10;
-          stringBuilder2.Append(this.ColorTextArray("system", this.NumFormat(this.energyRecharge), this.SpriteText("energy")));
-        }
-        if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null && this.auraCharges > 0 && (UnityEngine.Object) this.aura != (UnityEngine.Object) auraCurseData)
-        {
-          ++num10;
-          stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura.Id, this.auraCharges, character)), this.SpriteText(this.aura.ACName)));
-        }
-        if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && this.auraCharges2 > 0 && (UnityEngine.Object) this.aura2 != (UnityEngine.Object) auraCurseData)
-        {
-          ++num10;
-          stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura2.Id, this.auraCharges2, character)), this.SpriteText(this.aura2.ACName)));
-        }
-        if ((UnityEngine.Object) this.aura3 != (UnityEngine.Object) null && this.auraCharges3 > 0 && (UnityEngine.Object) this.aura3 != (UnityEngine.Object) auraCurseData)
-        {
-          ++num10;
-          stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura3.Id, this.auraCharges3, character)), this.SpriteText(this.aura3.ACName)));
-        }
-        if (num10 > 0)
-        {
-          if (num10 > 2)
-          {
-            stringBuilder2.Insert(0, str1);
-            stringBuilder2.Insert(0, "\n");
-          }
-          if (this.targetSide == Enums.CardTargetSide.Self)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) stringBuilder2.ToString()));
-          else
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGrant"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        int num11 = 0;
-        if ((UnityEngine.Object) this.auraSelf != (UnityEngine.Object) null && this.auraCharges > 0)
-        {
-          ++num11;
-          stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.auraSelf.Id, this.auraCharges, character)), this.SpriteText(this.auraSelf.ACName)));
-        }
-        if ((UnityEngine.Object) this.auraSelf2 != (UnityEngine.Object) null && this.auraCharges2 > 0)
-        {
-          ++num11;
-          stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.auraSelf2.Id, this.auraCharges2, character)), this.SpriteText(this.auraSelf2.ACName)));
-        }
-        if ((UnityEngine.Object) this.auraSelf3 != (UnityEngine.Object) null && this.auraCharges3 > 0)
-        {
-          ++num11;
-          stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.auraSelf3.Id, this.auraCharges3, character)), this.SpriteText(this.auraSelf3.ACName)));
-        }
-        if (!flag1)
-        {
-          if ((UnityEngine.Object) this.auraSelf != (UnityEngine.Object) null && (this.auraChargesSpecialValue1 || this.auraChargesSpecialValueGlobal))
-          {
-            ++num11;
-            stringBuilder2.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.auraSelf.ACName)));
-          }
-          if ((UnityEngine.Object) this.auraSelf2 != (UnityEngine.Object) null && (this.auraCharges2SpecialValue1 || this.auraCharges2SpecialValueGlobal))
-          {
-            ++num11;
-            stringBuilder2.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.auraSelf2.ACName)));
-          }
-          if ((UnityEngine.Object) this.auraSelf3 != (UnityEngine.Object) null && (this.auraCharges3SpecialValue1 || this.auraCharges3SpecialValueGlobal))
-          {
-            ++num11;
-            stringBuilder2.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.auraSelf3.ACName)));
-          }
-        }
-        if (num11 > 0)
-        {
-          if (num11 > 2)
-          {
-            stringBuilder2.Insert(0, str1);
-            stringBuilder2.Insert(0, "\n");
-          }
-          if (this.targetSide == Enums.CardTargetSide.Self)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("\n");
-          }
-          else
-          {
-            stringBuilder3.Append(string.Format(Texts.Instance.GetText("cardsYouGain"), (object) stringBuilder2.ToString()));
-            stringBuilder3.Append("\n");
-          }
-          stringBuilder2.Clear();
-        }
-        int num12 = 0;
-        if (this.curseCharges > 0 && (UnityEngine.Object) this.curse != (UnityEngine.Object) null)
-        {
-          ++num12;
-          stringBuilder2.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curse.Id, this.curseCharges, character)), this.SpriteText(this.curse.ACName)));
-        }
-        if (this.curseCharges2 > 0 && (UnityEngine.Object) this.curse2 != (UnityEngine.Object) null)
-        {
-          ++num12;
-          stringBuilder2.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curse2.Id, this.curseCharges2, character)), this.SpriteText(this.curse2.ACName)));
-        }
-        if (this.curseCharges3 > 0 && (UnityEngine.Object) this.curse3 != (UnityEngine.Object) null)
-        {
-          ++num12;
-          stringBuilder2.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curse3.Id, this.curseCharges3, character)), this.SpriteText(this.curse3.ACName)));
-        }
-        if (num12 > 0)
-        {
-          if (num12 > 2)
-          {
-            stringBuilder2.Insert(0, str1);
-            stringBuilder2.Insert(0, "\n");
-          }
-          if (this.targetSide == Enums.CardTargetSide.Self)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-          else
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (this.heal > 0 && !this.healSpecialValue1 && !this.healSpecialValueGlobal)
-        {
-          stringBuilder2.Append(this.ColorTextArray("heal", this.NumFormat(this.healPreCalculated), this.SpriteText("heal")));
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsHeal"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (this.healSelf > 0 && !this.healSelfSpecialValue1 && !this.healSelfSpecialValueGlobal)
-        {
-          stringBuilder2.Append(this.ColorTextArray("heal", this.NumFormat(this.healSelfPreCalculated), this.SpriteText("heal")));
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsHealSelf"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (this.damageSides > 0)
-        {
-          if (this.damageSpecialValueGlobal)
-            stringBuilder2.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
-          else
-            stringBuilder2.Append(this.ColorTextArray("damage", this.NumFormat(this.damageSidesPreCalculated), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
-        }
-        if (this.damageSides2 > 0)
-        {
-          if (this.damage2SpecialValueGlobal)
-            stringBuilder2.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
-          else
-            stringBuilder2.Append(this.ColorTextArray("damage", this.NumFormat(this.damageSidesPreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
-        }
-        if (stringBuilder2.Length > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTargetSides"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (stringBuilder3.Length > 0)
-          stringBuilder1.Append(stringBuilder3.ToString());
-        if (this.killPet)
-        {
-          stringBuilder1.Append(Texts.Instance.GetText("killPet"));
-          stringBuilder1.Append("\n");
-        }
-        if (this.damageEnergyBonus > 0 || this.healEnergyBonus > 0 || (UnityEngine.Object) this.acEnergyBonus != (UnityEngine.Object) null)
-        {
-          StringBuilder stringBuilder8 = new StringBuilder();
-          stringBuilder8.Append("<line-height=30%><br></line-height>");
-          StringBuilder stringBuilder9 = new StringBuilder();
-          stringBuilder9.Append(str2);
-          stringBuilder9.Append("[");
-          stringBuilder9.Append(Texts.Instance.GetText("overchargeAcronym"));
-          stringBuilder9.Append("]");
-          stringBuilder9.Append(str3);
-          stringBuilder9.Append("  ");
-          if (this.damageEnergyBonus > 0)
-          {
-            stringBuilder8.Append(stringBuilder9.ToString());
-            stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsDealDamage"), (object) this.ColorTextArray("damage", this.NumFormat(this.damageEnergyBonus), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType)))));
-            stringBuilder8.Append("\n");
-          }
-          if ((UnityEngine.Object) this.acEnergyBonus != (UnityEngine.Object) null)
-          {
-            stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.acEnergyBonusQuantity), this.SpriteText(this.acEnergyBonus.ACName)));
-            if ((UnityEngine.Object) this.acEnergyBonus2 != (UnityEngine.Object) null)
-            {
-              stringBuilder2.Append(" ");
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.acEnergyBonus2Quantity), this.SpriteText(this.acEnergyBonus2.ACName)));
-            }
-            if (this.acEnergyBonus.IsAura)
-            {
-              if (this.targetSide == Enums.CardTargetSide.Self)
-              {
-                stringBuilder8.Append(stringBuilder9.ToString());
-                stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) stringBuilder2.ToString()));
-              }
-              else
-              {
-                stringBuilder8.Append(stringBuilder9.ToString());
-                stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsGrant"), (object) stringBuilder2.ToString()));
-              }
-            }
-            else if (!this.acEnergyBonus.IsAura)
-            {
-              if (this.targetSide == Enums.CardTargetSide.Self)
-              {
-                stringBuilder8.Append(stringBuilder9.ToString());
-                stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-              }
-              else
-              {
-                stringBuilder8.Append(stringBuilder9.ToString());
-                stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) stringBuilder2.ToString()));
-              }
-            }
-            stringBuilder8.Append("\n");
-          }
-          if (this.healEnergyBonus > 0)
-          {
-            stringBuilder8.Append(stringBuilder9.ToString());
-            stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsHeal"), (object) this.ColorTextArray("heal", this.NumFormat(this.healEnergyBonus), this.SpriteText("heal"))));
-            stringBuilder8.Append("\n");
-          }
-          stringBuilder1.Append(stringBuilder8.ToString());
-          stringBuilder2.Clear();
-          stringBuilder8.Clear();
-        }
-        if (this.effectRepeat > 1 || this.effectRepeatMaxBonus > 0)
-        {
-          stringBuilder1.Append(str1);
-          stringBuilder1.Append("<nobr><size=-.05><color=#1A505A>- ");
-          if (this.effectRepeatMaxBonus > 0)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsRepeatUpTo"), (object) this.effectRepeatMaxBonus));
-          else if (this.effectRepeatTarget == Enums.EffectRepeatTarget.Chain)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsRepeatChain"), (object) (this.effectRepeat - 1)));
-          else if (this.effectRepeatTarget == Enums.EffectRepeatTarget.NoRepeat)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsRepeatJump"), (object) (this.effectRepeat - 1)));
-          else
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsRepeat"), (object) (this.effectRepeat - 1)));
-          if (this.effectRepeatModificator != 0 && this.effectRepeatTarget != Enums.EffectRepeatTarget.Chain)
-          {
-            stringBuilder1.Append(" (");
-            if (this.effectRepeatModificator > 0)
-              stringBuilder1.Append("+");
-            stringBuilder1.Append(this.effectRepeatModificator);
-            if (Functions.SpaceBeforePercentSign())
-              stringBuilder1.Append(" ");
-            stringBuilder1.Append("%)");
-          }
-          stringBuilder1.Append(" -</color></size></nobr>");
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (this.ignoreBlock || this.ignoreBlock2)
-        {
-          stringBuilder1.Append(str1);
-          stringBuilder1.Append(str2);
-          stringBuilder1.Append(Texts.Instance.GetText("cardsIgnoreBlock"));
-          stringBuilder1.Append(str3);
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (this.goldGainQuantity != 0 && this.shardsGainQuantity != 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("customGainPerHeroAnd"), (object) this.ColorTextArray("aura", this.goldGainQuantity.ToString(), this.SpriteText("gold")), (object) this.ColorTextArray("aura", this.shardsGainQuantity.ToString(), this.SpriteText("dust"))));
-          stringBuilder1.Append("\n");
-        }
-        else if (this.goldGainQuantity != 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("customGainPerHero"), (object) this.ColorTextArray("aura", this.goldGainQuantity.ToString(), this.SpriteText("gold"))));
-          stringBuilder1.Append("\n");
-        }
-        else if (this.shardsGainQuantity != 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("customGainPerHero"), (object) this.ColorTextArray("aura", this.shardsGainQuantity.ToString(), this.SpriteText("dust"))));
-          stringBuilder1.Append("\n");
-        }
-        if ((double) this.selfKillHiddenSeconds > 0.0)
-        {
-          stringBuilder1.Append(Texts.Instance.GetText("escapes"));
-          stringBuilder1.Append("\n");
-        }
-      }
+      StringBuilder builder = new StringBuilder();
+      StringBuilder aux = new StringBuilder();
+      string br1 = "<line-height=15%><br></line-height>";
+      string grColor = "<color=#444><size=-.15>";
+      string endColor = "</size></color>";
+      string goldColor = "<color=#5E3016><size=-.15>";
+      if (!string.IsNullOrEmpty(this.preDescriptionId))
+        this.AddFormattedDescription(builder, this.preDescriptionId, this.preDescriptionArgs);
+      if (!string.IsNullOrEmpty(this.descriptionId))
+        this.AddFormattedDescription(builder, this.descriptionId, this.descriptionArgs);
+      else if ((UnityEngine.Object) this.item == (UnityEngine.Object) null && (UnityEngine.Object) this.itemEnchantment == (UnityEngine.Object) null || this.useDescriptionFromCard)
+        this.AppendCardDescription(character, builder, aux, grColor, endColor, br1, goldColor);
       else
-      {
-        ItemData itemData = !((UnityEngine.Object) this.item != (UnityEngine.Object) null) ? this.itemEnchantment : this.item;
-        if (itemData.MaxHealth != 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemMaxHp"), (object) this.NumFormatItem(itemData.MaxHealth, true)));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.ResistModified1 == Enums.DamageType.All)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemAllResistances"), (object) this.NumFormatItem(itemData.ResistModifiedValue1, true, true)));
-          stringBuilder1.Append("\n");
-        }
-        int num13 = 0;
-        int num14 = 0;
-        if (itemData.ResistModified1 != Enums.DamageType.None && itemData.ResistModified1 != Enums.DamageType.All)
-        {
-          stringBuilder2.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) itemData.ResistModified1)));
-          num14 = itemData.ResistModifiedValue1;
-          ++num13;
-        }
-        if (itemData.ResistModified2 != Enums.DamageType.None && itemData.ResistModified2 != Enums.DamageType.All)
-        {
-          stringBuilder2.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) itemData.ResistModified2)));
-          if (num14 == 0)
-            num14 = itemData.ResistModifiedValue2;
-          ++num13;
-        }
-        if (itemData.ResistModified3 != Enums.DamageType.None && itemData.ResistModified3 != Enums.DamageType.All)
-        {
-          stringBuilder2.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) itemData.ResistModified3)));
-          if (num14 == 0)
-            num14 = itemData.ResistModifiedValue3;
-          ++num13;
-        }
-        if (num13 > 0)
-        {
-          if (num13 > 1)
-            stringBuilder2.Append("\n");
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemXResistances"), (object) stringBuilder2.ToString(), (object) this.NumFormatItem(num14, true, true)));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (itemData.CharacterStatModified == Enums.CharacterStat.Speed)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemSpeed"), (object) this.NumFormatItem(itemData.CharacterStatModifiedValue, true)));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.CharacterStatModified == Enums.CharacterStat.EnergyTurn)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemEnergyRegeneration"), (object) this.SpriteText("energy"), (object) this.NumFormatItem(itemData.CharacterStatModifiedValue, true)));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.CharacterStatModified2 == Enums.CharacterStat.Speed)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemSpeed"), (object) this.NumFormatItem(itemData.CharacterStatModifiedValue2, true)));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.CharacterStatModified2 == Enums.CharacterStat.EnergyTurn)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemEnergyRegeneration"), (object) this.SpriteText("energy"), (object) this.NumFormatItem(itemData.CharacterStatModifiedValue2, true)));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.DamageFlatBonus == Enums.DamageType.All)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemAllDamages"), (object) this.NumFormatItem(itemData.DamageFlatBonusValue, true)));
-          stringBuilder1.Append("\n");
-        }
-        int num15 = 0;
-        int num16 = 0;
-        if (itemData.DamageFlatBonus != Enums.DamageType.None && itemData.DamageFlatBonus != Enums.DamageType.All)
-        {
-          stringBuilder2.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) itemData.DamageFlatBonus)));
-          num16 = itemData.DamageFlatBonusValue;
-          ++num15;
-        }
-        if (itemData.DamageFlatBonus2 != Enums.DamageType.None && itemData.DamageFlatBonus2 != Enums.DamageType.All)
-        {
-          stringBuilder2.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) itemData.DamageFlatBonus2)));
-          ++num15;
-        }
-        if (itemData.DamageFlatBonus3 != Enums.DamageType.None && itemData.DamageFlatBonus3 != Enums.DamageType.All)
-        {
-          stringBuilder2.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) itemData.DamageFlatBonus3)));
-          ++num15;
-        }
-        if (itemData.DamagePercentBonus == Enums.DamageType.All)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemAllDamages"), (object) this.NumFormatItem(Functions.FuncRoundToInt(itemData.DamagePercentBonusValue), true, true)));
-          stringBuilder1.Append("\n");
-        }
-        if (num15 > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemXDamages"), (object) stringBuilder2.ToString(), (object) this.NumFormatItem(num16, true)));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (itemData.UseTheNextInsteadWhenYouPlay && (double) itemData.HealPercentBonus != 0.0)
-        {
-          string str11 = "";
-          if (itemData.DestroyAfterUses > 1)
-            str11 = "(" + itemData.DestroyAfterUses.ToString() + ") ";
-          StringBuilder stringBuilder10 = new StringBuilder();
-          stringBuilder10.Append("<size=-.15><color=#444>[");
-          stringBuilder10.Append(Texts.Instance.GetText("itemTheNext"));
-          stringBuilder10.Append("]</color></size><br>");
-          stringBuilder2.Append("<color=#5E3016>");
-          stringBuilder2.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) itemData.CastedCardType)));
-          stringBuilder2.Append("</color>");
-          stringBuilder1.Append(string.Format(stringBuilder10.ToString(), (object) str11, (object) stringBuilder2.ToString()));
-          stringBuilder2.Clear();
-          stringBuilder10.Clear();
-        }
-        if (itemData.HealFlatBonus != 0)
-        {
-          stringBuilder1.Append(this.SpriteText("heal"));
-          stringBuilder1.Append(" ");
-          stringBuilder1.Append(Functions.LowercaseFirst(Texts.Instance.GetText("healDone")));
-          stringBuilder1.Append(this.NumFormatItem(itemData.HealFlatBonus, true));
-          stringBuilder1.Append("\n");
-        }
-        if ((double) itemData.HealPercentBonus != 0.0)
-        {
-          stringBuilder1.Append(this.SpriteText("heal"));
-          stringBuilder1.Append(" ");
-          stringBuilder1.Append(Functions.LowercaseFirst(Texts.Instance.GetText("healDone")));
-          stringBuilder1.Append(this.NumFormatItem(Functions.FuncRoundToInt(itemData.HealPercentBonus), true, true));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.HealReceivedFlatBonus != 0)
-        {
-          stringBuilder1.Append(this.SpriteText("heal"));
-          stringBuilder1.Append(" ");
-          stringBuilder1.Append(Functions.LowercaseFirst(Texts.Instance.GetText("healTaken")));
-          stringBuilder1.Append(this.NumFormatItem(Functions.FuncRoundToInt((float) itemData.HealReceivedFlatBonus), true));
-          stringBuilder1.Append("\n");
-        }
-        if ((double) itemData.HealReceivedPercentBonus != 0.0)
-        {
-          stringBuilder1.Append(this.SpriteText("heal"));
-          stringBuilder1.Append(" ");
-          stringBuilder1.Append(Functions.LowercaseFirst(Texts.Instance.GetText("healTaken")));
-          stringBuilder1.Append(this.NumFormatItem(Functions.FuncRoundToInt(itemData.HealReceivedPercentBonus), true, true));
-          stringBuilder1.Append("\n");
-        }
-        if ((UnityEngine.Object) itemData.AuracurseBonus1 != (UnityEngine.Object) null && itemData.AuracurseBonusValue1 > 0 && (UnityEngine.Object) itemData.AuracurseBonus2 != (UnityEngine.Object) null && itemData.AuracurseBonusValue2 > 0 && itemData.AuracurseBonusValue1 == itemData.AuracurseBonusValue2)
-        {
-          stringBuilder2.Append(this.SpriteText(itemData.AuracurseBonus1.ACName));
-          stringBuilder2.Append(this.SpriteText(itemData.AuracurseBonus2.ACName));
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemCharges"), (object) stringBuilder2.ToString(), (object) this.NumFormatItem(itemData.AuracurseBonusValue1, true)));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        else
-        {
-          if ((UnityEngine.Object) itemData.AuracurseBonus1 != (UnityEngine.Object) null && itemData.AuracurseBonusValue1 > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemCharges"), (object) this.SpriteText(itemData.AuracurseBonus1.ACName), (object) this.NumFormatItem(itemData.AuracurseBonusValue1, true)));
-            stringBuilder1.Append("\n");
-          }
-          if ((UnityEngine.Object) itemData.AuracurseBonus2 != (UnityEngine.Object) null && itemData.AuracurseBonusValue2 > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemCharges"), (object) this.SpriteText(itemData.AuracurseBonus2.ACName), (object) this.NumFormatItem(itemData.AuracurseBonusValue2, true)));
-            stringBuilder1.Append("\n");
-          }
-        }
-        int num17 = 0;
-        if ((UnityEngine.Object) itemData.AuracurseImmune1 != (UnityEngine.Object) null)
-        {
-          ++num17;
-          stringBuilder2.Append(this.ColorTextArray("curse", this.SpriteText(itemData.AuracurseImmune1.Id)));
-        }
-        if ((UnityEngine.Object) itemData.AuracurseImmune2 != (UnityEngine.Object) null)
-        {
-          ++num17;
-          stringBuilder2.Append(this.ColorTextArray("curse", this.SpriteText(itemData.AuracurseImmune2.Id)));
-        }
-        if (num17 > 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsImmuneTo"), (object) stringBuilder2.ToString()));
-          stringBuilder1.Append("\n");
-          stringBuilder2.Clear();
-        }
-        if (itemData.PercentDiscountShop != 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemDiscount"), (object) this.NumFormatItem(itemData.PercentDiscountShop, true, true)));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.PercentRetentionEndGame != 0)
-        {
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemDieRetain"), (object) this.NumFormatItem(itemData.PercentRetentionEndGame, true, true)));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.AuracurseCustomString != "" && (UnityEngine.Object) itemData.AuracurseCustomAC != (UnityEngine.Object) null)
-        {
-          StringBuilder stringBuilder11 = new StringBuilder();
-          if ((itemData.AuracurseCustomString == "itemCustomTextMaxChargesIncrasedOnEnemies" || itemData.AuracurseCustomString == "itemCustomTextMaxChargesIncrasedOnHeroes") && itemData.AuracurseCustomModValue1 > 0)
-            stringBuilder11.Append("+");
-          stringBuilder11.Append(itemData.AuracurseCustomModValue1);
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText(itemData.AuracurseCustomString), (object) this.ColorTextArray("aura", this.SpriteText(itemData.AuracurseCustomAC.Id)), (object) stringBuilder11.ToString(), (object) itemData.AuracurseCustomModValue2));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.Id == "harleyrare")
-        {
-          stringBuilder1.Append(Texts.Instance.GetText("immortal"));
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.ModifiedDamageType != Enums.DamageType.None)
-        {
-          stringBuilder1.Append("<nobr>");
-          stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsTransformDamage"), (object) this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) itemData.ModifiedDamageType))));
-          stringBuilder1.Append("</nobr>");
-          stringBuilder1.Append("\n");
-        }
-        if (itemData.IsEnchantment && (itemData.CastedCardType != Enums.CardType.None || (itemData.Activation == Enums.EventActivation.PreFinishCast || itemData.Activation == Enums.EventActivation.FinishCast || itemData.Activation == Enums.EventActivation.FinishFinishCast) && !itemData.EmptyHand))
-        {
-          if (itemData.CastedCardType != Enums.CardType.None)
-          {
-            stringBuilder2.Append("<color=#5E3016>");
-            stringBuilder2.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) itemData.CastedCardType)));
-            stringBuilder2.Append("</color>");
-          }
-          else
-            stringBuilder2.Append(" <sprite name=cards>");
-          if (itemData.UseTheNextInsteadWhenYouPlay)
-          {
-            if ((double) itemData.HealPercentBonus == 0.0)
-            {
-              string str12 = "";
-              if (itemData.DestroyAfterUses > 1)
-                str12 = "(" + itemData.DestroyAfterUses.ToString() + ") ";
-              StringBuilder stringBuilder12 = new StringBuilder();
-              stringBuilder12.Append("<size=-.15><color=#444>[");
-              stringBuilder12.Append(Texts.Instance.GetText("itemTheNext"));
-              stringBuilder12.Append("]</color></size><br>");
-              stringBuilder1.Append(string.Format(stringBuilder12.ToString(), (object) str12, (object) stringBuilder2.ToString()));
-            }
-          }
-          else
-          {
-            stringBuilder1.Append("<size=-.15>");
-            stringBuilder1.Append("<color=#444>[");
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemWhenYouPlay"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("]</color>");
-            stringBuilder1.Append("</size><br>");
-          }
-          stringBuilder2.Clear();
-        }
-        if (itemData.Activation != Enums.EventActivation.None && itemData.Activation != Enums.EventActivation.PreBeginCombat)
-        {
-          if (stringBuilder1.Length > 0)
-            stringBuilder1.Append("<line-height=15%><br></line-height>");
-          StringBuilder stringBuilder13 = new StringBuilder();
-          if (itemData.TimesPerTurn == 1)
-            stringBuilder13.Append(Texts.Instance.GetText("itemOncePerTurn"));
-          else if (itemData.TimesPerTurn == 2)
-            stringBuilder13.Append(Texts.Instance.GetText("itemTwicePerTurn"));
-          else if (itemData.TimesPerTurn == 3)
-            stringBuilder13.Append(Texts.Instance.GetText("itemThricePerTurn"));
-          else if (itemData.TimesPerTurn == 4)
-            stringBuilder13.Append(Texts.Instance.GetText("itemFourPerTurn"));
-          else if (itemData.TimesPerTurn == 5)
-            stringBuilder13.Append(Texts.Instance.GetText("itemFivePerTurn"));
-          else if (itemData.TimesPerTurn == 6)
-            stringBuilder13.Append(Texts.Instance.GetText("itemSixPerTurn"));
-          else if (itemData.TimesPerTurn == 7)
-            stringBuilder13.Append(Texts.Instance.GetText("itemSevenPerTurn"));
-          else if (itemData.TimesPerTurn == 8)
-            stringBuilder13.Append(Texts.Instance.GetText("itemEightPerTurn"));
-          if (stringBuilder13.Length > 0)
-          {
-            stringBuilder1.Append("<size=-.15>");
-            stringBuilder1.Append("<color=#444>[");
-            stringBuilder1.Append(stringBuilder13.ToString());
-            stringBuilder1.Append("]</color>");
-            stringBuilder1.Append("</size><br>");
-          }
-          StringBuilder stringBuilder14 = new StringBuilder();
-          if (itemData.Activation == Enums.EventActivation.BeginCombat)
-            stringBuilder14.Append(Texts.Instance.GetText("itemCombatStart"));
-          else if (itemData.Activation == Enums.EventActivation.BeginCombatEnd)
-            stringBuilder14.Append(Texts.Instance.GetText("itemCombatEnd"));
-          else if (itemData.Activation == Enums.EventActivation.BeginTurnAboutToDealCards || itemData.Activation == Enums.EventActivation.BeginTurnCardsDealt)
-          {
-            if (itemData.RoundCycle > 1)
-              stringBuilder14.Append(string.Format(Texts.Instance.GetText("itemEveryNRounds"), (object) itemData.RoundCycle.ToString()));
-            else if (itemData.ExactRound == 1)
-              stringBuilder14.Append(Texts.Instance.GetText("itemFirstTurn"));
-            else
-              stringBuilder14.Append(Texts.Instance.GetText("itemEveryRound"));
-          }
-          else if (itemData.Activation == Enums.EventActivation.Damage)
-            stringBuilder14.Append(Texts.Instance.GetText("itemDamageDone"));
-          else if (itemData.Activation == Enums.EventActivation.Damaged)
-          {
-            if ((double) itemData.LowerOrEqualPercentHP < 100.0)
-              stringBuilder14.Append(string.Format(Texts.Instance.GetText("itemWhenDamagedBelow"), (object) (itemData.LowerOrEqualPercentHP.ToString() + (Functions.SpaceBeforePercentSign() ? " " : "") + "%")));
-            else
-              stringBuilder14.Append(Texts.Instance.GetText("itemWhenDamaged"));
-          }
-          else if (itemData.Activation == Enums.EventActivation.Hitted)
-            stringBuilder14.Append(Texts.Instance.GetText("itemWhenHitted"));
-          else if (itemData.Activation == Enums.EventActivation.Block)
-            stringBuilder14.Append(Texts.Instance.GetText("itemWhenBlock"));
-          else if (itemData.Activation == Enums.EventActivation.Heal)
-            stringBuilder14.Append(Texts.Instance.GetText("itemHealDoneAction"));
-          else if (itemData.Activation == Enums.EventActivation.Healed)
-            stringBuilder14.Append(Texts.Instance.GetText("itemWhenHealed"));
-          else if (itemData.Activation == Enums.EventActivation.Evaded)
-            stringBuilder14.Append(Texts.Instance.GetText("itemWhenEvaded"));
-          else if (itemData.Activation == Enums.EventActivation.Evade)
-            stringBuilder14.Append(Texts.Instance.GetText("itemWhenEvade"));
-          else if (itemData.Activation == Enums.EventActivation.BeginRound)
-          {
-            if (itemData.RoundCycle > 1)
-              stringBuilder14.Append(string.Format(Texts.Instance.GetText("itemEveryRoundRoundN"), (object) itemData.RoundCycle.ToString()));
-            else
-              stringBuilder14.Append(Texts.Instance.GetText("itemEveryRoundRound"));
-          }
-          else if (itemData.Activation == Enums.EventActivation.BeginTurn)
-          {
-            if (itemData.RoundCycle > 1)
-              stringBuilder14.Append(string.Format(Texts.Instance.GetText("itemEveryNRounds"), (object) itemData.RoundCycle.ToString()));
-            else
-              stringBuilder14.Append(Texts.Instance.GetText("itemEveryRound"));
-          }
-          else if (itemData.Activation == Enums.EventActivation.Killed)
-            stringBuilder14.Append(Texts.Instance.GetText("itemWhenKilled"));
-          else if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && itemData.AuraCurseNumForOneEvent == 0)
-            stringBuilder14.Append(string.Format(Texts.Instance.GetText("itemWhenYouApply"), (object) this.ColorTextArray("curse", this.SpriteText(itemData.AuraCurseSetted.Id))));
-          if (stringBuilder14.Length > 0)
-          {
-            stringBuilder1.Append("<size=-.15>");
-            stringBuilder1.Append("<color=#444>[");
-            stringBuilder1.Append(stringBuilder14.ToString());
-            stringBuilder1.Append("]</color>");
-            stringBuilder1.Append("</size><br>");
-          }
-          if (itemData.UsedEnergy)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyForEnergyUsed"), (object) this.ColorTextArray("system", this.SpriteText("energy"))));
-            stringBuilder1.Append("\n");
-          }
-          if (itemData.EmptyHand)
-          {
-            stringBuilder1.Append(Texts.Instance.GetText("itemWhenHandEmpty"));
-            stringBuilder1.Append(":<br>");
-          }
-          if (itemData.ChanceToDispel > 0 && itemData.ChanceToDispelNum > 0)
-          {
-            if (itemData.ChanceToDispel < 100)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemChanceToDispel"), (object) this.ColorTextArray("aura", this.NumFormatItem(itemData.ChanceToDispel, percent: true)), (object) this.ColorTextArray("curse", this.NumFormatItem(itemData.ChanceToDispelNum))));
-            else
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) this.ColorTextArray("curse", this.NumFormatItem(itemData.ChanceToDispelNum))));
-            stringBuilder1.Append("\n");
-          }
-          if (!itemData.IsEnchantment && itemData.CastedCardType != Enums.CardType.None)
-          {
-            stringBuilder2.Append("<color=#5E3016>");
-            stringBuilder2.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) itemData.CastedCardType)));
-            stringBuilder2.Append("</color>");
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemWhenYouPlay"), (object) stringBuilder2.ToString()));
-            stringBuilder2.Clear();
-            stringBuilder1.Append(":\n");
-          }
-          else if (!itemData.IsEnchantment && itemData.CastedCardType == Enums.CardType.None && (itemData.Activation == Enums.EventActivation.PreFinishCast || itemData.Activation == Enums.EventActivation.FinishCast || itemData.Activation == Enums.EventActivation.FinishFinishCast) && !itemData.EmptyHand)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemWhenYouPlay"), (object) "  <sprite name=cards>"));
-            stringBuilder1.Append(":\n");
-          }
-          if (itemData.DrawCards > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDraw"), (object) this.ColorTextArray("", this.NumFormat(itemData.DrawCards), this.SpriteText("card"))));
-            stringBuilder1.Append("<br>");
-          }
-          if (itemData.HealQuantity > 0)
-          {
-            stringBuilder2.Append("<color=#111111>");
-            stringBuilder2.Append(this.NumFormatItem(itemData.HealQuantity, true));
-            stringBuilder2.Append("</color>");
-            if (itemData.ItemTarget == Enums.ItemTarget.AllHero)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverHeroes"), (object) stringBuilder2.ToString()));
-            else if (itemData.ItemTarget == Enums.ItemTarget.Self)
-            {
-              if (itemData.Activation == Enums.EventActivation.Killed)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemResurrectHP"), (object) stringBuilder2.ToString()));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.AllEnemy)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("<br>");
-            stringBuilder2.Clear();
-          }
-          if (itemData.EnergyQuantity > 0 && itemData.ItemTarget == Enums.ItemTarget.Self)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) this.ColorTextArray("system", this.NumFormat(itemData.EnergyQuantity), this.SpriteText("energy"))));
-          if (itemData.HealPercentQuantity > 0)
-          {
-            stringBuilder2.Append("<color=#111111>");
-            stringBuilder2.Append(this.NumFormatItem(itemData.HealPercentQuantity, true, true));
-            stringBuilder2.Append("</color>");
-            if (itemData.ItemTarget == Enums.ItemTarget.AllHero)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverHeroes"), (object) stringBuilder2.ToString()));
-            else if (itemData.ItemTarget == Enums.ItemTarget.Self)
-            {
-              if (itemData.Activation == Enums.EventActivation.Killed)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemResurrectHP"), (object) stringBuilder2.ToString()));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.LowestFlatHpEnemy)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverLowestHPMonster"), (object) stringBuilder2.ToString()));
-            else if (itemData.ItemTarget == Enums.ItemTarget.LowestFlatHpHero)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverLowestHPHero"), (object) stringBuilder2.ToString()));
-            else if (itemData.ItemTarget == Enums.ItemTarget.AllEnemy)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), (object) stringBuilder2.ToString()));
-            else if (itemData.ItemTarget == Enums.ItemTarget.RandomHero)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverRandomHPHero"), (object) stringBuilder2.ToString()));
-            else if (itemData.ItemTarget == Enums.ItemTarget.RandomEnemy)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemRecoverRandomHPMonster"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("<br>");
-            stringBuilder2.Clear();
-          }
-          if (itemData.HealPercentQuantitySelf < 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsYouLose"), (object) this.ColorTextArray("damage", this.NumFormat(Mathf.Abs(itemData.HealPercentQuantitySelf)), Functions.SpaceBeforePercentSign() ? "" : "<space=-.1>", "% HP")));
-            stringBuilder1.Append("<br>");
-          }
-          if (itemData.DamageToTarget > 0)
-          {
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsDealDamage"), (object) this.ColorTextArray("damage", this.NumFormat(this.enchantDamagePreCalculated), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) itemData.DamageToTargetType)))));
-            stringBuilder1.Append("\n");
-          }
-          int num18 = 0;
-          bool flag5 = true;
-          if ((UnityEngine.Object) itemData.AuracurseGain1 != (UnityEngine.Object) null && itemData.AuracurseGainValue1 > 0)
-          {
-            ++num18;
-            if (itemData.NotShowCharacterBonus)
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(itemData.AuracurseGainValue1), this.SpriteText(itemData.AuracurseGain1.Id)));
-            else
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(itemData.AuracurseGain1.Id, itemData.AuracurseGainValue1, character)), this.SpriteText(itemData.AuracurseGain1.Id)));
-            if (!itemData.AuracurseGain1.IsAura)
-              flag5 = false;
-          }
-          if ((UnityEngine.Object) itemData.AuracurseGain2 != (UnityEngine.Object) null && itemData.AuracurseGainValue2 > 0)
-          {
-            ++num18;
-            if (itemData.NotShowCharacterBonus)
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(itemData.AuracurseGainValue2), this.SpriteText(itemData.AuracurseGain2.Id)));
-            else
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(itemData.AuracurseGain2.Id, itemData.AuracurseGainValue2, character)), this.SpriteText(itemData.AuracurseGain2.Id)));
-          }
-          if ((UnityEngine.Object) itemData.AuracurseGain3 != (UnityEngine.Object) null && itemData.AuracurseGainValue3 > 0)
-          {
-            ++num18;
-            if (itemData.NotShowCharacterBonus)
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(itemData.AuracurseGainValue3), this.SpriteText(itemData.AuracurseGain3.Id)));
-            else
-              stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(itemData.AuracurseGain3.Id, itemData.AuracurseGainValue3, character)), this.SpriteText(itemData.AuracurseGain3.Id)));
-          }
-          int num19;
-          if (num18 > 0)
-          {
-            if (itemData.ItemTarget == Enums.ItemTarget.Self)
-            {
-              if (itemData.HealQuantity > 0 || itemData.EnergyQuantity > 0 || itemData.HealPercentQuantity > 0)
-              {
-                StringBuilder stringBuilder15 = new StringBuilder();
-                if (flag5)
-                  stringBuilder15.Append(string.Format(Texts.Instance.GetText("cardsAnd"), (object) stringBuilder1.ToString(), (object) string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), (object) stringBuilder2.ToString())));
-                else
-                  stringBuilder15.Append(string.Format(Texts.Instance.GetText("cardsAnd"), (object) stringBuilder1.ToString(), (object) string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), (object) stringBuilder2.ToString())));
-                stringBuilder1.Clear();
-                stringBuilder1.Append(stringBuilder15.ToString());
-              }
-              else if (flag5)
-              {
-                string str13 = stringBuilder1.ToString();
-                if (str13.Length > 8 && str13.Substring(str13.Length - 9) == "<c>, </c>")
-                  stringBuilder1.Append(string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), (object) stringBuilder2.ToString()));
-                else
-                  stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) stringBuilder2.ToString()));
-              }
-              else if (stringBuilder1.ToString().Substring(stringBuilder1.ToString().Length - 9) == "<c>, </c>")
-                stringBuilder1.Append(string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), (object) stringBuilder2.ToString()));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.AllEnemy)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyEnemies"), (object) stringBuilder2.ToString()));
-            else if (itemData.ItemTarget == Enums.ItemTarget.AllHero)
-            {
-              if (this.cardClass == Enums.CardClass.Monster)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyHeroesFromMonster"), (object) stringBuilder2.ToString()));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyHeroes"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.RandomHero)
-            {
-              if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && itemData.AuraCurseNumForOneEvent > 0)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemForEveryCharge"), (object) this.ColorTextArray("curse", this.SpriteText(itemData.AuraCurseSetted.Id))));
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyRandomHero"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.RandomEnemy)
-            {
-              if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && itemData.AuraCurseNumForOneEvent > 0)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemForEveryCharge"), (object) this.ColorTextArray("curse", this.SpriteText(itemData.AuraCurseSetted.Id))));
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyRandomEnemy"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.HighestFlatHpEnemy)
-            {
-              if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && itemData.AuraCurseNumForOneEvent > 0)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemForEveryCharge"), (object) this.ColorTextArray("curse", this.SpriteText(itemData.AuraCurseSetted.Id))));
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyHighestFlatHpEnemy"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.LowestFlatHpEnemy)
-            {
-              if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && itemData.AuraCurseNumForOneEvent > 0)
-              {
-                StringBuilder stringBuilder16 = stringBuilder1;
-                string text = Texts.Instance.GetText("itemForEveryCharge");
-                string[] strArray = new string[2];
-                string str14;
-                if (itemData.AuraCurseNumForOneEvent <= 1)
-                {
-                  str14 = "";
-                }
-                else
-                {
-                  num19 = itemData.AuraCurseNumForOneEvent;
-                  str14 = num19.ToString();
-                }
-                strArray[0] = str14;
-                strArray[1] = this.SpriteText(itemData.AuraCurseSetted.Id);
-                string str15 = this.ColorTextArray("curse", strArray);
-                string str16 = string.Format(text, (object) str15);
-                stringBuilder16.Append(str16);
-              }
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyLowestFlatHpEnemy"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.HighestFlatHpHero)
-            {
-              if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && itemData.AuraCurseNumForOneEvent > 0)
-              {
-                StringBuilder stringBuilder17 = stringBuilder1;
-                string text = Texts.Instance.GetText("itemForEveryCharge");
-                string[] strArray = new string[2];
-                string str17;
-                if (itemData.AuraCurseNumForOneEvent <= 1)
-                {
-                  str17 = "";
-                }
-                else
-                {
-                  num19 = itemData.AuraCurseNumForOneEvent;
-                  str17 = num19.ToString();
-                }
-                strArray[0] = str17;
-                strArray[1] = this.SpriteText(itemData.AuraCurseSetted.Id);
-                string str18 = this.ColorTextArray("curse", strArray);
-                string str19 = string.Format(text, (object) str18);
-                stringBuilder17.Append(str19);
-              }
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyHighestFlatHpHero"), (object) stringBuilder2.ToString()));
-            }
-            else if (itemData.ItemTarget == Enums.ItemTarget.LowestFlatHpHero)
-            {
-              if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && itemData.AuraCurseNumForOneEvent > 0)
-              {
-                StringBuilder stringBuilder18 = stringBuilder1;
-                string text = Texts.Instance.GetText("itemForEveryCharge");
-                string[] strArray = new string[2];
-                string str20;
-                if (itemData.AuraCurseNumForOneEvent <= 1)
-                {
-                  str20 = "";
-                }
-                else
-                {
-                  num19 = itemData.AuraCurseNumForOneEvent;
-                  str20 = num19.ToString();
-                }
-                strArray[0] = str20;
-                strArray[1] = this.SpriteText(itemData.AuraCurseSetted.Id);
-                string str21 = this.ColorTextArray("curse", strArray);
-                string str22 = string.Format(text, (object) str21);
-                stringBuilder18.Append(str22);
-              }
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyLowestFlatHpHero"), (object) stringBuilder2.ToString()));
-            }
-            else if (this.targetSide == Enums.CardTargetSide.Enemy || itemData.ItemTarget == Enums.ItemTarget.CurrentTarget)
-            {
-              if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && itemData.AuraCurseNumForOneEvent > 0)
-              {
-                StringBuilder stringBuilder19 = stringBuilder1;
-                string text = Texts.Instance.GetText("itemApplyForEvery");
-                string[] strArray = new string[2];
-                string str23;
-                if (itemData.AuraCurseNumForOneEvent <= 1)
-                {
-                  str23 = "";
-                }
-                else
-                {
-                  num19 = itemData.AuraCurseNumForOneEvent;
-                  str23 = num19.ToString();
-                }
-                strArray[0] = str23;
-                strArray[1] = this.SpriteText(itemData.AuraCurseSetted.Id);
-                string str24 = this.ColorTextArray("curse", strArray);
-                string str25 = stringBuilder2.ToString();
-                string str26 = string.Format(text, (object) str24, (object) str25);
-                stringBuilder19.Append(str26);
-              }
-              else if (itemData.ItemTarget == Enums.ItemTarget.Random)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemApplyRandom"), (object) stringBuilder2.ToString()));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) stringBuilder2.ToString()));
-            }
-            else
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGrant"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("\n");
-            stringBuilder2.Clear();
-          }
-          int num20 = 0;
-          bool flag6 = true;
-          if ((UnityEngine.Object) itemData.AuracurseGainSelf1 != (UnityEngine.Object) null && itemData.AuracurseGainSelfValue1 > 0)
-          {
-            ++num20;
-            stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(itemData.AuracurseGainSelf1.Id, itemData.AuracurseGainSelfValue1, character)), this.SpriteText(itemData.AuracurseGainSelf1.Id)));
-            if (!itemData.AuracurseGainSelf1.IsAura)
-              flag6 = false;
-          }
-          if ((UnityEngine.Object) itemData.AuracurseGainSelf2 != (UnityEngine.Object) null && itemData.AuracurseGainSelfValue2 > 0)
-          {
-            ++num20;
-            stringBuilder2.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(itemData.AuracurseGainSelf2.Id, itemData.AuracurseGainSelfValue2, character)), this.SpriteText(itemData.AuracurseGainSelf2.Id)));
-          }
-          if (num20 > 0)
-          {
-            if (itemData.HealQuantity > 0 || itemData.EnergyQuantity > 0 || itemData.HealPercentQuantity > 0)
-            {
-              StringBuilder stringBuilder20 = new StringBuilder();
-              if (flag6)
-                stringBuilder20.Append(string.Format(Texts.Instance.GetText("cardsAnd"), (object) stringBuilder1.ToString(), (object) string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), (object) stringBuilder2.ToString())));
-              else
-                stringBuilder20.Append(string.Format(Texts.Instance.GetText("cardsAnd"), (object) stringBuilder1.ToString(), (object) string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), (object) stringBuilder2.ToString())));
-              stringBuilder1.Clear();
-              stringBuilder1.Append(stringBuilder20.ToString());
-            }
-            else if (flag6)
-            {
-              if (stringBuilder1.ToString().Substring(stringBuilder1.ToString().Length - 9) == "<c>, </c>")
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) stringBuilder2.ToString()));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) stringBuilder2.ToString()));
-            }
-            else if (stringBuilder1.ToString().Substring(stringBuilder1.ToString().Length - 9) == "<c>, </c>")
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-            else
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) stringBuilder2.ToString()));
-            stringBuilder1.Append("\n");
-            stringBuilder2.Clear();
-          }
-          if (itemData.CardNum > 0)
-          {
-            string str27;
-            if ((UnityEngine.Object) itemData.CardToGain != (UnityEngine.Object) null)
-            {
-              if (itemData.CardNum > 1)
-                stringBuilder2.Append(this.ColorTextArray("", this.NumFormat(itemData.CardNum), this.SpriteText("card")));
-              else
-                stringBuilder2.Append(this.SpriteText("card"));
-              CardData cardData = Globals.Instance.GetCardData(itemData.CardToGain.Id, false);
-              if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
-              {
-                stringBuilder2.Append(this.ColorFromCardDataRarity(cardData));
-                stringBuilder2.Append(cardData.CardName);
-                stringBuilder2.Append("</color>");
-              }
-              str27 = stringBuilder2.ToString();
-              stringBuilder2.Clear();
-            }
-            else
-            {
-              if (itemData.CardNum > 1)
-                stringBuilder2.Append(this.ColorTextArray("", this.NumFormat(itemData.CardNum), this.SpriteText("card")));
-              else
-                stringBuilder2.Append(this.SpriteText("card"));
-              if (itemData.CardToGainType != Enums.CardType.None)
-              {
-                stringBuilder2.Append("<color=#5E3016>");
-                stringBuilder2.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) itemData.CardToGainType)));
-                stringBuilder2.Append("</color>");
-              }
-              str27 = stringBuilder2.ToString();
-              stringBuilder2.Clear();
-            }
-            string str28 = "";
-            if (itemData.Permanent)
-            {
-              if (itemData.Vanish)
-              {
-                if (itemData.CostZero)
-                  str28 = string.Format(Texts.Instance.GetText("cardsAddCostVanish"), (object) 0);
-                else if (itemData.CostReduction > 0)
-                  str28 = string.Format(Texts.Instance.GetText("cardsAddCostReducedVanish"), (object) this.NumFormatItem(itemData.CostReduction, true));
-              }
-              else if (itemData.CostZero)
-                str28 = string.Format(Texts.Instance.GetText("cardsAddCost"), (object) 0);
-              else if (itemData.CostReduction > 0)
-                str28 = string.Format(Texts.Instance.GetText("cardsAddCostReduced"), (object) this.NumFormatItem(itemData.CostReduction, true));
-            }
-            else if (itemData.Vanish)
-            {
-              if (itemData.CostZero)
-                str28 = string.Format(Texts.Instance.GetText("cardsAddCostVanishTurn"), (object) 0);
-              else if (itemData.CostReduction > 0)
-                str28 = string.Format(Texts.Instance.GetText("cardsAddCostReducedVanishTurn"), (object) this.NumFormatItem(itemData.CostReduction, true));
-            }
-            else if (itemData.CostZero)
-              str28 = string.Format(Texts.Instance.GetText("cardsAddCostTurn"), (object) 0);
-            else if (itemData.CostReduction > 0)
-              str28 = string.Format(Texts.Instance.GetText("cardsAddCostReducedTurn"), (object) this.NumFormatItem(itemData.CostReduction, true));
-            if (itemData.DuplicateActive)
-            {
-              if (itemData.CardPlace == Enums.CardPlace.Hand)
-                stringBuilder1.Append(Texts.Instance.GetText("cardsDuplicateHand"));
-            }
-            else if (itemData.CardPlace == Enums.CardPlace.RandomDeck)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsIDShuffleDeck"), (object) str27));
-            else if (itemData.CardPlace == Enums.CardPlace.Cast)
-            {
-              if ((UnityEngine.Object) itemData.CardToGain != (UnityEngine.Object) null)
-              {
-                CardData cardData = Globals.Instance.GetCardData(itemData.CardToGain.Id, false);
-                if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
-                {
-                  stringBuilder2.Append(this.ColorFromCardDataRarity(cardData));
-                  stringBuilder2.Append(cardData.CardName);
-                  stringBuilder2.Append("</color>");
-                }
-              }
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsCast"), (object) stringBuilder2.ToString()));
-              stringBuilder2.Clear();
-            }
-            else if (itemData.CardPlace == Enums.CardPlace.Hand)
-            {
-              if (itemData.CardNum > 1)
-                stringBuilder2.Append(this.ColorTextArray("", this.NumFormat(itemData.CardNum), this.SpriteText("card")));
-              else
-                stringBuilder2.Append(this.SpriteText("card"));
-              if ((UnityEngine.Object) itemData.CardToGain != (UnityEngine.Object) null)
-              {
-                CardData cardData = Globals.Instance.GetCardData(itemData.CardToGain.Id, false);
-                if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
-                {
-                  stringBuilder2.Append(this.ColorFromCardDataRarity(cardData));
-                  stringBuilder2.Append(cardData.CardName);
-                  stringBuilder2.Append("</color>");
-                }
-              }
-              stringBuilder2.Clear();
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsIDPlaceHand"), (object) str27));
-            }
-            if (str28 != "")
-            {
-              stringBuilder1.Append(" ");
-              stringBuilder1.Append(str2);
-              stringBuilder1.Append(str28);
-              stringBuilder1.Append(str3);
-            }
-            if (itemData.CardsReduced == 0)
-              stringBuilder1.Append("\n");
-            else
-              stringBuilder1.Append(" ");
-          }
-          if (itemData.CardsReduced > 0)
-          {
-            StringBuilder stringBuilder21 = new StringBuilder();
-            stringBuilder21.Append("<color=#5E3016>");
-            stringBuilder21.Append(itemData.CardsReduced);
-            stringBuilder21.Append("</color>");
-            string str29 = stringBuilder21.ToString();
-            string str30;
-            if (itemData.CardToReduceType == Enums.CardType.None)
-            {
-              str30 = "  <sprite name=cards>";
-            }
-            else
-            {
-              stringBuilder21.Clear();
-              stringBuilder21.Append("<color=#5E3016>");
-              stringBuilder21.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) itemData.CardToReduceType)));
-              stringBuilder21.Append("</color>");
-              str30 = stringBuilder21.ToString();
-            }
-            stringBuilder21.Clear();
-            stringBuilder21.Append("<color=#111111>");
-            stringBuilder21.Append(Mathf.Abs(itemData.CostReduceReduction));
-            stringBuilder21.Append("</color>");
-            string str31 = stringBuilder21.ToString();
-            string str32 = itemData.CostReduceEnergyRequirement <= 0 ? "<space=-.2>" : "<color=#444><size=-.2>" + string.Format(Texts.Instance.GetText("itemReduceCost"), (object) itemData.CostReduceEnergyRequirement) + "</size></color>";
-            if (itemData.CostReducePermanent && itemData.ReduceHighestCost)
-            {
-              string str33;
-              if (itemData.CardsReduced == 1)
-              {
-                str33 = "";
-              }
-              else
-              {
-                num19 = itemData.CardsReduced;
-                str33 = "<color=#111111>(" + num19.ToString() + ")</color> ";
-              }
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemReduceHighestPermanent"), (object) str33, (object) str30, (object) str31, (object) str32));
-            }
-            else if (itemData.CostReducePermanent)
-            {
-              if (itemData.CardsReduced != 10)
-              {
-                if (itemData.CostReduceReduction > 0)
-                  stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemReduce"), (object) str29, (object) str30, (object) str31, (object) str32));
-                else
-                  stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemIncrease"), (object) str29, (object) str30, (object) str31, (object) str32));
-              }
-              else if (itemData.CostReduceReduction > 0)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemReduceAll"), (object) str30, (object) str31, (object) str32));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemIncreaseAll"), (object) str30, (object) str31, (object) str32));
-            }
-            else if (itemData.ReduceHighestCost)
-            {
-              string str34;
-              if (itemData.CardsReduced == 1)
-              {
-                str34 = "";
-              }
-              else
-              {
-                num19 = itemData.CardsReduced;
-                str34 = "<color=#111111>(" + num19.ToString() + ")</color> ";
-              }
-              if (itemData.CostReduceReduction > 0)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemReduceHighestTurn"), (object) str34, (object) str30, (object) str31, (object) str32));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemIncreaseHighestDiscarded"), (object) str34, (object) str30, (object) str31, (object) str32));
-            }
-            else if (itemData.CardsReduced != 10)
-            {
-              if (itemData.CostReduceReduction > 0)
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemReduceTurn"), (object) str29, (object) str30, (object) str31, (object) str32));
-              else
-                stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemIncreaseTurn"), (object) str29, (object) str30, (object) str31, (object) str32));
-            }
-            else if (itemData.CostReduceReduction > 0)
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemReduceTurnAll"), (object) str30, (object) str31, (object) str32));
-            else
-              stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemIncreaseTurnAll"), (object) str30, (object) str31, (object) str32));
-            stringBuilder1.Append("\n");
-          }
-        }
-        if (itemData.DestroyStartOfTurn || itemData.DestroyEndOfTurn)
-        {
-          stringBuilder1.Append("<voffset=-.1><size=-.05><color=#1A505A>- ");
-          stringBuilder1.Append(Texts.Instance.GetText("itemDestroyStartTurn"));
-          stringBuilder1.Append(" -</color></size>");
-        }
-        if (itemData.DestroyAfterUses > 0 && !itemData.UseTheNextInsteadWhenYouPlay)
-        {
-          stringBuilder1.Append("<nobr><size=-.05><color=#1A505A>- ");
-          if (itemData.DestroyAfterUses > 1)
-            stringBuilder1.Append(string.Format(Texts.Instance.GetText("itemLastUses"), (object) itemData.DestroyAfterUses));
-          else
-            stringBuilder1.Append(Texts.Instance.GetText("itemLastUse"));
-          stringBuilder1.Append(" -</color></size></nobr>");
-        }
-        if (itemData.TimesPerCombat > 0)
-        {
-          stringBuilder1.Append("<nobr><size=-.05><color=#1A505A>- ");
-          if (itemData.TimesPerCombat == 1)
-            stringBuilder1.Append(Texts.Instance.GetText("itemOncePerCombat"));
-          else if (itemData.TimesPerCombat == 2)
-            stringBuilder1.Append(Texts.Instance.GetText("itemTwicePerCombat"));
-          else if (itemData.TimesPerCombat == 3)
-            stringBuilder1.Append(Texts.Instance.GetText("itemThricePerCombat"));
-          stringBuilder1.Append(" -</color></size></nobr>");
-        }
-        if (itemData.PassSingleAndCharacterRolls)
-        {
-          stringBuilder1.Append(Texts.Instance.GetText("cardsPassEventRoll"));
-          stringBuilder1.Append("\n");
-        }
-      }
-      stringBuilder1.Replace("<c>", "<color=#5E3016>");
-      stringBuilder1.Replace("</c>", "</color>");
-      stringBuilder1.Replace("<nb>", "<nobr>");
-      stringBuilder1.Replace("</nb>", "</nobr>");
-      stringBuilder1.Replace("<br1>", "<br><line-height=15%><br></line-height>");
-      stringBuilder1.Replace("<br2>", "<br><line-height=30%><br></line-height>");
-      stringBuilder1.Replace("<br3>", "<br><line-height=50%><br></line-height>");
-      this.descriptionNormalized = stringBuilder1.ToString();
+        this.AppendItemDescription(character, builder, aux, grColor, endColor, goldColor);
+      if (!string.IsNullOrEmpty(this.postDescriptionId))
+        this.AddFormattedDescription(builder, this.postDescriptionId, this.postDescriptionArgs);
+      builder.Replace("<c>", "<color=#5E3016>");
+      builder.Replace("</c>", "</color>");
+      builder.Replace("<nb>", "<nobr>");
+      builder.Replace("</nb>", "</nobr>");
+      builder.Replace("<br1>", "<br><line-height=15%><br></line-height>");
+      builder.Replace("<br2>", "<br><line-height=30%><br></line-height>");
+      builder.Replace("<br3>", "<br><line-height=50%><br></line-height>");
+      builder.Replace("\n", "<br>");
+      builder.Replace("\r>", "<br>");
+      this.descriptionNormalized = builder.ToString();
       this.descriptionNormalized = Regex.Replace(this.descriptionNormalized, "[,][ ]*(<(.*?)>)*(.)", (MatchEvaluator) (m => m.ToString().ToLower()));
       this.descriptionNormalized = Regex.Replace(this.descriptionNormalized, "<br>\\w", (MatchEvaluator) (m => m.ToString().ToUpper()));
-      Globals.Instance.CardsDescriptionNormalized[this.id] = stringBuilder1.ToString();
+      Globals.Instance.CardsDescriptionNormalized[this.id] = builder.ToString();
       if (includeInSearch)
         Globals.Instance.IncludeInSearch(Regex.Replace(Regex.Replace(this.descriptionNormalized, "<sprite name=(.*?)>", (MatchEvaluator) (m => Texts.Instance.GetText(m.Groups[1].Value))), "(<(.*?)>)*", ""), this.id, false);
     }
     else
       this.descriptionNormalized = Globals.Instance.CardsDescriptionNormalized[this.id];
+  }
+
+  private void AddFormattedDescription(
+    StringBuilder builder,
+    string descriptionId,
+    string[] descriptionArgs)
+  {
+    if (descriptionArgs.Length != 0)
+    {
+      List<object> objectList = new List<object>();
+      foreach (string descriptionArg in descriptionArgs)
+      {
+        string key = descriptionArg.Trim();
+        Func<CardData, string> func;
+        if (CardData.CardValues.TryGetValue(key, out func))
+        {
+          string str = func(this);
+          objectList.Add((object) str);
+        }
+        else
+        {
+          if (!key.StartsWith("$"))
+            Debug.LogWarning((object) ("Argument \"" + key + "\" not found. Did you mean \"$" + key + "\"?"));
+          Debug.LogError((object) ("Argument \"" + key + "\" not recognized in the description arguments dictionary."));
+        }
+      }
+      string text1 = Texts.Instance.GetText(descriptionId);
+      int num = CardUtils.GetMaxPlaceholderFormattedStringIndex(text1) + 1;
+      if (objectList.Count != num)
+        return;
+      string text2 = string.Format(text1, objectList.ToArray());
+      builder.Append(Functions.FormatStringCard(text2));
+    }
+    else
+      builder.Append(Functions.FormatStringCard(Texts.Instance.GetText(descriptionId)));
+  }
+
+  private bool TryGetItem(out ItemData theItem)
+  {
+    if ((UnityEngine.Object) this.item != (UnityEngine.Object) null)
+    {
+      theItem = this.item;
+      return true;
+    }
+    if ((UnityEngine.Object) this.itemEnchantment != (UnityEngine.Object) null)
+    {
+      theItem = this.itemEnchantment;
+      return true;
+    }
+    theItem = (ItemData) null;
+    return false;
+  }
+
+  private void AppendItemDescription(
+    Character character,
+    StringBuilder builder,
+    StringBuilder aux,
+    string grColor,
+    string endColor,
+    string goldColor)
+  {
+    ItemData theItem;
+    if (!this.TryGetItem(out theItem))
+      return;
+    if (theItem.MaxHealth != 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemMaxHp"), (object) this.NumFormatItem(theItem.MaxHealth, true)));
+      builder.Append("\n");
+    }
+    if (theItem.ResistModified1 == Enums.DamageType.All)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemAllResistances"), (object) this.NumFormatItem(theItem.ResistModifiedValue1, true, true)));
+      builder.Append("\n");
+    }
+    int num1 = 0;
+    int num2 = 0;
+    if (theItem.ResistModified1 != Enums.DamageType.None && theItem.ResistModified1 != Enums.DamageType.All)
+    {
+      aux.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.ResistModified1)));
+      num2 = theItem.ResistModifiedValue1;
+      ++num1;
+    }
+    if (theItem.ResistModified2 != Enums.DamageType.None && theItem.ResistModified2 != Enums.DamageType.All)
+    {
+      if (num2 != theItem.ResistModifiedValue2)
+      {
+        aux.Append(string.Format(Texts.Instance.GetText("itemXResistances"), (object) string.Empty, (object) this.NumFormatItem(num2, true, true)));
+        aux.Append("\n");
+        num1 = 0;
+        num2 = 0;
+      }
+      aux.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.ResistModified2)));
+      if (num2 == 0)
+        num2 = theItem.ResistModifiedValue2;
+      ++num1;
+    }
+    if (theItem.ResistModified3 != Enums.DamageType.None && theItem.ResistModified3 != Enums.DamageType.All)
+    {
+      if (num2 != theItem.ResistModifiedValue3)
+      {
+        aux.Append(string.Format(Texts.Instance.GetText("itemXResistances"), (object) string.Empty, (object) this.NumFormatItem(num2, true, true)));
+        aux.Append("\n");
+        num1 = 0;
+        num2 = 0;
+      }
+      aux.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.ResistModified3)));
+      if (num2 == 0)
+        num2 = theItem.ResistModifiedValue3;
+      ++num1;
+    }
+    if (num1 > 0)
+    {
+      if (num1 > 1)
+        aux.Append("\n");
+      builder.Append(string.Format(Texts.Instance.GetText("itemXResistances"), (object) aux.ToString(), (object) this.NumFormatItem(num2, true, true)));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (theItem.CharacterStatModified == Enums.CharacterStat.Speed)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemSpeed"), (object) this.NumFormatItem(theItem.CharacterStatModifiedValue, true)));
+      builder.Append("\n");
+    }
+    if (theItem.CharacterStatModified == Enums.CharacterStat.EnergyTurn)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemEnergyRegeneration"), (object) this.SpriteText("energy"), (object) this.NumFormatItem(theItem.CharacterStatModifiedValue, true)));
+      builder.Append("\n");
+    }
+    if (theItem.CharacterStatModified2 == Enums.CharacterStat.Speed)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemSpeed"), (object) this.NumFormatItem(theItem.CharacterStatModifiedValue2, true)));
+      builder.Append("\n");
+    }
+    if (theItem.CharacterStatModified2 == Enums.CharacterStat.EnergyTurn)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemEnergyRegeneration"), (object) this.SpriteText("energy"), (object) this.NumFormatItem(theItem.CharacterStatModifiedValue2, true)));
+      builder.Append("\n");
+    }
+    if (theItem.DamageFlatBonus == Enums.DamageType.All)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemAllDamages"), (object) this.NumFormatItem(theItem.DamageFlatBonusValue, true)));
+      builder.Append("\n");
+    }
+    int num3 = 0;
+    int num4 = 0;
+    if (theItem.DamageFlatBonus != Enums.DamageType.None && theItem.DamageFlatBonus != Enums.DamageType.All)
+    {
+      aux.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.DamageFlatBonus)));
+      num4 = theItem.DamageFlatBonusValue;
+      ++num3;
+    }
+    if (theItem.DamageFlatBonus2 != Enums.DamageType.None && theItem.DamageFlatBonus2 != Enums.DamageType.All)
+    {
+      aux.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.DamageFlatBonus2)));
+      ++num3;
+    }
+    if (theItem.DamageFlatBonus3 != Enums.DamageType.None && theItem.DamageFlatBonus3 != Enums.DamageType.All)
+    {
+      aux.Append(this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.DamageFlatBonus3)));
+      ++num3;
+    }
+    if (theItem.DamagePercentBonus == Enums.DamageType.All)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemAllDamages"), (object) this.NumFormatItem(Functions.FuncRoundToInt(theItem.DamagePercentBonusValue), true, true)));
+      builder.Append("\n");
+    }
+    if (num3 > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemXDamages"), (object) aux.ToString(), (object) this.NumFormatItem(num4, true)));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    int index;
+    if (theItem.UseTheNextInsteadWhenYouPlay && (double) theItem.HealPercentBonus != 0.0)
+    {
+      string str = "";
+      if (theItem.DestroyAfterUses > 1)
+      {
+        index = theItem.DestroyAfterUses;
+        str = "(" + index.ToString() + ") ";
+      }
+      StringBuilder stringBuilder = new StringBuilder();
+      stringBuilder.Append("<size=-.15><color=#444>[");
+      stringBuilder.Append(Texts.Instance.GetText("itemTheNext"));
+      stringBuilder.Append("]</color></size><br>");
+      aux.Append("<color=#5E3016>");
+      aux.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) theItem.CastedCardType)));
+      aux.Append("</color>");
+      builder.Append(string.Format(stringBuilder.ToString(), (object) str, (object) aux.ToString()));
+      aux.Clear();
+      stringBuilder.Clear();
+    }
+    if (theItem.HealFlatBonus != 0)
+    {
+      builder.Append(this.SpriteText("heal"));
+      builder.Append(" ");
+      builder.Append(Functions.LowercaseFirst(Texts.Instance.GetText("healDone")));
+      builder.Append(this.NumFormatItem(theItem.HealFlatBonus, true));
+      builder.Append("\n");
+    }
+    if ((double) theItem.HealPercentBonus != 0.0)
+    {
+      builder.Append(this.SpriteText("heal"));
+      builder.Append(" ");
+      builder.Append(Functions.LowercaseFirst(Texts.Instance.GetText("healDone")));
+      builder.Append(this.NumFormatItem(Functions.FuncRoundToInt(theItem.HealPercentBonus), true, true));
+      builder.Append("\n");
+    }
+    if (theItem.HealReceivedFlatBonus != 0)
+    {
+      builder.Append(this.SpriteText("heal"));
+      builder.Append(" ");
+      builder.Append(Functions.LowercaseFirst(Texts.Instance.GetText("healTaken")));
+      builder.Append(this.NumFormatItem(Functions.FuncRoundToInt((float) theItem.HealReceivedFlatBonus), true));
+      builder.Append("\n");
+    }
+    if ((double) theItem.HealReceivedPercentBonus != 0.0)
+    {
+      builder.Append(this.SpriteText("heal"));
+      builder.Append(" ");
+      builder.Append(Functions.LowercaseFirst(Texts.Instance.GetText("healTaken")));
+      builder.Append(this.NumFormatItem(Functions.FuncRoundToInt(theItem.HealReceivedPercentBonus), true, true));
+      builder.Append("\n");
+    }
+    if ((UnityEngine.Object) theItem.AuracurseBonus1 != (UnityEngine.Object) null && theItem.AuracurseBonusValue1 > 0 && (UnityEngine.Object) theItem.AuracurseBonus2 != (UnityEngine.Object) null && theItem.AuracurseBonusValue2 > 0 && theItem.AuracurseBonusValue1 == theItem.AuracurseBonusValue2)
+    {
+      aux.Append(this.SpriteText(theItem.AuracurseBonus1.ACName));
+      aux.Append(this.SpriteText(theItem.AuracurseBonus2.ACName));
+      builder.Append(string.Format(Texts.Instance.GetText("itemCharges"), (object) aux.ToString(), (object) this.NumFormatItem(theItem.AuracurseBonusValue1, true)));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    else
+    {
+      if ((UnityEngine.Object) theItem.AuracurseBonus1 != (UnityEngine.Object) null && theItem.AuracurseBonusValue1 > 0)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("itemCharges"), (object) this.SpriteText(theItem.AuracurseBonus1.ACName), (object) this.NumFormatItem(theItem.AuracurseBonusValue1, true)));
+        builder.Append("\n");
+      }
+      if ((UnityEngine.Object) theItem.AuracurseBonus2 != (UnityEngine.Object) null && theItem.AuracurseBonusValue2 > 0)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("itemCharges"), (object) this.SpriteText(theItem.AuracurseBonus2.ACName), (object) this.NumFormatItem(theItem.AuracurseBonusValue2, true)));
+        builder.Append("\n");
+      }
+    }
+    int num5 = 0;
+    if ((UnityEngine.Object) theItem.AuracurseImmune1 != (UnityEngine.Object) null)
+    {
+      ++num5;
+      aux.Append(this.ColorTextArray("curse", this.SpriteText(theItem.AuracurseImmune1.Id)));
+    }
+    if ((UnityEngine.Object) theItem.AuracurseImmune2 != (UnityEngine.Object) null)
+    {
+      ++num5;
+      aux.Append(this.ColorTextArray("curse", this.SpriteText(theItem.AuracurseImmune2.Id)));
+    }
+    if (num5 > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsImmuneTo"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (theItem.PercentDiscountShop != 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemDiscount"), (object) this.NumFormatItem(theItem.PercentDiscountShop, true, true)));
+      builder.Append("\n");
+    }
+    if (theItem.PercentRetentionEndGame != 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("itemDieRetain"), (object) this.NumFormatItem(theItem.PercentRetentionEndGame, true, true)));
+      builder.Append("\n");
+    }
+    if (theItem.AuracurseCustomString != "" && (UnityEngine.Object) theItem.AuracurseCustomAC != (UnityEngine.Object) null)
+    {
+      StringBuilder stringBuilder = new StringBuilder();
+      if ((theItem.AuracurseCustomString == "itemCustomTextMaxChargesIncrasedOnEnemies" || theItem.AuracurseCustomString == "itemCustomTextMaxChargesIncrasedOnHeroes") && theItem.AuracurseCustomModValue1 > 0)
+        stringBuilder.Append("+");
+      stringBuilder.Append(theItem.AuracurseCustomModValue1);
+      builder.Append(string.Format(Texts.Instance.GetText(theItem.AuracurseCustomString), (object) this.ColorTextArray("aura", this.SpriteText(theItem.AuracurseCustomAC.Id)), (object) stringBuilder.ToString(), (object) theItem.AuracurseCustomModValue2));
+      builder.Append("\n");
+    }
+    if (theItem.Id == "harleyrare" || theItem.Id == "templelurkerpetrare" || theItem.Id == "mentalscavengerspetrare")
+    {
+      builder.Append(Texts.Instance.GetText("immortal"));
+      builder.Append("\n");
+    }
+    if (theItem.ModifiedDamageType != Enums.DamageType.None)
+    {
+      builder.Append("<nobr>");
+      builder.Append(string.Format(Texts.Instance.GetText("cardsTransformDamage"), (object) this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.ModifiedDamageType))));
+      builder.Append("</nobr>");
+      builder.Append("\n");
+    }
+    if (theItem.IsEnchantment && (theItem.CastedCardType != Enums.CardType.None || (theItem.Activation == Enums.EventActivation.PreFinishCast || theItem.Activation == Enums.EventActivation.FinishCast || theItem.Activation == Enums.EventActivation.FinishFinishCast) && !theItem.EmptyHand))
+    {
+      if (theItem.CastedCardType != Enums.CardType.None)
+      {
+        aux.Append("<color=#5E3016>");
+        aux.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) theItem.CastedCardType)));
+        aux.Append("</color>");
+      }
+      else
+        aux.Append(" <sprite name=cards>");
+      if (theItem.UseTheNextInsteadWhenYouPlay)
+      {
+        if ((double) theItem.HealPercentBonus == 0.0)
+        {
+          string str = "";
+          if (theItem.DestroyAfterUses > 1)
+          {
+            index = theItem.DestroyAfterUses;
+            str = "(" + index.ToString() + ") ";
+          }
+          StringBuilder stringBuilder = new StringBuilder();
+          stringBuilder.Append("<size=-.15><color=#444>[");
+          stringBuilder.Append(Texts.Instance.GetText("itemTheNext"));
+          stringBuilder.Append("]</color></size><br>");
+          builder.Append(string.Format(stringBuilder.ToString(), (object) str, (object) aux.ToString()));
+        }
+      }
+      else
+      {
+        builder.Append("<size=-.15>");
+        builder.Append("<color=#444>[");
+        builder.Append(string.Format(Texts.Instance.GetText("itemWhenYouPlay"), (object) aux.ToString()));
+        builder.Append("]</color>");
+        builder.Append("</size><br>");
+      }
+      aux.Clear();
+    }
+    if (theItem.Activation != Enums.EventActivation.None && theItem.Activation != Enums.EventActivation.PreBeginCombat)
+    {
+      if (builder.Length > 0)
+        builder.Append("<line-height=15%><br></line-height>");
+      StringBuilder stringBuilder1 = new StringBuilder();
+      if (theItem.TimesPerTurn == 1)
+        stringBuilder1.Append(Texts.Instance.GetText("itemOncePerTurn"));
+      else if (theItem.TimesPerTurn == 2)
+        stringBuilder1.Append(Texts.Instance.GetText("itemTwicePerTurn"));
+      else if (theItem.TimesPerTurn == 3)
+        stringBuilder1.Append(Texts.Instance.GetText("itemThricePerTurn"));
+      else if (theItem.TimesPerTurn == 4)
+        stringBuilder1.Append(Texts.Instance.GetText("itemFourPerTurn"));
+      else if (theItem.TimesPerTurn == 5)
+        stringBuilder1.Append(Texts.Instance.GetText("itemFivePerTurn"));
+      else if (theItem.TimesPerTurn == 6)
+        stringBuilder1.Append(Texts.Instance.GetText("itemSixPerTurn"));
+      else if (theItem.TimesPerTurn == 7)
+        stringBuilder1.Append(Texts.Instance.GetText("itemSevenPerTurn"));
+      else if (theItem.TimesPerTurn == 8)
+        stringBuilder1.Append(Texts.Instance.GetText("itemEightPerTurn"));
+      StringBuilder stringBuilder2 = new StringBuilder();
+      if (theItem.Activation == Enums.EventActivation.BeginCombat)
+        stringBuilder2.Append(Texts.Instance.GetText("itemCombatStart"));
+      else if (theItem.Activation == Enums.EventActivation.BeginCombatEnd)
+        stringBuilder2.Append(Texts.Instance.GetText("itemCombatEnd"));
+      else if (theItem.Activation == Enums.EventActivation.BeginTurnAboutToDealCards || theItem.Activation == Enums.EventActivation.BeginTurnCardsDealt)
+      {
+        if (theItem.RoundCycle > 1)
+        {
+          StringBuilder stringBuilder3 = stringBuilder2;
+          string text = Texts.Instance.GetText("itemEveryNRounds");
+          index = theItem.RoundCycle;
+          string str1 = index.ToString();
+          string str2 = string.Format(text, (object) str1);
+          stringBuilder3.Append(str2);
+        }
+        else if (theItem.ExactRound == 1)
+          stringBuilder2.Append(Texts.Instance.GetText("itemFirstTurn"));
+        else
+          stringBuilder2.Append(Texts.Instance.GetText("itemEveryRound"));
+      }
+      else if (theItem.Activation == Enums.EventActivation.Damage)
+        stringBuilder2.Append(Texts.Instance.GetText("itemDamageDone"));
+      else if (theItem.Activation == Enums.EventActivation.Damaged)
+      {
+        if ((double) theItem.LowerOrEqualPercentHP < 100.0)
+          stringBuilder2.Append(string.Format(Texts.Instance.GetText("itemWhenDamagedBelow"), (object) (theItem.LowerOrEqualPercentHP.ToString() + (Functions.SpaceBeforePercentSign() ? " " : "") + "%")));
+        else
+          stringBuilder2.Append(Texts.Instance.GetText("itemWhenDamaged"));
+      }
+      else if (theItem.Activation == Enums.EventActivation.Hitted)
+        stringBuilder2.Append(Texts.Instance.GetText("itemWhenHitted"));
+      else if (theItem.Activation == Enums.EventActivation.Block)
+        stringBuilder2.Append(Texts.Instance.GetText("itemWhenBlock"));
+      else if (theItem.Activation == Enums.EventActivation.Heal)
+        stringBuilder2.Append(Texts.Instance.GetText("itemHealDoneAction"));
+      else if (theItem.Activation == Enums.EventActivation.Healed)
+        stringBuilder2.Append(Texts.Instance.GetText("itemWhenHealed"));
+      else if (theItem.Activation == Enums.EventActivation.Evaded)
+        stringBuilder2.Append(Texts.Instance.GetText("itemWhenEvaded"));
+      else if (theItem.Activation == Enums.EventActivation.Evade)
+        stringBuilder2.Append(Texts.Instance.GetText("itemWhenEvade"));
+      else if (theItem.Activation == Enums.EventActivation.BeginRound)
+      {
+        if (theItem.RoundCycle > 1)
+        {
+          StringBuilder stringBuilder4 = stringBuilder2;
+          string text = Texts.Instance.GetText("itemEveryRoundRoundN");
+          index = theItem.RoundCycle;
+          string str3 = index.ToString();
+          string str4 = string.Format(text, (object) str3);
+          stringBuilder4.Append(str4);
+        }
+        else
+          stringBuilder2.Append(Texts.Instance.GetText("itemEveryRoundRound"));
+      }
+      else if (theItem.Activation == Enums.EventActivation.BeginTurn || theItem.Activation == Enums.EventActivation.AfterDealCards)
+      {
+        if (theItem.RoundCycle > 1)
+        {
+          StringBuilder stringBuilder5 = stringBuilder2;
+          string text = Texts.Instance.GetText("itemEveryNRounds");
+          index = theItem.RoundCycle;
+          string str5 = index.ToString();
+          string str6 = string.Format(text, (object) str5);
+          stringBuilder5.Append(str6);
+        }
+        else
+          stringBuilder2.Append(Texts.Instance.GetText("itemEveryRound"));
+      }
+      else if (theItem.Activation == Enums.EventActivation.Killed)
+        stringBuilder2.Append(Texts.Instance.GetText("itemWhenKilled"));
+      else if (theItem.Activation == Enums.EventActivation.BlockReachedZero)
+        stringBuilder2.Append(Texts.Instance.GetText("itemWhenBlockReachesZero"));
+      else if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent == 0)
+      {
+        string str = this.SpriteText(theItem.AuraCurseSetted.Id);
+        if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+        {
+          str += this.SpriteText(theItem.AuraCurseSetted2.Id);
+          if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+            str += this.SpriteText(theItem.AuraCurseSetted3.Id);
+        }
+        stringBuilder2.Append(string.Format(Texts.Instance.GetText("itemWhenYouApply"), (object) this.ColorTextArray("curse", str)));
+      }
+      if (stringBuilder2.Length > 0)
+      {
+        builder.Append("<size=-.15>");
+        builder.Append("<color=#444>[");
+        builder.Append(stringBuilder2.ToString());
+        builder.Append("]</color>");
+        builder.Append("</size><br>");
+      }
+      StringBuilder stringBuilder6 = (StringBuilder) null;
+      if (stringBuilder1.Length > 0)
+      {
+        builder.Append("<size=-.15>");
+        builder.Append("<color=#444>[");
+        builder.Append(stringBuilder1.ToString());
+        builder.Append("]</color>");
+        builder.Append("</size><br>");
+      }
+      if (theItem.UsedEnergy)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("itemApplyForEnergyUsed"), (object) this.ColorTextArray("system", this.SpriteText("energy"))));
+        builder.Append("\n");
+      }
+      if (theItem.EmptyHand)
+      {
+        builder.Append(Texts.Instance.GetText("itemWhenHandEmpty"));
+        builder.Append(":<br>");
+      }
+      if (theItem.ChanceToDispel > 0)
+      {
+        if (theItem.ChanceToDispelNum > 0)
+        {
+          if (theItem.ChanceToDispel < 100)
+            builder.Append(string.Format(Texts.Instance.GetText("itemChanceToDispel"), (object) this.ColorTextArray("aura", this.NumFormatItem(theItem.ChanceToDispel, percent: true)), (object) this.ColorTextArray("curse", this.NumFormatItem(theItem.ChanceToDispelNum))));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) this.ColorTextArray("curse", this.NumFormatItem(theItem.ChanceToDispelNum))));
+        }
+        else if (theItem.ChanceToDispelNum == -1)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsDispelAll")));
+        builder.Append("\n");
+      }
+      if (theItem.ChanceToPurge > 0)
+      {
+        if (theItem.ChanceToPurgeNum > 0)
+        {
+          if (theItem.ChanceToPurge < 100)
+            builder.Append(string.Format(Texts.Instance.GetText("itemChanceToPurge"), (object) this.ColorTextArray("aura", this.NumFormatItem(theItem.ChanceToPurge, percent: true)), (object) this.ColorTextArray("curse", this.NumFormatItem(theItem.ChanceToPurgeNum))));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) this.ColorTextArray("curse", this.NumFormatItem(theItem.ChanceToPurgeNum))));
+        }
+        else if (theItem.ChanceToDispelNum == -1)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsPurgeAll")));
+        builder.Append("\n");
+      }
+      if (theItem.ChanceToDispelSelf > 0 && theItem.ChanceToDispelNumSelf > 0)
+      {
+        if (theItem.ChanceToDispelSelf < 100)
+          builder.Append(string.Format(Texts.Instance.GetText("itemChanceToDispelSelf"), (object) this.ColorTextArray("aura", this.NumFormatItem(theItem.ChanceToDispelSelf, percent: true)), (object) this.ColorTextArray("curse", this.NumFormatItem(theItem.ChanceToDispelNumSelf))));
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("cardsDispelSelf"), (object) this.ColorTextArray("curse", this.NumFormatItem(theItem.ChanceToDispelNumSelf))));
+        builder.Append("\n");
+      }
+      if (!theItem.IsEnchantment && theItem.CastedCardType != Enums.CardType.None)
+      {
+        aux.Append("<color=#5E3016>");
+        aux.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) theItem.CastedCardType)));
+        aux.Append("</color>");
+        builder.Append(string.Format(Texts.Instance.GetText("itemWhenYouPlay"), (object) aux.ToString()));
+        aux.Clear();
+        builder.Append(":\n");
+      }
+      else if (!theItem.IsEnchantment && theItem.CastedCardType == Enums.CardType.None && (theItem.Activation == Enums.EventActivation.PreFinishCast || theItem.Activation == Enums.EventActivation.FinishCast || theItem.Activation == Enums.EventActivation.FinishFinishCast) && !theItem.EmptyHand)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("itemWhenYouPlay"), (object) "  <sprite name=cards>"));
+        builder.Append(":\n");
+      }
+      if (theItem.DrawCards > 0)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsDraw"), (object) this.ColorTextArray("", this.NumFormat(theItem.DrawCards), this.SpriteText("card"))));
+        builder.Append("<br>");
+      }
+      if (theItem.HealQuantitySpecialValue.Use)
+      {
+        aux.Append("<color=#111111>X</color>");
+        if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverHeroes"), (object) aux.ToString()));
+        else if (theItem.ItemTarget == Enums.ItemTarget.Self)
+        {
+          if (theItem.Activation == Enums.EventActivation.Killed)
+            builder.Append(string.Format(Texts.Instance.GetText("itemResurrectHP"), (object) aux.ToString()));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverMonsters"), (object) aux.ToString()));
+        builder.Append("<br>");
+        aux.Clear();
+      }
+      else if (theItem.HealQuantity > 0)
+      {
+        aux.Append("<color=#111111>");
+        aux.Append(this.NumFormatItem(theItem.HealQuantity, true));
+        aux.Append("</color>");
+        if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverHeroes"), (object) aux.ToString()));
+        else if (theItem.ItemTarget == Enums.ItemTarget.Self)
+        {
+          if (theItem.Activation == Enums.EventActivation.Killed)
+            builder.Append(string.Format(Texts.Instance.GetText("itemResurrectHP"), (object) aux.ToString()));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverMonsters"), (object) aux.ToString()));
+        builder.Append("<br>");
+        aux.Clear();
+      }
+      else if (theItem.HealQuantity < 0)
+      {
+        aux.Append("<color=#B00A00>");
+        aux.Append(this.NumFormatItem(theItem.HealQuantity, true));
+        aux.Append("</color>");
+        builder.Append(string.Format(Texts.Instance.GetText("itemLoseHPSelf"), (object) aux.ToString()));
+        builder.Append("<br>");
+        aux.Clear();
+      }
+      if (theItem.EnergyQuantity > 0 && theItem.ItemTarget == Enums.ItemTarget.Self)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) this.ColorTextArray("system", this.NumFormat(theItem.EnergyQuantity), this.SpriteText("energy"))));
+      if (theItem.HealPercentQuantity > 0)
+      {
+        aux.Append("<color=#111111>");
+        aux.Append(this.NumFormatItem(theItem.HealPercentQuantity, true, true));
+        aux.Append("</color>");
+        if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverHeroes"), (object) aux.ToString()));
+        else if (theItem.ItemTarget == Enums.ItemTarget.Self)
+        {
+          if (theItem.Activation == Enums.EventActivation.Killed)
+            builder.Append(string.Format(Texts.Instance.GetText("itemResurrectHP"), (object) aux.ToString()));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpEnemy)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverLowestHPMonster"), (object) aux.ToString()));
+        else if (theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpHero)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverLowestHPHero"), (object) aux.ToString()));
+        else if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverMonsters"), (object) aux.ToString()));
+        else if (theItem.ItemTarget == Enums.ItemTarget.RandomHero)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverRandomHPHero"), (object) aux.ToString()));
+        else if (theItem.ItemTarget == Enums.ItemTarget.RandomEnemy)
+          builder.Append(string.Format(Texts.Instance.GetText("itemRecoverRandomHPMonster"), (object) aux.ToString()));
+        builder.Append("<br>");
+        aux.Clear();
+      }
+      if (theItem.HealPercentQuantitySelf < 0)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsYouLose"), (object) this.ColorTextArray("damage", this.NumFormat(Mathf.Abs(theItem.HealPercentQuantitySelf)), Functions.SpaceBeforePercentSign() ? "" : "<space=-.1>", "% HP")));
+        builder.Append("<br>");
+      }
+      if (theItem.HealBasedOnAuraCurse > 0)
+      {
+        StringBuilder stringBuilder7 = new StringBuilder();
+        stringBuilder7.Append("Heal ");
+        stringBuilder7.Append(this.ColorTextArray("heal", "X", this.SpriteText("heal")));
+        stringBuilder7.Append("\n");
+        stringBuilder7.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYour"), (object) this.SpriteText(theItem.AuraCurseSetted.ACName), (object) " charges"));
+        builder.Append(stringBuilder7);
+        builder.Append("<br>");
+      }
+      if ((double) theItem.healSelfPerDamageDonePercent > 0.0)
+      {
+        string _id = "cardsHealSelfPerDamage";
+        if (theItem.ItemTarget == Enums.ItemTarget.AllHero || theItem.healSelfTeamPerDamageDonePercent)
+          _id = "cardHealAllHeroesPerDamage";
+        builder.Append(string.Format(Texts.Instance.GetText(_id), (object) theItem.healSelfPerDamageDonePercent.ToString()));
+        builder.Append("\n");
+      }
+      string str7 = "";
+      if (theItem.DamageToTarget1 > 0)
+        str7 += this.ColorTextArray("damage", this.NumFormat(this.enchantDamagePreCalculated1), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.DamageToTargetType1)));
+      else if (theItem.DttSpecialValues1.Use)
+        str7 += this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.DamageToTargetType1)));
+      if (theItem.DamageToTarget2 > 0)
+        str7 += this.ColorTextArray("damage", this.NumFormat(this.enchantDamagePreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.DamageToTargetType2)));
+      else if (theItem.DttSpecialValues2.Use)
+        str7 += this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) theItem.DamageToTargetType2)));
+      if (!str7.IsNullOrEmpty())
+      {
+        string _id = "cardsDealDamage";
+        if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+          _id = "dealDamageToAllMonsters";
+        else if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+          _id = "dealDamageToAllHeroes";
+        builder.Append(string.Format(Texts.Instance.GetText(_id), (object) str7));
+        builder.Append("\n");
+      }
+      int num6 = 0;
+      bool flag1 = true;
+      if ((UnityEngine.Object) theItem.AuracurseGain1 != (UnityEngine.Object) null && (theItem.AuracurseGainValue1 > 0 || theItem.AuracurseGain1SpecialValue.Use))
+      {
+        ++num6;
+        if (!theItem.AuracurseGain1SpecialValue.Use)
+        {
+          if (theItem.NotShowCharacterBonus)
+            aux.Append(this.ColorTextArray("aura", this.NumFormat(theItem.AuracurseGainValue1), this.SpriteText(theItem.AuracurseGain1.Id)));
+          else
+            aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(theItem.AuracurseGain1.Id, theItem.AuracurseGainValue1, character)), this.SpriteText(theItem.AuracurseGain1.Id)));
+        }
+        else
+          aux.Append(this.ColorTextArray("aura", "X", this.SpriteText(theItem.AuracurseGain1.Id)));
+        if (!theItem.AuracurseGain1.IsAura)
+          flag1 = false;
+      }
+      if ((UnityEngine.Object) theItem.AuracurseGain2 != (UnityEngine.Object) null && theItem.AuracurseGainValue2 > 0)
+      {
+        ++num6;
+        if (theItem.NotShowCharacterBonus)
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(theItem.AuracurseGainValue2), this.SpriteText(theItem.AuracurseGain2.Id)));
+        else
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(theItem.AuracurseGain2.Id, theItem.AuracurseGainValue2, character)), this.SpriteText(theItem.AuracurseGain2.Id)));
+      }
+      if ((UnityEngine.Object) theItem.AuracurseGain3 != (UnityEngine.Object) null && theItem.AuracurseGainValue3 > 0)
+      {
+        ++num6;
+        if (theItem.NotShowCharacterBonus)
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(theItem.AuracurseGainValue3), this.SpriteText(theItem.AuracurseGain3.Id)));
+        else
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(theItem.AuracurseGain3.Id, theItem.AuracurseGainValue3, character)), this.SpriteText(theItem.AuracurseGain3.Id)));
+      }
+      if (num6 > 0)
+      {
+        if (theItem.ItemTarget == Enums.ItemTarget.Self)
+        {
+          if (theItem.HealQuantity > 0 || theItem.EnergyQuantity > 0 || theItem.HealPercentQuantity > 0)
+          {
+            StringBuilder stringBuilder8 = new StringBuilder();
+            if (flag1)
+              stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsAnd"), (object) builder.ToString(), (object) string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), (object) aux.ToString())));
+            else
+              stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsAnd"), (object) builder.ToString(), (object) string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), (object) aux.ToString())));
+            builder.Clear();
+            builder.Append(stringBuilder8.ToString());
+          }
+          else
+          {
+            if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent > 0)
+            {
+              string str8 = this.SpriteText(theItem.AuraCurseSetted.Id);
+              if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+              {
+                str8 += this.SpriteText(theItem.AuraCurseSetted2.Id);
+                if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+                  str8 += this.SpriteText(theItem.AuraCurseSetted3.Id);
+              }
+              stringBuilder6 = stringBuilder6 ?? new StringBuilder();
+              StringBuilder stringBuilder9 = stringBuilder6;
+              string text = Texts.Instance.GetText("itemForEveryCharge");
+              string[] strArray = new string[2];
+              string str9;
+              if (theItem.AuraCurseNumForOneEvent <= 1)
+              {
+                str9 = "";
+              }
+              else
+              {
+                index = theItem.AuraCurseNumForOneEvent;
+                str9 = index.ToString();
+              }
+              strArray[0] = str9;
+              strArray[1] = str8;
+              string str10 = this.ColorTextArray("curse", strArray);
+              string str11 = string.Format(text, (object) str10);
+              stringBuilder9.Append(str11);
+            }
+            if (stringBuilder6 != null && stringBuilder6.Length > 0)
+            {
+              builder.Append("<size=-.15>");
+              builder.Append("<color=#444>[");
+              builder.Append(stringBuilder6.ToString());
+              builder.Append("]</color>");
+              builder.Append("</size><br>");
+            }
+            if (flag1)
+            {
+              string str12 = builder.ToString();
+              if (str12.Length > 8 && str12.Substring(str12.Length - 9) == "<c>, </c>")
+                builder.Append(string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), (object) aux.ToString()));
+              else
+                builder.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) aux.ToString()));
+            }
+            else if (builder.Length > 8 && builder.ToString().Substring(builder.ToString().Length - 9) == "<c>, </c>")
+              builder.Append(string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), (object) aux.ToString()));
+            else
+              builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) aux.ToString()));
+          }
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+          builder.Append(string.Format(Texts.Instance.GetText("itemApplyEnemies"), (object) aux.ToString()));
+        else if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+        {
+          if (this.cardClass == Enums.CardClass.Monster)
+            builder.Append(string.Format(Texts.Instance.GetText("itemApplyHeroesFromMonster"), (object) aux.ToString()));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("itemApplyHeroes"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.RandomHero)
+        {
+          if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent > 0)
+          {
+            string str13 = this.SpriteText(theItem.AuraCurseSetted.Id);
+            if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+            {
+              str13 += this.SpriteText(theItem.AuraCurseSetted2.Id);
+              if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+                str13 += this.SpriteText(theItem.AuraCurseSetted3.Id);
+            }
+            builder.Append(string.Format(Texts.Instance.GetText("itemForEveryCharge"), (object) this.ColorTextArray("curse", str13)));
+          }
+          builder.Append(string.Format(Texts.Instance.GetText("itemApplyRandomHero"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.RandomEnemy)
+        {
+          if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent > 0)
+          {
+            string str14 = this.SpriteText(theItem.AuraCurseSetted.Id);
+            if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+            {
+              str14 += this.SpriteText(theItem.AuraCurseSetted2.Id);
+              if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+                str14 += this.SpriteText(theItem.AuraCurseSetted3.Id);
+            }
+            builder.Append(string.Format(Texts.Instance.GetText("itemForEveryCharge"), (object) this.ColorTextArray("curse", str14)));
+          }
+          builder.Append(string.Format(Texts.Instance.GetText("itemApplyRandomEnemy"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.HighestFlatHpEnemy)
+        {
+          if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent > 0)
+          {
+            string str15 = this.SpriteText(theItem.AuraCurseSetted.Id);
+            if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+            {
+              str15 += this.SpriteText(theItem.AuraCurseSetted2.Id);
+              if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+                str15 += this.SpriteText(theItem.AuraCurseSetted3.Id);
+            }
+            builder.Append(string.Format(Texts.Instance.GetText("itemForEveryCharge"), (object) this.ColorTextArray("curse", str15)));
+          }
+          builder.Append(string.Format(Texts.Instance.GetText("itemApplyHighestFlatHpEnemy"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpEnemy)
+        {
+          if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent > 0)
+          {
+            string str16 = this.SpriteText(theItem.AuraCurseSetted.Id);
+            if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+            {
+              str16 += this.SpriteText(theItem.AuraCurseSetted2.Id);
+              if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+                str16 += this.SpriteText(theItem.AuraCurseSetted3.Id);
+            }
+            StringBuilder stringBuilder10 = builder;
+            string text = Texts.Instance.GetText("itemForEveryCharge");
+            string[] strArray = new string[2];
+            string str17;
+            if (theItem.AuraCurseNumForOneEvent <= 1)
+            {
+              str17 = "";
+            }
+            else
+            {
+              index = theItem.AuraCurseNumForOneEvent;
+              str17 = index.ToString();
+            }
+            strArray[0] = str17;
+            strArray[1] = str16;
+            string str18 = this.ColorTextArray("curse", strArray);
+            string str19 = string.Format(text, (object) str18);
+            stringBuilder10.Append(str19);
+          }
+          builder.Append(string.Format(Texts.Instance.GetText("itemApplyLowestFlatHpEnemy"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.HighestFlatHpHero)
+        {
+          if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent > 0)
+          {
+            string str20 = this.SpriteText(theItem.AuraCurseSetted.Id);
+            if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+            {
+              str20 += this.SpriteText(theItem.AuraCurseSetted2.Id);
+              if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+                str20 += this.SpriteText(theItem.AuraCurseSetted3.Id);
+            }
+            StringBuilder stringBuilder11 = builder;
+            string text = Texts.Instance.GetText("itemForEveryCharge");
+            string[] strArray = new string[2];
+            string str21;
+            if (theItem.AuraCurseNumForOneEvent <= 1)
+            {
+              str21 = "";
+            }
+            else
+            {
+              index = theItem.AuraCurseNumForOneEvent;
+              str21 = index.ToString();
+            }
+            strArray[0] = str21;
+            strArray[1] = str20;
+            string str22 = this.ColorTextArray("curse", strArray);
+            string str23 = string.Format(text, (object) str22);
+            stringBuilder11.Append(str23);
+          }
+          builder.Append(string.Format(Texts.Instance.GetText("itemApplyHighestFlatHpHero"), (object) aux.ToString()));
+        }
+        else if (theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpHero)
+        {
+          if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent > 0)
+          {
+            string str24 = this.SpriteText(theItem.AuraCurseSetted.Id);
+            if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+            {
+              str24 += this.SpriteText(theItem.AuraCurseSetted2.Id);
+              if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+                str24 += this.SpriteText(theItem.AuraCurseSetted3.Id);
+            }
+            StringBuilder stringBuilder12 = builder;
+            string text = Texts.Instance.GetText("itemForEveryCharge");
+            string[] strArray = new string[2];
+            string str25;
+            if (theItem.AuraCurseNumForOneEvent <= 1)
+            {
+              str25 = "";
+            }
+            else
+            {
+              index = theItem.AuraCurseNumForOneEvent;
+              str25 = index.ToString();
+            }
+            strArray[0] = str25;
+            strArray[1] = str24;
+            string str26 = this.ColorTextArray("curse", strArray);
+            string str27 = string.Format(text, (object) str26);
+            stringBuilder12.Append(str27);
+          }
+          builder.Append(string.Format(Texts.Instance.GetText("itemApplyLowestFlatHpHero"), (object) aux.ToString()));
+        }
+        else if (this.targetSide == Enums.CardTargetSide.Enemy || theItem.ItemTarget == Enums.ItemTarget.CurrentTarget)
+        {
+          if ((UnityEngine.Object) theItem.AuraCurseSetted != (UnityEngine.Object) null && theItem.AuraCurseNumForOneEvent > 0)
+          {
+            string str28 = this.SpriteText(theItem.AuraCurseSetted.Id);
+            if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted2)
+            {
+              str28 += this.SpriteText(theItem.AuraCurseSetted2.Id);
+              if ((bool) (UnityEngine.Object) theItem.AuraCurseSetted3)
+                str28 += this.SpriteText(theItem.AuraCurseSetted3.Id);
+            }
+            StringBuilder stringBuilder13 = builder;
+            string text = Texts.Instance.GetText("itemApplyForEvery");
+            string[] strArray = new string[2];
+            string str29;
+            if (theItem.AuraCurseNumForOneEvent <= 1)
+            {
+              str29 = "";
+            }
+            else
+            {
+              index = theItem.AuraCurseNumForOneEvent;
+              str29 = index.ToString();
+            }
+            strArray[0] = str29;
+            strArray[1] = str28;
+            string str30 = this.ColorTextArray("curse", strArray);
+            string str31 = aux.ToString();
+            string str32 = string.Format(text, (object) str30, (object) str31);
+            stringBuilder13.Append(str32);
+          }
+          else if (theItem.ItemTarget == Enums.ItemTarget.Random)
+            builder.Append(string.Format(Texts.Instance.GetText("itemApplyRandom"), (object) aux.ToString()));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) aux.ToString()));
+        }
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("cardsGrant"), (object) aux.ToString()));
+        builder.Append("\n");
+        aux.Clear();
+      }
+      GetXEqualsDecriptionValue();
+      int num7 = 0;
+      bool flag2 = true;
+      if ((UnityEngine.Object) theItem.AuracurseGainSelf1 != (UnityEngine.Object) null && theItem.AuracurseGainSelfValue1 > 0)
+      {
+        ++num7;
+        aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(theItem.AuracurseGainSelf1.Id, theItem.AuracurseGainSelfValue1, character)), this.SpriteText(theItem.AuracurseGainSelf1.Id)));
+        if (!theItem.AuracurseGainSelf1.IsAura)
+          flag2 = false;
+      }
+      if ((UnityEngine.Object) theItem.AuracurseGainSelf2 != (UnityEngine.Object) null && theItem.AuracurseGainSelfValue2 > 0)
+      {
+        ++num7;
+        aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(theItem.AuracurseGainSelf2.Id, theItem.AuracurseGainSelfValue2, character)), this.SpriteText(theItem.AuracurseGainSelf2.Id)));
+      }
+      if ((UnityEngine.Object) theItem.AuracurseGainSelf3 != (UnityEngine.Object) null && theItem.AuracurseGainSelfValue3 > 0)
+      {
+        ++num7;
+        aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(theItem.AuracurseGainSelf3.Id, theItem.AuracurseGainSelfValue3, character)), this.SpriteText(theItem.AuracurseGainSelf3.Id)));
+      }
+      string auraSprites = "";
+      string curseSprites = "";
+      SetAuraCurseSpritesText(ref auraSprites, ref curseSprites, theItem.auracurseHeal1);
+      SetAuraCurseSpritesText(ref auraSprites, ref curseSprites, theItem.auracurseHeal2);
+      SetAuraCurseSpritesText(ref auraSprites, ref curseSprites, theItem.auracurseHeal3);
+      if (!string.IsNullOrEmpty(auraSprites))
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) auraSprites));
+        builder.Append("\n");
+      }
+      if (!string.IsNullOrEmpty(curseSprites))
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) curseSprites));
+        builder.Append("\n");
+      }
+      if (num7 > 0)
+      {
+        if (theItem.HealQuantity > 0 || theItem.EnergyQuantity > 0 || theItem.HealPercentQuantity > 0)
+        {
+          StringBuilder stringBuilder14 = new StringBuilder();
+          if (flag2)
+            stringBuilder14.Append(string.Format(Texts.Instance.GetText("cardsAnd"), (object) builder.ToString(), (object) string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), (object) aux.ToString())));
+          else
+            stringBuilder14.Append(string.Format(Texts.Instance.GetText("cardsAnd"), (object) builder.ToString(), (object) string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), (object) aux.ToString())));
+          builder.Clear();
+          builder.Append(stringBuilder14.ToString());
+        }
+        else if (flag2)
+        {
+          if (theItem.ChooseOneACToGain)
+            builder.Append(string.Format(Texts.Instance.GetText("cardsGainOneOf"), (object) aux.ToString()));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) aux.ToString()));
+        }
+        else if (theItem.ChooseOneACToGain)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsSufferOneOf"), (object) aux.ToString()));
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) aux.ToString()));
+        builder.Append("\n");
+        aux.Clear();
+      }
+      if (theItem.CardNum > 0)
+      {
+        string str33;
+        if ((UnityEngine.Object) theItem.CardToGain != (UnityEngine.Object) null)
+        {
+          if (theItem.CardNum > 1)
+            aux.Append(this.ColorTextArray("", this.NumFormat(theItem.CardNum), this.SpriteText("card")));
+          else
+            aux.Append(this.SpriteText("card"));
+          CardData cardData = Globals.Instance.GetCardData(theItem.CardToGain.Id, false);
+          if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
+          {
+            aux.Append(this.ColorFromCardDataRarity(cardData));
+            aux.Append(cardData.CardName);
+            aux.Append("</color>");
+          }
+          str33 = aux.ToString();
+          aux.Clear();
+        }
+        else
+        {
+          if (theItem.CardNum > 1)
+            aux.Append(this.ColorTextArray("", this.NumFormat(theItem.CardNum), this.SpriteText("card")));
+          else
+            aux.Append(this.SpriteText("card"));
+          if (theItem.CardToGainType != Enums.CardType.None)
+          {
+            aux.Append("<color=#5E3016>");
+            aux.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) theItem.CardToGainType)));
+            aux.Append("</color>");
+          }
+          str33 = aux.ToString();
+          aux.Clear();
+        }
+        string str34 = "";
+        if (theItem.Permanent)
+        {
+          if (theItem.Vanish)
+          {
+            if (theItem.CostZero)
+              str34 = string.Format(Texts.Instance.GetText("cardsAddCostVanish"), (object) 0);
+            else if (theItem.CostReduction > 0)
+              str34 = string.Format(Texts.Instance.GetText("cardsAddCostReducedVanish"), (object) this.NumFormatItem(theItem.CostReduction, true));
+          }
+          else if (theItem.CostZero)
+            str34 = string.Format(Texts.Instance.GetText("cardsAddCost"), (object) 0);
+          else if (theItem.CostReduction > 0)
+            str34 = string.Format(Texts.Instance.GetText("cardsAddCostReduced"), (object) this.NumFormatItem(theItem.CostReduction, true));
+        }
+        else if (theItem.Vanish)
+        {
+          if (theItem.CostZero)
+            str34 = string.Format(Texts.Instance.GetText("cardsAddCostVanishTurn"), (object) 0);
+          else if (theItem.CostReduction > 0)
+            str34 = string.Format(Texts.Instance.GetText("cardsAddCostReducedVanishTurn"), (object) this.NumFormatItem(theItem.CostReduction, true));
+        }
+        else if (theItem.CostZero)
+          str34 = string.Format(Texts.Instance.GetText("cardsAddCostTurn"), (object) 0);
+        else if (theItem.CostReduction > 0)
+          str34 = string.Format(Texts.Instance.GetText("cardsAddCostReducedTurn"), (object) this.NumFormatItem(theItem.CostReduction, true));
+        if (theItem.DuplicateActive)
+        {
+          if (theItem.CardPlace == Enums.CardPlace.Hand)
+            builder.Append(Texts.Instance.GetText("cardsDuplicateHand"));
+        }
+        else if (theItem.CardPlace == Enums.CardPlace.RandomDeck)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsIDShuffleDeck"), (object) str33));
+        else if (theItem.CardPlace == Enums.CardPlace.Cast)
+        {
+          if ((UnityEngine.Object) theItem.CardToGain != (UnityEngine.Object) null)
+          {
+            CardData cardData = Globals.Instance.GetCardData(theItem.CardToGain.Id, false);
+            if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
+            {
+              aux.Append(this.ColorFromCardDataRarity(cardData));
+              aux.Append(cardData.CardName);
+              aux.Append("</color>");
+            }
+          }
+          builder.Append(string.Format(Texts.Instance.GetText("cardsCast"), (object) aux.ToString()));
+          aux.Clear();
+        }
+        else if (theItem.CardPlace == Enums.CardPlace.Hand || theItem.CardPlace == Enums.CardPlace.TopDeck)
+        {
+          if (theItem.CardNum > 1)
+            aux.Append(this.ColorTextArray("", this.NumFormat(theItem.CardNum), this.SpriteText("card")));
+          else
+            aux.Append(this.SpriteText("card"));
+          if ((UnityEngine.Object) theItem.CardToGain != (UnityEngine.Object) null)
+          {
+            CardData cardData = Globals.Instance.GetCardData(theItem.CardToGain.Id, false);
+            if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
+            {
+              aux.Append(this.ColorFromCardDataRarity(cardData));
+              aux.Append(cardData.CardName);
+              aux.Append("</color>");
+            }
+          }
+          aux.Clear();
+          string _id = "cardsIDPlaceHand";
+          if (theItem.CardPlace == Enums.CardPlace.TopDeck)
+            _id = "cardsIDPlaceTopDeck";
+          builder.Append(string.Format(Texts.Instance.GetText(_id), (object) str33));
+        }
+        if (str34 != "")
+        {
+          builder.Append(" ");
+          builder.Append(grColor);
+          builder.Append(str34);
+          builder.Append(endColor);
+        }
+        if (theItem.CardsReduced == 0)
+          builder.Append("\n");
+        else
+          builder.Append(" ");
+      }
+      if (theItem.CardsReduced > 0)
+      {
+        StringBuilder stringBuilder15 = new StringBuilder();
+        stringBuilder15.Append("<color=#5E3016>");
+        stringBuilder15.Append(theItem.CardsReduced);
+        stringBuilder15.Append("</color>");
+        string str35 = stringBuilder15.ToString();
+        string str36;
+        if (theItem.CardToReduceType == Enums.CardType.None)
+        {
+          str36 = "  <sprite name=cards>";
+        }
+        else
+        {
+          stringBuilder15.Clear();
+          stringBuilder15.Append("<color=#5E3016>");
+          stringBuilder15.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) theItem.CardToReduceType)));
+          stringBuilder15.Append("</color>");
+          str36 = stringBuilder15.ToString();
+        }
+        stringBuilder15.Clear();
+        stringBuilder15.Append("<color=#111111>");
+        stringBuilder15.Append(Mathf.Abs(theItem.CostReduceReduction));
+        stringBuilder15.Append("</color>");
+        string str37 = stringBuilder15.ToString();
+        string str38 = theItem.CostReduceEnergyRequirement <= 0 ? "<space=-.2>" : "<color=#444><size=-.2>" + string.Format(Texts.Instance.GetText("itemReduceCost"), (object) theItem.CostReduceEnergyRequirement) + "</size></color>";
+        if (theItem.CostReducePermanent && theItem.ReduceHighestCost)
+        {
+          string str39;
+          if (theItem.CardsReduced == 1)
+          {
+            str39 = "";
+          }
+          else
+          {
+            index = theItem.CardsReduced;
+            str39 = "<color=#111111>(" + index.ToString() + ")</color> ";
+          }
+          builder.Append(string.Format(Texts.Instance.GetText("itemReduceHighestPermanent"), (object) str39, (object) str36, (object) str37, (object) str38));
+        }
+        else if (theItem.CostReducePermanent)
+        {
+          if (theItem.CardsReduced != 10)
+          {
+            if (theItem.CostReduceReduction > 0)
+              builder.Append(string.Format(Texts.Instance.GetText("itemReduce"), (object) str35, (object) str36, (object) str37, (object) str38));
+            else
+              builder.Append(string.Format(Texts.Instance.GetText("itemIncrease"), (object) str35, (object) str36, (object) str37, (object) str38));
+          }
+          else if (theItem.CostReduceReduction > 0)
+            builder.Append(string.Format(Texts.Instance.GetText("itemReduceAll"), (object) str36, (object) str37, (object) str38));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("itemIncreaseAll"), (object) str36, (object) str37, (object) str38));
+        }
+        else if (theItem.ReduceHighestCost)
+        {
+          string str40;
+          if (theItem.CardsReduced == 1)
+          {
+            str40 = "";
+          }
+          else
+          {
+            index = theItem.CardsReduced;
+            str40 = "<color=#111111>(" + index.ToString() + ")</color> ";
+          }
+          if (theItem.CostReduceReduction > 0)
+            builder.Append(string.Format(Texts.Instance.GetText("itemReduceHighestTurn"), (object) str40, (object) str36, (object) str37, (object) str38));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("itemIncreaseHighestDiscarded"), (object) str40, (object) str36, (object) str37, (object) str38));
+        }
+        else if (theItem.CardsReduced != 10)
+        {
+          if (theItem.CostReduceReduction > 0)
+            builder.Append(string.Format(Texts.Instance.GetText("itemReduceTurn"), (object) str35, (object) str36, (object) str37, (object) str38));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("itemIncreaseTurn"), (object) str35, (object) str36, (object) str37, (object) str38));
+        }
+        else if (theItem.CostReduceReduction > 0)
+          builder.Append(string.Format(Texts.Instance.GetText("itemReduceTurnAll"), (object) str36, (object) str37, (object) str38));
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("itemIncreaseTurnAll"), (object) str36, (object) str37, (object) str38));
+        builder.Append("\n");
+      }
+    }
+    if (!string.IsNullOrEmpty(this.descriptionId))
+    {
+      List<object> objectList = new List<object>();
+      string[] descriptionArgs = this.descriptionArgs;
+      for (index = 0; index < descriptionArgs.Length; ++index)
+      {
+        if (string.Equals(descriptionArgs[index].Trim(), "DestroyAfterUses", StringComparison.OrdinalIgnoreCase))
+          objectList.Add((object) theItem.DestroyAfterUses);
+      }
+      if (objectList.Count > 0)
+        builder.Append(string.Format(Texts.Instance.GetText(this.descriptionId), objectList.ToArray()));
+    }
+    if (theItem.DestroyStartOfTurn || theItem.DestroyEndOfTurn)
+    {
+      builder.Append("<voffset=-.1><size=-.05><color=#1A505A>- ");
+      builder.Append(Texts.Instance.GetText("itemDestroyStartTurn"));
+      builder.Append(" -</color></size>");
+    }
+    if (theItem.DestroyAfterUses > 0 && !theItem.UseTheNextInsteadWhenYouPlay)
+    {
+      builder.Append("<nobr><size=-.05><color=#1A505A>- ");
+      if (theItem.DestroyAfterUses > 1)
+        builder.Append(string.Format(Texts.Instance.GetText("itemLastUses"), (object) theItem.DestroyAfterUses));
+      else
+        builder.Append(Texts.Instance.GetText("itemLastUse"));
+      builder.Append(" -</color></size></nobr>");
+    }
+    if (theItem.TimesPerCombat > 0)
+    {
+      builder.Append("<nobr><size=-.05><color=#1A505A>- ");
+      if (theItem.TimesPerCombat == 1)
+        builder.Append(Texts.Instance.GetText("itemOncePerCombat"));
+      else if (theItem.TimesPerCombat == 2)
+        builder.Append(Texts.Instance.GetText("itemTwicePerCombat"));
+      else if (theItem.TimesPerCombat == 3)
+        builder.Append(Texts.Instance.GetText("itemThricePerCombat"));
+      builder.Append(" -</color></size></nobr>");
+    }
+    if (theItem.StealAuras > 0)
+    {
+      string _id = "cardsStealAuras";
+      if (theItem.ItemTarget == Enums.ItemTarget.RandomEnemy)
+        _id = "cardsStealAurasFromRandomEnemy";
+      builder.Append(string.Format(Texts.Instance.GetText(_id), (object) theItem.StealAuras.ToString()));
+      builder.Append("\n");
+    }
+    if (!theItem.PassSingleAndCharacterRolls)
+      return;
+    builder.Append(Texts.Instance.GetText("cardsPassEventRoll"));
+    builder.Append("\n");
+
+    void GetXEqualsDecriptionValue()
+    {
+      SpecialValues specialValues = new SpecialValues();
+      if (theItem.AuracurseGain1SpecialValue.Use)
+        specialValues = theItem.AuracurseGain1SpecialValue;
+      if (theItem.AuracurseGain2SpecialValue.Use)
+        specialValues = theItem.AuracurseGain2SpecialValue;
+      if (theItem.AuracurseGain3SpecialValue.Use)
+        specialValues = theItem.AuracurseGain3SpecialValue;
+      if (theItem.DttSpecialValues1.Use)
+        specialValues = theItem.DttSpecialValues1;
+      if (theItem.DttSpecialValues2.Use)
+        specialValues = theItem.DttSpecialValues2;
+      if (theItem.HealQuantitySpecialValue.Use)
+        specialValues = theItem.HealQuantitySpecialValue;
+      if (!specialValues.Use)
+        return;
+      builder.Append(goldColor);
+      builder.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYour"), (object) this.SpecialModifierDescription(specialValues, this.item ?? this.ItemEnchantment), (object) string.Format(" x{0}", (object) specialValues.Multiplier)));
+      builder.Append(endColor);
+      builder.Append("\n");
+    }
+
+    void SetAuraCurseSpritesText(
+      ref string auraSprites,
+      ref string curseSprites,
+      AuraCurseData acData)
+    {
+      if (!(bool) (UnityEngine.Object) acData)
+        return;
+      if (acData.IsAura)
+        auraSprites += this.SpriteText(acData.Id);
+      else
+        curseSprites += this.SpriteText(acData.Id);
+    }
+  }
+
+  private void AppendCardDescription(
+    Character character,
+    StringBuilder builder,
+    StringBuilder aux,
+    string grColor,
+    string endColor,
+    string br1,
+    string goldColor)
+  {
+    int num1 = 0;
+    string str1 = "";
+    string str2 = "";
+    string str3 = "";
+    float num2 = 0.0f;
+    string str4 = "";
+    bool flag1 = false;
+    bool flag2 = false;
+    bool flag3 = true;
+    StringBuilder stringBuilder1 = new StringBuilder();
+    if (this.damage > 0 || this.damage2 > 0 || this.damageSelf > 0 || this.DamageSelf2 > 0)
+      flag3 = false;
+    if (this.drawCard != 0 && !this.drawCardSpecialValueGlobal)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsDraw"), (object) this.ColorTextArray("", this.NumFormat(this.drawCard), this.SpriteText("card"))));
+      builder.Append("<br>");
+    }
+    if (this.specialValueGlobal == Enums.CardSpecialValue.DiscardedCards)
+    {
+      if (this.discardCardPlace == Enums.CardPlace.Vanish)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsVanish"), (object) this.ColorTextArray("", "X", this.SpriteText("card"))));
+      else
+        builder.Append(string.Format(Texts.Instance.GetText("cardsDiscard"), (object) this.ColorTextArray("", "X", this.SpriteText("card"))));
+      builder.Append("\n");
+    }
+    if (this.drawCardSpecialValueGlobal)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsDraw"), (object) this.ColorTextArray("aura", "X", this.SpriteText("card"))));
+      builder.Append("<br>");
+    }
+    if (this.addCard != 0)
+    {
+      string str5;
+      if (this.addCardId != "")
+      {
+        aux.Append(this.ColorTextArray("", this.NumFormat(this.addCard), this.SpriteText("card")));
+        CardData cardData = Globals.Instance.GetCardData(this.addCardId, false);
+        if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
+        {
+          aux.Append(this.ColorFromCardDataRarity(cardData));
+          aux.Append(cardData.CardName);
+          aux.Append("</color>");
+        }
+        str5 = aux.ToString();
+        aux.Clear();
+      }
+      else
+      {
+        if (this.addCardChoose > 0)
+          aux.Append(this.ColorTextArray("", this.NumFormat(this.addCardChoose), this.SpriteText("card")));
+        else
+          aux.Append(this.ColorTextArray("", this.NumFormat(this.addCard), this.SpriteText("card")));
+        if (this.addCardType != Enums.CardType.None)
+        {
+          aux.Append("<color=#5E3016>");
+          aux.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) this.addCardType)));
+          aux.Append("</color>");
+        }
+        str5 = aux.ToString();
+        aux.Clear();
+      }
+      string str6 = "";
+      if (this.addCardReducedCost == -1)
+        str6 = !this.addCardVanish ? (!this.addCardCostTurn ? string.Format(Texts.Instance.GetText("cardsAddCost"), (object) 0) : string.Format(Texts.Instance.GetText("cardsAddCostTurn"), (object) 0)) : (!this.addCardCostTurn ? string.Format(Texts.Instance.GetText("cardsAddCostVanish"), (object) 0) : string.Format(Texts.Instance.GetText("cardsAddCostVanish"), (object) 0));
+      else if (this.addCardReducedCost > 0)
+        str6 = !this.addCardVanish ? (!this.addCardCostTurn ? string.Format(Texts.Instance.GetText("cardsAddCostReduced"), (object) this.addCardReducedCost) : string.Format(Texts.Instance.GetText("cardsAddCostReducedTurn"), (object) this.addCardReducedCost)) : (!this.addCardCostTurn ? string.Format(Texts.Instance.GetText("cardsAddCostReducedVanish"), (object) this.addCardReducedCost) : string.Format(Texts.Instance.GetText("cardsAddCostReducedVanishTurn"), (object) this.addCardReducedCost));
+      string _id = "";
+      if (this.addCardId != "")
+      {
+        if (this.addCardPlace == Enums.CardPlace.RandomDeck)
+          _id = this.targetSide == Enums.CardTargetSide.Self || this.targetSide == Enums.CardTargetSide.Enemy && this.cardClass != Enums.CardClass.Monster ? "cardsIDShuffleDeck" : "cardsIDShuffleTargetDeck";
+        else if (this.addCardPlace == Enums.CardPlace.Hand)
+          _id = "cardsIDPlaceHand";
+        else if (this.addCardPlace == Enums.CardPlace.TopDeck)
+          _id = this.targetSide != Enums.CardTargetSide.Self ? "cardsIDPlaceTargetTopDeck" : "cardsIDPlaceTopDeck";
+        else if (this.addCardPlace == Enums.CardPlace.Discard)
+          _id = this.targetSide == Enums.CardTargetSide.Self || this.targetSide == Enums.CardTargetSide.Enemy && this.cardClass != Enums.CardClass.Monster ? "cardsIDPlaceDiscard" : "cardsIDPlaceTargetDiscard";
+      }
+      else if (this.addCardFrom == Enums.CardFrom.Game)
+      {
+        if (this.addCardPlace == Enums.CardPlace.RandomDeck)
+          _id = this.addCardChoose != 0 ? "cardsDiscoverNumberToDeck" : "cardsDiscoverToDeck";
+        else if (this.addCardPlace == Enums.CardPlace.Hand)
+          _id = this.addCardChoose != 0 ? "cardsDiscoverNumberToHand" : "cardsDiscoverToHand";
+        else if (this.addCardPlace == Enums.CardPlace.TopDeck && this.addCardChoose != 0)
+          _id = "cardsDiscoverNumberToTopDeck";
+      }
+      else if (this.addCardFrom == Enums.CardFrom.Deck)
+      {
+        if (this.addCardPlace == Enums.CardPlace.Hand)
+          _id = this.addCardChoose <= 0 ? (this.addCard <= 1 ? "cardsRevealItToHand" : "cardsRevealThemToHand") : "cardsRevealNumberToHand";
+        else if (this.addCardPlace == Enums.CardPlace.TopDeck)
+          _id = this.addCardChoose <= 0 ? (this.addCard <= 1 ? "cardsRevealItToTopDeck" : "cardsRevealThemToTopDeck") : "cardsRevealNumberToTopDeck";
+      }
+      else if (this.addCardFrom == Enums.CardFrom.Discard)
+      {
+        if (this.addCardPlace == Enums.CardPlace.TopDeck)
+          _id = "cardsPickToTop";
+        else if (this.addCardPlace == Enums.CardPlace.Hand)
+          _id = "cardsPickToHand";
+      }
+      else if (this.addCardFrom == Enums.CardFrom.Hand)
+      {
+        if (this.targetSide == Enums.CardTargetSide.Friend)
+        {
+          if (this.addCardPlace == Enums.CardPlace.TopDeck)
+            _id = "cardsDuplicateToTargetTopDeck";
+          else if (this.addCardPlace == Enums.CardPlace.RandomDeck)
+            _id = "cardsDuplicateToTargetRandomDeck";
+        }
+        else if (this.addCardPlace == Enums.CardPlace.Hand)
+          _id = "cardsDuplicateToHand";
+      }
+      else if (this.addCardFrom == Enums.CardFrom.Vanish)
+      {
+        if (this.addCardPlace == Enums.CardPlace.TopDeck)
+          _id = "cardsFromVanishToTop";
+        else if (this.addCardPlace == Enums.CardPlace.Hand)
+          _id = "cardsFromVanishToHand";
+      }
+      builder.Append(string.Format(Texts.Instance.GetText(_id), (object) str5, (object) this.ColorTextArray("", this.NumFormat(this.addCard))));
+      if (str6 != "")
+      {
+        builder.Append(" ");
+        builder.Append(grColor);
+        builder.Append(str6);
+        builder.Append(endColor);
+      }
+      builder.Append("\n");
+    }
+    if (this.discardCard != 0)
+    {
+      if (this.discardCardType != Enums.CardType.None)
+      {
+        aux.Append("<color=#5E3016>");
+        aux.Append(Texts.Instance.GetText(Enum.GetName(typeof (Enums.CardType), (object) this.discardCardType)));
+        aux.Append("</color>");
+      }
+      if (this.discardCardPlace == Enums.CardPlace.Discard)
+      {
+        if (!this.discardCardAutomatic)
+        {
+          builder.Append(string.Format(Texts.Instance.GetText("cardsDiscard"), (object) this.ColorTextArray("", this.NumFormat(this.discardCard), this.SpriteText("card"))));
+          builder.Append(aux);
+          builder.Append("\n");
+        }
+        else
+        {
+          builder.Append(string.Format(Texts.Instance.GetText("cardsDiscard"), (object) this.ColorTextArray("", this.NumFormat(this.discardCard), this.SpriteText("cardrandom"))));
+          builder.Append(aux);
+          builder.Append("\n");
+        }
+      }
+      else if (this.discardCardPlace == Enums.CardPlace.TopDeck)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsPlaceToTop"), (object) this.ColorTextArray("", this.NumFormat(this.discardCard), this.SpriteText("card"), aux.ToString().Trim())));
+        builder.Append("\n");
+      }
+      else if (this.discardCardPlace == Enums.CardPlace.Vanish)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsVanish"), (object) this.ColorTextArray("", this.NumFormat(this.discardCard), this.SpriteText("card"), aux.ToString().Trim())));
+        builder.Append("\n");
+      }
+      aux.Clear();
+    }
+    if (this.lookCards != 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsLook"), (object) this.ColorTextArray("", this.NumFormat(this.lookCards), this.SpriteText("card"))));
+      builder.Append("\n");
+      if (this.lookCardsDiscardUpTo == -1)
+      {
+        builder.Append(Texts.Instance.GetText("cardsDiscardAny"));
+        builder.Append("\n");
+      }
+      else if (this.lookCardsDiscardUpTo > 0)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsDiscardUpTo"), (object) this.ColorTextArray("", this.NumFormat(this.lookCardsDiscardUpTo))));
+        builder.Append("\n");
+      }
+      else if (this.lookCardsVanishUpTo > 0)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsVanishUpTo"), (object) this.ColorTextArray("", this.NumFormat(this.lookCardsVanishUpTo))));
+        builder.Append("\n");
+      }
+    }
+    num1 = 0;
+    if ((UnityEngine.Object) this.summonUnit != (UnityEngine.Object) null && this.summonUnitNum > 0)
+    {
+      aux.Append("\n<color=#5E3016>");
+      if (this.summonUnitNum > 1)
+      {
+        aux.Append(this.summonUnitNum);
+        aux.Append(" ");
+      }
+      NPCData npc = Globals.Instance.GetNPC(this.summonUnit?.Id);
+      if ((UnityEngine.Object) npc != (UnityEngine.Object) null)
+        aux.Append(npc.NPCName);
+      if (this.metamorph)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsMetamorph"), (object) aux.ToString()));
+      else if (this.evolve)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsEvolve"), (object) aux.ToString()));
+      else
+        builder.Append(string.Format(Texts.Instance.GetText("cardsSummon"), (object) aux.ToString()));
+      builder.Append("</color>\n");
+      aux.Clear();
+    }
+    if (this.dispelAuras > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) this.ColorTextArray("aura", this.dispelAuras.ToString())));
+      builder.Append("\n");
+    }
+    else if (this.dispelAuras == -1)
+    {
+      builder.Append(Texts.Instance.GetText("cardsPurgeAll"));
+      builder.Append("\n");
+    }
+    num1 = 0;
+    if (this.specialValueGlobal == Enums.CardSpecialValue.None && this.specialValue1 == Enums.CardSpecialValue.None && this.specialValue2 == Enums.CardSpecialValue.None)
+    {
+      StringBuilder stringBuilder2 = new StringBuilder();
+      StringBuilder stringBuilder3 = new StringBuilder();
+      if ((UnityEngine.Object) this.healAuraCurseName != (UnityEngine.Object) null)
+      {
+        if (this.healAuraCurseName.IsAura)
+          stringBuilder2.Append(this.SpriteText(this.healAuraCurseName.ACName));
+        else
+          stringBuilder3.Append(this.SpriteText(this.healAuraCurseName.ACName));
+      }
+      if ((UnityEngine.Object) this.healAuraCurseName2 != (UnityEngine.Object) null)
+      {
+        if (this.healAuraCurseName2.IsAura)
+          stringBuilder2.Append(this.SpriteText(this.healAuraCurseName2.ACName));
+        else
+          stringBuilder3.Append(this.SpriteText(this.healAuraCurseName2.ACName));
+      }
+      if ((UnityEngine.Object) this.healAuraCurseName3 != (UnityEngine.Object) null)
+      {
+        if (this.healAuraCurseName3.IsAura)
+          stringBuilder2.Append(this.SpriteText(this.healAuraCurseName3.ACName));
+        else
+          stringBuilder3.Append(this.SpriteText(this.healAuraCurseName3.ACName));
+      }
+      if ((UnityEngine.Object) this.healAuraCurseName4 != (UnityEngine.Object) null)
+      {
+        if (this.healAuraCurseName4.IsAura)
+          stringBuilder2.Append(this.SpriteText(this.healAuraCurseName4.ACName));
+        else
+          stringBuilder3.Append(this.SpriteText(this.healAuraCurseName4.ACName));
+      }
+      if (stringBuilder2.Length > 0)
+      {
+        string _id = "cardsPurge";
+        if (this.targetSide == Enums.CardTargetSide.Self)
+          _id = "cardsPurgeYour";
+        builder.Append(string.Format(Texts.Instance.GetText(_id), (object) stringBuilder2.ToString()));
+        builder.Append("\n");
+      }
+      if (stringBuilder3.Length > 0)
+      {
+        string _id = "cardsDispel";
+        if (this.targetSide == Enums.CardTargetSide.Self)
+          _id = "cardsDispelYour";
+        builder.Append(string.Format(Texts.Instance.GetText(_id), (object) stringBuilder3.ToString()));
+        builder.Append("\n");
+      }
+      if (this.healCurses > 0)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) this.ColorTextArray("curse", this.healCurses.ToString())));
+        builder.Append("\n");
+      }
+      if (this.healCurses == -1)
+      {
+        builder.Append(Texts.Instance.GetText("cardsDispelAll"));
+        builder.Append("\n");
+      }
+      if ((UnityEngine.Object) this.healAuraCurseSelf != (UnityEngine.Object) null)
+      {
+        if (this.healAuraCurseSelf.IsAura)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsPurgeYour"), (object) this.SpriteText(this.healAuraCurseSelf.ACName)));
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("cardsDispelYour"), (object) this.SpriteText(this.healAuraCurseSelf.ACName)));
+        builder.Append("\n");
+      }
+    }
+    else
+    {
+      if (this.healCurses > 0)
+      {
+        if (this.targetSide == Enums.CardTargetSide.Enemy)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) this.healCurses));
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) this.healCurses));
+        builder.Append("\n");
+      }
+      if ((UnityEngine.Object) this.healAuraCurseName4 != (UnityEngine.Object) null && (UnityEngine.Object) this.healAuraCurseName3 == (UnityEngine.Object) null)
+      {
+        StringBuilder stringBuilder4 = new StringBuilder();
+        StringBuilder stringBuilder5 = new StringBuilder();
+        if (this.healAuraCurseName4.IsAura)
+          stringBuilder4.Append(this.SpriteText(this.healAuraCurseName4.ACName));
+        else
+          stringBuilder5.Append(this.SpriteText(this.healAuraCurseName4.ACName));
+        if (stringBuilder4.Length > 0)
+        {
+          builder.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) stringBuilder4.ToString()));
+          builder.Append("\n");
+        }
+        if (stringBuilder5.Length > 0)
+        {
+          builder.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) stringBuilder5.ToString()));
+          builder.Append("\n");
+        }
+      }
+    }
+    if (this.transferCurses > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsTransferCurse"), (object) this.transferCurses.ToString()));
+      builder.Append("\n");
+    }
+    if (this.stealAuras > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsStealAuras"), (object) this.stealAuras.ToString()));
+      builder.Append("\n");
+    }
+    if (this.increaseAuras > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsIncreaseAura"), (object) this.increaseAuras.ToString()));
+      builder.Append("\n");
+    }
+    if (this.increaseCurses > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsIncreaseCurse"), (object) this.increaseCurses.ToString()));
+      builder.Append("\n");
+    }
+    if (this.reduceAuras > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsReduceAura"), (object) this.reduceAuras.ToString()));
+      builder.Append("\n");
+    }
+    if (this.reduceCurses > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsReduceCurse"), (object) this.reduceCurses.ToString()));
+      builder.Append("\n");
+    }
+    bool flag4 = false;
+    if (this.damage > 0)
+    {
+      if (this.damage > 0 && this.damage2 > 0 && this.damageType == this.damageType2 && !this.damageSpecialValueGlobal && !this.damageSpecialValue1 && !this.damageSpecialValue2 && !this.damage2SpecialValueGlobal && !this.damage2SpecialValue1 && !this.damage2SpecialValue2)
+      {
+        aux.Append(this.ColorTextArray("damage", this.NumFormat(this.damagePreCalculatedCombined), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
+        flag4 = true;
+      }
+      else
+      {
+        if (this.damage == 1 && (this.damageSpecialValueGlobal || this.damageSpecialValue1 || this.damageSpecialValue2))
+          aux.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
+        else
+          aux.Append(this.ColorTextArray("damage", this.NumFormat(this.damagePreCalculated), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
+        if (this.damage2 > 0)
+        {
+          flag4 = true;
+          if (this.damage2 == 1 && (this.damage2SpecialValue1 || this.damage2SpecialValue2 || this.damage2SpecialValueGlobal))
+          {
+            if (this.damageType == this.damageType2)
+            {
+              aux.Append("<space=-.3>");
+              aux.Append("+");
+              aux.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
+            }
+            else
+              aux.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
+          }
+          else
+            aux.Append(this.ColorTextArray("damage", this.NumFormat(this.damagePreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
+        }
+      }
+      builder.Append(string.Format(Texts.Instance.GetText("cardsDealDamage"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (!flag4 && this.damage2 > 0)
+    {
+      if (this.damage2 == 1 && (this.damage2SpecialValueGlobal || this.damage2SpecialValue1 || this.damage2SpecialValue2))
+        aux.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
+      else
+        aux.Append(this.ColorTextArray("damage", this.NumFormat(this.damagePreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
+      builder.Append(string.Format(Texts.Instance.GetText("cardsDealDamage"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    int num3 = 0;
+    if (this.damageSelf > 0)
+    {
+      ++num3;
+      if (this.damageSpecialValueGlobal || this.damageSpecialValue1 || this.damageSpecialValue2)
+        aux.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
+      else
+        aux.Append(this.ColorTextArray("damage", this.NumFormat(this.damageSelfPreCalculated), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
+    }
+    if (this.damageSelf2 > 0)
+    {
+      ++num3;
+      if (this.damage2SpecialValueGlobal || this.damage2SpecialValue1 || this.damage2SpecialValue2)
+        aux.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
+      else
+        aux.Append(this.ColorTextArray("damage", this.NumFormat(this.damageSelfPreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
+    }
+    if (num3 > 0)
+    {
+      if (num3 > 2)
+      {
+        aux.Insert(0, br1);
+        aux.Insert(0, "\n");
+      }
+      if (this.targetSide == Enums.CardTargetSide.Self)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) aux.ToString()));
+        builder.Append("\n");
+      }
+      else
+      {
+        stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsYouSuffer"), (object) aux.ToString()));
+        stringBuilder1.Append("\n");
+      }
+      aux.Clear();
+    }
+    if (stringBuilder1.Length > 0)
+    {
+      builder.Append(stringBuilder1.ToString());
+      stringBuilder1.Clear();
+    }
+    if ((double) this.healSelfPerDamageDonePercent > 0.0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsHealSelfPerDamage"), (object) this.healSelfPerDamageDonePercent.ToString()));
+      builder.Append("\n");
+    }
+    if (this.selfHealthLoss != 0 && !this.selfHealthLossSpecialGlobal)
+    {
+      if (this.selfHealthLossSpecialValue1)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsLoseHp"), (object) this.ColorTextArray("damage", "X HP")));
+      else
+        builder.Append(string.Format(Texts.Instance.GetText("cardsLoseHp"), (object) this.ColorTextArray("damage", this.NumFormat(this.selfHealthLoss), "HP")));
+      builder.Append("\n");
+    }
+    if ((this.targetSide == Enums.CardTargetSide.Friend || this.targetSide == Enums.CardTargetSide.FriendNotSelf) && this.SpecialValueGlobal == Enums.CardSpecialValue.AuraCurseYours && (UnityEngine.Object) this.SpecialAuraCurseNameGlobal != (UnityEngine.Object) null && (double) this.SpecialValueModifierGlobal > 0.0)
+    {
+      flag1 = true;
+      builder.Append(string.Format(Texts.Instance.GetText("cardsShareYour"), (object) this.SpriteText(this.SpecialAuraCurseNameGlobal.ACName)));
+      builder.Append("\n");
+    }
+    if (!this.Damage2SpecialValue1 && !flag1 && (this.specialValueGlobal != Enums.CardSpecialValue.None || this.specialValue1 != Enums.CardSpecialValue.None || this.specialValue2 != Enums.CardSpecialValue.None))
+    {
+      if (!this.damageSpecialValueGlobal && !this.damageSpecialValue1 && !this.damageSpecialValue2)
+      {
+        if (this.targetSide == Enums.CardTargetSide.Self && (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseTarget || this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseYours))
+        {
+          if ((UnityEngine.Object) this.specialAuraCurseNameGlobal != (UnityEngine.Object) null)
+            str1 = this.SpriteText(this.specialAuraCurseNameGlobal.ACName);
+          if (this.auraChargesSpecialValueGlobal)
+          {
+            if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null)
+              str2 = this.SpriteText(this.aura.ACName);
+            if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && this.auraCharges2SpecialValueGlobal)
+              str3 = this.SpriteText(this.aura2.ACName);
+          }
+          else if (this.curseChargesSpecialValueGlobal)
+          {
+            if ((UnityEngine.Object) this.curse != (UnityEngine.Object) null)
+              str2 = this.SpriteText(this.curse.ACName);
+            if ((UnityEngine.Object) this.curse2 != (UnityEngine.Object) null && this.curseCharges2SpecialValueGlobal)
+              str3 = this.SpriteText(this.curse2.ACName);
+          }
+        }
+        else if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseTarget)
+        {
+          if ((UnityEngine.Object) this.specialAuraCurseName1 != (UnityEngine.Object) null)
+            str1 = this.SpriteText(this.specialAuraCurseName1.ACName);
+          if (this.auraChargesSpecialValue1)
+          {
+            if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null)
+              str2 = this.SpriteText(this.aura.ACName);
+            if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && this.auraCharges2SpecialValue1)
+              str3 = this.SpriteText(this.aura2.ACName);
+          }
+          else if (this.curseChargesSpecialValue1)
+          {
+            if ((UnityEngine.Object) this.curse != (UnityEngine.Object) null)
+              str2 = this.SpriteText(this.curse.ACName);
+            if ((UnityEngine.Object) this.curse2 != (UnityEngine.Object) null && this.CurseCharges2SpecialValue1)
+              str3 = this.SpriteText(this.curse2.ACName);
+          }
+        }
+        if (str1 != "" && str2 != "")
+        {
+          flag2 = true;
+          if (str1 == str2)
+          {
+            if (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseTarget)
+            {
+              if ((double) this.specialValueModifierGlobal == 100.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsDoubleTarget"), (object) str1));
+                builder.Append("\n");
+              }
+              else if ((double) this.specialValueModifierGlobal == 200.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsTripleTarget"), (object) str1));
+                builder.Append("\n");
+              }
+              else if ((double) this.specialValueModifierGlobal < 100.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsLosePercentTarget"), (object) (float) (100.0 - (double) this.specialValueModifierGlobal), (object) str1));
+                builder.Append("\n");
+              }
+            }
+            else if (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseYours)
+            {
+              if ((double) this.specialValueModifierGlobal == 100.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsDoubleYour"), (object) str1));
+                builder.Append("\n");
+              }
+              else if ((double) this.specialValueModifierGlobal == 200.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsTripleYour"), (object) str1));
+                builder.Append("\n");
+              }
+              else if ((double) this.specialValueModifierGlobal < 100.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsLosePercentYour"), (object) (float) (100.0 - (double) this.specialValueModifierGlobal), (object) str1));
+                builder.Append("\n");
+              }
+            }
+            else if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseTarget)
+            {
+              if ((double) this.specialValueModifier1 == 100.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsDoubleTarget"), (object) str1));
+                builder.Append("\n");
+              }
+              else if ((double) this.specialValueModifier1 == 200.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsTripleTarget"), (object) str1));
+                builder.Append("\n");
+              }
+              else if ((double) this.specialValueModifier1 < 100.0 && (UnityEngine.Object) this.healAuraCurseName != (UnityEngine.Object) null)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsLosePercentTarget"), (object) (float) (100.0 - (double) this.specialValueModifier1), (object) str1));
+                builder.Append("\n");
+              }
+              else
+                flag2 = false;
+            }
+            else if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseYours)
+            {
+              if ((double) this.specialValueModifier1 == 100.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsDoubleYour"), (object) str1));
+                builder.Append("\n");
+              }
+              else if ((double) this.specialValueModifier1 == 200.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsTripleYour"), (object) str1));
+                builder.Append("\n");
+              }
+              else if ((double) this.specialValueModifier1 < 100.0)
+              {
+                builder.Append(string.Format(Texts.Instance.GetText("cardsLosePercentYour"), (object) (float) (100.0 - (double) this.specialValueModifier1), (object) str1));
+                builder.Append("\n");
+              }
+            }
+          }
+          else
+          {
+            aux.Append(str2);
+            if ((double) this.specialValueModifier1 > 0.0)
+              num2 = this.specialValueModifier1 / 100f;
+            if ((double) num2 > 0.0 && (double) num2 != 1.0)
+              str4 = "x " + num2.ToString();
+            if (str4 != "")
+            {
+              aux.Append(" <c>");
+              aux.Append(str4);
+              aux.Append("</c>");
+            }
+            if (str3 != "")
+              builder.Append(string.Format(Texts.Instance.GetText("cardsTransformIntoAnd"), (object) str1, (object) aux.ToString(), (object) str3));
+            else
+              builder.Append(string.Format(Texts.Instance.GetText("cardsTransformInto"), (object) str1, (object) aux.ToString()));
+            builder.Append("\n");
+            aux.Clear();
+            num2 = 0.0f;
+            str4 = "";
+          }
+        }
+      }
+    }
+    if (this.energyRechargeSpecialValueGlobal)
+      aux.Append(this.ColorTextArray("aura", "X", this.SpriteText("energy")));
+    AuraCurseData auraCurseData = (AuraCurseData) null;
+    if (!flag1 && !flag2)
+    {
+      int num4 = 0;
+      if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null && (this.auraChargesSpecialValue1 || this.auraChargesSpecialValueGlobal))
+      {
+        ++num4;
+        aux.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.aura.ACName)));
+        auraCurseData = this.aura;
+      }
+      if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && (this.auraCharges2SpecialValue1 || this.auraCharges2SpecialValueGlobal))
+      {
+        ++num4;
+        if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null && (UnityEngine.Object) this.aura == (UnityEngine.Object) this.aura2)
+        {
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura.Id, this.auraCharges, character)), this.SpriteText(this.aura.ACName)));
+          aux.Append("+");
+        }
+        aux.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.aura2.ACName)));
+        auraCurseData = this.aura2;
+      }
+      if ((UnityEngine.Object) this.aura3 != (UnityEngine.Object) null && (this.auraCharges3SpecialValue1 || this.auraCharges3SpecialValueGlobal))
+      {
+        ++num4;
+        if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null && (UnityEngine.Object) this.aura == (UnityEngine.Object) this.aura3)
+        {
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura.Id, this.auraCharges, character)), this.SpriteText(this.aura.ACName)));
+          aux.Append("+");
+        }
+        if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && (UnityEngine.Object) this.aura == (UnityEngine.Object) this.aura3)
+        {
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura2.Id, this.auraCharges2, character)), this.SpriteText(this.aura3.ACName)));
+          aux.Append("+");
+        }
+        aux.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.aura3.ACName)));
+        auraCurseData = this.aura3;
+      }
+      if (num4 > 0)
+      {
+        if (this.targetSide == Enums.CardTargetSide.Self)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) aux.ToString()));
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("cardsGrant"), (object) aux.ToString()));
+        builder.Append("\n");
+        aux.Clear();
+      }
+    }
+    if (!flag1 && !flag2)
+    {
+      int num5 = 0;
+      if ((UnityEngine.Object) this.curse != (UnityEngine.Object) null && (this.curseChargesSpecialValue1 || this.curseChargesSpecialValueGlobal))
+      {
+        ++num5;
+        aux.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curse.ACName)));
+      }
+      if ((UnityEngine.Object) this.curse2 != (UnityEngine.Object) null && (this.curseCharges2SpecialValue1 || this.curseCharges2SpecialValueGlobal))
+      {
+        ++num5;
+        aux.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curse2.ACName)));
+      }
+      if ((UnityEngine.Object) this.curse3 != (UnityEngine.Object) null && (this.curseCharges3SpecialValue1 || this.curseCharges3SpecialValueGlobal))
+      {
+        ++num5;
+        aux.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curse3.ACName)));
+      }
+      if (num5 > 0)
+      {
+        if (this.targetSide == Enums.CardTargetSide.Self)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) aux.ToString()));
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) aux.ToString()));
+        builder.Append("\n");
+        aux.Clear();
+      }
+      int num6 = 0;
+      if ((UnityEngine.Object) this.curseSelf != (UnityEngine.Object) null && (this.curseChargesSpecialValue1 || this.curseChargesSpecialValueGlobal))
+      {
+        ++num6;
+        aux.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curseSelf.ACName)));
+      }
+      if ((UnityEngine.Object) this.curseSelf2 != (UnityEngine.Object) null && (this.curseCharges2SpecialValue1 || this.curseCharges2SpecialValueGlobal))
+      {
+        ++num6;
+        aux.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curseSelf2.ACName)));
+      }
+      if ((UnityEngine.Object) this.curseSelf3 != (UnityEngine.Object) null && (this.curseCharges3SpecialValue1 || this.curseCharges3SpecialValueGlobal))
+      {
+        ++num6;
+        aux.Append(this.ColorTextArray("curse", "X", this.SpriteText(this.curseSelf3.ACName)));
+      }
+      if (num6 > 0)
+      {
+        if (this.targetSide == Enums.CardTargetSide.Self || (UnityEngine.Object) this.curseSelf != (UnityEngine.Object) null || (UnityEngine.Object) this.curseSelf2 != (UnityEngine.Object) null || (UnityEngine.Object) this.curseSelf3 != (UnityEngine.Object) null)
+        {
+          if (this.targetSide == Enums.CardTargetSide.Self)
+          {
+            builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) aux.ToString()));
+            builder.Append("\n");
+          }
+          else if (!flag3)
+          {
+            stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsYouSuffer"), (object) aux.ToString()));
+            stringBuilder1.Append("\n");
+          }
+          else
+          {
+            builder.Append(string.Format(Texts.Instance.GetText("cardsYouSuffer"), (object) aux.ToString()));
+            builder.Append("\n");
+          }
+        }
+        else
+        {
+          builder.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) aux.ToString()));
+          builder.Append("\n");
+        }
+        aux.Clear();
+      }
+    }
+    int num7 = 0;
+    if (this.heal > 0 && (this.healSpecialValue1 || this.healSpecialValueGlobal))
+    {
+      aux.Append(this.ColorTextArray("heal", "X", this.SpriteText("heal")));
+      num1 = num7 + 1;
+    }
+    if (aux.Length > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsHeal"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    int num8 = 0;
+    if (this.healSelf > 0 && (this.healSelfSpecialValue1 || this.healSelfSpecialValueGlobal))
+    {
+      aux.Append(this.ColorTextArray("heal", "X", this.SpriteText("heal")));
+      num1 = num8 + 1;
+    }
+    if (aux.Length > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsHealSelf"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (this.selfHealthLoss > 0 && this.selfHealthLossSpecialGlobal)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsYouLose"), (object) this.ColorTextArray("damage", "X", "HP")));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    int num9 = 0;
+    if ((UnityEngine.Object) this.curseSelf != (UnityEngine.Object) null && this.curseCharges > 0)
+    {
+      ++num9;
+      aux.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curseSelf.Id, this.curseCharges, character)), this.SpriteText(this.curseSelf.ACName)));
+    }
+    if ((UnityEngine.Object) this.curseSelf2 != (UnityEngine.Object) null && this.curseCharges2 > 0)
+    {
+      ++num9;
+      aux.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curseSelf2.Id, this.curseCharges2, character)), this.SpriteText(this.curseSelf2.ACName)));
+    }
+    if ((UnityEngine.Object) this.curseSelf3 != (UnityEngine.Object) null && this.curseCharges3 > 0)
+    {
+      ++num9;
+      aux.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curseSelf3.Id, this.curseCharges3, character)), this.SpriteText(this.curseSelf3.ACName)));
+    }
+    if (num9 > 0)
+    {
+      if (num9 > 2)
+      {
+        aux.Insert(0, br1);
+        aux.Insert(0, "\n");
+      }
+      if (this.targetSide == Enums.CardTargetSide.Self)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) aux.ToString()));
+        builder.Append("\n");
+      }
+      else
+      {
+        stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsYouSuffer"), (object) aux.ToString()));
+        stringBuilder1.Append("\n");
+      }
+      aux.Clear();
+    }
+    int num10 = 0;
+    if (this.energyRecharge < 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsLoseHp"), (object) aux.Append(this.ColorTextArray("system", this.NumFormat(Mathf.Abs(this.energyRecharge)), this.SpriteText("energy")))));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (this.energyRecharge > 0)
+    {
+      ++num10;
+      aux.Append(this.ColorTextArray("system", this.NumFormat(this.energyRecharge), this.SpriteText("energy")));
+    }
+    if ((UnityEngine.Object) this.aura != (UnityEngine.Object) null && this.auraCharges > 0 && (UnityEngine.Object) this.aura != (UnityEngine.Object) auraCurseData)
+    {
+      ++num10;
+      aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura.Id, this.auraCharges, character)), this.SpriteText(this.aura.ACName)));
+    }
+    if ((UnityEngine.Object) this.aura2 != (UnityEngine.Object) null && this.auraCharges2 > 0 && (UnityEngine.Object) this.aura2 != (UnityEngine.Object) auraCurseData)
+    {
+      ++num10;
+      aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura2.Id, this.auraCharges2, character)), this.SpriteText(this.aura2.ACName)));
+    }
+    if ((UnityEngine.Object) this.aura3 != (UnityEngine.Object) null && this.auraCharges3 > 0 && (UnityEngine.Object) this.aura3 != (UnityEngine.Object) auraCurseData)
+    {
+      ++num10;
+      aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.aura3.Id, this.auraCharges3, character)), this.SpriteText(this.aura3.ACName)));
+    }
+    if (this.auras != null && this.auras.Length != 0)
+    {
+      foreach (CardData.AuraBuffs aura in this.auras)
+      {
+        if (aura != null && (UnityEngine.Object) aura.aura != (UnityEngine.Object) null && aura.auraCharges > 0 && (UnityEngine.Object) aura.aura != (UnityEngine.Object) auraCurseData)
+        {
+          ++num10;
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(aura.aura.Id, aura.auraCharges, character)), this.SpriteText(aura.aura.ACName)));
+        }
+      }
+    }
+    if (num10 > 0)
+    {
+      if (num10 > 2)
+      {
+        aux.Insert(0, br1);
+        aux.Insert(0, "\n");
+      }
+      if (this.targetSide == Enums.CardTargetSide.Self)
+      {
+        if (this.ChooseOneOfAvailableAuras)
+          builder.Append(string.Format(Texts.Instance.GetText("cardsGainOneOf"), (object) aux.ToString()));
+        else
+          builder.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) aux.ToString()));
+      }
+      else if (this.ChooseOneOfAvailableAuras)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsGrantOneOf"), (object) aux.ToString()));
+      else
+        builder.Append(string.Format(Texts.Instance.GetText("cardsGrant"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    int num11 = 0;
+    if ((UnityEngine.Object) this.auraSelf != (UnityEngine.Object) null && this.auraCharges > 0)
+    {
+      ++num11;
+      aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.auraSelf.Id, this.auraCharges, character)), this.SpriteText(this.auraSelf.ACName)));
+    }
+    if ((UnityEngine.Object) this.auraSelf2 != (UnityEngine.Object) null && this.auraCharges2 > 0)
+    {
+      ++num11;
+      aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.auraSelf2.Id, this.auraCharges2, character)), this.SpriteText(this.auraSelf2.ACName)));
+    }
+    if ((UnityEngine.Object) this.auraSelf3 != (UnityEngine.Object) null && this.auraCharges3 > 0)
+    {
+      ++num11;
+      aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(this.auraSelf3.Id, this.auraCharges3, character)), this.SpriteText(this.auraSelf3.ACName)));
+    }
+    if (this.auras != null && this.auras.Length != 0)
+    {
+      foreach (CardData.AuraBuffs aura in this.auras)
+      {
+        if (aura != null && (UnityEngine.Object) aura.auraSelf != (UnityEngine.Object) null && aura.auraCharges > 0)
+        {
+          ++num11;
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(this.GetFinalAuraCharges(aura.auraSelf.Id, aura.auraCharges, character)), this.SpriteText(aura.auraSelf.ACName)));
+        }
+      }
+    }
+    if (!flag1)
+    {
+      if ((UnityEngine.Object) this.auraSelf != (UnityEngine.Object) null && (this.auraChargesSpecialValue1 || this.auraChargesSpecialValueGlobal))
+      {
+        ++num11;
+        aux.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.auraSelf.ACName)));
+      }
+      if ((UnityEngine.Object) this.auraSelf2 != (UnityEngine.Object) null && (this.auraCharges2SpecialValue1 || this.auraCharges2SpecialValueGlobal))
+      {
+        ++num11;
+        aux.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.auraSelf2.ACName)));
+      }
+      if ((UnityEngine.Object) this.auraSelf3 != (UnityEngine.Object) null && (this.auraCharges3SpecialValue1 || this.auraCharges3SpecialValueGlobal))
+      {
+        ++num11;
+        aux.Append(this.ColorTextArray("aura", "X", this.SpriteText(this.auraSelf3.ACName)));
+      }
+    }
+    if (num11 > 0)
+    {
+      if (num11 > 2)
+      {
+        aux.Insert(0, br1);
+        aux.Insert(0, "\n");
+      }
+      if (this.targetSide == Enums.CardTargetSide.Self)
+      {
+        builder.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) aux.ToString()));
+        builder.Append("\n");
+      }
+      else
+      {
+        stringBuilder1.Append(string.Format(Texts.Instance.GetText("cardsYouGain"), (object) aux.ToString()));
+        stringBuilder1.Append("\n");
+      }
+      aux.Clear();
+    }
+    if (!flag1 && !flag2)
+    {
+      if ((double) this.specialValueModifierGlobal > 0.0)
+        num2 = this.specialValueModifierGlobal / 100f;
+      else if ((double) this.specialValueModifier1 > 0.0)
+        num2 = this.specialValueModifier1 / 100f;
+      if ((double) num2 > 0.0 && (double) num2 != 1.0)
+        str4 = "x" + num2.ToString();
+      if (str4 == "")
+        str4 = "<space=-.1>";
+      if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseYours)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYour"), (object) this.SpriteText(this.SpecialAuraCurseName1.ACName), (object) str4));
+      else if (this.specialValue1 == Enums.CardSpecialValue.AuraCurseTarget)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTarget"), (object) this.SpriteText(this.SpecialAuraCurseName1.ACName), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseYours)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYour"), (object) this.SpriteText(this.SpecialAuraCurseNameGlobal.ACName), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.AuraCurseTarget)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTarget"), (object) this.SpriteText(this.SpecialAuraCurseNameGlobal.ACName), (object) str4));
+      if (this.specialValueGlobal == Enums.CardSpecialValue.HealthYours)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourHp"), (object) str4));
+      else if (this.specialValue1 == Enums.CardSpecialValue.HealthYours)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourHp"), (object) str4));
+      else if (this.specialValue1 == Enums.CardSpecialValue.HealthTarget)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetHp"), (object) str4));
+      if (this.specialValueGlobal == Enums.CardSpecialValue.SpeedYours)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourSpeed"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.SpeedTarget)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetSpeed"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.SpeedDifference || this.specialValue1 == Enums.CardSpecialValue.SpeedDifference)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsDifferenceSpeed"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.DiscardedCards)
+      {
+        if (this.discardCardPlace == Enums.CardPlace.Vanish)
+          aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourVanishedCards"), (object) str4));
+        else
+          aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourDiscardedCards"), (object) str4));
+      }
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.VanishedCards)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourVanishedCards"), (object) str4));
+      if (this.specialValueGlobal == Enums.CardSpecialValue.CardsHand || this.specialValue1 == Enums.CardSpecialValue.CardsHand || this.specialValue2 == Enums.CardSpecialValue.CardsHand)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourHand"), (object) this.SpriteText("card"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsDeck || this.specialValue1 == Enums.CardSpecialValue.CardsDeck || this.specialValue2 == Enums.CardSpecialValue.CardsDeck)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourDeck"), (object) this.SpriteText("card"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsDiscard || this.specialValue1 == Enums.CardSpecialValue.CardsDiscard || this.specialValue2 == Enums.CardSpecialValue.CardsDiscard)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourDiscard"), (object) this.SpriteText("card"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsVanish || this.specialValue1 == Enums.CardSpecialValue.CardsVanish || this.specialValue2 == Enums.CardSpecialValue.CardsVanish)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourVanish"), (object) this.SpriteText("card"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsDeckTarget || this.specialValue1 == Enums.CardSpecialValue.CardsDeckTarget || this.specialValue2 == Enums.CardSpecialValue.CardsDeckTarget)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetDeck"), (object) this.SpriteText("card"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsDiscardTarget || this.specialValue1 == Enums.CardSpecialValue.CardsDiscardTarget || this.specialValue2 == Enums.CardSpecialValue.CardsDiscardTarget)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetDiscard"), (object) this.SpriteText("card"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.CardsVanishTarget || this.specialValue1 == Enums.CardSpecialValue.CardsVanishTarget || this.specialValue2 == Enums.CardSpecialValue.CardsVanishTarget)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetVanish"), (object) this.SpriteText("card"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.MissingHealthYours || this.specialValue1 == Enums.CardSpecialValue.MissingHealthYours)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYourMissingHealth"), (object) str4));
+      else if (this.specialValueGlobal == Enums.CardSpecialValue.MissingHealthTarget || this.specialValue1 == Enums.CardSpecialValue.MissingHealthTarget)
+        aux.Append(string.Format(Texts.Instance.GetText("cardsXEqualsTargetMissingHealth"), (object) str4));
+      if (aux.Length > 0)
+      {
+        builder.Append(goldColor);
+        builder.Append(aux);
+        builder.Append(endColor);
+        builder.Append("\n");
+        aux.Clear();
+        if ((UnityEngine.Object) this.healAuraCurseName != (UnityEngine.Object) null)
+        {
+          if (this.targetSide == Enums.CardTargetSide.Self)
+          {
+            if (this.healAuraCurseName.IsAura)
+              builder.Append(string.Format(Texts.Instance.GetText("cardsPurgeYour"), (object) this.SpriteText(this.healAuraCurseName.ACName)));
+            else
+              builder.Append(string.Format(Texts.Instance.GetText("cardsDispelYour"), (object) this.SpriteText(this.healAuraCurseName.ACName)));
+          }
+          else if (this.healAuraCurseName.IsAura)
+            builder.Append(string.Format(Texts.Instance.GetText("cardsPurge"), (object) this.SpriteText(this.healAuraCurseName.ACName)));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("cardsDispel"), (object) this.SpriteText(this.healAuraCurseName.ACName)));
+          builder.Append("\n");
+        }
+        if ((UnityEngine.Object) this.healAuraCurseSelf != (UnityEngine.Object) null)
+        {
+          if (this.healAuraCurseSelf.IsAura)
+            builder.Append(string.Format(Texts.Instance.GetText("cardsPurgeYour"), (object) this.SpriteText(this.healAuraCurseSelf.ACName)));
+          else
+            builder.Append(string.Format(Texts.Instance.GetText("cardsDispelYour"), (object) this.SpriteText(this.healAuraCurseSelf.ACName)));
+          builder.Append("\n");
+        }
+      }
+      num2 = 0.0f;
+    }
+    int num12 = 0;
+    if (this.curseCharges > 0 && (UnityEngine.Object) this.curse != (UnityEngine.Object) null)
+    {
+      ++num12;
+      aux.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curse.Id, this.curseCharges, character)), this.SpriteText(this.curse.ACName)));
+    }
+    if (this.curseCharges2 > 0 && (UnityEngine.Object) this.curse2 != (UnityEngine.Object) null)
+    {
+      ++num12;
+      aux.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curse2.Id, this.curseCharges2, character)), this.SpriteText(this.curse2.ACName)));
+    }
+    if (this.curseCharges3 > 0 && (UnityEngine.Object) this.curse3 != (UnityEngine.Object) null)
+    {
+      ++num12;
+      aux.Append(this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curse3.Id, this.curseCharges3, character)), this.SpriteText(this.curse3.ACName)));
+    }
+    if (num12 > 0)
+    {
+      if (num12 > 2)
+      {
+        aux.Insert(0, br1);
+        aux.Insert(0, "\n");
+      }
+      if (this.targetSide == Enums.CardTargetSide.Self)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) aux.ToString()));
+      else
+        builder.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (this.curseChargesSides > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsTargetSides"), (object) this.ColorTextArray("curse", this.NumFormat(this.GetFinalAuraCharges(this.curse.Id, this.curseChargesSides, character)), this.SpriteText(this.curse.ACName))));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (this.heal > 0 && !this.healSpecialValue1 && !this.healSpecialValueGlobal)
+    {
+      aux.Append(this.ColorTextArray("heal", this.NumFormat(this.healPreCalculated), this.SpriteText("heal")));
+      builder.Append(string.Format(Texts.Instance.GetText("cardsHeal"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (this.healSelf > 0 && !this.healSelfSpecialValue1 && !this.healSelfSpecialValueGlobal)
+    {
+      aux.Append(this.ColorTextArray("heal", this.NumFormat(this.healSelfPreCalculated), this.SpriteText("heal")));
+      builder.Append(string.Format(Texts.Instance.GetText("cardsHealSelf"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (this.damageSides > 0)
+    {
+      if (this.damageSpecialValueGlobal)
+        aux.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
+      else
+        aux.Append(this.ColorTextArray("damage", this.NumFormat(this.damageSidesPreCalculated), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType))));
+    }
+    if (this.damageSides2 > 0)
+    {
+      if (this.damage2SpecialValueGlobal)
+        aux.Append(this.ColorTextArray("damage", "X", this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
+      else
+        aux.Append(this.ColorTextArray("damage", this.NumFormat(this.damageSidesPreCalculated2), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType2))));
+    }
+    if (aux.Length > 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("cardsTargetSides"), (object) aux.ToString()));
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (stringBuilder1.Length > 0)
+      builder.Append(stringBuilder1.ToString());
+    if (this.killPet)
+    {
+      builder.Append(Texts.Instance.GetText("killPet"));
+      builder.Append("\n");
+    }
+    if (this.damageEnergyBonus > 0 || this.healEnergyBonus > 0 || (UnityEngine.Object) this.acEnergyBonus != (UnityEngine.Object) null)
+    {
+      StringBuilder stringBuilder6 = new StringBuilder();
+      stringBuilder6.Append("<line-height=30%><br></line-height>");
+      StringBuilder stringBuilder7 = new StringBuilder();
+      stringBuilder7.Append(grColor);
+      stringBuilder7.Append("[");
+      stringBuilder7.Append(Texts.Instance.GetText("overchargeAcronym"));
+      stringBuilder7.Append("]");
+      stringBuilder7.Append(endColor);
+      stringBuilder7.Append("  ");
+      if (this.damageEnergyBonus > 0)
+      {
+        stringBuilder6.Append(stringBuilder7.ToString());
+        stringBuilder6.Append(string.Format(Texts.Instance.GetText("cardsDealDamage"), (object) this.ColorTextArray("damage", this.NumFormat(this.damageEnergyBonus), this.SpriteText(Enum.GetName(typeof (Enums.DamageType), (object) this.damageType)))));
+        stringBuilder6.Append("\n");
+      }
+      if ((UnityEngine.Object) this.acEnergyBonus != (UnityEngine.Object) null)
+      {
+        aux.Append(this.ColorTextArray("aura", this.NumFormat(this.acEnergyBonusQuantity), this.SpriteText(this.acEnergyBonus.ACName)));
+        if ((UnityEngine.Object) this.acEnergyBonus2 != (UnityEngine.Object) null)
+        {
+          aux.Append(" ");
+          aux.Append(this.ColorTextArray("aura", this.NumFormat(this.acEnergyBonus2Quantity), this.SpriteText(this.acEnergyBonus2.ACName)));
+        }
+        if (this.acEnergyBonus.IsAura)
+        {
+          if (this.targetSide == Enums.CardTargetSide.Self)
+          {
+            stringBuilder6.Append(stringBuilder7.ToString());
+            stringBuilder6.Append(string.Format(Texts.Instance.GetText("cardsGain"), (object) aux.ToString()));
+          }
+          else
+          {
+            stringBuilder6.Append(stringBuilder7.ToString());
+            stringBuilder6.Append(string.Format(Texts.Instance.GetText("cardsGrant"), (object) aux.ToString()));
+          }
+        }
+        else if (!this.acEnergyBonus.IsAura)
+        {
+          if (this.targetSide == Enums.CardTargetSide.Self)
+          {
+            stringBuilder6.Append(stringBuilder7.ToString());
+            stringBuilder6.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), (object) aux.ToString()));
+          }
+          else
+          {
+            stringBuilder6.Append(stringBuilder7.ToString());
+            stringBuilder6.Append(string.Format(Texts.Instance.GetText("cardsApply"), (object) aux.ToString()));
+          }
+        }
+        stringBuilder6.Append("\n");
+      }
+      if (this.healEnergyBonus > 0)
+      {
+        stringBuilder6.Append(stringBuilder7.ToString());
+        stringBuilder6.Append(string.Format(Texts.Instance.GetText("cardsHeal"), (object) this.ColorTextArray("heal", this.NumFormat(this.healEnergyBonus), this.SpriteText("heal"))));
+        stringBuilder6.Append("\n");
+      }
+      builder.Append(stringBuilder6.ToString());
+      aux.Clear();
+      stringBuilder6.Clear();
+    }
+    if (this.effectRepeat > 1 || this.effectRepeatMaxBonus > 0)
+    {
+      builder.Append(br1);
+      builder.Append("<nobr><size=-.05><color=#1A505A>- ");
+      if (this.effectRepeatMaxBonus > 0)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsRepeatUpTo"), (object) this.effectRepeatMaxBonus));
+      else if (this.effectRepeatTarget == Enums.EffectRepeatTarget.Chain)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsRepeatChain"), (object) (this.effectRepeat - 1)));
+      else if (this.effectRepeatTarget == Enums.EffectRepeatTarget.NoRepeat)
+        builder.Append(string.Format(Texts.Instance.GetText("cardsRepeatJump"), (object) (this.effectRepeat - 1)));
+      else
+        builder.Append(string.Format(Texts.Instance.GetText("cardsRepeat"), (object) (this.effectRepeat - 1)));
+      if (this.effectRepeatModificator != 0 && this.effectRepeatTarget != Enums.EffectRepeatTarget.Chain)
+      {
+        builder.Append(" (");
+        if (this.effectRepeatModificator > 0)
+          builder.Append("+");
+        builder.Append(this.effectRepeatModificator);
+        if (Functions.SpaceBeforePercentSign())
+          builder.Append(" ");
+        builder.Append("%)");
+      }
+      builder.Append(" -</color></size></nobr>");
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (this.ignoreBlock || this.ignoreBlock2)
+    {
+      builder.Append(br1);
+      builder.Append(grColor);
+      builder.Append(Texts.Instance.GetText("cardsIgnoreBlock"));
+      builder.Append(endColor);
+      builder.Append("\n");
+      aux.Clear();
+    }
+    if (this.goldGainQuantity != 0 && this.shardsGainQuantity != 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("customGainPerHeroAnd"), (object) this.ColorTextArray("aura", this.goldGainQuantity.ToString(), this.SpriteText("gold")), (object) this.ColorTextArray("aura", this.shardsGainQuantity.ToString(), this.SpriteText("dust"))));
+      builder.Append("\n");
+    }
+    else if (this.goldGainQuantity != 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("customGainPerHero"), (object) this.ColorTextArray("aura", this.goldGainQuantity.ToString(), this.SpriteText("gold"))));
+      builder.Append("\n");
+    }
+    else if (this.shardsGainQuantity != 0)
+    {
+      builder.Append(string.Format(Texts.Instance.GetText("customGainPerHero"), (object) this.ColorTextArray("aura", this.shardsGainQuantity.ToString(), this.SpriteText("dust"))));
+      builder.Append("\n");
+    }
+    if ((double) this.selfKillHiddenSeconds > 0.0)
+    {
+      builder.Append(Texts.Instance.GetText("escapes"));
+      builder.Append("\n");
+    }
+  }
+
+  public string SpecialModifierDescription(SpecialValues specialValues, ItemData itemData = null)
+  {
+    string str = "";
+    switch (specialValues.Name)
+    {
+      case Enums.SpecialValueModifierName.RuneCharges:
+        str = this.SpriteText("runered") + this.SpriteText("runeblue") + this.SpriteText("runegreen");
+        break;
+      case Enums.SpecialValueModifierName.DamageDealt:
+        str = "Damage Dealt";
+        break;
+      case Enums.SpecialValueModifierName.AuracurseSetCharges:
+      case Enums.SpecialValueModifierName.AuraCurseYours:
+        str = this.SpriteText(itemData.AuraCurseSetted.Id);
+        break;
+    }
+    return str;
   }
 
   private string NumFormatItem(int num, bool plus = false, bool percent = false)
@@ -4464,5 +5035,148 @@ public class CardData : ScriptableObject
   {
     get => this.metamorph;
     set => this.metamorph = value;
+  }
+
+  public bool PetTemporal
+  {
+    get => this.petTemporal;
+    set => this.petTemporal = value;
+  }
+
+  public bool PetTemporalAttack
+  {
+    get => this.petTemporalAttack;
+    set => this.petTemporalAttack = value;
+  }
+
+  public bool PetTemporalCast
+  {
+    get => this.petTemporalCast;
+    set => this.petTemporalCast = value;
+  }
+
+  public bool PetTemporalMoveToCenter
+  {
+    get => this.petTemporalMoveToCenter;
+    set => this.petTemporalMoveToCenter = value;
+  }
+
+  public bool PetTemporalMoveToBack
+  {
+    get => this.petTemporalMoveToBack;
+    set => this.petTemporalMoveToBack = value;
+  }
+
+  public float PetTemporalFadeOutDelay
+  {
+    get => this.petTemporalFadeOutDelay;
+    set => this.petTemporalFadeOutDelay = value;
+  }
+
+  public int CurseChargesSides
+  {
+    get => this.curseChargesSides;
+    set => this.curseChargesSides = value;
+  }
+
+  public bool ChooseOneOfAvailableAuras
+  {
+    get => this.chooseOneOfAvailableAuras;
+    set => this.chooseOneOfAvailableAuras = value;
+  }
+
+  public bool AddVanishToDeck
+  {
+    get => this.addVanishToDeck;
+    set => this.addVanishToDeck = value;
+  }
+
+  public bool AddCardOnlyCheckAuxTypes
+  {
+    get => this.addCardOnlyCheckAuxTypes;
+    set => this.addCardOnlyCheckAuxTypes = value;
+  }
+
+  public AudioClip SoundDragRework
+  {
+    get => this.soundDragRework;
+    set => this.soundDragRework = value;
+  }
+
+  public AudioClip SoundReleaseRework
+  {
+    get => this.soundReleaseRework;
+    set => this.soundReleaseRework = value;
+  }
+
+  public AudioClip SoundHitRework
+  {
+    get => this.soundHitRework;
+    set => this.soundHitRework = value;
+  }
+
+  public CardData.AuraBuffs[] Auras
+  {
+    get => this.auras;
+    set => this.auras = value;
+  }
+
+  public CardData.CurseDebuffs[] Curses
+  {
+    get => this.curses;
+    set => this.curses = value;
+  }
+
+  static CardData()
+  {
+    ItemData theItem;
+    CardData.CardValues = new Dictionary<string, Func<CardData, string>>()
+    {
+      {
+        "$DestroyAfterUses",
+        (Func<CardData, string>) (data => !data.TryGetItem(out theItem) ? string.Empty : theItem.DestroyAfterUses.ToString())
+      },
+      {
+        "$SpecialValueModifierGlobal",
+        (Func<CardData, string>) (data => data.specialValueModifierGlobal.ToString("F0"))
+      }
+    };
+  }
+
+  [Serializable]
+  public class AuraBuffs
+  {
+    public AuraCurseData aura;
+    public AuraCurseData auraSelf;
+    public int auraCharges;
+    public bool auraChargesSpecialValueGlobal;
+    public bool auraChargesSpecialValue1;
+    public bool auraChargesSpecialValue2;
+  }
+
+  [Serializable]
+  public class CurseDebuffs
+  {
+    public AuraCurseData curse;
+    public AuraCurseData curseSelf;
+    public int curseCharges;
+    public int curseChargesSides;
+    public bool curseChargesSpecialValueGlobal;
+    public bool curseChargesSpecialValue1;
+    public bool curseChargesSpecialValue2;
+  }
+
+  [Serializable]
+  public struct CardToGainTypeBasedOnHeroClass
+  {
+    public Enums.HeroClass heroClass;
+    public List<Enums.CardType> cardTypes;
+  }
+
+  [Serializable]
+  public struct CardToGainListBasedOnHeroClass
+  {
+    public Enums.HeroClass heroClass;
+    public List<CardData> cardsList;
   }
 }

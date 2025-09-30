@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: NPC
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -12,11 +12,11 @@ using UnityEngine;
 [Serializable]
 public class NPC : Character
 {
-  [SerializeField]
-  private string internalId = "";
   private CardItem currentCardItem;
 
-  public void InitData()
+  public CardItem GetCurrentCardItem() => this.currentCardItem;
+
+  public override void InitData()
   {
     if (!((UnityEngine.Object) this.NpcData != (UnityEngine.Object) null))
       return;
@@ -27,7 +27,7 @@ public class NPC : Character
     this.ClassName = this.SubclassName = "Monster";
     this.SpriteSpeed = this.NpcData.SpriteSpeed;
     this.SpritePortrait = this.NpcData.SpritePortrait;
-    this.Id = this.NpcData.Id + "_" + this.internalId;
+    this.Id = this.NpcData.Id + "_" + this.InternalId;
     this.Hp = this.HpCurrent = this.NpcData.Hp;
     this.Energy = this.EnergyCurrent = 10000;
     this.EnergyTurn = 0;
@@ -73,7 +73,8 @@ public class NPC : Character
     }
     this.Alive = true;
     this.AuraList = new List<Aura>();
-    this.SetInitalCards(this.NpcData);
+    if (this.NpcData.AICards != null)
+      this.SetInitalCards(this.NpcData);
     switch (AtOManager.Instance.GetNgPlus())
     {
       case 1:
@@ -317,12 +318,16 @@ public class NPC : Character
   private void SetInitalCards(NPCData npcData)
   {
     this.Cards = new List<string>();
-    if (npcData.AICards == null)
-      return;
-    for (int index1 = 0; index1 < npcData.AICards.Length; ++index1)
+    bool flag = GameManager.Instance.IsSingularity();
+    int num1 = flag ? AtOManager.Instance.GetSingularityMadness() : AtOManager.Instance.GetMadnessDifficulty();
+    foreach (AICards aiCard in npcData.AICards)
     {
-      for (int index2 = 0; index2 < npcData.AICards[index1].UnitsInDeck; ++index2)
-        this.Cards.Add(npcData.AICards[index1].Card.Id);
+      for (int index = 0; index < aiCard.UnitsInDeck; ++index)
+      {
+        int num2 = flag ? aiCard.StartsAtSingularityMadnessLevel : aiCard.StartsAtObeliskMadnessLevel;
+        if (num1 >= num2)
+          this.Cards.Add(aiCard.Card.Id);
+      }
     }
   }
 
@@ -346,7 +351,10 @@ public class NPC : Character
         AICards aiCard = this.NpcData.AICards[index];
         string cardPriorityText = "";
         if (aiCard.TargetCast == Enums.TargetCast.Back)
-          cardPriorityText = Texts.Instance.GetText("priorityBack");
+        {
+          if (aiCard.Card.TargetSide != Enums.CardTargetSide.Friend || aiCard.Card.TargetPosition != Enums.CardTargetPosition.Back)
+            cardPriorityText = Texts.Instance.GetText("priorityBack");
+        }
         else if (aiCard.TargetCast == Enums.TargetCast.Middle)
           cardPriorityText = Texts.Instance.GetText("priorityMiddle");
         else if (aiCard.TargetCast == Enums.TargetCast.AnyButFront)
@@ -457,7 +465,7 @@ public class NPC : Character
         if (this.NpcData.AICards[index1] != null && this.NpcData.AICards[index1].AddCardRound == MatchManager.Instance.GetCurrentRound())
         {
           for (int index2 = 0; index2 < this.NpcData.AICards[index1].UnitsInDeck; ++index2)
-            MatchManager.Instance.AddCardToNPCDeck(this.NPCIndex, this.NpcData.AICards[index1].Card.Id, this.internalId);
+            MatchManager.Instance.AddCardToNPCDeck(this.NPCIndex, this.NpcData.AICards[index1].Card.Id, this.InternalId);
         }
       }
     }
@@ -575,9 +583,17 @@ public class NPC : Character
     MatchManager.Instance.ResetDeckHandNPC(this.NPCIndex);
   }
 
-  public string InternalId
+  public bool CheckPlayableIfSpecialCard(string cardId)
   {
-    get => this.internalId;
-    set => this.internalId = value;
+    if (!MatchManager.Instance.IsPhantomArmorSpecialCard(cardId))
+      return true;
+    if (this.IsParalyzed() || this.IsSleep())
+      return false;
+    foreach (NPC npc in MatchManager.Instance.GetTeamNPC())
+    {
+      if (npc == null || npc != null && !npc.Alive)
+        return false;
+    }
+    return true;
   }
 }

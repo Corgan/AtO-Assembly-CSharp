@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Loot
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System.Collections.Generic;
@@ -14,6 +14,8 @@ public static class Loot
   {
     if (AtOManager.Instance.GetGameId() == "")
       return (List<string>) null;
+    if (GameManager.Instance.GetDeveloperMode() && _itemListId == "")
+      return Globals.Instance.CardListByClass[Enums.CardClass.Item];
     LootData lootData = Globals.Instance.GetLootData(_itemListId);
     if ((Object) lootData == (Object) null)
       return (List<string>) null;
@@ -58,7 +60,7 @@ public static class Loot
               if (!ts1.Contains(str) && (!AtOManager.Instance.ItemBoughtOnThisShop(_itemListId, str) && AtOManager.Instance.HowManyTownRerolls() > 0 || AtOManager.Instance.HowManyTownRerolls() == 0))
               {
                 cardData = Globals.Instance.GetCardData(str, false);
-                if ((Object) cardData.Item != (Object) null && !cardData.Item.DropOnly)
+                if ((Object) cardData.Item != (Object) null && (!cardData.Item.DropOnly && !lootData.AllowDropOnlyItems || lootData.AllowDropOnlyItems))
                 {
                   if (cardData.CardUpgraded == Enums.CardUpgraded.Rare)
                     flag = false;

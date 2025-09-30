@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Functions
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -986,7 +986,7 @@ public static class Functions
         flag = false;
         break;
       case "error":
-        flag = false;
+        flag = true;
         break;
       case "gamebusy":
         flag = false;
@@ -1649,6 +1649,7 @@ public static class Functions
     stringList.Add("spark");
     stringList.Add("vulnerable");
     stringList.Add("wet");
+    stringList.Add("sleep");
     StringBuilder stringBuilder = new StringBuilder();
     if (_mapNode == "")
       _mapNode = AtOManager.Instance.currentMapNode;
@@ -2068,5 +2069,24 @@ public static class Functions
     {
       return (CultureInfo) null;
     }
+  }
+
+  public static int GetConsistentRandom(int value, int minLimit, int maxLimit)
+  {
+    int stableHash = Functions.GetStableHash(value);
+    return minLimit + Math.Abs(stableHash) % (maxLimit - minLimit + 1);
+  }
+
+  public static int GetStableHash(int value)
+  {
+    byte[] bytes = BitConverter.GetBytes(value);
+    using (MD5 md5 = MD5.Create())
+      return BitConverter.ToInt32(md5.ComputeHash(bytes), 0);
+  }
+
+  public static string RemoveWhitespace(string str, bool toLower = false)
+  {
+    string str1 = Regex.Replace(str, "[\\s']+", "");
+    return toLower ? str1.ToLower() : str1;
   }
 }

@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Paradox.Startup
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using PDX.SDK;
@@ -50,13 +50,12 @@ namespace Paradox
         Ecosystem = new Ecosystem?(Ecosystem.Steam),
         UserIdType = "steam",
         UserId = SteamManager.Instance.steamId.ToString(),
-        TelemetryDebugEnabled = new bool?(false),
+        Telemetry = new TelemetryConfig(),
         Language = new Language?(Startup.GetLangFromGlobalLang())
       };
       if (GameManager.Instance.PDXCliToken == "")
         Startup.usingLauncher = false;
-      if (Startup.usingLauncher)
-        config.SkipLegalChecksAndEnableTelemetry = new bool?(true);
+      int num = Startup.usingLauncher ? 1 : 0;
       Startup.context = await Context.Create(Startup.Platform, Startup.Namespace, config);
       if (!Startup.usingLauncher)
       {
@@ -101,6 +100,7 @@ namespace Paradox
         await Paradox.Account.LoginWithSessionToken();
       GameManager.Instance.GetDisabledDLCs();
       Telemetry.SendStartGame();
+      await SettingsManager.Instance.InitTelemetryToggle();
     }
 
     public static void Shutdown()

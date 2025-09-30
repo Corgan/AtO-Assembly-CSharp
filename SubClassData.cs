@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: SubClassData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -49,6 +49,8 @@ public class SubClassData : ScriptableObject
   private Enums.HeroClass heroClass;
   [SerializeField]
   private Enums.HeroClass heroClassSecondary;
+  [SerializeField]
+  private Enums.HeroClass heroClassThird;
   [Header("Sound")]
   [SerializeField]
   private AudioClip actionSound;
@@ -176,6 +178,13 @@ public class SubClassData : ScriptableObject
   private CardData[] cardsSingularity;
 
   private void Awake()
+  {
+    if (string.IsNullOrEmpty(this.subClassName))
+      return;
+    this.Init();
+  }
+
+  public void Init()
   {
     this.id = Regex.Replace(this.subClassName, "\\s+", "").ToLower();
     this.sourceCharacterName = this.characterName;
@@ -632,6 +641,12 @@ public class SubClassData : ScriptableObject
   {
     get => this.heroClassSecondary;
     set => this.heroClassSecondary = value;
+  }
+
+  public Enums.HeroClass HeroClassThird
+  {
+    get => this.heroClassThird;
+    set => this.heroClassThird = value;
   }
 
   public bool InitialUnlock

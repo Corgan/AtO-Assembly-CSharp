@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Item
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -102,7 +102,24 @@ public class Item
             Functions.DebugLogGD(cardName + " Broke because Not round cycle", "item");
           return false;
         }
-        if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null && Globals.Instance.GetAuraCurseData(_auxString).Id != itemData.AuraCurseSetted.Id)
+        bool flag1 = true;
+        if ((UnityEngine.Object) itemData.AuraCurseSetted != (UnityEngine.Object) null)
+        {
+          AuraCurseData auraCurseData = Globals.Instance.GetAuraCurseData(_auxString);
+          if ((bool) (UnityEngine.Object) auraCurseData && auraCurseData.Id != itemData.AuraCurseSetted.Id)
+            flag1 = false;
+        }
+        if ((UnityEngine.Object) itemData.AuraCurseSetted2 != (UnityEngine.Object) null && !flag1)
+        {
+          AuraCurseData auraCurseData = Globals.Instance.GetAuraCurseData(_auxString);
+          flag1 = !(bool) (UnityEngine.Object) auraCurseData || !(auraCurseData.Id != itemData.AuraCurseSetted2.Id);
+        }
+        if ((UnityEngine.Object) itemData.AuraCurseSetted3 != (UnityEngine.Object) null && !flag1)
+        {
+          AuraCurseData auraCurseData = Globals.Instance.GetAuraCurseData(_auxString);
+          flag1 = !(bool) (UnityEngine.Object) auraCurseData || !(auraCurseData.Id != itemData.AuraCurseSetted3.Id);
+        }
+        if (!flag1)
         {
           if (Globals.Instance.ShowDebug)
             Functions.DebugLogGD(cardName + " Broke because Not aura setted", "item");
@@ -138,14 +155,14 @@ public class Item
               Functions.DebugLogGD(cardName + " Broke because is begin tourn phase", "item");
             return false;
           }
-          bool flag = true;
+          bool flag2 = true;
           if (num > 0)
-            flag = false;
+            flag2 = false;
           if (cardsWaitingForReset > 0)
-            flag = false;
+            flag2 = false;
           if (num == 0 && cardsWaitingForReset == 1 && (UnityEngine.Object) castedCard != (UnityEngine.Object) null && castedCard.CardClass == Enums.CardClass.Injury)
-            flag = true;
-          if (!flag)
+            flag2 = true;
+          if (!flag2)
           {
             if (Globals.Instance.ShowDebug)
               Functions.DebugLogGD(cardName + " Broke because Not empty hand valid item");
@@ -192,10 +209,7 @@ public class Item
           this.ShowCombatText(lower, cardName, character, MatchManager.Instance.ItemExecutedInThisCombat(character.Id, itemData.Id), itemData.TimesPerCombat);
         }
         MatchManager.Instance.itemTimeout[order] = 0.0f;
-        string castedCardId = "";
-        if ((UnityEngine.Object) castedCard != (UnityEngine.Object) null)
-          castedCardId = castedCard.Id;
-        this.DoItemData(target, cardName, auxInt, cardItem, lower, itemData, character, order, castedCardId, theEvent);
+        this.DoItemData(target, cardName, auxInt, cardItem, lower, itemData, character, order, castedCard, theEvent);
         return true;
     }
   }
@@ -209,9 +223,12 @@ public class Item
     ItemData itemData,
     Character character,
     int order,
-    string castedCardId = "",
+    CardData castedCard = null,
     Enums.EventActivation theEvent = Enums.EventActivation.None)
   {
+    string str1 = "";
+    if ((UnityEngine.Object) castedCard != (UnityEngine.Object) null)
+      str1 = castedCard.Id;
     int charges1 = -1;
     int chargesTotal = -1;
     bool flag1 = false;
@@ -222,8 +239,13 @@ public class Item
       if (itemData.DestroyAfterUses > 0 && itemData.Activation != Enums.EventActivation.Killed)
       {
         chargesTotal = itemData.DestroyAfterUses - 1;
-        charges1 = MatchManager.Instance.EnchantmentExecutedTimes(character.Id, itemData.Id);
-        if (charges1 >= chargesTotal)
+        int num = MatchManager.Instance.EnchantmentExecutedTimes(character.Id, itemData.Id);
+        if (num <= chargesTotal)
+        {
+          MatchManager.Instance.EnchantmentExecute(character.Id, itemData.Id);
+          character.EnchantmentExecute(itemData.Id);
+        }
+        if (num == chargesTotal)
         {
           if (character.IsHero)
             AtOManager.Instance.RemoveItemFromHero(true, character.HeroIndex, "", itemData.Id);
@@ -232,15 +254,10 @@ public class Item
           MatchManager.Instance.RedrawCardsDescriptionPrecalculated();
           if (Globals.Instance.ShowDebug)
             Functions.DebugLogGD("Destroyed because DestroyAfterUses", "item");
-          if (charges1 > chargesTotal)
-            return;
         }
-        else
-        {
-          MatchManager.Instance.EnchantmentExecute(character.Id, itemData.Id);
-          character.EnchantmentExecute(itemData.Id);
-          ++charges1;
-        }
+        else if (num > chargesTotal)
+          return;
+        charges1 = num + 1;
       }
       if (!itemData.IsEnchantment && itemData.DrawCards > 0)
       {
@@ -255,6 +272,8 @@ public class Item
           MatchManager.Instance.NewCard(drawCards, Enums.CardFrom.Deck);
         }
       }
+      if (itemData.AddVanishToDeck)
+        MatchManager.Instance.AddVanishToDeck(character.IsHero ? character.HeroIndex : character.NPCIndex, character.IsHero);
     }
     List<Character> characterList = new List<Character>();
     if (itemData.ItemTarget == Enums.ItemTarget.Self || itemData.ItemTarget == Enums.ItemTarget.SelfEnemy)
@@ -262,9 +281,9 @@ public class Item
     else if (itemData.ItemTarget == Enums.ItemTarget.RandomHero)
       characterList.Add((Character) this.GetRandomHero());
     else if (itemData.ItemTarget == Enums.ItemTarget.RandomEnemy)
-      characterList.Add((Character) this.GetRandomNPC());
+      characterList.Add((Character) this.GetRandomNPC(itemData.DontTargetBoss));
     else if (itemData.ItemTarget == Enums.ItemTarget.Random)
-      characterList.Add(this.GetRandomCharacter());
+      characterList.Add(this.GetRandomCharacter(itemData.DontTargetBoss));
     else if (itemData.ItemTarget == Enums.ItemTarget.AllHero)
       characterList = this.GetAllHeroList();
     else if (itemData.ItemTarget == Enums.ItemTarget.AllEnemy)
@@ -287,23 +306,70 @@ public class Item
     }
     else
     {
-      if (itemData.DamageToTarget > 0)
+      if (theEvent == Enums.EventActivation.Damage)
       {
-        int num1 = !character.IsHero || cardItem.CardClass != Enums.CardClass.Monster ? character.DamageWithCharacterBonus(itemData.DamageToTarget, itemData.DamageToTargetType, Enums.CardClass.Item) : itemData.DamageToTarget;
+        if (itemData.healSelfTeamPerDamageDonePercent)
+        {
+          foreach (Hero hero in MatchManager.Instance.GetTeamHero())
+          {
+            if (hero != null && hero.Alive)
+              hero.ModifyHp(Functions.FuncRoundToInt((float) ((double) auxInt * (double) itemData.healSelfPerDamageDonePercent * 0.0099999997764825821)));
+          }
+        }
+        else if (target != null)
+        {
+          foreach (Character character1 in characterList)
+            character1.ModifyHp(Functions.FuncRoundToInt((float) ((double) auxInt * (double) itemData.healSelfPerDamageDonePercent * 0.0099999997764825821)));
+        }
+      }
+      if (itemData.DamageToTarget1 > 0 || itemData.DttSpecialValues1.Use)
+      {
+        int num1 = !character.IsHero || cardItem.CardClass != Enums.CardClass.Monster ? character.DamageWithCharacterBonus(itemData.GetModifiedValue(itemData.DamageToTarget1, itemData.DttSpecialValues1), itemData.DamageToTargetType1, Enums.CardClass.Item) : itemData.GetModifiedValue(itemData.DamageToTarget1, itemData.DttSpecialValues1);
         if (itemData.DttMultiplyByEnergyUsed)
           num1 *= MatchManager.Instance.energyJustWastedByHero;
         if (num1 > -1)
         {
           for (int index = 0; index < characterList.Count; ++index)
           {
-            Character character1 = characterList[index];
-            int num2 = num1;
-            if (character1 != null)
+            Character character2 = characterList[index];
+            if (!itemData.DontTargetBoss || !((UnityEngine.Object) character2.NpcData != (UnityEngine.Object) null) || !character2.NpcData.IsBoss)
             {
-              int num3 = character1.IncreasedCursedDamagePerStack(itemData.DamageToTargetType);
-              int damage = num2 + num3;
-              character1.IndirectDamage(itemData.DamageToTargetType, damage);
+              int num2 = num1;
+              if (character2 != null)
+              {
+                int num3 = character2.IncreasedCursedDamagePerStack(itemData.DamageToTargetType1);
+                int damage = num2 + num3;
+                character2.IndirectDamage(itemData.DamageToTargetType1, damage);
+              }
             }
+            else
+              break;
+          }
+        }
+        flag1 = true;
+      }
+      if (itemData.DamageToTarget2 > 0 || itemData.DttSpecialValues2.Use)
+      {
+        int num4 = !character.IsHero || cardItem.CardClass != Enums.CardClass.Monster ? character.DamageWithCharacterBonus(itemData.GetModifiedValue(itemData.DamageToTarget2, itemData.DttSpecialValues2), itemData.DamageToTargetType2, Enums.CardClass.Item) : itemData.GetModifiedValue(itemData.DamageToTarget2, itemData.DttSpecialValues2);
+        if (itemData.DttMultiplyByEnergyUsed)
+          num4 *= MatchManager.Instance.energyJustWastedByHero;
+        if (num4 > -1)
+        {
+          for (int index = 0; index < characterList.Count; ++index)
+          {
+            Character character3 = characterList[index];
+            if (!itemData.DontTargetBoss || !((UnityEngine.Object) character3.NpcData != (UnityEngine.Object) null) || !character3.NpcData.IsBoss)
+            {
+              int num5 = num4;
+              if (character3 != null)
+              {
+                int num6 = character3.IncreasedCursedDamagePerStack(itemData.DamageToTargetType2);
+                int damage = num5 + num6;
+                character3.IndirectDamage(itemData.DamageToTargetType2, damage);
+              }
+            }
+            else
+              break;
           }
         }
         flag1 = true;
@@ -320,145 +386,300 @@ public class Item
       }
       bool flag2 = false;
       bool flag3 = false;
-      for (int index = 0; index < characterList.Count; ++index)
+      if (itemData.ChanceToDispel > 0)
       {
-        Character character2 = characterList[index];
-        if (character2 != null)
+        int num = 0;
+        if (itemData.ChanceToDispel < 100)
+          num = MatchManager.Instance.GetRandomIntRange(0, 100, "item");
+        if (num < itemData.ChanceToDispel)
         {
-          if ((UnityEngine.Object) itemData.AuracurseGain1 != (UnityEngine.Object) null)
+          character.HealCurses(itemData.ChanceToDispelNum);
+          MatchManager.Instance.ItemActivationDisplay(itemType);
+        }
+        flag1 = true;
+      }
+      if (itemData.ChanceToPurge > 0)
+      {
+        int num = 0;
+        if (itemData.ChanceToPurge < 100)
+          num = MatchManager.Instance.GetRandomIntRange(0, 100, "item");
+        if (num < itemData.ChanceToPurge)
+        {
+          character.DispelAuras(itemData.ChanceToPurgeNum);
+          MatchManager.Instance.ItemActivationDisplay(itemType);
+        }
+        flag1 = true;
+      }
+      if (itemData.ChanceToDispelSelf > 0 && itemData.ChanceToDispelNumSelf > 0)
+      {
+        int num = 0;
+        if (itemData.ChanceToDispelSelf < 100)
+          num = MatchManager.Instance.GetRandomIntRange(0, 100, "item");
+        if (num < itemData.ChanceToDispelSelf)
+        {
+          character.HealCurses(itemData.ChanceToDispelNumSelf);
+          MatchManager.Instance.ItemActivationDisplay(itemType);
+        }
+        flag1 = true;
+      }
+      int num7 = 0;
+      if ((bool) (UnityEngine.Object) itemData.AuraCurseSetted)
+      {
+        int num8 = num7 + 1;
+        if ((bool) (UnityEngine.Object) itemData.AuraCurseSetted2)
+        {
+          int num9 = num8 + 1;
+          if ((bool) (UnityEngine.Object) itemData.AuraCurseSetted3)
           {
-            int charges2 = itemData.AuraCurseNumForOneEvent <= 0 ? itemData.AuracurseGainValue1 : Functions.FuncRoundToInt((float) (auxInt / itemData.AuraCurseNumForOneEvent)) * itemData.AuracurseGainValue1;
-            if (itemData.Acg1MultiplyByEnergyUsed)
-              charges2 *= MatchManager.Instance.energyJustWastedByHero;
-            if (itemType == "corruption")
-              character2.SetAuraTrait((Character) null, itemData.AuracurseGain1.Id, charges2);
-            else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
-              character2.SetAuraTrait((Character) null, itemData.AuracurseGain1.Id, charges2);
-            else
-              character2.SetAuraTrait(character, itemData.AuracurseGain1.Id, charges2);
-            flag2 = true;
-            flag1 = true;
-          }
-          if ((UnityEngine.Object) itemData.AuracurseGain2 != (UnityEngine.Object) null)
-          {
-            int charges3 = itemData.AuraCurseNumForOneEvent <= 0 ? itemData.AuracurseGainValue2 : Functions.FuncRoundToInt((float) (auxInt / itemData.AuraCurseNumForOneEvent)) * itemData.AuracurseGainValue2;
-            if (itemData.Acg2MultiplyByEnergyUsed)
-              charges3 *= MatchManager.Instance.energyJustWastedByHero;
-            if (itemType == "corruption")
-              character2.SetAuraTrait((Character) null, itemData.AuracurseGain2.Id, charges3);
-            else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
-              character2.SetAuraTrait((Character) null, itemData.AuracurseGain2.Id, charges3);
-            else
-              character2.SetAuraTrait(character, itemData.AuracurseGain2.Id, charges3);
-            flag2 = true;
-            flag1 = true;
-          }
-          if ((UnityEngine.Object) itemData.AuracurseGain3 != (UnityEngine.Object) null)
-          {
-            int charges4 = itemData.AuraCurseNumForOneEvent <= 0 ? itemData.AuracurseGainValue3 : Functions.FuncRoundToInt((float) (auxInt / itemData.AuraCurseNumForOneEvent)) * itemData.AuracurseGainValue3;
-            if (itemData.Acg3MultiplyByEnergyUsed)
-              charges4 *= MatchManager.Instance.energyJustWastedByHero;
-            if (itemType == "corruption")
-              character2.SetAuraTrait((Character) null, itemData.AuracurseGain3.Id, charges4);
-            else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
-              character2.SetAuraTrait((Character) null, itemData.AuracurseGain3.Id, charges4);
-            else
-              character2.SetAuraTrait(character, itemData.AuracurseGain3.Id, charges4);
-            flag2 = true;
-            flag1 = true;
-          }
-          if (itemData.HealQuantity > 0)
-          {
-            character2.ModifyHp(itemData.HealQuantity);
-            CastResolutionForCombatText _cast = new CastResolutionForCombatText();
-            _cast.heal = itemData.HealQuantity;
-            if ((UnityEngine.Object) character2.HeroItem != (UnityEngine.Object) null)
-              character2.HeroItem.ScrollCombatTextDamageNew(_cast);
-            else
-              character2.NPCItem.ScrollCombatTextDamageNew(_cast);
-            flag1 = true;
-          }
-          if (itemData.HealPercentQuantity != 0)
-          {
-            if (itemData.Activation == Enums.EventActivation.Killed)
-            {
-              if (itemData.HealPercentQuantity > 0)
-              {
-                if (character2.GetHp() > 0)
-                  return;
-                character2.Resurrect((float) itemData.HealPercentQuantity);
-                flag2 = true;
-                MatchManager.Instance.itemTimeout[order] = 0.5f;
-              }
-            }
-            else if (character2.GetHp() > 0 && itemData.HealPercentQuantity != 0)
-            {
-              character2.PercentHeal((float) itemData.HealPercentQuantity, true);
-              flag2 = true;
-            }
-            flag1 = true;
-          }
-          if (itemData.HealPercentQuantitySelf != 0)
-          {
-            if (itemData.Activation == Enums.EventActivation.Killed)
-            {
-              if (itemData.HealPercentQuantitySelf > 0)
-              {
-                if (character.GetHp() > 0)
-                  return;
-                character.Resurrect((float) itemData.HealPercentQuantitySelf);
-                flag2 = true;
-                MatchManager.Instance.itemTimeout[order] = 0.5f;
-              }
-            }
-            else if (character.GetHp() > 0 && itemData.HealPercentQuantitySelf != 0 && !flag3)
-            {
-              flag3 = true;
-              character.PercentHeal((float) itemData.HealPercentQuantitySelf, true);
-              flag2 = true;
-            }
-            flag1 = true;
-          }
-          if (itemData.EnergyQuantity > 0)
-          {
-            character2.ModifyEnergy(itemData.EnergyQuantity, true);
-            flag1 = true;
+            int num10 = num9 + 1;
           }
         }
       }
-      if ((UnityEngine.Object) itemData.AuracurseGainSelf1 != (UnityEngine.Object) null)
+      for (int index = 0; index < characterList.Count; ++index)
       {
-        if (itemType == "corruption")
-          character.SetAuraTrait((Character) null, itemData.AuracurseGainSelf1.Id, itemData.AuracurseGainSelfValue1);
-        else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
-          character.SetAuraTrait((Character) null, itemData.AuracurseGainSelf1.Id, itemData.AuracurseGainSelfValue1);
-        else
-          character.SetAuraTrait(character, itemData.AuracurseGainSelf1.Id, itemData.AuracurseGainSelfValue1);
-        flag2 = true;
-        flag1 = true;
-      }
-      if ((UnityEngine.Object) itemData.AuracurseGainSelf2 != (UnityEngine.Object) null)
-      {
-        if (itemType == "corruption")
-          character.SetAuraTrait((Character) null, itemData.AuracurseGainSelf2.Id, itemData.AuracurseGainSelfValue2);
-        else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
-          character.SetAuraTrait((Character) null, itemData.AuracurseGainSelf2.Id, itemData.AuracurseGainSelfValue2);
-        else
-          character.SetAuraTrait(character, itemData.AuracurseGainSelf2.Id, itemData.AuracurseGainSelfValue2);
-        flag2 = true;
-        flag1 = true;
-      }
-      int num4 = MatchManager.Instance.CountHeroHand(character.HeroIndex);
-      if (itemData.CardNum > 0 && (itemData.CardPlace != Enums.CardPlace.Hand || num4 < 10) && ((UnityEngine.Object) itemData.CardToGain != (UnityEngine.Object) null || itemData.CardToGainList != null || itemData.DuplicateActive))
-      {
-        int num5 = itemData.CardNum;
-        if (character.IsHero && itemData.CardPlace == Enums.CardPlace.Hand && MatchManager.Instance.CountHeroHand() + num5 > 10)
-          num5 = 10 - MatchManager.Instance.CountHeroHand();
-        for (int indexForBatch = 0; indexForBatch < num5; ++indexForBatch)
+        Character character4 = characterList[index];
+        if (!itemData.DontTargetBoss || !((UnityEngine.Object) character4.NpcData != (UnityEngine.Object) null) || !character4.NpcData.IsBoss)
         {
-          string str = "";
+          if (character4 != null)
+          {
+            Character target1 = target;
+            if (theEvent == Enums.EventActivation.Damaged && !character.IsHero)
+              target1 = character;
+            if ((UnityEngine.Object) itemData.AuracurseGain1 != (UnityEngine.Object) null)
+            {
+              int charges2 = itemData.AuraCurseNumForOneEvent <= 0 ? itemData.GetModifiedValue(itemData.AuracurseGainValue1, itemData.AuracurseGain1SpecialValue, itemData, target1) : Functions.FuncRoundToInt((float) (auxInt / itemData.AuraCurseNumForOneEvent)) * itemData.GetModifiedValue(itemData.AuracurseGainValue1, itemData.AuracurseGain1SpecialValue, itemData, target1);
+              if (itemData.Acg1MultiplyByEnergyUsed)
+                charges2 *= MatchManager.Instance.energyJustWastedByHero;
+              if (itemType == "corruption")
+                character4.SetAuraTrait((Character) null, itemData.AuracurseGain1.Id, charges2);
+              else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
+                character4.SetAuraTrait((Character) null, itemData.AuracurseGain1.Id, charges2);
+              else
+                character4.SetAuraTrait(character, itemData.AuracurseGain1.Id, charges2);
+              flag2 = true;
+              flag1 = true;
+            }
+            if ((UnityEngine.Object) itemData.AuracurseGain2 != (UnityEngine.Object) null)
+            {
+              int charges3 = itemData.AuraCurseNumForOneEvent <= 0 ? itemData.GetModifiedValue(itemData.AuracurseGainValue2, itemData.AuracurseGain2SpecialValue, itemData, target1) : Functions.FuncRoundToInt((float) (auxInt / itemData.AuraCurseNumForOneEvent)) * itemData.GetModifiedValue(itemData.AuracurseGainValue2, itemData.AuracurseGain2SpecialValue, itemData, target1);
+              if (itemData.Acg2MultiplyByEnergyUsed)
+                charges3 *= MatchManager.Instance.energyJustWastedByHero;
+              if (itemType == "corruption")
+                character4.SetAuraTrait((Character) null, itemData.AuracurseGain2.Id, charges3);
+              else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
+                character4.SetAuraTrait((Character) null, itemData.AuracurseGain2.Id, charges3);
+              else
+                character4.SetAuraTrait(character, itemData.AuracurseGain2.Id, charges3);
+              flag2 = true;
+              flag1 = true;
+            }
+            if ((UnityEngine.Object) itemData.AuracurseGain3 != (UnityEngine.Object) null)
+            {
+              int charges4 = itemData.AuraCurseNumForOneEvent <= 0 ? itemData.GetModifiedValue(itemData.AuracurseGainValue3, itemData.AuracurseGain3SpecialValue, itemData, target1) : Functions.FuncRoundToInt((float) (auxInt / itemData.AuraCurseNumForOneEvent)) * itemData.GetModifiedValue(itemData.AuracurseGainValue3, itemData.AuracurseGain3SpecialValue, itemData, target1);
+              if (itemData.Acg3MultiplyByEnergyUsed)
+                charges4 *= MatchManager.Instance.energyJustWastedByHero;
+              if (itemType == "corruption")
+                character4.SetAuraTrait((Character) null, itemData.AuracurseGain3.Id, charges4);
+              else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
+                character4.SetAuraTrait((Character) null, itemData.AuracurseGain3.Id, charges4);
+              else
+                character4.SetAuraTrait(character, itemData.AuracurseGain3.Id, charges4);
+              flag2 = true;
+              flag1 = true;
+            }
+            if (itemData.HealQuantity > 0 || itemData.HealQuantitySpecialValue.Use)
+            {
+              character4.ModifyHp(itemData.GetModifiedValue(itemData.HealQuantity, itemData.HealQuantitySpecialValue));
+              CastResolutionForCombatText _cast = new CastResolutionForCombatText();
+              _cast.heal = itemData.HealQuantity;
+              if ((UnityEngine.Object) character4.HeroItem != (UnityEngine.Object) null)
+                character4.HeroItem.ScrollCombatTextDamageNew(_cast);
+              else
+                character4.NPCItem.ScrollCombatTextDamageNew(_cast);
+              flag1 = true;
+            }
+            else if (itemData.HealQuantity < 0)
+            {
+              int healQuantity = itemData.HealQuantity;
+              if (itemData.UsedEnergy && castedCard.EnergyCost > 0)
+                healQuantity *= MatchManager.Instance.energyJustWastedByHero;
+              character4.ModifyHp(healQuantity);
+              CastResolutionForCombatText _cast = new CastResolutionForCombatText();
+              _cast.damage = itemData.HealQuantity;
+              if ((UnityEngine.Object) character4.HeroItem != (UnityEngine.Object) null)
+                character4.HeroItem.ScrollCombatTextDamageNew(_cast);
+              else
+                character4.NPCItem.ScrollCombatTextDamageNew(_cast);
+              flag1 = true;
+            }
+            if (itemData.HealPercentQuantity != 0)
+            {
+              if (itemData.Activation == Enums.EventActivation.Killed)
+              {
+                if (itemData.HealPercentQuantity > 0)
+                {
+                  if (character4.GetHp() > 0)
+                    return;
+                  character4.Resurrect((float) itemData.HealPercentQuantity);
+                  flag2 = true;
+                  MatchManager.Instance.itemTimeout[order] = 0.5f;
+                }
+              }
+              else if (character4.GetHp() > 0 && itemData.HealPercentQuantity != 0)
+              {
+                character4.PercentHeal((float) itemData.HealPercentQuantity, true);
+                flag2 = true;
+              }
+              flag1 = true;
+            }
+            if (itemData.HealPercentQuantitySelf != 0)
+            {
+              if (itemData.Activation == Enums.EventActivation.Killed)
+              {
+                if (itemData.HealPercentQuantitySelf > 0)
+                {
+                  if (character.GetHp() > 0)
+                    return;
+                  character.Resurrect((float) itemData.HealPercentQuantitySelf);
+                  flag2 = true;
+                  MatchManager.Instance.itemTimeout[order] = 0.5f;
+                }
+              }
+              else if (character.GetHp() > 0 && itemData.HealPercentQuantitySelf != 0 && !flag3)
+              {
+                flag3 = true;
+                character.PercentHeal((float) itemData.HealPercentQuantitySelf, true);
+                flag2 = true;
+              }
+              flag1 = true;
+            }
+            if (itemData.EnergyQuantity > 0)
+            {
+              int energyQuantity = itemData.EnergyQuantity;
+              if (itemData.UsedEnergy && cardItem.EnergyCost > 0)
+                energyQuantity *= MatchManager.Instance.energyJustWastedByHero;
+              character4.ModifyEnergy(energyQuantity, true);
+              flag1 = true;
+            }
+          }
+        }
+        else
+          break;
+      }
+      if (!itemData.ChooseOneACToGain)
+      {
+        if ((UnityEngine.Object) itemData.AuracurseGainSelf1 != (UnityEngine.Object) null)
+        {
+          if (itemType == "corruption")
+            character.SetAuraTrait((Character) null, itemData.AuracurseGainSelf1.Id, itemData.AuracurseGainSelfValue1);
+          else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
+            character.SetAuraTrait((Character) null, itemData.AuracurseGainSelf1.Id, itemData.AuracurseGainSelfValue1);
+          else
+            character.SetAuraTrait(character, itemData.AuracurseGainSelf1.Id, itemData.AuracurseGainSelfValue1);
+          flag2 = true;
+          flag1 = true;
+        }
+        if ((UnityEngine.Object) itemData.AuracurseGainSelf2 != (UnityEngine.Object) null)
+        {
+          if (itemType == "corruption")
+            character.SetAuraTrait((Character) null, itemData.AuracurseGainSelf2.Id, itemData.AuracurseGainSelfValue2);
+          else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
+            character.SetAuraTrait((Character) null, itemData.AuracurseGainSelf2.Id, itemData.AuracurseGainSelfValue2);
+          else
+            character.SetAuraTrait(character, itemData.AuracurseGainSelf2.Id, itemData.AuracurseGainSelfValue2);
+          flag2 = true;
+          flag1 = true;
+        }
+      }
+      else
+      {
+        List<AuraCurseData> auraCurseDataList = new List<AuraCurseData>();
+        List<int> intList = new List<int>();
+        if ((bool) (UnityEngine.Object) itemData.AuracurseGainSelf1)
+        {
+          auraCurseDataList.Add(itemData.AuracurseGainSelf1);
+          intList.Add(itemData.AuracurseGainSelfValue1);
+        }
+        if ((bool) (UnityEngine.Object) itemData.AuracurseGainSelf2)
+        {
+          auraCurseDataList.Add(itemData.AuracurseGainSelf2);
+          intList.Add(itemData.AuracurseGainSelfValue2);
+        }
+        if ((bool) (UnityEngine.Object) itemData.AuracurseGainSelf3)
+        {
+          auraCurseDataList.Add(itemData.AuracurseGainSelf3);
+          intList.Add(itemData.AuracurseGainSelfValue3);
+        }
+        int index = UnityEngine.Random.Range(0, auraCurseDataList.Count);
+        if ((UnityEngine.Object) auraCurseDataList[index] != (UnityEngine.Object) null)
+        {
+          if (itemType == "corruption")
+            character.SetAuraTrait((Character) null, auraCurseDataList[index].Id, intList[index]);
+          else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
+            character.SetAuraTrait((Character) null, auraCurseDataList[index].Id, intList[index]);
+          else
+            character.SetAuraTrait(character, auraCurseDataList[index].Id, intList[index]);
+          flag2 = true;
+          flag1 = true;
+        }
+      }
+      if ((UnityEngine.Object) itemData.auracurseHeal1 != (UnityEngine.Object) null)
+      {
+        character.HealAuraCurse(itemData.auracurseHeal1);
+        if ((UnityEngine.Object) itemData.auracurseHeal2 != (UnityEngine.Object) null)
+        {
+          character.HealAuraCurse(itemData.auracurseHeal2);
+          if ((UnityEngine.Object) itemData.auracurseHeal3 != (UnityEngine.Object) null)
+            character.HealAuraCurse(itemData.auracurseHeal3);
+        }
+      }
+      if (character != null && theEvent == itemData.Activation)
+      {
+        List<string> curseList = new List<string>();
+        List<int> intList = new List<int>();
+        int num11 = 0;
+        Character character5 = target;
+        if (character5 == null && itemData.ItemTarget == Enums.ItemTarget.RandomEnemy)
+          character5 = (Character) this.GetRandomNPC();
+        if (character5 != null)
+        {
+          for (int index = 0; index < character5.AuraList.Count && num11 < itemData.StealAuras; ++index)
+          {
+            if (character5.AuraList[index] != null && (UnityEngine.Object) character5.AuraList[index].ACData != (UnityEngine.Object) null && character5.AuraList[index].ACData.IsAura && character5.AuraList[index].ACData.Removable && character5.AuraList[index].GetCharges() > 0 && (!(character5.AuraList[index].ACData.Id == "invulnerable") || !character5.CharacterIsDraculaBat()))
+            {
+              curseList.Add(character5.AuraList[index].ACData.Id);
+              intList.Add(character5.AuraList[index].GetCharges());
+              ++num11;
+            }
+          }
+        }
+        if (num11 > 0)
+        {
+          character5.HealCursesName(curseList);
+          for (int index = 0; index < curseList.Count; ++index)
+          {
+            if (character != null && character.Alive)
+              character.SetAuraTrait(character, curseList[index], intList[index]);
+          }
+        }
+      }
+      foreach (Hero hero in MatchManager.Instance.GetTeamHero())
+      {
+        if (hero != null && hero.Alive)
+          hero.GetAurasAuraCurseModifiers();
+      }
+      MatchManager.Instance.RefreshStatusEffects();
+      int num12 = MatchManager.Instance.CountHeroHand(character.HeroIndex);
+      if (itemData.CardNum > 0 && (itemData.CardPlace != Enums.CardPlace.Hand || num12 < 10) && ((UnityEngine.Object) itemData.CardToGain != (UnityEngine.Object) null || itemData.CardToGainList != null || itemData.DuplicateActive))
+      {
+        int num13 = itemData.CardNum;
+        if (character.IsHero && itemData.CardPlace == Enums.CardPlace.Hand && MatchManager.Instance.CountHeroHand() + num13 > 10)
+          num13 = 10 - MatchManager.Instance.CountHeroHand();
+        for (int indexForBatch = 0; indexForBatch < num13; ++indexForBatch)
+        {
+          string str2 = "";
           if (itemData.DuplicateActive)
-            str = castedCardId;
+            str2 = str1;
           else if (itemData.CardToGainList.Count > 0)
           {
             bool flag4 = false;
@@ -467,17 +688,38 @@ public class Item
               int randomIntRange = MatchManager.Instance.GetRandomIntRange(0, itemData.CardToGainList.Count, "item");
               if ((UnityEngine.Object) itemData.CardToGainList[randomIntRange] != (UnityEngine.Object) null)
               {
-                str = itemData.CardToGainList[randomIntRange].Id;
+                str2 = itemData.CardToGainList[randomIntRange].Id;
                 flag4 = true;
               }
             }
           }
           else
-            str = !((UnityEngine.Object) itemData.CardToGain != (UnityEngine.Object) null) ? Functions.GetRandomCardIdByTypeAndRandomRarity(itemData.CardToGainType) : itemData.CardToGain.Id;
-          string cardInDictionary = MatchManager.Instance.CreateCardInDictionary(str);
+            str2 = !((UnityEngine.Object) itemData.CardToGain != (UnityEngine.Object) null) ? Functions.GetRandomCardIdByTypeAndRandomRarity(itemData.CardToGainType) : itemData.CardToGain.Id;
+          string cardInDictionary = MatchManager.Instance.CreateCardInDictionary(str2);
           CardData cardData = MatchManager.Instance.GetCardData(cardInDictionary);
+          if (cardData.AddCardListBasedOnHeroClass.Count > 0 && character != null && character.IsHero)
+          {
+            List<CardData> cardDataList = new List<CardData>();
+            foreach (CardData.CardToGainListBasedOnHeroClass basedOnHeroClass in cardData.AddCardListBasedOnHeroClass)
+            {
+              if (basedOnHeroClass.heroClass == character.HeroData.HeroSubClass.HeroClass || basedOnHeroClass.heroClass == character.HeroData.HeroSubClass.HeroClassSecondary || basedOnHeroClass.heroClass == character.HeroData.HeroSubClass.HeroClassThird)
+              {
+                foreach (CardData cards in basedOnHeroClass.cardsList)
+                {
+                  if (!cardDataList.Contains(cards))
+                    cardDataList.Add(cards);
+                }
+              }
+            }
+            if (cardDataList.Count > 0)
+            {
+              cardData.AddCardList = cardDataList.ToArray();
+              cardData.AddCardChoose = cardDataList.Count;
+              cardData.SetDescriptionNew(true);
+            }
+          }
           if (itemData.DuplicateActive)
-            cardData = MatchManager.Instance.DuplicateCardData(cardData, MatchManager.Instance.GetCardData(str));
+            cardData = MatchManager.Instance.DuplicateCardData(cardData, MatchManager.Instance.GetCardData(str2));
           cardData.Vanish = itemData.Vanish;
           if (itemData.Permanent)
           {
@@ -514,27 +756,27 @@ public class Item
         if (cardDataList.Count > 0)
         {
           CardData cardData1 = (CardData) null;
-          int num6 = itemData.CardsReduced;
-          if (num6 > cardDataList.Count)
-            num6 = cardDataList.Count;
+          int num14 = itemData.CardsReduced;
+          if (num14 > cardDataList.Count)
+            num14 = cardDataList.Count;
           List<string> stringList = new List<string>();
-          for (int index1 = 0; index1 < num6; ++index1)
+          for (int index1 = 0; index1 < num14; ++index1)
           {
             bool flag5 = false;
             for (int index2 = 0; !flag5 && index2 < 100; ++index2)
             {
               if (itemData.ReduceHighestCost)
               {
-                int num7 = -1;
+                int num15 = -1;
                 int index3 = -1;
                 CardData cardData2 = (CardData) null;
                 for (int index4 = 0; index4 < cardDataList.Count; ++index4)
                 {
                   int cardFinalCost = cardDataList[index4].GetCardFinalCost();
-                  if (cardFinalCost > num7)
+                  if (cardFinalCost > num15)
                   {
                     cardData2 = cardDataList[index4];
-                    num7 = cardFinalCost;
+                    num15 = cardFinalCost;
                     index3 = index4;
                   }
                 }
@@ -566,18 +808,6 @@ public class Item
           }
           MatchManager.Instance.ItemActivationDisplay(itemType);
         }
-      }
-      if (itemData.ChanceToDispel > 0 && itemData.ChanceToDispelNum > 0)
-      {
-        int num8 = 0;
-        if (itemData.ChanceToDispel < 100)
-          num8 = MatchManager.Instance.GetRandomIntRange(0, 100, "item");
-        if (num8 < itemData.ChanceToDispel)
-        {
-          character.HealCurses(itemData.ChanceToDispelNum);
-          MatchManager.Instance.ItemActivationDisplay(itemType);
-        }
-        flag1 = true;
       }
       if ((UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null && itemData.IsEnchantment && itemData.DrawCards > 0)
       {
@@ -626,14 +856,19 @@ public class Item
       {
         for (int index = 0; index < characterList.Count; ++index)
         {
-          Character character3 = characterList[index];
-          if (character3 != null)
+          Character character6 = characterList[index];
+          if (!itemData.DontTargetBoss || !((UnityEngine.Object) character6.NpcData != (UnityEngine.Object) null) || !character6.NpcData.IsBoss)
           {
-            if ((UnityEngine.Object) character3.HeroItem != (UnityEngine.Object) null)
-              EffectsManager.Instance.PlayEffectAC(itemData.EffectTarget, true, character3.HeroItem.CharImageT, false, itemData.EffectTargetDelay);
-            else if ((UnityEngine.Object) character3.NPCItem != (UnityEngine.Object) null)
-              EffectsManager.Instance.PlayEffectAC(itemData.EffectTarget, true, character3.NPCItem.CharImageT, false, itemData.EffectTargetDelay);
+            if (character6 != null)
+            {
+              if ((UnityEngine.Object) character6.HeroItem != (UnityEngine.Object) null)
+                EffectsManager.Instance.PlayEffectAC(itemData.EffectTarget, true, character6.HeroItem.CharImageT, false, itemData.EffectTargetDelay);
+              else if ((UnityEngine.Object) character6.NPCItem != (UnityEngine.Object) null)
+                EffectsManager.Instance.PlayEffectAC(itemData.EffectTarget, true, character6.NPCItem.CharImageT, false, itemData.EffectTargetDelay);
+            }
           }
+          else
+            break;
         }
       }
       if ((UnityEngine.Object) itemData.ItemSound != (UnityEngine.Object) null)
@@ -708,7 +943,7 @@ public class Item
     return (Hero) null;
   }
 
-  private NPC GetRandomNPC()
+  private NPC GetRandomNPC(bool noBoss = false)
   {
     NPC[] teamNpc = MatchManager.Instance.GetTeamNPC();
     List<int> intList = new List<int>();
@@ -720,23 +955,24 @@ public class Item
     if (intList.Count > 0)
     {
       bool flag = false;
+      int index = MatchManager.Instance.GetRandomIntRange(0, intList.Count, "item");
       int num = 0;
       while (!flag)
       {
-        int randomIntRange = MatchManager.Instance.GetRandomIntRange(0, intList.Count, "item");
-        if (teamNpc[intList[randomIntRange]] != null && teamNpc[intList[randomIntRange]].Alive)
-          return teamNpc[intList[randomIntRange]];
+        if (teamNpc[intList[index]] != null && teamNpc[intList[index]].Alive && (!noBoss || (UnityEngine.Object) teamNpc[intList[index]].NpcData != (UnityEngine.Object) null && !teamNpc[intList[index]].NpcData.IsBoss))
+          return teamNpc[intList[index]];
+        index = (index + 1) % teamNpc.Length;
         ++num;
-        if (num > 10)
-          flag = true;
+        if (num > teamNpc.Length)
+          return (NPC) null;
       }
     }
     return (NPC) null;
   }
 
-  private Character GetRandomCharacter()
+  private Character GetRandomCharacter(bool noBoss = false)
   {
-    return MatchManager.Instance.GetRandomIntRange(0, 2, "item") == 0 ? (Character) this.GetRandomHero() : (Character) this.GetRandomNPC();
+    return MatchManager.Instance.GetRandomIntRange(0, 2, "item") == 0 ? (Character) this.GetRandomHero() : (Character) this.GetRandomNPC(noBoss);
   }
 
   private List<Character> GetAllHeroList()

@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Effects
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using UnityEngine;
@@ -35,10 +35,31 @@ public class Effects : MonoBehaviour
       this.transform.localPosition = new Vector3(theTransform.position.x, 1.4f, 1f);
       this.transform.localPosition -= new Vector3(theTransform.localPosition.x, 0.0f, 0.0f);
     }
+    this.PlayEffect(effect, flip);
+  }
+
+  public void Play(string effect, float posX, bool isHero, bool flip, bool castInCenter)
+  {
+    if (string.IsNullOrEmpty(effect))
+      return;
+    if (castInCenter)
+      this.transform.localPosition = new Vector3(0.0f, 1.4f, 1f);
+    else if (effect == "smoke" && (isHero & flip || !isHero && !flip))
+      this.transform.localPosition = new Vector3(0.0f, 1.4f, 0.0f);
+    else
+      this.transform.localPosition = new Vector3(posX, 1.4f, 1f);
+    this.PlayEffect(effect, flip);
+  }
+
+  private void PlayEffect(string effect, bool flip)
+  {
     GameObject resourceEffect = Globals.Instance.GetResourceEffect(effect);
     if ((Object) resourceEffect == (Object) null)
-    {
       Debug.LogError((object) ("Effect doesn't exists => " + effect));
+    else if ((bool) (Object) resourceEffect.GetComponentInChildren<ParticleSystem>())
+    {
+      this.childTransform.rotation = Quaternion.identity;
+      Object.Destroy((Object) Object.Instantiate<GameObject>(resourceEffect, this.childTransform), 2.5f);
     }
     else
     {
@@ -54,6 +75,11 @@ public class Effects : MonoBehaviour
         this.childSpr.sortingOrder = resourceEffect.GetComponent<SpriteRenderer>().sortingOrder;
         this.childSpr.color = resourceEffect.GetComponent<SpriteRenderer>().color;
       }
+      else
+      {
+        this.childAnimator.runtimeAnimatorController = (RuntimeAnimatorController) null;
+        Object.Destroy((Object) Object.Instantiate<GameObject>(resourceEffect, this.childTransform.position, resourceEffect.transform.rotation), 2.5f);
+      }
       if (flip)
         this.childSpr.flipX = true;
       else
@@ -63,7 +89,7 @@ public class Effects : MonoBehaviour
 
   public bool HasStopped()
   {
-    return (Object) this.childAnimator == (Object) null || (Object) this.childAnimator.runtimeAnimatorController == (Object) null || (double) this.childAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime > 1.0;
+    return this.childTransform.childCount <= 0 && ((Object) this.childAnimator == (Object) null || (Object) this.childAnimator.runtimeAnimatorController == (Object) null || (double) this.childAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime > 1.0);
   }
 
   public void Stop(string effect)

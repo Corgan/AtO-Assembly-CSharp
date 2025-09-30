@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: GameManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -15,6 +15,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Zone;
 
 #nullable disable
 public class GameManager : MonoBehaviour
@@ -66,7 +67,30 @@ public class GameManager : MonoBehaviour
   private bool configUseLegacySounds;
   private bool configUseLegacySoundsSheepOwl;
   private bool configCrossPlayEnabled = true;
+  [SerializeField]
   private bool developerMode;
+  [SerializeField]
+  private bool cheatMode;
+  [SerializeField]
+  private bool winMatchOnStart;
+  [SerializeField]
+  private bool skipTutorial;
+  [SerializeField]
+  private MapType startFromMap;
+  [SerializeField]
+  private bool useImmortal;
+  [SerializeField]
+  private bool useManyResources;
+  [SerializeField]
+  private bool unlockAllHeroes;
+  [SerializeField]
+  private bool unlockMadness;
+  [SerializeField]
+  private bool disableSave;
+  [SerializeField]
+  private bool disableSteamAuthorizationForPhoton;
+  [SerializeField]
+  private bool useTestSteamID;
   private bool isDemo;
   private bool showedDemoMsg;
   private StringBuilder SBversion;
@@ -108,6 +132,7 @@ public class GameManager : MonoBehaviour
     UnityEngine.Object.DontDestroyOnLoad((UnityEngine.Object) this.gameObject);
     this.globalBlack.gameObject.SetActive(true);
     CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US", false);
+    this.disableSteamAuthorizationForPhoton = false;
   }
 
   private void Start()
@@ -397,7 +422,73 @@ public class GameManager : MonoBehaviour
 
   public void DebugShow() => Globals.Instance.ShowDebug = !Globals.Instance.ShowDebug;
 
-  public bool GetDeveloperMode() => this.developerMode;
+  public bool GetDeveloperMode() => false;
+
+  public bool CheatMode
+  {
+    get => this.cheatMode;
+    set => this.cheatMode = value;
+  }
+
+  public bool WinMatchOnStart
+  {
+    get => this.winMatchOnStart;
+    set => this.winMatchOnStart = value;
+  }
+
+  public bool SkipTutorial
+  {
+    get => this.skipTutorial;
+    set => this.skipTutorial = value;
+  }
+
+  public MapType StartFromMap
+  {
+    get => this.startFromMap;
+    set => this.startFromMap = value;
+  }
+
+  public bool IsSaveDisabled
+  {
+    get => this.disableSave;
+    set => this.disableSave = value;
+  }
+
+  public bool UseTestSteamID
+  {
+    get => this.useTestSteamID;
+    set => this.useTestSteamID = value;
+  }
+
+  public bool UseImmortal
+  {
+    get => this.useImmortal;
+    set => this.useImmortal = value;
+  }
+
+  public bool UseManyResources
+  {
+    get => this.useManyResources;
+    set => this.useManyResources = value;
+  }
+
+  public bool UnlockAllHeroes
+  {
+    get => this.unlockAllHeroes;
+    set => this.unlockAllHeroes = value;
+  }
+
+  public bool UnlockMadness
+  {
+    get => this.unlockMadness;
+    set => this.unlockMadness = value;
+  }
+
+  public bool DisableSteamAuthorizationForPhoton
+  {
+    get => this.disableSteamAuthorizationForPhoton;
+    set => this.disableSteamAuthorizationForPhoton = value;
+  }
 
   public void SetDemo(bool state) => this.isDemo = state;
 
@@ -440,7 +531,7 @@ public class GameManager : MonoBehaviour
 
   public bool TutorialWatched(string popType)
   {
-    return PlayerManager.Instance.TutorialWatched != null && PlayerManager.Instance.TutorialWatched.Contains(popType);
+    return this.CheatMode && GameManager.Instance.SkipTutorial || PlayerManager.Instance.TutorialWatched != null && PlayerManager.Instance.TutorialWatched.Contains(popType);
   }
 
   public bool IsTutorialGame()
@@ -498,6 +589,7 @@ public class GameManager : MonoBehaviour
 
   public void EscapeFunction(bool activateExit = true)
   {
+    CardBackSelectionPanel component = HeroSelectionManager.Instance.CardBacksPopUp.GetComponent<CardBackSelectionPanel>();
     if (!this.PrefsLoaded || this.IsMaskActive() || AtOManager.Instance.saveLoadStatus)
       return;
     string sceneName = SceneStatic.GetSceneName();
@@ -532,6 +624,8 @@ public class GameManager : MonoBehaviour
       GiveManager.Instance.ShowGive(false);
     else if (PerkTree.Instance.IsActive())
       PerkTree.Instance.Hide();
+    else if (component.gameObject.activeSelf)
+      component.Close();
     else if (sceneName != "ChallengeSelection" && sceneName != "Map" && (UnityEngine.Object) CardCraftManager.Instance != (UnityEngine.Object) null && !CardCraftManager.Instance.IsWaitingDivination())
     {
       if (Functions.TransformIsVisible(CardCraftManager.Instance.filterWindow))
@@ -684,7 +778,7 @@ public class GameManager : MonoBehaviour
 
   private void GenerateHeroes()
   {
-    if (GameManager.Instance.GetDeveloperMode())
+    if (this.GetDeveloperMode())
       Debug.Log((object) nameof (GenerateHeroes));
     this.gameHeroes = new Dictionary<string, Hero>();
     this.gameHeroes.Add("mercenary", this.CreateHero("mercenary"));
@@ -710,6 +804,13 @@ public class GameManager : MonoBehaviour
     this.gameHeroes.Add("engineer", this.CreateHero("engineer"));
     this.gameHeroes.Add("valkyrie", this.CreateHero("valkyrie"));
     this.gameHeroes.Add("alchemist", this.CreateHero("alchemist"));
+    Hero hero1 = this.CreateHero("deathknight");
+    if (hero1 != null)
+      this.gameHeroes.Add("deathknight", hero1);
+    Hero hero2 = this.CreateHero("bloodmage");
+    if (hero2 == null)
+      return;
+    this.gameHeroes.Add("bloodmage", hero2);
   }
 
   public bool IsObeliskChallenge()
@@ -964,6 +1065,8 @@ public class GameManager : MonoBehaviour
   public Hero CreateHero(string subClass)
   {
     SubClassData subClassData = Globals.Instance.GetSubClassData(subClass);
+    if (!(bool) (UnityEngine.Object) subClassData)
+      return (Hero) null;
     HeroData heroData = UnityEngine.Object.Instantiate<HeroData>(Globals.Instance.GetHeroData(subClassData.HeroClass.ToString().ToLower()));
     Hero hero = new Hero();
     heroData.HeroSubClass = subClassData;

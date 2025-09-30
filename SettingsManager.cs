@@ -1,13 +1,15 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: SettingsManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
+using Paradox;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -30,6 +32,10 @@ public class SettingsManager : MonoBehaviour
   public Toggle resetSavedToggle;
   public Toggle resetTutorialToggle;
   public Toggle extendedDescriptionsToggle;
+  [SerializeField]
+  private Toggle telemetryToggle;
+  [SerializeField]
+  private GameObject telemetryContainerGO;
   public Toggle backgroundMuteToggle;
   public Toggle legacySoundsToggle;
   public Toggle legacySoundsSheepOwlToggle;
@@ -371,6 +377,26 @@ public class SettingsManager : MonoBehaviour
     AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("removeProgressQuestion"));
     this.resetSavedToggle.isOn = false;
   }
+
+  public void OnTelemetryToggleChanged(bool isOn) => this.UpdateTelemetryConsent(isOn);
+
+  public void ShowTelemetryTooltip()
+  {
+    PopupManager.Instance.SetText(Texts.Instance.GetText("optionalTelemetryTooltip"), true, "followdown");
+  }
+
+  public void HideTelemetryTooltip() => PopupManager.Instance.ClosePopup();
+
+  public async Task InitTelemetryToggle()
+  {
+    bool flag = await Telemetry.IsConsentAvailable();
+    this.telemetryContainerGO.SetActive(flag);
+    if (!flag)
+      return;
+    this.telemetryToggle.isOn = await Telemetry.GetConsentChoice();
+  }
+
+  private async void UpdateTelemetryConsent(bool value) => await Telemetry.SetConsentChoice(value);
 
   private void ResetSavedDataAction()
   {

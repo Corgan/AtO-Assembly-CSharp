@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: IntroNewGameManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -10,6 +10,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Zone;
 
 #nullable disable
 public class IntroNewGameManager : MonoBehaviour
@@ -33,6 +34,8 @@ public class IntroNewGameManager : MonoBehaviour
   public Transform bgUprising;
   public Transform bgSahti;
   public Transform bgDreadnought;
+  public Transform bgSunken;
+  public Transform bgDreams;
   private Coroutine coFade;
 
   public static IntroNewGameManager Instance { get; private set; }
@@ -73,12 +76,21 @@ public class IntroNewGameManager : MonoBehaviour
     this.bgUprising.gameObject.SetActive(false);
     this.bgSahti.gameObject.SetActive(false);
     this.bgDreadnought.gameObject.SetActive(false);
+    this.bgSunken.gameObject.SetActive(false);
+    if (GameManager.Instance.CheatMode && GameManager.Instance.StartFromMap != MapType.None)
+    {
+      currentMapNode = MapUtils.GetNodeName(GameManager.Instance.StartFromMap);
+      AtOManager.Instance.currentMapNode = currentMapNode;
+    }
     if (AtOManager.Instance.IsAdventureCompleted())
       this.DoFinishGame();
-    else if (currentMapNode != "tutorial_0" && currentMapNode != "sen_0" && currentMapNode != "secta_0" && currentMapNode != "velka_0" && currentMapNode != "aqua_0" && !currentMapNode.StartsWith("spider_") && currentMapNode != "voidlow_0" && currentMapNode != "faen_0" && currentMapNode != "forge_0" && !currentMapNode.StartsWith("sewers_") && currentMapNode != "wolf_0" && currentMapNode != "ulmin_0" && !currentMapNode.StartsWith("pyr_") && currentMapNode != "uprising_0" && currentMapNode != "sahti_0" && currentMapNode != "dread_0")
+    else if (currentMapNode != "tutorial_0" && currentMapNode != "sen_0" && currentMapNode != "secta_0" && currentMapNode != "velka_0" && currentMapNode != "aqua_0" && !currentMapNode.StartsWith("spider_") && currentMapNode != "voidlow_0" && currentMapNode != "faen_0" && currentMapNode != "forge_0" && !currentMapNode.StartsWith("sewers_") && currentMapNode != "wolf_0" && currentMapNode != "ulmin_0" && !currentMapNode.StartsWith("pyr_") && currentMapNode != "uprising_0" && currentMapNode != "sahti_0" && currentMapNode != "dread_0" && currentMapNode != "sunken_0" && currentMapNode != "dream_0")
       GameManager.Instance.ChangeScene("Map");
     else
       this.DoIntro(currentMapNode);
+    if (!GameManager.Instance.CheatMode || GameManager.Instance.StartFromMap == MapType.None)
+      return;
+    GameManager.Instance.StartFromMap = MapType.None;
   }
 
   private void DoFinishGame()
@@ -158,36 +170,50 @@ public class IntroNewGameManager : MonoBehaviour
       }
       else
       {
-        stringBuilder.Append(string.Format(Texts.Instance.GetText("actNumber"), (object) (townTier + 2)));
         switch (currentMapNode)
         {
-          case "velka_0":
-            this.bgVelkarath.gameObject.SetActive(true);
-            _id = "Velkarath";
+          case "sunken_0":
+            stringBuilder.Append(string.Format(Texts.Instance.GetText("actNumber"), (object) 2));
+            this.bgSunken.gameObject.SetActive(true);
+            _id = "Sunken";
             break;
-          case "aqua_0":
-            this.bgAquarfall.gameObject.SetActive(true);
-            _id = "Aquarfall";
+          case "dream_0":
+            this.bgDreams.gameObject.SetActive(true);
+            _id = "Dreams";
             break;
-          case "voidlow_0":
-            this.bgVoid.gameObject.SetActive(true);
-            _id = "TheVoid";
-            break;
-          case "faen_0":
-            this.bgFaeborg.gameObject.SetActive(true);
-            _id = "Faeborg";
-            break;
-          case "ulmin_0":
-            this.bgUlminin.gameObject.SetActive(true);
-            _id = "Ulminin";
-            break;
-          case "uprising_0":
-            this.bgUprising.gameObject.SetActive(true);
-            _id = "Uprising";
-            break;
-          case "sahti_0":
-            this.bgSahti.gameObject.SetActive(true);
-            _id = "Sahti";
+          default:
+            stringBuilder.Append(string.Format(Texts.Instance.GetText("actNumber"), (object) (townTier + 2)));
+            switch (currentMapNode)
+            {
+              case "velka_0":
+                this.bgVelkarath.gameObject.SetActive(true);
+                _id = "Velkarath";
+                break;
+              case "aqua_0":
+                this.bgAquarfall.gameObject.SetActive(true);
+                _id = "Aquarfall";
+                break;
+              case "voidlow_0":
+                this.bgVoid.gameObject.SetActive(true);
+                _id = "TheVoid";
+                break;
+              case "faen_0":
+                this.bgFaeborg.gameObject.SetActive(true);
+                _id = "Faeborg";
+                break;
+              case "ulmin_0":
+                this.bgUlminin.gameObject.SetActive(true);
+                _id = "Ulminin";
+                break;
+              case "uprising_0":
+                this.bgUprising.gameObject.SetActive(true);
+                _id = "Uprising";
+                break;
+              case "sahti_0":
+                this.bgSahti.gameObject.SetActive(true);
+                _id = "Sahti";
+                break;
+            }
             break;
         }
       }
@@ -209,6 +235,14 @@ public class IntroNewGameManager : MonoBehaviour
             break;
           case "uprising_0":
             this.body.text = Texts.Instance.GetText("uprisingIntro");
+            this.buttonContinue.gameObject.SetActive(true);
+            break;
+          case "sunken_0":
+            this.body.text = Texts.Instance.GetText("sunkenIntro");
+            this.buttonContinue.gameObject.SetActive(true);
+            break;
+          case "dream_0":
+            this.body.text = Texts.Instance.GetText("dreamIntro");
             this.buttonContinue.gameObject.SetActive(true);
             break;
           default:

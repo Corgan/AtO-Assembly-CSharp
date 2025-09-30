@@ -1,9 +1,12 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: MatchManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
+using Cards;
+using CustomAbilities;
+using NPCs;
 using Photon.Pun;
 using Photon.Realtime;
 using System;
@@ -20,6 +23,9 @@ using UnityEngine.UI;
 #nullable disable
 public class MatchManager : MonoBehaviour
 {
+  public Action OnLoadCombatFinished;
+  public Action<Hero, CardData> OnCardCastByHeroBegins;
+  public Action<Hero, CardData> OnCardCastedByHero;
   private bool checkSyncCodeInCoop = true;
   private int combatCounter;
   private Dictionary<string, string> syncCodeDict = new Dictionary<string, string>();
@@ -88,6 +94,7 @@ public class MatchManager : MonoBehaviour
   private List<string> randomStringDeckArr = new List<string>();
   private List<string> randomStringShuffleArr = new List<string>();
   private List<string> randomStringMiscArr = new List<string>();
+  private bool winOnBattleFast;
   private bool combatLoading;
   private bool reloadingGame;
   public bool justCasted;
@@ -97,6 +104,7 @@ public class MatchManager : MonoBehaviour
   private Dictionary<int, List<string>> heroBeginItems = new Dictionary<int, List<string>>();
   private Dictionary<int, Dictionary<string, string>> heroDestroyedItemsInThisTurn = new Dictionary<int, Dictionary<string, string>>();
   private List<string> teamHeroItemsFromTurnSave;
+  private List<NPCState> npcParamsFromTurnSave;
   public Dictionary<string, List<string>> prePostDamageDictionary = new Dictionary<string, List<string>>();
   public int energyJustWastedByHero;
   public SideCharacters sideCharacters;
@@ -332,6 +340,16 @@ public class MatchManager : MonoBehaviour
   private float sinceLastUpdate;
   private float updateTimeout = 0.015f;
   public List<GameObject> decorationsT;
+  private BossNPC bossNpc;
+  public GameObject phantomArmorPrefab;
+  public GameObject phantomArmorVfxPrefab;
+  private MindSpikeAbility mindSpikeAbility;
+  private Aura auraCurse;
+  private readonly Dictionary<string, Dictionary<Character, bool>> auraStates = new Dictionary<string, Dictionary<Character, bool>>((IEqualityComparer<string>) StringComparer.OrdinalIgnoreCase);
+  public static Action<NPCData, HeroData, int> OnCharacterKilled;
+  public static Action<Character, int> OnCharacterDamaged;
+
+  public MindSpikeAbility MindSpikeAbility => this.mindSpikeAbility;
 
   public static MatchManager Instance { get; private set; }
 
@@ -353,9 +371,11 @@ public class MatchManager : MonoBehaviour
       this.newCardsCounterTM = this.newCardsCounter.GetChild(0).GetComponent<TMP_Text>();
       this.sceneCamera.gameObject.SetActive(false);
       this.photonView = PhotonView.Get((Component) this);
+      this.bossNpc = (BossNPC) null;
       AlertManager.Instance.HideAlert();
       this.ShowMaskFull();
       NetworkManager.Instance.StartStopQueue(true);
+      this.mindSpikeAbility = new MindSpikeAbility();
     }
   }
 
@@ -431,7 +451,6 @@ public class MatchManager : MonoBehaviour
             ++this.failCount;
             if (this.failCount == 300)
             {
-              Debug.Log((object) this.getStatusString);
               if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
                 this.photonView.RPC("NET_MasterReloadCombat", RpcTarget.MasterClient, (object) ("from update() " + this.failCount.ToString()));
               else
@@ -620,12 +639,14 @@ public class MatchManager : MonoBehaviour
     string turnCombatStatsEffects,
     string turnCombatStatsCurrent,
     string turnHeroLife,
-    string itemExecutionInCombat)
+    string itemExecutionInCombat,
+    string currentSpecialCardsUsedInMatch,
+    string npcParams)
   {
     if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster() && turnData == "")
       NetworkManager.Instance.SetStatusReady("loadturndatasyncro");
     else
-      this.SetLoadTurn(turnData, turnCombatDictionaryKeys, turnCombatDictionaryValues, turnHeroItems, turnCombatStatsEffects, turnCombatStatsCurrent, turnHeroLife, itemExecutionInCombat);
+      this.SetLoadTurn(turnData, turnCombatDictionaryKeys, turnCombatDictionaryValues, turnHeroItems, turnCombatStatsEffects, turnCombatStatsCurrent, turnHeroLife, itemExecutionInCombat, currentSpecialCardsUsedInMatch, npcParams);
   }
 
   public void SetLoadTurn(
@@ -636,7 +657,9 @@ public class MatchManager : MonoBehaviour
     string turnCombatStatsEffects,
     string turnCombatStatsCurrent,
     string turnHeroLife,
-    string itemExecutionInCombat)
+    string itemExecutionInCombat,
+    string currentSpecialCardsUsedInMatch,
+    string npcParams)
   {
     AtOManager.Instance.combatGameCode = turnData;
     this.SetCardDictionaryKeysValues(turnCombatDictionaryKeys, turnCombatDictionaryValues);
@@ -646,11 +669,13 @@ public class MatchManager : MonoBehaviour
     this.SetCombatStatsCurrentForTurnSave(turnCombatStatsCurrent);
     this.SetHeroLifeArrForTurnSave(turnHeroLife);
     this.SetItemExecutionInCombatForTurnSave(itemExecutionInCombat);
+    this.SetCurrentSpecialCardsUsedInMatchForTurnSave(currentSpecialCardsUsedInMatch);
+    this.SetNPCParamsFromTurnSave(npcParams);
     if (GameManager.Instance.IsMultiplayer())
     {
       if (NetworkManager.Instance.IsMaster())
       {
-        this.turnDataForMP = new string[8];
+        this.turnDataForMP = new string[10];
         this.turnDataForMP[0] = turnData;
         this.turnDataForMP[1] = turnCombatDictionaryKeys;
         this.turnDataForMP[2] = turnCombatDictionaryValues;
@@ -659,6 +684,8 @@ public class MatchManager : MonoBehaviour
         this.turnDataForMP[5] = turnCombatStatsCurrent;
         this.turnDataForMP[6] = turnHeroLife;
         this.turnDataForMP[7] = itemExecutionInCombat;
+        this.turnDataForMP[8] = currentSpecialCardsUsedInMatch;
+        this.turnDataForMP[9] = npcParams;
       }
       else
         NetworkManager.Instance.SetStatusReady("loadturndatasyncro");
@@ -682,13 +709,13 @@ public class MatchManager : MonoBehaviour
       {
         if (this.turnLoadedBySave)
         {
-          if (this.turnDataForMP != null && this.turnDataForMP.Length == 8)
-            this.photonView.RPC("NET_SetLoadTurn", RpcTarget.Others, (object) this.turnDataForMP[0], (object) this.turnDataForMP[1], (object) this.turnDataForMP[2], (object) this.turnDataForMP[3], (object) this.turnDataForMP[4], (object) this.turnDataForMP[5], (object) this.turnDataForMP[6], (object) this.turnDataForMP[7]);
+          if (this.turnDataForMP != null && this.turnDataForMP.Length == 10)
+            this.photonView.RPC("NET_SetLoadTurn", RpcTarget.Others, (object) this.turnDataForMP[0], (object) this.turnDataForMP[1], (object) this.turnDataForMP[2], (object) this.turnDataForMP[3], (object) this.turnDataForMP[4], (object) this.turnDataForMP[5], (object) this.turnDataForMP[6], (object) this.turnDataForMP[7], (object) this.turnDataForMP[8], (object) this.turnDataForMP[9]);
           else
-            this.photonView.RPC("NET_SetLoadTurn", RpcTarget.Others, (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "");
+            this.photonView.RPC("NET_SetLoadTurn", RpcTarget.Others, (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "");
         }
         else
-          this.photonView.RPC("NET_SetLoadTurn", RpcTarget.Others, (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "");
+          this.photonView.RPC("NET_SetLoadTurn", RpcTarget.Others, (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "", (object) "");
       }
       if (Globals.Instance.ShowDebug)
         Functions.DebugLogGD("**************************", "net");
@@ -1034,11 +1061,13 @@ public class MatchManager : MonoBehaviour
     SpriteRenderer pittSR = deadT.Find("cavern_deadpitt").GetComponent<SpriteRenderer>();
     pittSR.color = new Color(1f, 1f, 1f, 0.0f);
     float index = 0.0f;
+    Color hideColor = new Color(1f, 1f, 1f, 0.0f);
     while ((double) index < 1.0)
     {
       yield return (object) Globals.Instance.WaitForSeconds(0.02f);
       index += 0.1f;
-      pittSR.color = new Color(1f, 1f, 1f, index);
+      hideColor.a = index;
+      pittSR.color = hideColor;
     }
   }
 
@@ -1225,7 +1254,7 @@ public class MatchManager : MonoBehaviour
     for (int index = 0; index < teamNpc.Length; ++index)
     {
       this.TeamNPC[index] = (NPC) null;
-      if (teamNpc[index] != null && teamNpc[index] != "" && (!((UnityEngine.Object) this.combatData != (UnityEngine.Object) null) || AtOManager.Instance.GetMadnessDifficulty() != 0 || this.combatData.NpcRemoveInMadness0Index != index || AtOManager.Instance.GetActNumberForText() >= 3))
+      if (teamNpc[index] != null && teamNpc[index] != "" && (!((UnityEngine.Object) this.combatData != (UnityEngine.Object) null) || (!GameManager.Instance.IsGameAdventure() || AtOManager.Instance.GetMadnessDifficulty() != 0) && (!GameManager.Instance.IsSingularity() || AtOManager.Instance.GetSingularityMadness() != 0) || this.combatData.NpcRemoveInMadness0Index != index || AtOManager.Instance.GetActNumberForText() >= 3))
       {
         NPC npc = new NPC();
         npc.NpcData = Globals.Instance.GetNPC(teamNpc[index]);
@@ -1234,6 +1263,65 @@ public class MatchManager : MonoBehaviour
         this.TeamNPC[index] = npc;
       }
     }
+    if (!((UnityEngine.Object) this.combatData != (UnityEngine.Object) null) || !this.combatData.RandomizeNpcPosition)
+      return;
+    System.Random random = new System.Random();
+    for (int index1 = this.TeamNPC.Length - 1; index1 > 0; --index1)
+    {
+      int index2 = random.Next(index1 + 1) % (this.TeamNPC.Length - 1);
+      NPC npc = this.TeamNPC[index2];
+      this.TeamNPC[index2] = this.TeamNPC[index1];
+      if (this.TeamNPC[index1] != null)
+      {
+        this.TeamNPC[index2].Position = this.TeamNPC[index1].Position;
+        this.TeamNPC[index2].NPCIndex = this.TeamNPC[index1].NPCIndex;
+      }
+      this.TeamNPC[index1] = npc;
+      if (npc != null)
+      {
+        this.TeamNPC[index1].Position = npc.Position;
+        this.TeamNPC[index1].NPCIndex = npc.NPCIndex;
+      }
+    }
+  }
+
+  private void UpdateBossNpc()
+  {
+    if (this.bossNpc != null)
+      return;
+    foreach (NPC npc in this.TeamNPC)
+    {
+      if (npc != null && npc.NPCIsBoss())
+      {
+        if (npc.NpcData.Id == "franky")
+          this.bossNpc = (BossNPC) new Frankenstein(npc);
+        else if (npc.NpcData.Id == "s_queen")
+          this.bossNpc = (BossNPC) new SirenQueen();
+        else if (npc.NpcData.Id == "count")
+          this.bossNpc = (BossNPC) new Dracula(npc);
+        else if (npc.NpcData.Id == "pa_d")
+          this.bossNpc = (BossNPC) new PhantomArmor(npc);
+      }
+    }
+    if ((UnityEngine.Object) this.combatData != (UnityEngine.Object) null)
+    {
+      if (!((UnityEngine.Object) this.combatData.NpcToSummonOnNpcKilled != (UnityEngine.Object) null) || !(this.combatData.NpcToSummonOnNpcKilled.Id == "s_queen"))
+        return;
+      this.bossNpc = (BossNPC) new SirenQueen();
+    }
+    else
+    {
+      if (!AtOManager.Instance.SirenQueenBattle)
+        return;
+      this.bossNpc = (BossNPC) new SirenQueen();
+    }
+  }
+
+  private void OnDestroy()
+  {
+    if (this.bossNpc == null)
+      return;
+    this.bossNpc.Dispose();
   }
 
   private void GenerateHeroes()
@@ -1330,9 +1418,9 @@ public class MatchManager : MonoBehaviour
     this.teamHeroItemsFromTurnSave = (List<string>) null;
   }
 
-  public void RemovePetEnchantment(GameObject charGO)
+  public void RemovePetEnchantment(GameObject charGO, string _enchantmentName = "")
   {
-    string n = "thePetEnchantment";
+    string n = "thePetEnchantment" + _enchantmentName;
     Transform transform = charGO.transform.Find(n);
     if (!((UnityEngine.Object) transform != (UnityEngine.Object) null))
       return;
@@ -1345,11 +1433,11 @@ public class MatchManager : MonoBehaviour
     Hero _hero,
     NPC _npc,
     bool _fromEnchant = false,
-    int _enchantIndex = -1)
+    string _enchantName = "")
   {
     string n = "thePet";
     if (_fromEnchant)
-      n = "thePetEnchantment" + _enchantIndex.ToString();
+      n = "thePetEnchantment" + _enchantName;
     Transform transform = charGO.transform.Find(n);
     if ((UnityEngine.Object) transform != (UnityEngine.Object) null)
     {
@@ -1468,28 +1556,19 @@ public class MatchManager : MonoBehaviour
         NPC[] teamNpc1 = this.TeamNPC;
         KeyValuePair<int, int> keyValuePair = source.ElementAt<KeyValuePair<int, int>>(index1);
         int index2 = keyValuePair.Value;
-        if (teamNpc1[index2] != null)
+        NPC currentCharacter = teamNpc1[index2];
+        if (currentCharacter != null)
         {
+          if (MatchManager.CanDestroyIllusion((Character) currentCharacter))
+            this.DestroyIllusion((Character) currentCharacter);
+          currentCharacter.DestroyCharacter();
+          currentCharacter.Alive = false;
+          currentCharacter.HpCurrent = 0;
+          currentCharacter.NpcData = (NPCData) null;
           NPC[] teamNpc2 = this.TeamNPC;
           keyValuePair = source.ElementAt<KeyValuePair<int, int>>(index1);
           int index3 = keyValuePair.Value;
-          teamNpc2[index3].DestroyCharacter();
-          NPC[] teamNpc3 = this.TeamNPC;
-          keyValuePair = source.ElementAt<KeyValuePair<int, int>>(index1);
-          int index4 = keyValuePair.Value;
-          teamNpc3[index4].Alive = false;
-          NPC[] teamNpc4 = this.TeamNPC;
-          keyValuePair = source.ElementAt<KeyValuePair<int, int>>(index1);
-          int index5 = keyValuePair.Value;
-          teamNpc4[index5].HpCurrent = 0;
-          NPC[] teamNpc5 = this.TeamNPC;
-          keyValuePair = source.ElementAt<KeyValuePair<int, int>>(index1);
-          int index6 = keyValuePair.Value;
-          teamNpc5[index6].NpcData = (NPCData) null;
-          NPC[] teamNpc6 = this.TeamNPC;
-          keyValuePair = source.ElementAt<KeyValuePair<int, int>>(index1);
-          int index7 = keyValuePair.Value;
-          teamNpc6[index7] = (NPC) null;
+          teamNpc2[index3] = (NPC) null;
         }
       }
     }
@@ -1498,7 +1577,7 @@ public class MatchManager : MonoBehaviour
     bool flag = false;
     for (int index = 0; index < this.TeamNPC.Length; ++index)
     {
-      if (this.TeamNPC[index].Id.StartsWith("pitt") && this.TeamNPC[index].Alive)
+      if (this.TeamNPC[index] != null && this.TeamNPC[index].Id.StartsWith("pitt") && this.TeamNPC[index].Alive)
       {
         flag = true;
         this.DoSahtiRustBackground(true);
@@ -1510,12 +1589,26 @@ public class MatchManager : MonoBehaviour
     this.DoSahtiRustBackground(false);
   }
 
-  public int GetNPCAvailablePosition()
+  public int GetNPCAvailablePosition(int slotsNeeded = 1)
   {
-    for (int availablePosition = 0; availablePosition < this.TeamNPC.Length; ++availablePosition)
+    if (slotsNeeded < 1 || slotsNeeded > this.TeamNPC.Length)
+      return -1;
+    for (int availablePosition = 0; availablePosition < this.TeamNPC.Length && availablePosition + slotsNeeded <= this.TeamNPC.Length; ++availablePosition)
     {
       if ((this.TeamNPC[availablePosition] == null || !this.TeamNPC[availablePosition].Alive) && (availablePosition <= 0 || this.TeamNPC[availablePosition - 1] == null || !((UnityEngine.Object) this.TeamNPC[availablePosition - 1].NpcData != (UnityEngine.Object) null) || !this.TeamNPC[availablePosition - 1].Alive || !this.TeamNPC[availablePosition - 1].NpcData.BigModel))
-        return availablePosition;
+      {
+        bool flag = true;
+        for (int index = 0; index < slotsNeeded; ++index)
+        {
+          if (this.TeamNPC[availablePosition + index] != null && this.TeamNPC[availablePosition + index].Alive)
+          {
+            flag = false;
+            break;
+          }
+        }
+        if (flag)
+          return availablePosition;
+      }
     }
     return -1;
   }
@@ -1527,27 +1620,152 @@ public class MatchManager : MonoBehaviour
     this.targetTransformDict.Remove(_key);
   }
 
-  private void CreateNPC(
+  private Character CreateIllusion(
+    Character originalCharacter,
+    string effectTarget,
+    CardData card1,
+    int createdCharacterPositionInTeam)
+  {
+    bool isNPC = originalCharacter is NPC;
+    if (!isNPC)
+      throw new InvalidOperationException("Illusion for Hero is not supported");
+    CharacterItem characterItem = isNPC ? (CharacterItem) originalCharacter.NPCItem : (CharacterItem) originalCharacter.HeroItem;
+    List<Aura> auraList = originalCharacter.AuraList;
+    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.npcPrefab, Vector3.zero, Quaternion.identity, this.GO_NPCs.transform);
+    Character characterWithUniqueId = this.CreateCharacterWithUniqueId(originalCharacter, isNPC, createdCharacterPositionInTeam);
+    gameObject.name = characterWithUniqueId.Id;
+    if (this.targetTransformDict != null)
+      this.targetTransformDict[gameObject.name] = gameObject.transform;
+    characterWithUniqueId.Position = createdCharacterPositionInTeam;
+    characterWithUniqueId.RoundMoved = this.currentRound + 1;
+    characterWithUniqueId.GO = gameObject;
+    if (isNPC)
+    {
+      characterWithUniqueId.SetNPCIndex(createdCharacterPositionInTeam);
+      characterWithUniqueId.NPCItem = gameObject.GetComponent<NPCItem>();
+      characterWithUniqueId.NPCItem.NpcData = characterWithUniqueId.NpcData;
+      characterWithUniqueId.NPCItem.Init((NPC) characterWithUniqueId);
+      characterWithUniqueId.NPCItem.DrawOrderSprites(false, createdCharacterPositionInTeam * 2);
+      this.NPCHand[createdCharacterPositionInTeam] = new List<string>();
+      this.NPCDeckDiscard[createdCharacterPositionInTeam] = new List<string>((IEnumerable<string>) this.NPCDeckDiscard[originalCharacter.NPCIndex]);
+      this.NPCDeck[createdCharacterPositionInTeam] = new List<string>();
+      this.NPCDeck[createdCharacterPositionInTeam].AddRange(this.NPCHand[originalCharacter.NPCIndex].Where<string>((Func<string, bool>) (card2 => card2 != null)));
+      this.NPCDeck[createdCharacterPositionInTeam].AddRange((IEnumerable<string>) this.NPCDeck[originalCharacter.NPCIndex]);
+    }
+    else
+    {
+      characterWithUniqueId.SetHeroIndex(createdCharacterPositionInTeam);
+      characterWithUniqueId.HeroItem = gameObject.GetComponent<HeroItem>();
+      characterWithUniqueId.HeroItem.HeroData = characterWithUniqueId.HeroData;
+      characterWithUniqueId.HeroItem.Init((Hero) characterWithUniqueId);
+      characterWithUniqueId.HeroItem.DrawOrderSprites(false, createdCharacterPositionInTeam * 2);
+      this.HeroHand[createdCharacterPositionInTeam] = new List<string>();
+      this.HeroDeckDiscard[createdCharacterPositionInTeam] = new List<string>((IEnumerable<string>) this.HeroDeckDiscard[originalCharacter.HeroIndex]);
+      this.HeroDeck[createdCharacterPositionInTeam].AddRange(this.HeroHand[originalCharacter.HeroIndex].Where<string>((Func<string, bool>) (card3 => card3 != null)));
+      this.HeroDeck[createdCharacterPositionInTeam].AddRange((IEnumerable<string>) this.HeroDeck[originalCharacter.HeroIndex]);
+    }
+    this.SetInitiatives();
+    this.ReDrawInitiatives();
+    (isNPC ? (CharacterItem) characterWithUniqueId.NPCItem : (CharacterItem) characterWithUniqueId.HeroItem).SetPosition(true);
+    string str = (isNPC ? (IEnumerable<Character>) this.TeamNPC : (IEnumerable<Character>) this.TeamHero).FirstOrDefault<Character>((Func<Character, bool>) (m => m != null && !(m.Corruption == "")))?.Corruption ?? "";
+    characterWithUniqueId.Corruption = str;
+    characterWithUniqueId.AuraList = auraList.Select<Aura, Aura>((Func<Aura, Aura>) (a => a.DeepClone())).ToList<Aura>();
+    characterWithUniqueId.HpCurrent = originalCharacter.HpCurrent;
+    characterWithUniqueId.UpdateAuraCurseFunctions();
+    if (isNPC)
+    {
+      List<string> collection;
+      if (!this.npcCardsCasted.TryGetValue(originalCharacter.InternalId, out collection))
+        collection = new List<string>();
+      this.npcCardsCasted[characterWithUniqueId.InternalId] = new List<string>((IEnumerable<string>) collection);
+    }
+    if ((UnityEngine.Object) card1 != (UnityEngine.Object) null)
+    {
+      if (!string.IsNullOrEmpty(effectTarget))
+        EffectsManager.Instance.PlayEffect(card1, false, false, characterItem.CharImageT);
+      if ((UnityEngine.Object) card1.SummonAura != (UnityEngine.Object) null && card1.SummonAuraCharges > 0)
+        characterWithUniqueId.SetAura((Character) null, card1.SummonAura, card1.SummonAuraCharges);
+      if ((UnityEngine.Object) card1.SummonAura2 != (UnityEngine.Object) null && card1.SummonAuraCharges2 > 0)
+        characterWithUniqueId.SetAura((Character) null, card1.SummonAura2, card1.SummonAuraCharges2);
+      if ((UnityEngine.Object) card1.SummonAura3 != (UnityEngine.Object) null && card1.SummonAuraCharges3 > 0)
+        characterWithUniqueId.SetAura((Character) null, card1.SummonAura3, card1.SummonAuraCharges3);
+    }
+    characterWithUniqueId.IsIllusion = true;
+    originalCharacter.IllusionCharacter = characterWithUniqueId;
+    if (isNPC)
+      characterWithUniqueId.NpcData.FinishCombatOnDead = false;
+    return characterWithUniqueId;
+  }
+
+  private Character CreateCharacterWithUniqueId(
+    Character original,
+    bool isNPC,
+    int newPositionInTeam)
+  {
+    Character character;
+    if (!isNPC)
+    {
+      Hero hero = new Hero();
+      hero.HeroData = original.HeroData;
+      character = (Character) hero;
+    }
+    else
+    {
+      character = (Character) new NPC();
+      character.NpcData = original.NpcData;
+    }
+    Character characterWithUniqueId = character;
+    Character[] characterArray = isNPC ? (Character[]) this.TeamNPC : (Character[]) this.TeamHero;
+    characterWithUniqueId.InitData();
+    characterWithUniqueId.Position = newPositionInTeam;
+    characterArray[newPositionInTeam] = characterWithUniqueId;
+    string randomString = this.GetRandomString();
+    while (this.targetTransformDict.ContainsKey(randomString))
+      randomString = this.GetRandomString();
+    characterWithUniqueId.InternalId = randomString;
+    bool flag;
+    do
+    {
+      flag = false;
+      for (int index = 0; index < characterArray.Length; ++index)
+      {
+        if (index != newPositionInTeam && characterArray[index] != null && characterArray[index].InternalId == characterWithUniqueId.InternalId)
+        {
+          flag = true;
+          characterWithUniqueId.InternalId += newPositionInTeam.ToString();
+          break;
+        }
+      }
+    }
+    while (flag);
+    characterWithUniqueId.InitData();
+    GameManager.Instance.PlayAudio(Globals.Instance.GetAuraCurseData("spark").GetSound(true));
+    return characterWithUniqueId;
+  }
+
+  public void CreateNPC(
     NPCData _npcData,
     string effectTarget = "",
     int _position = -1,
     bool generateFromReload = false,
     string internalId = "",
     CardData _cardActive = null,
-    string _casterInternalId = "")
+    string _casterInternalId = "",
+    float delay = 0.0f,
+    bool replaceCharacter = false,
+    bool isSummon = false)
   {
     if (Globals.Instance.ShowDebug)
       Functions.DebugLogGD("CreateNPC -> " + _npcData?.ToString() + " ID->" + internalId + " INPOS->" + _position.ToString(), "trace");
     int index1 = -1;
     bool flag1 = false;
-    bool flag2 = false;
     if (!generateFromReload && (UnityEngine.Object) _cardActive != (UnityEngine.Object) null && (_cardActive.Metamorph || _cardActive.Evolve))
     {
-      flag1 = true;
+      replaceCharacter = true;
       if (_cardActive.Evolve)
-        flag2 = true;
+        flag1 = true;
     }
-    if (!flag1)
+    if (!replaceCharacter)
     {
       index1 = this.GetNPCAvailablePosition();
       if (_position > -1)
@@ -1565,14 +1783,14 @@ public class MatchManager : MonoBehaviour
       }
     }
     else
-      flag1 = false;
+      replaceCharacter = false;
     if (index1 <= -1)
       return;
     float num = 1f;
     List<Aura> auraList = (List<Aura>) null;
-    if (flag1)
+    if (replaceCharacter)
     {
-      if (flag2)
+      if (flag1)
       {
         auraList = new List<Aura>((IEnumerable<Aura>) this.TeamNPC[index1].AuraList);
         num = (float) this.TeamNPC[index1].HpCurrent / (float) this.TeamNPC[index1].Hp;
@@ -1593,15 +1811,15 @@ public class MatchManager : MonoBehaviour
     }
     else
       _npc.InternalId = internalId;
-    bool flag3 = true;
-    while (flag3)
+    bool flag2 = true;
+    while (flag2)
     {
-      flag3 = false;
+      flag2 = false;
       for (int index3 = 0; index3 < this.TeamNPC.Length; ++index3)
       {
         if (index3 != index1 && this.TeamNPC[index3] != null && this.TeamNPC[index3].InternalId == _npc.InternalId)
         {
-          flag3 = true;
+          flag2 = true;
           _npc.InternalId += index1.ToString();
           break;
         }
@@ -1620,6 +1838,7 @@ public class MatchManager : MonoBehaviour
     _npc.NPCItem = gameObject.GetComponent<NPCItem>();
     _npc.NPCItem.NpcData = _npcData;
     _npc.NPCItem.Init(_npc);
+    _npc.IsSummon = isSummon;
     _npc.NPCItem.SetPosition(true);
     _npc.NPCItem.DrawOrderSprites(false, index1 * 2);
     this.NPCHand[index1] = new List<string>();
@@ -1627,7 +1846,7 @@ public class MatchManager : MonoBehaviour
     if (!generateFromReload)
     {
       _npc.NPCItem.InstantFadeOutCharacter();
-      this.StartCoroutine(_npc.NPCItem.FadeInCharacter());
+      Globals.Instance.StartCoroutine(_npc.NPCItem.FadeInCharacter(delay));
       this.GenerateDecksNPCs(index1);
     }
     this.SetInitiatives();
@@ -1657,7 +1876,7 @@ public class MatchManager : MonoBehaviour
       }
       _npc.Corruption = str;
     }
-    if (!flag2)
+    if (!flag1)
       return;
     _npc.AuraList = auraList;
     _npc.HpCurrent = Functions.FuncRoundToInt((float) _npc.Hp * num);
@@ -1892,6 +2111,39 @@ public class MatchManager : MonoBehaviour
       return;
     _heroItems = Functions.DecompressString(_heroItems);
     this.teamHeroItemsFromTurnSave = ((IEnumerable<string>) JsonHelper.FromJson<string>(_heroItems)).ToList<string>();
+  }
+
+  public string GetNPCParamsForTurnSave()
+  {
+    if (!((IEnumerable<NPC>) this.TeamNPC).Any<NPC>((Func<NPC, bool>) (npc => this.IsIllusion((Character) npc) || npc.IsSummon)))
+      return string.Empty;
+    List<NPCState> npcStateList = new List<NPCState>();
+    foreach (NPC npc in this.TeamNPC)
+    {
+      if (!((UnityEngine.Object) npc?.NpcData == (UnityEngine.Object) null) && (this.IsIllusion((Character) npc) || npc.IllusionCharacter != null))
+      {
+        Character illusionCharacter = npc.IllusionCharacter;
+        npcStateList.Add(new NPCState()
+        {
+          Id = npc.NpcData.Id + "_" + npc.InternalId,
+          IsIllusion = npc.IsIllusion,
+          IsIllusionExposed = npc.IsIllusionExposed,
+          IllusionCharacterId = illusionCharacter == null ? "" : illusionCharacter.NpcData.Id + "_" + illusionCharacter.InternalId
+        });
+      }
+    }
+    return npcStateList.Count != 0 ? Functions.CompressString(JsonHelper.ToJson<NPCState>(npcStateList.ToArray())) : string.Empty;
+  }
+
+  public void SetNPCParamsFromTurnSave(string _npcParams)
+  {
+    if (string.IsNullOrEmpty(_npcParams))
+      return;
+    _npcParams = Functions.DecompressString(_npcParams);
+    NPCState[] source = JsonHelper.FromJson<NPCState>(_npcParams);
+    if (source == null)
+      return;
+    this.npcParamsFromTurnSave = ((IEnumerable<NPCState>) source).ToList<NPCState>();
   }
 
   private void NET_ShareDecks(bool ContinueNewGame = false)
@@ -2205,7 +2457,11 @@ public class MatchManager : MonoBehaviour
 
   private IEnumerator BeginMatch()
   {
+    this.UpdateBossNpc();
     GameManager.Instance.SceneLoaded();
+    Action loadCombatFinished = this.OnLoadCombatFinished;
+    if (loadCombatFinished != null)
+      loadCombatFinished();
     string lower = AtOManager.Instance.GetTownZoneId().ToLower();
     if (GameManager.Instance.IsMultiplayer() && Globals.Instance.ZoneDataSource.ContainsKey(lower) && !Globals.Instance.ZoneDataSource[lower].ChangeTeamOnEntrance)
     {
@@ -2550,9 +2806,44 @@ public class MatchManager : MonoBehaviour
           Functions.DebugLogGD("abouttobegin, we can continue!", "net");
       }
     }
+    if (GameManager.Instance.CheatMode && GameManager.Instance.UseImmortal)
+    {
+      int num = 99999;
+      foreach (Hero hero in this.TeamHero)
+      {
+        hero.Hp = num;
+        hero.HpCurrent = num;
+        hero.SetHP();
+      }
+    }
     this.combatLoading = false;
     this.NextTurnFunction();
     yield return (object) null;
+  }
+
+  private bool TryGetNPCsWithMasterReweaverAbility(
+    CardData data,
+    Character casterCharacter,
+    out List<NPC> npcsWithAbility)
+  {
+    npcsWithAbility = new List<NPC>();
+    if (casterCharacter == null || !casterCharacter.Alive || !(casterCharacter is Hero) || (UnityEngine.Object) casterCharacter.HeroData == (UnityEngine.Object) null || !this.IsFightCard(data) || data.Corrupted)
+      return false;
+    foreach (NPC npc in this.TeamNPC)
+    {
+      if (npc != null && npc.Alive)
+      {
+        foreach (string masterReweaverKey in CardUtils.MasterReweaverKeys)
+        {
+          if (npc.HasEnchantment(masterReweaverKey))
+          {
+            npcsWithAbility.Add(npc);
+            break;
+          }
+        }
+      }
+    }
+    return npcsWithAbility.Count > 0;
   }
 
   private void SetEventDirect(string theEvent, bool automatic = true, bool add = false)
@@ -2591,9 +2882,10 @@ public class MatchManager : MonoBehaviour
     Enums.EventActivation theEvent,
     Character target = null,
     int auxInt = 0,
-    string auxString = "")
+    string auxString = "",
+    Character caster = null)
   {
-    this.StartCoroutine(this.SetEventCoAction(theChar, theEvent, target, auxInt, auxString));
+    this.StartCoroutine(this.SetEventCoAction(theChar, theEvent, target, auxInt, auxString, caster));
   }
 
   private IEnumerator SetEventCoAction(
@@ -2601,7 +2893,8 @@ public class MatchManager : MonoBehaviour
     Enums.EventActivation theEvent,
     Character target = null,
     int auxInt = 0,
-    string auxString = "")
+    string auxString = "",
+    Character caster = null)
   {
     while (this.waitingDeathScreen)
     {
@@ -2617,22 +2910,22 @@ public class MatchManager : MonoBehaviour
     }
     else
     {
-      StringBuilder stringBuilder = new StringBuilder();
-      stringBuilder.Append(theChar.Id);
-      stringBuilder.Append(auxInt);
-      stringBuilder.Append(auxString);
-      stringBuilder.Append(theEvent.ToString());
-      string eventCode = stringBuilder.ToString();
+      string eventCode = new StringBuilder().Append(theChar.Id).Append(auxInt).Append(auxString).Append(theEvent.ToString()).ToString();
       if (!this.eventList.Contains(eventCode))
         this.eventList.Add(eventCode);
       if (theEvent != Enums.EventActivation.BeginTurn || !theChar.HasEffectSkipsTurn())
       {
-        if (theChar.IsHero && theChar.HaveTraitToActivate(theEvent))
+        if (theChar.IsHero && theChar.ActivateTrait(theEvent, target, auxInt, auxString))
         {
-          theChar.ActivateTrait(theEvent, target, auxInt, auxString);
           yield return (object) Globals.Instance.WaitForSeconds(0.2f);
           for (; this.generatedCardTimes > 0; --this.generatedCardTimes)
             yield return (object) Globals.Instance.WaitForSeconds(0.5f);
+        }
+        else
+        {
+          Character character = target;
+          if ((character != null ? (character.IsHero ? 1 : 0) : 0) != 0 && theEvent == Enums.EventActivation.AuraCurseSet)
+            target.ActivateTrait(theEvent, target, auxInt, auxString);
         }
         if (this.generatedCardTimes < 0)
           this.generatedCardTimes = 0;
@@ -2649,7 +2942,7 @@ public class MatchManager : MonoBehaviour
         }
         this.generatedCardTimes = 0;
       }
-      theChar.FinishSetEvent(theEvent);
+      theChar.FinishSetEvent(theEvent, target, auxInt, auxString);
       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
       if (this.eventList.Contains(eventCode))
         this.eventList.Remove(eventCode);
@@ -2743,6 +3036,7 @@ public class MatchManager : MonoBehaviour
       Functions.DebugLogGD("[ENDTURN]", "trace");
     if (Globals.Instance.ShowDebug)
       Functions.DebugLogGD("[ENDTURN] GameStatus->" + this.gameStatus, "trace");
+    Debug.Log((object) nameof (EndTurn));
     this.ShowHandMask(true);
     if (this.botEndTurn.gameObject.activeSelf)
       this.botEndTurn.gameObject.SetActive(false);
@@ -3027,7 +3321,13 @@ public class MatchManager : MonoBehaviour
 
   public int GameRound() => this.currentRound;
 
-  private void NextTurnFunction() => this.StartCoroutine(this.NextTurn());
+  internal void NextTurnFunction()
+  {
+    this.StartCoroutine(this.NextTurn());
+    if (!GameManager.Instance.CheatMode || !GameManager.Instance.WinMatchOnStart)
+      return;
+    this.FinishCombat();
+  }
 
   private IEnumerator NextTurn()
   {
@@ -3579,61 +3879,75 @@ public class MatchManager : MonoBehaviour
                 Functions.DebugLogGD("CorruptionBeginRoundPre, we can continue!", "net");
             }
           }
-          if (matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.AllHero || matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.RandomHero || matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.Self)
+          switch (matchManager.corruptionItem.ItemTarget)
           {
-            if (matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.AllHero || matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.Self)
-            {
-              if (Globals.Instance.ShowDebug)
-                Functions.DebugLogGD("corr0");
-              for (int index = 0; index < 4; ++index)
+            case Enums.ItemTarget.Self:
+            case Enums.ItemTarget.RandomHero:
+            case Enums.ItemTarget.AllHero:
+              switch (matchManager.corruptionItem.ItemTarget)
               {
-                if (matchManager.TeamHero[index] != null && matchManager.TeamHero[index].Alive)
-                  matchManager.TeamHero[index].SetEvent(Enums.EventActivation.CorruptionBeginRound);
+                case Enums.ItemTarget.Self:
+                case Enums.ItemTarget.AllHero:
+                  if (Globals.Instance.ShowDebug)
+                    Functions.DebugLogGD("corr0");
+                  for (int index = 0; index < 4; ++index)
+                  {
+                    if (matchManager.TeamHero[index] != null && matchManager.TeamHero[index].Alive)
+                      matchManager.TeamHero[index].SetEvent(Enums.EventActivation.CorruptionBeginRound);
+                  }
+                  break;
+                default:
+                  if (Globals.Instance.ShowDebug)
+                    Functions.DebugLogGD("corr1");
+                  bool flag4 = false;
+                  while (!flag4)
+                  {
+                    int randomIntRange = matchManager.GetRandomIntRange(0, 4);
+                    if (matchManager.TeamHero[randomIntRange] != null && matchManager.TeamHero[randomIntRange].Alive)
+                    {
+                      matchManager.TeamHero[randomIntRange].SetEvent(Enums.EventActivation.CorruptionBeginRound);
+                      flag4 = true;
+                    }
+                  }
+                  break;
               }
-            }
-            else
-            {
-              if (Globals.Instance.ShowDebug)
-                Functions.DebugLogGD("corr1");
-              bool flag4 = false;
-              while (!flag4)
+              break;
+            default:
+              switch (matchManager.corruptionItem.ItemTarget)
               {
-                int randomIntRange = matchManager.GetRandomIntRange(0, 4);
-                if (matchManager.TeamHero[randomIntRange] != null && matchManager.TeamHero[randomIntRange].Alive)
-                {
-                  matchManager.TeamHero[randomIntRange].SetEvent(Enums.EventActivation.CorruptionBeginRound);
-                  flag4 = true;
-                }
+                case Enums.ItemTarget.RandomEnemy:
+                case Enums.ItemTarget.AllEnemy:
+                case Enums.ItemTarget.SelfEnemy:
+                  switch (matchManager.corruptionItem.ItemTarget)
+                  {
+                    case Enums.ItemTarget.AllEnemy:
+                    case Enums.ItemTarget.SelfEnemy:
+                      if (Globals.Instance.ShowDebug)
+                        Functions.DebugLogGD("corr2");
+                      for (int index = 0; index < 4; ++index)
+                      {
+                        if (matchManager.TeamNPC[index] != null && matchManager.TeamNPC[index].Alive)
+                          matchManager.TeamNPC[index].SetEvent(Enums.EventActivation.CorruptionBeginRound);
+                      }
+                      break;
+                    default:
+                      if (Globals.Instance.ShowDebug)
+                        Functions.DebugLogGD("corr3");
+                      bool flag5 = false;
+                      while (!flag5)
+                      {
+                        int randomIntRange = matchManager.GetRandomIntRange(0, 4);
+                        if (matchManager.TeamNPC[randomIntRange] != null && matchManager.TeamNPC[randomIntRange].Alive)
+                        {
+                          matchManager.TeamNPC[randomIntRange].SetEvent(Enums.EventActivation.CorruptionBeginRound);
+                          flag5 = true;
+                        }
+                      }
+                      break;
+                  }
+                  break;
               }
-            }
-          }
-          else if (matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.AllEnemy || matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.RandomEnemy || matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.SelfEnemy)
-          {
-            if (matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.AllEnemy || matchManager.corruptionItem.ItemTarget == Enums.ItemTarget.SelfEnemy)
-            {
-              if (Globals.Instance.ShowDebug)
-                Functions.DebugLogGD("corr2");
-              for (int index = 0; index < 4; ++index)
-              {
-                if (matchManager.TeamNPC[index] != null && matchManager.TeamNPC[index].Alive)
-                  matchManager.TeamNPC[index].SetEvent(Enums.EventActivation.CorruptionBeginRound);
-              }
-            }
-            else
-            {
-              if (Globals.Instance.ShowDebug)
-                Functions.DebugLogGD("corr3");
-              bool flag5 = false;
-              while (!flag5)
-              {
-                int randomIntRange = matchManager.GetRandomIntRange(0, 4);
-                if (matchManager.TeamNPC[randomIntRange] != null && matchManager.TeamNPC[randomIntRange].Alive)
-                {
-                  matchManager.TeamNPC[randomIntRange].SetEvent(Enums.EventActivation.CorruptionBeginRound);
-                  flag5 = true;
-                }
-              }
-            }
+              break;
           }
           yield return (object) Globals.Instance.WaitForSeconds(0.2f);
           for (i = 0; matchManager.generatedCardTimes > 0 && i < 200; ++i)
@@ -4620,7 +4934,7 @@ public class MatchManager : MonoBehaviour
     }
   }
 
-  private void SetInitiatives()
+  public void SetInitiatives()
   {
     if (this.CharOrder != null)
     {
@@ -4860,6 +5174,8 @@ public class MatchManager : MonoBehaviour
       this.targetTransform = transform;
   }
 
+  public Transform GetTarget() => this.targetTransform;
+
   [PunRPC]
   private void NET_SetTargetTransform(string _targetTransform)
   {
@@ -4990,6 +5306,8 @@ public class MatchManager : MonoBehaviour
       cardToCheck = this.cardActive;
     if ((UnityEngine.Object) cardToCheck == (UnityEngine.Object) null)
       return false;
+    if (cardToCheck.TempAttackSelf)
+      return true;
     if (cardToCheck.EffectRequired != "")
     {
       if (cardToCheck.EffectRequired != "stealth")
@@ -5019,45 +5337,53 @@ public class MatchManager : MonoBehaviour
     NPC npcById = this.GetNPCById(transform.name);
     if (cardToCheck.TargetType != Enums.CardTargetType.Global && (casterIsHero && cardToCheck.EffectRepeatTarget != Enums.EffectRepeatTarget.Random && cardToCheck.TargetPosition != Enums.CardTargetPosition.Random || !casterIsHero) && (casterIsHero && npcById != null && npcById.HasEffect("stealth") || !casterIsHero && heroById != null && heroById.HasEffect("stealth")))
       return false;
-    if (cardToCheck.TargetType != Enums.CardTargetType.Global && (cardToCheck.TargetSide == Enums.CardTargetSide.Enemy || cardToCheck.TargetSide == Enums.CardTargetSide.Anyone))
+    if (cardToCheck.TargetType != Enums.CardTargetType.Global)
     {
-      bool flag6 = false;
-      bool flag7 = false;
-      List<Hero> heroList = new List<Hero>();
-      List<NPC> npcList = new List<NPC>();
-      if (heroById != null && !casterIsHero)
+      switch (cardToCheck.TargetSide)
       {
-        for (int index = 0; index < this.TeamHero.Length; ++index)
-        {
-          if (this.TeamHero[index] != null)
+        case Enums.CardTargetSide.Enemy:
+        case Enums.CardTargetSide.Anyone:
+          bool flag6 = false;
+          bool flag7 = false;
+          List<Hero> heroList = new List<Hero>();
+          List<NPC> npcList = new List<NPC>();
+          if (heroById != null && !casterIsHero)
           {
-            Hero hero = this.TeamHero[index];
-            if (hero != null && hero.Alive && hero.HasEffect("taunt") && !hero.HasEffect("stealth"))
+            for (int index = 0; index < this.TeamHero.Length; ++index)
             {
-              heroList.Add(hero);
-              flag6 = true;
+              if (this.TeamHero[index] != null)
+              {
+                Hero hero = this.TeamHero[index];
+                if (hero != null && hero.Alive && hero.HasEffect("taunt") && !hero.HasEffect("stealth"))
+                {
+                  heroList.Add(hero);
+                  flag6 = true;
+                }
+              }
             }
+            if (flag6 && !heroList.Contains(heroById))
+              return false;
+            break;
           }
-        }
-        if (flag6 && !heroList.Contains(heroById))
-          return false;
-      }
-      else if (npcById != null & casterIsHero)
-      {
-        for (int index = 0; index < this.TeamNPC.Length; ++index)
-        {
-          if (this.TeamNPC[index] != null)
+          if (npcById != null & casterIsHero)
           {
-            NPC npc = this.TeamNPC[index];
-            if (npc != null && npc.Alive && npc.HasEffect("taunt") && !npc.HasEffect("stealth"))
+            for (int index = 0; index < this.TeamNPC.Length; ++index)
             {
-              npcList.Add(npc);
-              flag7 = true;
+              if (this.TeamNPC[index] != null)
+              {
+                NPC npc = this.TeamNPC[index];
+                if (npc != null && npc.Alive && npc.HasEffect("taunt") && !npc.HasEffect("stealth"))
+                {
+                  npcList.Add(npc);
+                  flag7 = true;
+                }
+              }
             }
+            if (flag7 && !npcList.Contains(npcById))
+              return false;
+            break;
           }
-        }
-        if (flag7 && !npcList.Contains(npcById))
-          return false;
+          break;
       }
     }
     if (heroById != null)
@@ -5639,8 +5965,23 @@ public class MatchManager : MonoBehaviour
         matchManager.waitExecution = false;
       }
     }
-    if (matchManager.theNPC != null && matchManager.theNPC.Alive && !AI.DoAI(matchManager.theNPC, matchManager.TeamHero, matchManager.TeamNPC) && !matchManager.CheckMatchIsOver())
-      matchManager.EndTurn();
+    if (matchManager.theNPC != null && matchManager.theNPC.Alive)
+    {
+      float castDelay = 0.0f;
+      bool casted = AI.DoAI(matchManager.theNPC, matchManager.TeamHero, matchManager.TeamNPC, ref castDelay);
+      if ((double) castDelay > 0.0 && !casted && matchManager.bossNpc != null && matchManager.bossNpc is PhantomArmor)
+      {
+        PhantomArmor pa = matchManager.bossNpc as PhantomArmor;
+        pa.TriggerSpecialEffect();
+        yield return (object) Globals.Instance.WaitForSeconds(castDelay);
+        casted = AI.DoAI(matchManager.theNPC, matchManager.TeamHero, matchManager.TeamNPC, ref castDelay);
+        yield return (object) Globals.Instance.WaitForSeconds(2f * castDelay);
+        pa.SpecialEffectFinish();
+        pa = (PhantomArmor) null;
+      }
+      if (!casted && !matchManager.CheckMatchIsOver())
+        matchManager.EndTurn();
+    }
     yield return (object) null;
   }
 
@@ -5724,6 +6065,7 @@ public class MatchManager : MonoBehaviour
     bool _propagate = true)
   {
     MatchManager matchManager1 = this;
+    MatchManager.Instance.RaiseCardCastBegin(theCardItem);
     matchManager1.ClearCardsBorder();
     if (!(matchManager1.gameStatus == "EndTurn"))
     {
@@ -5814,8 +6156,18 @@ public class MatchManager : MonoBehaviour
       if (Globals.Instance.ShowDebug)
         Functions.DebugLogGD("CastCardProcess Debug 1", "trace");
       if ((UnityEngine.Object) _cardActive != (UnityEngine.Object) null && matchManager1.TeamHero != null && matchManager1.heroActive > -1 && matchManager1.heroActive < matchManager1.TeamHero.Length && matchManager1.TeamHero[matchManager1.heroActive] != null)
+      {
+        List<NPC> npcsWithAbility;
+        bool masterReweaverAbility = matchManager1.TryGetNPCsWithMasterReweaverAbility(_cardActive, (Character) matchManager1.TeamHero[matchManager1.heroActive], out npcsWithAbility);
+        CardItem cardItem = matchManager1.cardItemTable.FirstOrDefault<CardItem>((Func<CardItem, bool>) (i => i.CardData.Id == _cardActive.Id));
+        if (!_cardActive.TempAttackSelf & masterReweaverAbility)
+          matchManager1.ApplyCorruptedEcho(_cardActive, cardItem, npcsWithAbility);
+        else if (_cardActive.TempAttackSelf && !masterReweaverAbility)
+          matchManager1.ReturnCardDataToOriginalState(_cardActive, cardItem);
         matchManager1.TeamHero[matchManager1.heroActive].SetCastedCard(_cardActive);
+      }
       string _cardForSync;
+      CardItem cardTutorial;
       if (_automatic)
       {
         if (_cardActive.CardName.ToLower() == "crystallize")
@@ -5863,15 +6215,31 @@ public class MatchManager : MonoBehaviour
           yield return (object) null;
         else
           yield return (object) Globals.Instance.WaitForSeconds(0.28f);
+        if (!GameManager.Instance.IsMultiplayer() && matchManager1.theNPC != null && (UnityEngine.Object) matchManager1.theNPC.NPCItem != (UnityEngine.Object) null)
+        {
+          CardData cardData = _cardActive;
+          if ((cardData != null ? (cardData.SpecialCardEnum == SpecialCardEnum.NightmareImage ? 1 : 0) : 0) != 0 && !GameManager.Instance.TutorialWatched("illusionAbility"))
+          {
+            cardTutorial = matchManager1.theNPC.GetCurrentCardItem();
+            yield return (object) Globals.Instance.WaitForSeconds(0.3f);
+            matchManager1.waitingTutorial = true;
+            yield return (object) Globals.Instance.WaitForSeconds(0.2f);
+            GameManager.Instance.ShowTutorialPopup("illusionAbility", cardTutorial.transform.Find("CardGO/TitleText").transform.position, Vector3.zero);
+            matchManager1.characterWindow.Hide();
+            while (matchManager1.waitingTutorial)
+              yield return (object) Globals.Instance.WaitForSeconds(0.1f);
+            cardTutorial = (CardItem) null;
+          }
+        }
         if (_cardActive.MoveToCenter)
         {
-          if (_cardActive.AddCard == 0)
+          if (_cardActive.AddCard == 0 && !matchManager1.IsPhantomArmorSpecialCard(_cardActive.Id))
           {
             yield return (object) Globals.Instance.WaitForSeconds(0.15f);
             matchManager1.theNPC.NPCItem.CharacterAttackAnim();
           }
         }
-        else if (matchManager1.theNPC != null && (UnityEngine.Object) matchManager1.theNPC.NPCItem != (UnityEngine.Object) null)
+        else if (matchManager1.theNPC != null && (UnityEngine.Object) matchManager1.theNPC.NPCItem != (UnityEngine.Object) null && !matchManager1.IsPhantomArmorSpecialCard(_cardActive.Id))
         {
           matchManager1.theNPC.NPCItem.CharacterCastAnim();
           yield return (object) Globals.Instance.WaitForSeconds(0.2f);
@@ -5914,7 +6282,7 @@ public class MatchManager : MonoBehaviour
         matchManager1.theHero.ModifyEnergy(-matchManager1.theHero.GetCardFinalCost(_cardActive));
         if (_cardActive.TargetSide == Enums.CardTargetSide.Self && (UnityEngine.Object) matchManager1.theHero.HeroItem != (UnityEngine.Object) null)
           matchManager1.targetTransform = matchManager1.theHero.HeroItem.transform;
-        matchManager1.theHero.SetEvent(Enums.EventActivation.CastCard);
+        matchManager1.theHero.SetEvent(Enums.EventActivation.CastCard, auxInt: _cardActive.GetCardFinalCost(), auxString: _cardActive.Id);
         if ((UnityEngine.Object) theCasterHero.HeroData != (UnityEngine.Object) null && (UnityEngine.Object) theCasterHero.HeroData.HeroSubClass.ActionSound != (UnityEngine.Object) null)
           GameManager.Instance.PlayAudio(theCasterHero.HeroData.HeroSubClass.ActionSound, 0.25f);
       }
@@ -6117,6 +6485,7 @@ public class MatchManager : MonoBehaviour
       for (_drawLoopCurrent = 0; _drawLoopCurrent < _drawLoopsTotal; ++_drawLoopCurrent)
       {
         int indexExtremeBlock;
+        int i;
         if (_drawLoopsTotal == 1 || _drawLoopCurrent == 1)
         {
           cardsNum = _cardActive.DrawCard;
@@ -6135,7 +6504,7 @@ public class MatchManager : MonoBehaviour
               cardsNum = num2;
             indexExtremeBlock = 0;
             indexGameBusy = 0;
-            for (int i = 0; i < cardsNum; ++i)
+            for (i = 0; i < cardsNum; ++i)
             {
               matchManager1.gameStatus = "DrawingCards";
               if (Globals.Instance.ShowDebug)
@@ -6221,7 +6590,6 @@ public class MatchManager : MonoBehaviour
           theCasterIsHeroPre = theCasterIsHero;
           theCardItemPostDiscardPre = theCardItemPostDiscard;
           List<string> UsedCardsId;
-          CardItem CI;
           if ((_drawLoopsTotal == 1 || _drawLoopCurrent == 1) && _cardActive.AddCard != 0)
           {
             cardsNum = _cardActive.AddCard;
@@ -6231,26 +6599,28 @@ public class MatchManager : MonoBehaviour
             {
               if (_cardActive.AddCardId != "")
               {
-                Hero hero = (Hero) null;
+                Hero target = (Hero) null;
                 if ((UnityEngine.Object) matchManager1.targetTransform != (UnityEngine.Object) null)
-                  hero = matchManager1.GetHeroById(matchManager1.targetTransform.name);
+                  target = matchManager1.GetHeroById(matchManager1.targetTransform.name);
                 bool flag2 = false;
                 if (_cardActive.TargetSide == Enums.CardTargetSide.Friend)
                 {
-                  if (hero == null && theCasterHero != null)
-                    hero = theCasterHero;
+                  if (target == null && theCasterHero != null)
+                    target = theCasterHero;
                   for (int heroIndex = 0; heroIndex < 4; ++heroIndex)
                   {
-                    if (matchManager1.TeamHero[heroIndex] != null && (UnityEngine.Object) matchManager1.TeamHero[heroIndex].HeroItem != (UnityEngine.Object) null && matchManager1.TeamHero[heroIndex].Alive && (_cardActive.TargetType == Enums.CardTargetType.Global || hero != null && hero.Id == matchManager1.TeamHero[heroIndex].Id))
+                    if (matchManager1.TeamHero[heroIndex] != null && (UnityEngine.Object) matchManager1.TeamHero[heroIndex].HeroItem != (UnityEngine.Object) null && matchManager1.TeamHero[heroIndex].Alive && (_cardActive.TargetType == Enums.CardTargetType.Global || target != null && target.Id == matchManager1.TeamHero[heroIndex].Id))
                     {
-                      matchManager1.GenerateNewCard(cardsNum, _cardActive.AddCardId, true, _cardActive.AddCardPlace, _cardActive, heroIndex: heroIndex);
+                      CardData cardForModify = matchManager1.GetCardForModify(_cardActive, (Character) theCasterHero, (Character) matchManager1.TeamHero[heroIndex]);
+                      matchManager1.GenerateNewCard(cardsNum, _cardActive.AddCardId, true, _cardActive.AddCardPlace, cardForModify, heroIndex: heroIndex);
                       flag2 = true;
                     }
                   }
                 }
                 else
                 {
-                  matchManager1.GenerateNewCard(cardsNum, _cardActive.AddCardId, true, _cardActive.AddCardPlace, _cardActive);
+                  CardData cardForModify = matchManager1.GetCardForModify(_cardActive, (Character) theCasterHero, (Character) target);
+                  matchManager1.GenerateNewCard(cardsNum, _cardActive.AddCardId, true, _cardActive.AddCardPlace, cardForModify);
                   flag2 = true;
                 }
                 if (flag2)
@@ -6268,11 +6638,23 @@ public class MatchManager : MonoBehaviour
                 List<Enums.CardType> cardTypeList = new List<Enums.CardType>();
                 if (_cardActive.AddCardType != Enums.CardType.None && _cardActive.AddCardType != Enums.CardType.Enchantment && _cardActive.AddCardType != Enums.CardType.Boon && _cardActive.AddCardType != Enums.CardType.Injury)
                 {
-                  cardTypeList.Add(_cardActive.AddCardType);
+                  if (!_cardActive.AddCardOnlyCheckAuxTypes)
+                    cardTypeList.Add(_cardActive.AddCardType);
                   for (int index = 0; index < _cardActive.AddCardTypeAux.Length; ++index)
                   {
                     if (_cardActive.AddCardTypeAux[index] != Enums.CardType.None)
                       cardTypeList.Add(_cardActive.AddCardTypeAux[index]);
+                  }
+                }
+                foreach (CardData.CardToGainTypeBasedOnHeroClass basedOnHeroClass in _cardActive.AddCardTypeBasedOnHeroClass)
+                {
+                  if (basedOnHeroClass.heroClass == matchManager1.theHero.HeroData.HeroSubClass.HeroClass || basedOnHeroClass.heroClass == matchManager1.theHero.HeroData.HeroSubClass.HeroClassSecondary || basedOnHeroClass.heroClass == matchManager1.theHero.HeroData.HeroSubClass.HeroClassThird)
+                  {
+                    foreach (Enums.CardType cardType in basedOnHeroClass.cardTypes)
+                    {
+                      if (!cardTypeList.Contains(cardType))
+                        cardTypeList.Add(cardType);
+                    }
                   }
                 }
                 List<int> ValidCardsInDeck = new List<int>();
@@ -6344,20 +6726,23 @@ public class MatchManager : MonoBehaviour
                   List<string> stringList = new List<string>();
                   string name1 = Enum.GetName(typeof (Enums.HeroClass), (object) matchManager1.theHero.HeroData.HeroClass);
                   string name2 = Enum.GetName(typeof (Enums.HeroClass), (object) matchManager1.theHero.HeroData.HeroSubClass.HeroClassSecondary);
+                  string name3 = Enum.GetName(typeof (Enums.HeroClass), (object) matchManager1.theHero.HeroData.HeroSubClass.HeroClassThird);
                   int count1 = cardTypeList.Count;
+                  bool flag4 = _cardActive.AddCardTypeBasedOnHeroClass.Count > 0;
                   for (int index3 = 0; index3 < cardTypeList.Count; ++index3)
                   {
-                    string name3 = Enum.GetName(typeof (Enums.CardType), (object) cardTypeList[index3]);
-                    string key1 = name1 + "_" + name3;
-                    string key2 = name2 + "_" + name3;
+                    string name4 = Enum.GetName(typeof (Enums.CardType), (object) cardTypeList[index3]);
+                    string key1 = name1 + "_" + name4;
+                    string key2 = name2 + "_" + name4;
+                    string key3 = name3 + "_" + name4;
                     if (Globals.Instance.CardListByClassType.ContainsKey(key1))
                     {
                       int count2 = Globals.Instance.CardListByClassType[key1].Count;
                       for (int index4 = 0; index4 < count2; ++index4)
                       {
-                        string str = Globals.Instance.CardListByClassType[key1][index4];
-                        if (!stringList.Contains(str))
-                          stringList.Add(str);
+                        string id = Globals.Instance.CardListByClassType[key1][index4];
+                        if (!stringList.Contains(id) && (!flag4 || cardTypeList.Contains(matchManager1.GetCardData(id).CardType)))
+                          stringList.Add(id);
                       }
                     }
                     if (Globals.Instance.CardListByClassType.ContainsKey(key2))
@@ -6365,9 +6750,19 @@ public class MatchManager : MonoBehaviour
                       int count3 = Globals.Instance.CardListByClassType[key2].Count;
                       for (int index5 = 0; index5 < count3; ++index5)
                       {
-                        string str = Globals.Instance.CardListByClassType[key2][index5];
-                        if (!stringList.Contains(str))
-                          stringList.Add(str);
+                        string id = Globals.Instance.CardListByClassType[key2][index5];
+                        if (!stringList.Contains(id) && (!flag4 || cardTypeList.Contains(matchManager1.GetCardData(id).CardType)))
+                          stringList.Add(id);
+                      }
+                    }
+                    if (Globals.Instance.CardListByClassType.ContainsKey(key3))
+                    {
+                      int count4 = Globals.Instance.CardListByClassType[key3].Count;
+                      for (int index6 = 0; index6 < count4; ++index6)
+                      {
+                        string id = Globals.Instance.CardListByClassType[key3][index6];
+                        if (!stringList.Contains(id) && (!flag4 || cardTypeList.Contains(matchManager1.GetCardData(id).CardType)))
+                          stringList.Add(id);
                       }
                     }
                   }
@@ -6376,19 +6771,26 @@ public class MatchManager : MonoBehaviour
                     if (_cardActive.AddCardChoose > 0)
                     {
                       UsedCardsId = new List<string>();
+                      Dictionary<Enums.CardType, int> dictionary = new Dictionary<Enums.CardType, int>();
+                      int num4 = Mathf.CeilToInt((float) _cardActive.AddCardChoose / (float) cardTypeList.Count);
+                      bool flag5 = _cardActive.AddCardTypeBasedOnHeroClass.Count > 0;
+                      foreach (Enums.CardType key in cardTypeList)
+                        dictionary.Add(key, 0);
                       for (int index = 0; index < _cardActive.AddCardChoose; ++index)
                       {
-                        bool flag4 = false;
-                        while (!flag4)
+                        bool flag6 = false;
+                        while (!flag6)
                         {
                           CardData card = Globals.Instance.Cards[stringList[matchManager1.GetRandomIntRange(0, stringList.Count)]];
-                          if ((UnityEngine.Object) card != (UnityEngine.Object) null)
+                          if ((UnityEngine.Object) card != (UnityEngine.Object) null && (!flag5 || !dictionary.ContainsKey(card.CardType) || dictionary[card.CardType] != num4))
                           {
                             string cardByRarity = Functions.GetCardByRarity(matchManager1.GetRandomIntRange(0, 100), card);
                             if (stringList.Contains(cardByRarity) && !UsedCardsId.Contains(cardByRarity) && (UnityEngine.Object) Globals.Instance.Cards[cardByRarity] != (UnityEngine.Object) null)
                             {
                               ValidCardsStringInDeck.Add(matchManager1.CreateCardInDictionary(Globals.Instance.Cards[cardByRarity].Id));
-                              flag4 = true;
+                              flag6 = true;
+                              if (flag5)
+                                dictionary[card.CardType]++;
                               UsedCardsId.Add(cardByRarity);
                             }
                           }
@@ -6400,8 +6802,8 @@ public class MatchManager : MonoBehaviour
                       UsedCardsId = new List<string>();
                       for (int index = 0; index < cardsNum; ++index)
                       {
-                        bool flag5 = false;
-                        while (!flag5)
+                        bool flag7 = false;
+                        while (!flag7)
                         {
                           CardData card = Globals.Instance.Cards[stringList[matchManager1.GetRandomIntRange(0, stringList.Count)]];
                           if ((UnityEngine.Object) card != (UnityEngine.Object) null)
@@ -6410,7 +6812,7 @@ public class MatchManager : MonoBehaviour
                             if (stringList.Contains(cardByRarity) && !UsedCardsId.Contains(cardByRarity) && (UnityEngine.Object) Globals.Instance.Cards[cardByRarity] != (UnityEngine.Object) null)
                             {
                               ValidCardsStringInDeck.Add(matchManager1.CreateCardInDictionary(Globals.Instance.Cards[cardByRarity].Id));
-                              flag5 = true;
+                              flag7 = true;
                               UsedCardsId.Add(cardByRarity);
                             }
                           }
@@ -6449,21 +6851,21 @@ public class MatchManager : MonoBehaviour
                   }
                   else
                   {
-                    Enums.CardClass key3 = (Enums.CardClass) Enum.Parse(typeof (Enums.CardClass), Enum.GetName(typeof (Enums.HeroClass), (object) matchManager1.theHero.HeroData.HeroClass));
-                    int count4 = Globals.Instance.CardListByClass[key3].Count;
-                    for (int index = 0; index < count4; ++index)
+                    Enums.CardClass key4 = (Enums.CardClass) Enum.Parse(typeof (Enums.CardClass), Enum.GetName(typeof (Enums.HeroClass), (object) matchManager1.theHero.HeroData.HeroClass));
+                    int count5 = Globals.Instance.CardListByClass[key4].Count;
+                    for (int index = 0; index < count5; ++index)
                     {
-                      string str = Globals.Instance.CardListByClass[key3][index];
+                      string str = Globals.Instance.CardListByClass[key4][index];
                       if (!keyList.Contains(str))
                         keyList.Add(str);
                     }
                     if (matchManager1.theHero.HeroData.HeroSubClass.HeroClassSecondary != Enums.HeroClass.None)
                     {
-                      Enums.CardClass key4 = (Enums.CardClass) Enum.Parse(typeof (Enums.CardClass), Enum.GetName(typeof (Enums.HeroClass), (object) matchManager1.theHero.HeroData.HeroSubClass.HeroClassSecondary));
-                      int count5 = Globals.Instance.CardListByClass[key4].Count;
-                      for (int index = 0; index < count5; ++index)
+                      Enums.CardClass key5 = (Enums.CardClass) Enum.Parse(typeof (Enums.CardClass), Enum.GetName(typeof (Enums.HeroClass), (object) matchManager1.theHero.HeroData.HeroSubClass.HeroClassSecondary));
+                      int count6 = Globals.Instance.CardListByClass[key5].Count;
+                      for (int index = 0; index < count6; ++index)
                       {
-                        string str = Globals.Instance.CardListByClass[key4][index];
+                        string str = Globals.Instance.CardListByClass[key5][index];
                         if (!keyList.Contains(str))
                           keyList.Add(str);
                       }
@@ -6503,11 +6905,11 @@ public class MatchManager : MonoBehaviour
                       UsedCardsId = new List<string>();
                       for (int index = 0; index < cardsNum; ++index)
                       {
-                        bool flag6 = false;
-                        int num4 = 0;
-                        while (!flag6 && num4 < 1000)
+                        bool flag8 = false;
+                        int num5 = 0;
+                        while (!flag8 && num5 < 1000)
                         {
-                          ++num4;
+                          ++num5;
                           string key = keyList[matchManager1.GetRandomIntRange(0, keyList.Count)];
                           if (Globals.Instance.Cards.ContainsKey(key) && (UnityEngine.Object) Globals.Instance.Cards[key] != (UnityEngine.Object) null && !Globals.Instance.CardListByClass[Enums.CardClass.Monster].Contains(Globals.Instance.Cards[key].Id))
                           {
@@ -6518,7 +6920,7 @@ public class MatchManager : MonoBehaviour
                               if (cardByRarity != "" && !UsedCardsId.Contains(cardByRarity) && Globals.Instance.Cards.ContainsKey(cardByRarity) && (UnityEngine.Object) Globals.Instance.Cards[cardByRarity] != (UnityEngine.Object) null)
                               {
                                 ValidCardsStringInDeck.Add(matchManager1.CreateCardInDictionary(Globals.Instance.Cards[cardByRarity].Id));
-                                flag6 = true;
+                                flag8 = true;
                                 UsedCardsId.Add(cardByRarity);
                               }
                             }
@@ -6544,8 +6946,8 @@ public class MatchManager : MonoBehaviour
                     if (ValidCardsInDeck.Count > indexGameBusy)
                     {
                       ValidCardsInDeck = ValidCardsInDeck.ShuffleList<int>();
-                      int num5 = ValidCardsInDeck.Count - indexGameBusy;
-                      for (int index = 0; index < num5; ++index)
+                      int num6 = ValidCardsInDeck.Count - indexGameBusy;
+                      for (int index = 0; index < num6; ++index)
                         ValidCardsInDeck.RemoveAt(0);
                     }
                     else
@@ -6584,24 +6986,24 @@ public class MatchManager : MonoBehaviour
                     {
                       GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, matchManager1.deckCardsWindow.cardContainer);
                       matchManager1.GO_List.Add(gameObject);
-                      CI = gameObject.GetComponent<CardItem>();
+                      cardTutorial = gameObject.GetComponent<CardItem>();
                       gameObject.name = "TMP_" + indexExtremeBlock.ToString();
                       matchManager1.cardGos.Add(gameObject.name, gameObject);
-                      CI.SetCard(keyList[indexExtremeBlock], false, matchManager1.theHero);
-                      matchManager1.AddCardModificationsForCardForShow(_cardActive, CI.CardData);
-                      CI.DrawEnergyCost(false);
+                      cardTutorial.SetCard(keyList[indexExtremeBlock], false, matchManager1.theHero);
+                      matchManager1.AddCardModificationsForCardForShow(_cardActive, cardTutorial.CardData);
+                      cardTutorial.DrawEnergyCost(false);
                       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-                      CI.cardforaddcard = true;
-                      CI.AmplifyForSelection(indexExtremeBlock, indexGameBusy);
-                      CI.SetDestination(CI.GetDestination() - new Vector3(2.5f, -4.5f, 0.0f));
-                      CI.DisableTrail();
-                      CI.active = true;
-                      CI.HideRarityParticles();
-                      CI.HideCardIconParticles();
+                      cardTutorial.cardforaddcard = true;
+                      cardTutorial.AmplifyForSelection(indexExtremeBlock, indexGameBusy);
+                      cardTutorial.SetDestination(cardTutorial.GetDestination() - new Vector3(2.5f, -4.5f, 0.0f));
+                      cardTutorial.DisableTrail();
+                      cardTutorial.active = true;
+                      cardTutorial.HideRarityParticles();
+                      cardTutorial.HideCardIconParticles();
                       if (matchManager1.IsYourTurnForAddDiscard())
-                        CI.ShowKeyNum(true, (indexExtremeBlock + 1).ToString());
+                        cardTutorial.ShowKeyNum(true, (indexExtremeBlock + 1).ToString());
                       yield return (object) null;
-                      CI = (CardItem) null;
+                      cardTutorial = (CardItem) null;
                     }
                     if (GameManager.Instance.IsMultiplayer())
                     {
@@ -6666,14 +7068,18 @@ public class MatchManager : MonoBehaviour
                               {
                                 if (matchManager1.TeamHero[heroIndex] != null && matchManager1.TeamHero[heroIndex].Alive && hero.Id == matchManager1.TeamHero[heroIndex].Id)
                                 {
-                                  matchManager1.GenerateNewCard(_cardActive.AddCard, id, true, _cardActive.AddCardPlace, _cardActive, matchManager1.CICardAddcard[indexExtremeBlock].CardData, heroIndex);
+                                  CardData cardForModify = matchManager1.GetCardForModify(_cardActive, (Character) theCasterHero, (Character) matchManager1.TeamHero[heroIndex]);
+                                  matchManager1.GenerateNewCard(_cardActive.AddCard, id, true, _cardActive.AddCardPlace, cardForModify, matchManager1.CICardAddcard[indexExtremeBlock].CardData, heroIndex);
                                   break;
                                 }
                               }
                             }
                           }
                           else
-                            matchManager1.GenerateNewCard(_cardActive.AddCard, id, true, _cardActive.AddCardPlace, _cardActive, matchManager1.CICardAddcard[indexExtremeBlock].CardData);
+                          {
+                            CardData cardForModify = matchManager1.GetCardForModify(_cardActive, (Character) theCasterHero, (Character) null);
+                            matchManager1.GenerateNewCard(_cardActive.AddCard, id, true, _cardActive.AddCardPlace, cardForModify, matchManager1.CICardAddcard[indexExtremeBlock].CardData);
+                          }
                           yield return (object) Globals.Instance.WaitForSeconds(0.1f);
                           while (matchManager1.gameBusy)
                             yield return (object) Globals.Instance.WaitForSeconds(0.1f);
@@ -6802,11 +7208,32 @@ public class MatchManager : MonoBehaviour
                   }
                   else if (ValidCardsStringInDeck.Count > 0)
                   {
+                    indexExtremeBlock = -1;
+                    Hero _targetHero = (Hero) null;
+                    if ((UnityEngine.Object) matchManager1.targetTransform != (UnityEngine.Object) null)
+                      _targetHero = matchManager1.GetHeroById(matchManager1.targetTransform.name);
+                    if (_cardActive.TargetSide == Enums.CardTargetSide.Friend)
+                    {
+                      if (_targetHero == null && theCasterHero != null)
+                        _targetHero = theCasterHero;
+                      if (_targetHero != null)
+                      {
+                        for (int index = 0; index < 4; ++index)
+                        {
+                          if (matchManager1.TeamHero[index] != null && (UnityEngine.Object) matchManager1.TeamHero[index].HeroItem != (UnityEngine.Object) null && matchManager1.TeamHero[index].Alive && _targetHero.Id == matchManager1.TeamHero[index].Id)
+                          {
+                            indexExtremeBlock = index;
+                            break;
+                          }
+                        }
+                      }
+                    }
                     if (_cardActive.AddCardChoose != 0)
                     {
-                      for (indexExtremeBlock = 0; indexExtremeBlock < ValidCardsStringInDeck.Count; ++indexExtremeBlock)
+                      for (i = 0; i < ValidCardsStringInDeck.Count; ++i)
                       {
-                        matchManager1.GenerateNewCard(1, ValidCardsStringInDeck[indexExtremeBlock], false, _cardActive.AddCardPlace, _cardActive);
+                        CardData cardForModify = matchManager1.GetCardForModify(_cardActive, (Character) theCasterHero, (Character) _targetHero);
+                        matchManager1.GenerateNewCard(1, ValidCardsStringInDeck[i], false, _cardActive.AddCardPlace, cardForModify, heroIndex: indexExtremeBlock);
                         yield return (object) Globals.Instance.WaitForSeconds(0.1f);
                         while (matchManager1.gameBusy)
                           yield return (object) Globals.Instance.WaitForSeconds(0.01f);
@@ -6814,14 +7241,16 @@ public class MatchManager : MonoBehaviour
                     }
                     else
                     {
-                      for (indexExtremeBlock = 0; indexExtremeBlock < ValidCardsStringInDeck.Count; ++indexExtremeBlock)
+                      for (i = 0; i < ValidCardsStringInDeck.Count; ++i)
                       {
-                        matchManager1.GenerateNewCard(1, ValidCardsStringInDeck[indexExtremeBlock], false, _cardActive.AddCardPlace, _cardActive);
+                        CardData cardForModify = matchManager1.GetCardForModify(_cardActive, (Character) theCasterHero, (Character) _targetHero);
+                        matchManager1.GenerateNewCard(1, ValidCardsStringInDeck[i], false, _cardActive.AddCardPlace, cardForModify, heroIndex: indexExtremeBlock);
                         yield return (object) Globals.Instance.WaitForSeconds(0.1f);
                         while (matchManager1.gameBusy)
                           yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                       }
                     }
+                    _targetHero = (Hero) null;
                   }
                   keyList = (List<string>) null;
                 }
@@ -6858,17 +7287,17 @@ public class MatchManager : MonoBehaviour
               }
             }
             List<string> stringList = new List<string>();
-            for (int index6 = 0; index6 < matchManager1.cardItemTable.Count; ++index6)
+            for (int index7 = 0; index7 < matchManager1.cardItemTable.Count; ++index7)
             {
-              CardItem cardItem = matchManager1.cardItemTable[index6];
+              CardItem cardItem = matchManager1.cardItemTable[index7];
               if (!(cardItem.InternalId == theCardItem.InternalId))
               {
                 if (cardTypeList.Count > 0)
                 {
                   List<Enums.CardType> cardTypes = cardItem.CardData.GetCardTypes();
-                  for (int index7 = 0; index7 < cardTypes.Count; ++index7)
+                  for (int index8 = 0; index8 < cardTypes.Count; ++index8)
                   {
-                    if (cardTypeList.Contains(cardTypes[index7]))
+                    if (cardTypeList.Contains(cardTypes[index8]))
                     {
                       stringList.Add(cardItem.InternalId);
                       break;
@@ -6879,16 +7308,16 @@ public class MatchManager : MonoBehaviour
                   stringList.Add(cardItem.InternalId);
               }
             }
-            bool flag7 = _cardActive.DiscardCardAutomatic;
+            bool flag9 = _cardActive.DiscardCardAutomatic;
             if (matchManager1.GlobalDiscardCardsNum >= stringList.Count)
             {
               matchManager1.GlobalDiscardCardsNum = stringList.Count;
-              flag7 = true;
+              flag9 = true;
             }
             matchManager1.discardNumDecidedByThePlayer = false;
             if (_cardActive.SpecialValueGlobal == Enums.CardSpecialValue.DiscardedCards || _cardActive.SpecialValueGlobal == Enums.CardSpecialValue.VanishedCards)
             {
-              flag7 = false;
+              flag9 = false;
               matchManager1.GlobalDiscardCardsNum = 10;
               matchManager1.discardNumDecidedByThePlayer = true;
             }
@@ -6896,17 +7325,17 @@ public class MatchManager : MonoBehaviour
               Functions.DebugLogGD("--->" + matchManager1.GlobalDiscardCardsNum.ToString());
             if (matchManager1.GlobalDiscardCardsNum > 0)
             {
-              if (flag7)
+              if (flag9)
               {
                 CIAutomatic = new List<CardItem>();
                 if (matchManager1.GlobalDiscardCardsNum != stringList.Count)
                 {
-                  for (int index8 = 0; index8 < matchManager1.GlobalDiscardCardsNum; ++index8)
+                  for (int index9 = 0; index9 < matchManager1.GlobalDiscardCardsNum; ++index9)
                   {
                     int randomIntRange = matchManager1.GetRandomIntRange(0, stringList.Count);
-                    for (int index9 = 0; index9 < matchManager1.cardItemTable.Count; ++index9)
+                    for (int index10 = 0; index10 < matchManager1.cardItemTable.Count; ++index10)
                     {
-                      CardItem cardItem = matchManager1.cardItemTable[index9];
+                      CardItem cardItem = matchManager1.cardItemTable[index10];
                       if (cardItem.InternalId == stringList[randomIntRange])
                       {
                         CIAutomatic.Add(cardItem);
@@ -6918,12 +7347,12 @@ public class MatchManager : MonoBehaviour
                 }
                 else
                 {
-                  for (int index10 = 0; index10 < matchManager1.GlobalDiscardCardsNum; ++index10)
+                  for (int index11 = 0; index11 < matchManager1.GlobalDiscardCardsNum; ++index11)
                   {
-                    for (int index11 = 0; index11 < matchManager1.cardItemTable.Count; ++index11)
+                    for (int index12 = 0; index12 < matchManager1.cardItemTable.Count; ++index12)
                     {
-                      CardItem cardItem = matchManager1.cardItemTable[index11];
-                      if (cardItem.InternalId == stringList[index10])
+                      CardItem cardItem = matchManager1.cardItemTable[index12];
+                      if (cardItem.InternalId == stringList[index11])
                       {
                         CIAutomatic.Add(cardItem);
                         break;
@@ -6954,19 +7383,19 @@ public class MatchManager : MonoBehaviour
                 matchManager1.CICardDiscard = new List<CardItem>();
                 matchManager1.discardSelector.TurnOn(_cardActive.DiscardCardPlace, matchManager1.discardNumDecidedByThePlayer);
                 Transform cardContainer = matchManager1.discardSelector.cardContainer;
-                for (int index12 = 0; index12 < stringList.Count; ++index12)
+                for (int index13 = 0; index13 < stringList.Count; ++index13)
                 {
-                  for (int index13 = 0; index13 < matchManager1.cardItemTable.Count; ++index13)
+                  for (int index14 = 0; index14 < matchManager1.cardItemTable.Count; ++index14)
                   {
-                    CardItem cardItem = matchManager1.cardItemTable[index13];
-                    if (cardItem.InternalId == stringList[index12])
+                    CardItem cardItem = matchManager1.cardItemTable[index14];
+                    if (cardItem.InternalId == stringList[index13])
                     {
                       cardItem.cardfordiscard = true;
                       cardItem.transform.parent = cardContainer;
-                      cardItem.AmplifyForSelection(index12, stringList.Count);
+                      cardItem.AmplifyForSelection(index13, stringList.Count);
                       if (matchManager1.IsYourTurnForAddDiscard())
                       {
-                        cardItem.ShowKeyNum(true, (index12 + 1).ToString());
+                        cardItem.ShowKeyNum(true, (index13 + 1).ToString());
                         break;
                       }
                       break;
@@ -7079,23 +7508,23 @@ public class MatchManager : MonoBehaviour
               for (indexExtremeBlock = 0; indexExtremeBlock < indexGameBusy; ++indexExtremeBlock)
               {
                 GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, matchManager1.deckCardsWindow.cardContainer);
-                CI = gameObject.GetComponent<CardItem>();
+                cardTutorial = gameObject.GetComponent<CardItem>();
                 gameObject.name = "TMP_" + indexExtremeBlock.ToString();
                 matchManager1.cardGos.Add(gameObject.name, gameObject);
-                CIAutomatic.Add(CI);
-                CI.SetCard(UsedCardsId[indexExtremeBlock], false, matchManager1.TeamHero[cardsNum]);
+                CIAutomatic.Add(cardTutorial);
+                cardTutorial.SetCard(UsedCardsId[indexExtremeBlock], false, matchManager1.TeamHero[cardsNum]);
                 yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-                CI.cardfordiscard = true;
-                CI.AmplifyForSelection(indexExtremeBlock, indexGameBusy);
-                CI.SetDestination(CI.GetDestination() - new Vector3(2.5f, -4.5f, 0.0f));
-                CI.DisableTrail();
-                CI.active = true;
-                CI.HideRarityParticles();
-                CI.HideCardIconParticles();
+                cardTutorial.cardfordiscard = true;
+                cardTutorial.AmplifyForSelection(indexExtremeBlock, indexGameBusy);
+                cardTutorial.SetDestination(cardTutorial.GetDestination() - new Vector3(2.5f, -4.5f, 0.0f));
+                cardTutorial.DisableTrail();
+                cardTutorial.active = true;
+                cardTutorial.HideRarityParticles();
+                cardTutorial.HideCardIconParticles();
                 if (matchManager1.IsYourTurnForAddDiscard())
-                  CI.ShowKeyNum(true, (indexExtremeBlock + 1).ToString());
+                  cardTutorial.ShowKeyNum(true, (indexExtremeBlock + 1).ToString());
                 yield return (object) null;
-                CI = (CardItem) null;
+                cardTutorial = (CardItem) null;
               }
               if (GameManager.Instance.IsMultiplayer())
               {
@@ -7216,9 +7645,9 @@ public class MatchManager : MonoBehaviour
         for (cardsNum = 0; cardsNum < _drawLoopCurrent; ++cardsNum)
         {
           if (theCasterNPC != null)
-            matchManager1.CreateNPC(_cardActive.SummonUnit, _cardActive.EffectTarget, _cardActive: _cardActive, _casterInternalId: theCasterNPC.InternalId);
+            matchManager1.CreateNPC(_cardActive.SummonUnit, _cardActive.EffectTarget, _cardActive: _cardActive, _casterInternalId: theCasterNPC.InternalId, isSummon: true);
           else
-            matchManager1.CreateNPC(_cardActive.SummonUnit, _cardActive.EffectTarget, _cardActive: _cardActive);
+            matchManager1.CreateNPC(_cardActive.SummonUnit, _cardActive.EffectTarget, _cardActive: _cardActive, isSummon: true);
           yield return (object) Globals.Instance.WaitForSeconds(0.1f);
         }
         if ((UnityEngine.Object) _cardActive != (UnityEngine.Object) null && _cardActive.Metamorph)
@@ -7272,13 +7701,13 @@ public class MatchManager : MonoBehaviour
           }
         }
       }
-      Hero _targetHero = (Hero) null;
+      Hero _targetHero1 = (Hero) null;
       NPC _targetNPC = (NPC) null;
       if ((UnityEngine.Object) matchManager1.targetTransform != (UnityEngine.Object) null && (UnityEngine.Object) matchManager1.targetTransform.GetComponent<HeroItem>() != (UnityEngine.Object) null)
-        _targetHero = matchManager1.targetTransform.GetComponent<HeroItem>().Hero;
+        _targetHero1 = matchManager1.targetTransform.GetComponent<HeroItem>().Hero;
       if ((UnityEngine.Object) matchManager1.targetTransform != (UnityEngine.Object) null && (UnityEngine.Object) matchManager1.targetTransform.GetComponent<NPCItem>() != (UnityEngine.Object) null)
         _targetNPC = matchManager1.targetTransform.GetComponent<NPCItem>().NPC;
-      int _cardSpecialValueGlobal = Functions.FuncRoundToInt(matchManager1.GetCardSpecialValue(_cardActive, 0, (Character) matchManager1.theHero, (Character) matchManager1.theNPC, (Character) _targetHero, (Character) _targetNPC, false));
+      int _cardSpecialValueGlobal = Functions.FuncRoundToInt(matchManager1.GetCardSpecialValue(_cardActive, 0, (Character) matchManager1.theHero, (Character) matchManager1.theNPC, (Character) _targetHero1, (Character) _targetNPC, false));
       matchManager1.cardItemActive = theCardItem;
       int _cardIterationTotal = 1;
       if (_cardActive.TargetType == Enums.CardTargetType.Global)
@@ -7357,8 +7786,39 @@ public class MatchManager : MonoBehaviour
         matchManager1.StartCoroutine(matchManager1.CastCardAction(_cardActive, matchManager1.targetTransform, theCardItem, _uniqueCastId, _automatic, _card, 1, _cardSpecialValueGlobal));
         yield return (object) null;
       }
+      foreach (NPC currentNPC in matchManager1.TeamNPC)
+      {
+        NPC targetNPC;
+        if (matchManager1.TryGetTransferPainTarget(_cardActive, currentNPC, out targetNPC))
+          matchManager1.ApplyTransferPain(currentNPC, targetNPC);
+      }
+      if (matchManager1.CanUpdateMindSpikeProgress(_cardActive))
+        matchManager1.mindSpikeAbility.IncreaseSpecialCardCount();
+      Character casterCharacter = theCasterNPC != null ? (Character) theCasterNPC : (Character) theCasterHero;
+      List<NPC> npcsWithAbility1;
+      if (matchManager1.TryGetNPCsWithMasterReweaverAbility(_cardActive, casterCharacter, out npcsWithAbility1))
+      {
+        foreach (NPC npcWithAbility in npcsWithAbility1)
+          matchManager1.UpdateMasterReweaverProgress(casterCharacter, npcWithAbility);
+      }
+      if (matchManager1.GetCharacterActive().IsHero)
+      {
+        Action<Hero, CardData> cardCastedByHero = matchManager1.OnCardCastedByHero;
+        if (cardCastedByHero != null)
+          cardCastedByHero(matchManager1.theHero, matchManager1.cardActive);
+      }
       yield return (object) null;
     }
+  }
+
+  public void RaiseCardCastBegin(CardItem theCardItem)
+  {
+    if (!((UnityEngine.Object) theCardItem != (UnityEngine.Object) null) || this.heroActive < 0 || this.heroActive >= this.TeamHero.Length || this.TeamHero[this.heroActive] == null)
+      return;
+    Action<Hero, CardData> castByHeroBegins = this.OnCardCastByHeroBegins;
+    if (castByHeroBegins == null)
+      return;
+    castByHeroBegins(this.TeamHero[this.heroActive], theCardItem.CardData);
   }
 
   public IEnumerator CastCardAction(
@@ -7372,7 +7832,6 @@ public class MatchManager : MonoBehaviour
     int _cardSpecialValueGlobal)
   {
     MatchManager matchManager = this;
-    matchManager.targetTransform = (Transform) null;
     bool youCanCastEffect = false;
     bool isYourFirstTarget = false;
     if (!matchManager.castedCards.Contains(_uniqueCastId))
@@ -7409,7 +7868,7 @@ public class MatchManager : MonoBehaviour
         theCasterCharacter = (Character) theCasterHero;
         theCasterName = matchManager.theHero.GameName;
         theCasterId = matchManager.theHero.Id;
-        if (!_cardActive.AutoplayDraw && !_cardActive.AutoplayEndTurn && youCanCastEffect && _cardActive.EffectPreAction == "" && !_cardActive.IsPetCast)
+        if (!_cardActive.AutoplayDraw && !_cardActive.AutoplayEndTurn && youCanCastEffect && _cardActive.EffectPreAction == "" && !_cardActive.IsPetCast && !_cardActive.IsPetAttack)
         {
           if (_cardActive.MoveToCenter)
             matchManager.theHero.HeroItem.CharacterAttackAnim();
@@ -7666,7 +8125,11 @@ public class MatchManager : MonoBehaviour
                   matchManager.targetTransform = (Transform) null;
               }
               if (_npc != null)
+              {
                 _npcItem = _npc.NPCItem;
+                if (!_npc.Alive || matchManager.bossNpc != null && !matchManager.bossNpc.IsValidTarget())
+                  break;
+              }
               if (_hero != null)
                 _heroItem = _hero.HeroItem;
             }
@@ -7681,7 +8144,8 @@ public class MatchManager : MonoBehaviour
           int exahustGenerating;
           if (theCasterNPC != null && _cardActive.AddCardId != "" && _hero != null && _hero.Alive)
           {
-            matchManager.GenerateNewCard(_cardActive.AddCard, _cardActive.AddCardId, true, _cardActive.AddCardPlace, heroIndex: _hero.HeroIndex);
+            CardData cardForModify = matchManager.GetCardForModify(_cardActive, (Character) theCasterNPC, (Character) _hero);
+            matchManager.GenerateNewCard(_cardActive.AddCard, _cardActive.AddCardId, true, _cardActive.AddCardPlace, cardForModify, heroIndex: _hero.HeroIndex, copyConfig: _cardActive.CopyConfig);
             yield return (object) Globals.Instance.WaitForSeconds(1f);
             for (exahustGenerating = 0; matchManager.generatedCardTimes > 0 && exahustGenerating < 10; ++exahustGenerating)
               yield return (object) Globals.Instance.WaitForSeconds(0.1f);
@@ -7694,9 +8158,9 @@ public class MatchManager : MonoBehaviour
             {
               if (youCanCastEffect && matchManager.cardIteration.ContainsKey(_cardActive.InternalId) && matchManager.cardIteration[_cardActive.InternalId] == 0)
               {
-                if (theCasterHero != null && (UnityEngine.Object) theCasterHero.HeroItem != (UnityEngine.Object) null)
+                if (theCasterHero != null && (UnityEngine.Object) theCasterHero.HeroItem != (UnityEngine.Object) null && !_cardActive.TempAttackSelf)
                   theCasterHero.HeroItem.MoveToCenter();
-                else if (theCasterNPC != null && (UnityEngine.Object) theCasterNPC.NPCItem != (UnityEngine.Object) null)
+                else if (theCasterNPC != null && (UnityEngine.Object) theCasterNPC.NPCItem != (UnityEngine.Object) null && !matchManager.IsPhantomArmorSpecialCard(_cardActive.Id))
                   theCasterNPC.NPCItem.MoveToCenter();
               }
               if (theCasterHero != null && (UnityEngine.Object) theCasterHero.HeroItem != (UnityEngine.Object) null)
@@ -7736,6 +8200,11 @@ public class MatchManager : MonoBehaviour
                 _npc.AssignEnchantment(id);
                 _npc.NPCItem.ShowEnchantments();
               }
+            }
+            else if (_cardActive.Playable && (UnityEngine.Object) _cardActive.PetModel != (UnityEngine.Object) null && _cardActive.PetTemporal)
+            {
+              matchManager.StartCoroutine(matchManager.CreateCardCastPet(_cardActive, theCasterHero.HeroItem.gameObject, theCasterHero, (NPC) null));
+              yield return (object) Globals.Instance.WaitForSeconds(0.75f);
             }
             if (_cardActive.TransferCurses > 0)
             {
@@ -7799,6 +8268,19 @@ public class MatchManager : MonoBehaviour
                 }
               }
               yield return (object) Globals.Instance.WaitForSeconds(0.1f);
+            }
+            if (_cardActive.AddVanishToDeck)
+            {
+              if (_hero != null)
+              {
+                foreach (string id in matchManager.HeroDeck[_hero.HeroIndex])
+                  matchManager.GetCardData(id).Vanish = true;
+              }
+              else if (_npc != null)
+              {
+                foreach (string id in matchManager.NPCDeck[_npc.NPCIndex])
+                  matchManager.GetCardData(id).Vanish = true;
+              }
             }
             if (_cardActive.HealCurses != 0)
             {
@@ -7918,12 +8400,16 @@ public class MatchManager : MonoBehaviour
                 doRedrawInitiatives = true;
             }
             int directAttackIteration;
+            bool damagedEventFired;
+            bool blockedEventFired;
             bool fullEvadedDmg;
             bool fullEvadedDmgSide1;
             bool fullEvadedDmgSide2;
             bool ignoreBlock;
             int i;
             int dmg;
+            int dmgTotal;
+            int blocked;
             if (_cardActive.Damage > 0 || _cardActive.Damage2 > 0 || _cardActive.DamageSides > 0 || _cardActive.DamageSides2 > 0 || _cardActive.DamageSelf > 0 || _cardActive.DamageSelf2 > 0)
             {
               bool _isHero = isHero;
@@ -7940,8 +8426,8 @@ public class MatchManager : MonoBehaviour
               if ((UnityEngine.Object) _heroItem != (UnityEngine.Object) null)
                 ctHero[_heroItem] = CRT;
               directAttackIteration = 0;
-              bool damagedEventFired = false;
-              bool blockedEventFired = false;
+              damagedEventFired = false;
+              blockedEventFired = false;
               fullEvadedDmg = false;
               fullEvadedDmgSide1 = false;
               fullEvadedDmgSide2 = false;
@@ -8235,14 +8721,14 @@ public class MatchManager : MonoBehaviour
                       dmg = cardSpecialValue2;
                   }
                   int num9 = 0;
-                  int auxInt1 = 0;
+                  dmgTotal = 0;
                   if (theCasterHero != null)
                     num9 = theCasterHero.DamageWithCharacterBonus(dmg, dmgType, _cardActive.CardClass, matchManager.energyJustWastedByHero);
                   else if (theCasterNPC != null)
                     num9 = theCasterNPC.DamageWithCharacterBonus(dmg, dmgType, _cardActive.CardClass, matchManager.energyJustWastedByHero);
                   if ((double) effectRepeatPercent != 100.0)
                     num9 = Functions.FuncRoundToInt((float) ((double) num9 * (double) effectRepeatPercent * 0.0099999997764825821));
-                  int auxInt2 = 0;
+                  blocked = 0;
                   if (Globals.Instance.ShowDebug)
                     Functions.DebugLogGD("directAttackIteration->" + directAttackIteration.ToString(), "general");
                   int num10;
@@ -8297,20 +8783,22 @@ public class MatchManager : MonoBehaviour
                         }
                         if (!ignoreBlock)
                         {
-                          int num13 = _dmg;
+                          blocked = _dmg;
                           _dmg = _npc.ModifyBlock(_dmg);
-                          auxInt2 = num13 - _dmg;
+                          blocked -= _dmg;
                         }
-                        CRT.blocked = auxInt2;
+                        CRT.blocked = blocked;
+                        if (_npc.GetAuraCharges("block") == 0 && blocked > 0)
+                          _npc.SetEvent(Enums.EventActivation.BlockReachedZero);
                         if (_dmg == 0 & flag)
                         {
-                          if (auxInt2 > 0)
+                          if (blocked > 0)
                           {
                             CRT.fullblocked = true;
                             if (directAttackIteration == 0)
                             {
-                              _npc.SetEvent(Enums.EventActivation.Block, theCasterCharacter, auxInt2);
-                              theCasterCharacter.SetEvent(Enums.EventActivation.Blocked, (Character) _npc, auxInt2);
+                              _npc.SetEvent(Enums.EventActivation.Block, theCasterCharacter, blocked);
+                              theCasterCharacter.SetEvent(Enums.EventActivation.Blocked, (Character) _npc, blocked);
                             }
                           }
                         }
@@ -8319,16 +8807,17 @@ public class MatchManager : MonoBehaviour
                           CRT.fullblocked = false;
                           if (!_npc.IsImmune(dmgType))
                           {
-                            int num14 = -1 * _npc.BonusResists(dmgType);
-                            auxInt1 = Functions.FuncRoundToInt((float) _dmg + (float) ((double) _dmg * (double) num14 * 0.0099999997764825821));
+                            int num13 = -1 * _npc.BonusResists(dmgType);
+                            dmgTotal = Functions.FuncRoundToInt((float) _dmg + (float) ((double) _dmg * (double) num13 * 0.0099999997764825821));
+                            dmgTotal = matchManager.IncreaseDamage((Character) _npc, dmgTotal);
                             if (i == 2 || i == 8)
                             {
-                              CRT.damage2 = auxInt1;
+                              CRT.damage2 = dmgTotal;
                               CRT.damageType2 = dmgType;
                             }
                             else
                             {
-                              CRT.damage = auxInt1;
+                              CRT.damage = dmgTotal;
                               CRT.damageType = dmgType;
                             }
                           }
@@ -8344,16 +8833,18 @@ public class MatchManager : MonoBehaviour
                   }
                   else
                   {
-                    int num15 = _hero.IncreasedCursedDamagePerStack(dmgType);
-                    int _dmg = num9 + num15;
+                    int num14 = _hero.IncreasedCursedDamagePerStack(dmgType);
+                    int _dmg = num9 + num14;
                     if (_dmg <= 0)
                     {
                       _dmg = 0;
                       CRT.mitigated = true;
                     }
-                    int num16 = _hero.EffectCharges("evasion");
+                    int num15 = _hero.EffectCharges("evasion");
                     bool flag = _hero.GetAuraCharges("block") > 0;
-                    if ((i == 1 || i == 3 || i == 4 || i == 7) && num16 > 0)
+                    if (_hero.GetAuraCharges("block") == 0 && blocked > 0)
+                      _hero.SetEvent(Enums.EventActivation.BlockReachedZero);
+                    if ((i == 1 || i == 3 || i == 4 || i == 7) && num15 > 0)
                     {
                       _hero.ConsumeEffectCharges("evasion", 1);
                       num10 = 0;
@@ -8385,35 +8876,36 @@ public class MatchManager : MonoBehaviour
                       }
                       if (!ignoreBlock)
                       {
-                        int num17 = _dmg;
+                        blocked = _dmg;
                         _dmg = _hero.ModifyBlock(_dmg);
-                        auxInt2 = num17 - _dmg;
+                        blocked -= _dmg;
                       }
-                      CRT.blocked = auxInt2;
+                      CRT.blocked = blocked;
                       if (_dmg == 0 & flag)
                       {
-                        if (auxInt2 > 0)
+                        if (blocked > 0)
                         {
                           CRT.fullblocked = true;
                           if (directAttackIteration == 0)
                           {
-                            _hero.SetEvent(Enums.EventActivation.Block, theCasterCharacter, auxInt2);
-                            theCasterCharacter.SetEvent(Enums.EventActivation.Blocked, (Character) _hero, auxInt2);
+                            _hero.SetEvent(Enums.EventActivation.Block, theCasterCharacter, blocked);
+                            theCasterCharacter.SetEvent(Enums.EventActivation.Blocked, (Character) _hero, blocked);
                           }
                         }
                       }
                       else if (!_hero.IsImmune(dmgType))
                       {
-                        int num18 = -1 * _hero.BonusResists(dmgType);
-                        auxInt1 = Functions.FuncRoundToInt((float) _dmg + (float) ((double) _dmg * (double) num18 * 0.0099999997764825821));
+                        int num16 = -1 * _hero.BonusResists(dmgType);
+                        dmgTotal = Functions.FuncRoundToInt((float) _dmg + (float) ((double) _dmg * (double) num16 * 0.0099999997764825821));
+                        dmgTotal = matchManager.IncreaseDamage((Character) _hero, dmgTotal);
                         if (i == 2 || i == 8)
                         {
-                          CRT.damage2 = auxInt1;
+                          CRT.damage2 = dmgTotal;
                           CRT.damageType2 = dmgType;
                         }
                         else
                         {
-                          CRT.damage = auxInt1;
+                          CRT.damage = dmgTotal;
                           CRT.damageType = dmgType;
                         }
                       }
@@ -8421,66 +8913,67 @@ public class MatchManager : MonoBehaviour
                         CRT.immune = true;
                     }
                   }
-                  if (auxInt1 < 0)
-                    auxInt1 = 0;
+                  if (dmgTotal < 0)
+                    dmgTotal = 0;
                   Dictionary<Enums.DamageType, int> dictionary = new Dictionary<Enums.DamageType, int>();
                   if (isNPC)
                   {
-                    matchManager.castCardDamageDone = auxInt1 <= _npc.GetHp() ? (float) auxInt1 : (float) _npc.GetHp();
+                    matchManager.castCardDamageDone = dmgTotal <= _npc.GetHp() ? (float) dmgTotal : (float) _npc.GetHp();
                     matchManager.castCardDamageDoneTotal += matchManager.castCardDamageDone;
-                    matchManager.castCardDamageDoneIteration += (float) auxInt1;
-                    _npc.ModifyHp(-auxInt1);
-                    if (auxInt1 > 0 && (i == 1 || i == 2 || i == 3 || i == 4))
+                    matchManager.castCardDamageDoneIteration += (float) dmgTotal;
+                    _npc.ModifyHp(-dmgTotal);
+                    if (dmgTotal > 0 && (i == 1 || i == 2 || i == 3 || i == 4))
                     {
                       if (i != 2 || i == 2 && !damagedEventFired)
-                        theCasterCharacter.SetEvent(Enums.EventActivation.Damage, (Character) _npc, auxInt1);
+                        theCasterCharacter.SetEvent(Enums.EventActivation.Damage, (Character) _npc, dmgTotal);
                       if (!damagedEventFired)
                       {
-                        _npc.SetEvent(Enums.EventActivation.Damaged, theCasterCharacter, auxInt1);
+                        _npc.SetEvent(Enums.EventActivation.Damaged, theCasterCharacter, dmgTotal);
                         damagedEventFired = true;
                       }
                       else if (i == 2)
-                        _npc.SetEvent(Enums.EventActivation.DamagedSecondary, theCasterCharacter, auxInt1);
+                        _npc.SetEvent(Enums.EventActivation.DamagedSecondary, theCasterCharacter, dmgTotal);
                     }
-                    if (auxInt1 == 0 && auxInt2 > 0 && (i == 3 || i == 4 || i == 5 || i == 6) && !blockedEventFired)
+                    if (dmgTotal == 0 && blocked > 0 && (i == 3 || i == 4 || i == 5 || i == 6) && !blockedEventFired)
                     {
-                      _npc.SetEvent(Enums.EventActivation.Block, theCasterCharacter, auxInt2);
+                      _npc.SetEvent(Enums.EventActivation.Block, theCasterCharacter, blocked);
                       blockedEventFired = true;
                     }
-                    if (!fullEvadedDmg && i == 1 || !fullEvadedDmgSide1 && i == 3 || !fullEvadedDmgSide2 && i == 4)
+                    if (!fullEvadedDmg && i == 1 || !fullEvadedDmgSide1 && i == 2 || !fullEvadedDmgSide1 && i == 3 || !fullEvadedDmgSide2 && i == 4)
                     {
-                      _npc.DamageReflected(theCasterHero, theCasterNPC);
+                      _npc.DamageReflected(theCasterHero, theCasterNPC, dmgTotal, blocked);
                       yield return (object) Globals.Instance.WaitForSeconds(0.05f);
                       _npc.HealAttacker(theCasterHero, theCasterNPC);
                     }
                   }
                   else
                   {
-                    matchManager.castCardDamageDone = auxInt1 <= _hero.GetHp() ? (float) auxInt1 : (float) _hero.GetHp();
+                    matchManager.castCardDamageDone = dmgTotal <= _hero.GetHp() ? (float) dmgTotal : (float) _hero.GetHp();
                     matchManager.castCardDamageDoneTotal += matchManager.castCardDamageDone;
-                    matchManager.castCardDamageDoneIteration += (float) auxInt1;
-                    _hero.ModifyHp(-auxInt1);
-                    if (auxInt1 > 0 && (i == 1 || i == 2 || i == 3 || i == 4))
+                    matchManager.castCardDamageDoneIteration += (float) dmgTotal;
+                    _hero.ModifyHp(-dmgTotal);
+                    if (dmgTotal > 0 && (i == 1 || i == 2 || i == 3 || i == 4))
                     {
                       if (i != 2 || i == 2 && !damagedEventFired)
-                        theCasterCharacter.SetEvent(Enums.EventActivation.Damage, (Character) _hero, auxInt1);
+                        theCasterCharacter.SetEvent(Enums.EventActivation.Damage, (Character) _hero, dmgTotal);
                       if (!damagedEventFired)
                       {
-                        _hero.SetEvent(Enums.EventActivation.Damaged, theCasterCharacter, auxInt1);
+                        _hero.SetEvent(Enums.EventActivation.Damaged, theCasterCharacter, dmgTotal);
                         damagedEventFired = true;
                       }
                       else if (i == 2)
-                        _hero.SetEvent(Enums.EventActivation.DamagedSecondary, theCasterCharacter, auxInt1);
+                        _hero.SetEvent(Enums.EventActivation.DamagedSecondary, theCasterCharacter, dmgTotal);
                     }
-                    if (auxInt1 == 0 && auxInt2 > 0 && (i == 3 || i == 4 || i == 5 || i == 6) && !blockedEventFired)
+                    if (dmgTotal == 0 && blocked > 0 && (i == 3 || i == 4 || i == 5 || i == 6) && !blockedEventFired)
                     {
-                      _hero.SetEvent(Enums.EventActivation.Block, theCasterCharacter, auxInt2);
+                      _hero.SetEvent(Enums.EventActivation.Block, theCasterCharacter, blocked);
                       blockedEventFired = true;
                     }
-                    if (!fullEvadedDmg && i == 1 || !fullEvadedDmgSide1 && i == 3 || !fullEvadedDmgSide2 && i == 4)
+                    if (!fullEvadedDmg && i == 1 || !fullEvadedDmgSide1 && i == 2 || !fullEvadedDmgSide1 && i == 3 || !fullEvadedDmgSide2 && i == 4)
                     {
-                      _hero.DamageReflected(theCasterHero, theCasterNPC);
+                      _hero.DamageReflected(theCasterHero, theCasterNPC, dmgTotal, blocked);
                       yield return (object) Globals.Instance.WaitForSeconds(0.05f);
+                      _hero.GrantBlockToTeam(theCasterHero, theCasterNPC, dmgTotal, blocked);
                       _hero.HealAttacker(theCasterHero, theCasterNPC);
                     }
                   }
@@ -8549,30 +9042,30 @@ public class MatchManager : MonoBehaviour
               {
                 Transform from = (Transform) null;
                 Transform to = (Transform) null;
-                int num19 = 0;
-                int num20 = 0;
+                int num17 = 0;
+                int num18 = 0;
                 if (theCasterNPC != null && (UnityEngine.Object) theCasterNPC.NPCItem != (UnityEngine.Object) null)
                 {
                   from = theCasterNPC.NPCItem.CharImageT;
-                  num19 = theCasterNPC.Position;
+                  num17 = theCasterNPC.Position;
                 }
                 else if (theCasterHero != null && (UnityEngine.Object) theCasterHero.HeroItem != (UnityEngine.Object) null)
                 {
                   from = theCasterHero.HeroItem.CharImageT;
-                  num19 = theCasterHero.Position;
+                  num17 = theCasterHero.Position;
                 }
                 if (_npc != null && (UnityEngine.Object) _npcItem != (UnityEngine.Object) null)
                 {
                   to = _npcItem.CharImageT;
-                  num20 = _npc.Position;
+                  num18 = _npc.Position;
                 }
                 else if (_hero != null && (UnityEngine.Object) _heroItem != (UnityEngine.Object) null)
                 {
                   to = _heroItem.CharImageT;
-                  num20 = _hero.Position;
+                  num18 = _hero.Position;
                 }
                 matchManager.waitingTrail = true;
-                EffectsManager.Instance.PlayEffectTrail(_cardActive, theCasterIsHero, from, to, num19 + num20 + 1);
+                EffectsManager.Instance.PlayEffectTrail(_cardActive, theCasterIsHero, from, to, num17 + num18 + 1);
                 while (matchManager.waitingTrail)
                   yield return (object) Globals.Instance.WaitForSeconds(0.01f);
               }
@@ -8611,91 +9104,102 @@ public class MatchManager : MonoBehaviour
             {
               AuraCurseData auraCurseData1 = (AuraCurseData) null;
               directAttackIteration = 0;
-              if ((UnityEngine.Object) _cardActive.Aura != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.Aura2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.Aura3 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.AcEnergyBonus != (UnityEngine.Object) null && _cardActive.AcEnergyBonus.IsAura)
+              Character targetCharacter;
+              if ((UnityEngine.Object) _cardActive.Aura != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.Aura2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.Aura3 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.AcEnergyBonus != (UnityEngine.Object) null && _cardActive.AcEnergyBonus.IsAura || _cardActive.Auras != null && _cardActive.Auras.Length != 0)
               {
+                targetCharacter = theCasterHero != null ? (Character) _npc : (Character) _hero;
                 ignoreBlock = false;
                 fullEvadedDmgSide2 = false;
                 fullEvadedDmgSide1 = false;
                 fullEvadedDmg = false;
-                for (dmg = 0; dmg < 5; ++dmg)
+                blockedEventFired = _cardActive.Auras != null && _cardActive.Auras.Length != 0;
+                dmgTotal = blockedEventFired ? _cardActive.Auras.Length + 5 : 5;
+                for (dmg = 0; dmg < dmgTotal; ++dmg)
                 {
-                  AuraCurseData _acData = (AuraCurseData) null;
-                  if (dmg == 0 && (UnityEngine.Object) _cardActive.Aura != (UnityEngine.Object) null)
+                  damagedEventFired = false;
+                  AuraCurseData auraCurseData2 = (AuraCurseData) null;
+                  if (dmg == 0 && !_cardActive.ChooseOneOfAvailableAuras && (UnityEngine.Object) _cardActive.Aura != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.Aura;
-                    directAttackIteration = _cardActive.AuraCharges;
-                    if (_cardActive.AuraChargesSpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.AuraChargesSpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.AuraChargesSpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData2 = _cardActive.Aura;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData2, _cardActive.AuraCharges, _cardActive.AuraChargesSpecialValueGlobal, _cardActive.AuraChargesSpecialValue1, _cardActive.AuraChargesSpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                     if (_cardActive.AuraCharges2 > 0 && (UnityEngine.Object) _cardActive.Aura == (UnityEngine.Object) _cardActive.Aura2)
                     {
-                      if (_cardActive.AuraCharges2SpecialValueGlobal)
-                        directAttackIteration += cardSpecialValueGlobal;
-                      else if (_cardActive.AuraCharges2SpecialValue1)
-                        directAttackIteration += exahustGenerating;
-                      else if (_cardActive.AuraCharges2SpecialValue2)
-                        directAttackIteration += cardSpecialValue2;
-                      else
-                        directAttackIteration += _cardActive.AuraCharges2;
+                      directAttackIteration += matchManager.ResolveAuraCurseCharges(auraCurseData2, 0, _cardActive.AuraCharges2SpecialValueGlobal, _cardActive.AuraCharges2SpecialValue1, _cardActive.AuraCharges2SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2, new int?(_cardActive.AuraCharges2));
                       fullEvadedDmgSide1 = true;
                     }
                   }
-                  else if (dmg == 1 && (UnityEngine.Object) _cardActive.Aura2 != (UnityEngine.Object) null)
+                  else if (dmg == 1 && !_cardActive.ChooseOneOfAvailableAuras && (UnityEngine.Object) _cardActive.Aura2 != (UnityEngine.Object) null)
                   {
                     if (!fullEvadedDmgSide1)
                     {
-                      _acData = _cardActive.Aura2;
-                      directAttackIteration = _cardActive.AuraCharges2;
-                      if (_cardActive.AuraCharges2SpecialValueGlobal)
-                        directAttackIteration = cardSpecialValueGlobal;
-                      else if (_cardActive.AuraCharges2SpecialValue1)
-                        directAttackIteration = exahustGenerating;
-                      else if (_cardActive.AuraCharges2SpecialValue2)
-                        directAttackIteration = cardSpecialValue2;
+                      auraCurseData2 = _cardActive.Aura2;
+                      directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData2, _cardActive.AuraCharges2, _cardActive.AuraCharges2SpecialValueGlobal, _cardActive.AuraCharges2SpecialValue1, _cardActive.AuraCharges2SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                       if (_cardActive.AuraCharges3 > 0 && (UnityEngine.Object) _cardActive.Aura2 == (UnityEngine.Object) _cardActive.Aura3)
                       {
-                        if (_cardActive.AuraCharges3SpecialValueGlobal)
-                          directAttackIteration += cardSpecialValueGlobal;
-                        else if (_cardActive.AuraCharges3SpecialValue1)
-                          directAttackIteration += exahustGenerating;
-                        else if (_cardActive.AuraCharges3SpecialValue2)
-                          directAttackIteration += cardSpecialValue2;
-                        else
-                          directAttackIteration += _cardActive.AuraCharges3;
+                        directAttackIteration += matchManager.ResolveAuraCurseCharges(auraCurseData2, 0, _cardActive.AuraCharges3SpecialValueGlobal, _cardActive.AuraCharges3SpecialValue1, _cardActive.AuraCharges3SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2, new int?(_cardActive.AuraCharges3));
                         fullEvadedDmg = true;
                       }
                     }
                     else
                       continue;
                   }
-                  else if (dmg == 2 && (UnityEngine.Object) _cardActive.Aura3 != (UnityEngine.Object) null)
+                  else if (dmg == 2 && !_cardActive.ChooseOneOfAvailableAuras && (UnityEngine.Object) _cardActive.Aura3 != (UnityEngine.Object) null)
                   {
                     if (!fullEvadedDmg)
                     {
-                      _acData = _cardActive.Aura3;
-                      directAttackIteration = _cardActive.AuraCharges3;
-                      if (_cardActive.AuraCharges3SpecialValueGlobal)
-                        directAttackIteration = cardSpecialValueGlobal;
-                      else if (_cardActive.AuraCharges3SpecialValue1)
-                        directAttackIteration = exahustGenerating;
-                      else if (_cardActive.AuraCharges3SpecialValue2)
-                        directAttackIteration = cardSpecialValue2;
+                      auraCurseData2 = _cardActive.Aura3;
+                      directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData2, _cardActive.AuraCharges3, _cardActive.AuraCharges3SpecialValueGlobal, _cardActive.AuraCharges3SpecialValue1, _cardActive.AuraCharges3SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                     }
                     else
                       continue;
                   }
+                  else if (blockedEventFired && dmg >= 3 && dmg <= dmgTotal - 3)
+                  {
+                    CardData.AuraBuffs aura = _cardActive.Auras[dmg - 3];
+                    if (aura != null && (UnityEngine.Object) aura.aura != (UnityEngine.Object) null)
+                    {
+                      auraCurseData2 = aura.aura;
+                      directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData2, aura.auraCharges, aura.auraChargesSpecialValueGlobal, aura.auraChargesSpecialValue1, aura.auraChargesSpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
+                    }
+                  }
+                  else if (_cardActive.ChooseOneOfAvailableAuras)
+                  {
+                    damagedEventFired = true;
+                    List<AuraCurseData> auraCurseDataList = new List<AuraCurseData>();
+                    List<int> intList = new List<int>();
+                    if ((bool) (UnityEngine.Object) _cardActive.Aura)
+                    {
+                      auraCurseDataList.Add(_cardActive.Aura);
+                      intList.Add(_cardActive.AuraCharges);
+                    }
+                    if ((bool) (UnityEngine.Object) _cardActive.Aura2)
+                    {
+                      auraCurseDataList.Add(_cardActive.Aura2);
+                      intList.Add(_cardActive.AuraCharges2);
+                    }
+                    if ((bool) (UnityEngine.Object) _cardActive.Aura3)
+                    {
+                      auraCurseDataList.Add(_cardActive.Aura3);
+                      intList.Add(_cardActive.AuraCharges3);
+                    }
+                    if (_cardActive.Auras != null && _cardActive.Auras.Length != 0)
+                    {
+                      auraCurseDataList.AddRange(((IEnumerable<CardData.AuraBuffs>) _cardActive.Auras).Where<CardData.AuraBuffs>((Func<CardData.AuraBuffs, bool>) (x => (UnityEngine.Object) x.aura != (UnityEngine.Object) null)).Select<CardData.AuraBuffs, AuraCurseData>((Func<CardData.AuraBuffs, AuraCurseData>) (x => x.aura)));
+                      intList.AddRange(((IEnumerable<CardData.AuraBuffs>) _cardActive.Auras).Where<CardData.AuraBuffs>((Func<CardData.AuraBuffs, bool>) (x => (UnityEngine.Object) x.aura != (UnityEngine.Object) null)).Select<CardData.AuraBuffs, int>((Func<CardData.AuraBuffs, int>) (x => x.auraCharges)));
+                    }
+                    int randomIntRange = matchManager.GetRandomIntRange(0, auraCurseDataList.Count, "misc");
+                    auraCurseData2 = auraCurseDataList[randomIntRange];
+                    directAttackIteration = intList[randomIntRange];
+                  }
                   if (matchManager.energyAssigned > 0 && (UnityEngine.Object) _cardActive.AcEnergyBonus != (UnityEngine.Object) null && _cardActive.AcEnergyBonus.IsAura)
                   {
-                    if (dmg == 3 && !ignoreBlock)
+                    if (dmg == dmgTotal - 2 && !ignoreBlock)
                     {
-                      _acData = _cardActive.AcEnergyBonus;
+                      auraCurseData2 = _cardActive.AcEnergyBonus;
                       directAttackIteration = _cardActive.AcEnergyBonusQuantity * matchManager.energyAssigned;
                       ignoreBlock = true;
                     }
-                    else if (!ignoreBlock && (UnityEngine.Object) _acData != (UnityEngine.Object) null && _acData.Id == _cardActive.AcEnergyBonus.Id)
+                    else if (!ignoreBlock && (UnityEngine.Object) auraCurseData2 != (UnityEngine.Object) null && auraCurseData2.Id == _cardActive.AcEnergyBonus.Id)
                     {
                       directAttackIteration += _cardActive.AcEnergyBonusQuantity * matchManager.energyAssigned;
                       ignoreBlock = true;
@@ -8703,87 +9207,83 @@ public class MatchManager : MonoBehaviour
                   }
                   if (matchManager.energyAssigned > 0 && (UnityEngine.Object) _cardActive.AcEnergyBonus2 != (UnityEngine.Object) null && _cardActive.AcEnergyBonus2.IsAura)
                   {
-                    if (dmg == 4 && !fullEvadedDmgSide2)
+                    if (dmg == dmgTotal - 1 && !fullEvadedDmgSide2)
                     {
-                      _acData = _cardActive.AcEnergyBonus2;
+                      auraCurseData2 = _cardActive.AcEnergyBonus2;
                       directAttackIteration = _cardActive.AcEnergyBonus2Quantity * matchManager.energyAssigned;
                       fullEvadedDmgSide2 = true;
                     }
-                    else if (!fullEvadedDmgSide2 && (UnityEngine.Object) _acData != (UnityEngine.Object) null && _acData.Id == _cardActive.AcEnergyBonus2.Id)
+                    else if (!fullEvadedDmgSide2 && (UnityEngine.Object) auraCurseData2 != (UnityEngine.Object) null && auraCurseData2.Id == _cardActive.AcEnergyBonus2.Id)
                     {
                       directAttackIteration += _cardActive.AcEnergyBonus2Quantity * matchManager.energyAssigned;
                       fullEvadedDmgSide2 = true;
                     }
                   }
-                  if ((UnityEngine.Object) _acData != (UnityEngine.Object) null)
+                  if ((UnityEngine.Object) auraCurseData2 != (UnityEngine.Object) null)
                   {
                     if (isHero)
                     {
                       if ((UnityEngine.Object) _heroItem != (UnityEngine.Object) null)
-                        _hero.SetAura(theCasterCharacter, _acData, directAttackIteration, CC: _cardActive.CardClass);
+                        _hero.SetAura(theCasterCharacter, auraCurseData2, directAttackIteration, CC: _cardActive.CardClass);
                       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                     }
                     else
                     {
                       if ((UnityEngine.Object) _npcItem != (UnityEngine.Object) null)
-                        _npc.SetAura(theCasterCharacter, _acData, directAttackIteration, CC: _cardActive.CardClass);
+                        _npc.SetAura(theCasterCharacter, auraCurseData2, directAttackIteration, CC: _cardActive.CardClass);
                       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                     }
                   }
                   yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                   doRedrawInitiatives = true;
+                  if (damagedEventFired)
+                    break;
                 }
+                targetCharacter = (Character) null;
               }
               auraCurseData1 = (AuraCurseData) null;
               directAttackIteration = 0;
-              if (isYourFirstTarget && ((UnityEngine.Object) _cardActive.AuraSelf != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.AuraSelf2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.AuraSelf3 != (UnityEngine.Object) null))
+              if (isYourFirstTarget && ((UnityEngine.Object) _cardActive.AuraSelf != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.AuraSelf2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.AuraSelf3 != (UnityEngine.Object) null || _cardActive.Auras != null && _cardActive.Auras.Length != 0))
               {
-                for (dmg = 0; dmg < 3; ++dmg)
+                targetCharacter = theCasterHero != null ? (Character) _npc : (Character) _hero;
+                dmgTotal = _cardActive.Auras != null && _cardActive.Auras.Length != 0 ? _cardActive.Auras.Length + 3 : 3;
+                for (dmg = 0; dmg < dmgTotal; ++dmg)
                 {
-                  AuraCurseData _acData = (AuraCurseData) null;
+                  AuraCurseData auraCurseData3 = (AuraCurseData) null;
                   if (dmg == 0 && (UnityEngine.Object) _cardActive.AuraSelf != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.AuraSelf;
-                    directAttackIteration = _cardActive.AuraCharges;
-                    if (_cardActive.AuraChargesSpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.AuraChargesSpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.AuraChargesSpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData3 = _cardActive.AuraSelf;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData3, _cardActive.AuraCharges, _cardActive.AuraChargesSpecialValueGlobal, _cardActive.AuraChargesSpecialValue1, _cardActive.AuraChargesSpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                   }
                   else if (dmg == 1 && (UnityEngine.Object) _cardActive.AuraSelf2 != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.AuraSelf2;
-                    directAttackIteration = _cardActive.AuraCharges2;
-                    if (_cardActive.AuraCharges2SpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.AuraCharges2SpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.AuraCharges2SpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData3 = _cardActive.AuraSelf2;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData3, _cardActive.AuraCharges2, _cardActive.AuraCharges2SpecialValueGlobal, _cardActive.AuraCharges2SpecialValue1, _cardActive.AuraCharges2SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                   }
                   else if (dmg == 2 && (UnityEngine.Object) _cardActive.AuraSelf3 != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.AuraSelf3;
-                    directAttackIteration = _cardActive.AuraCharges3;
-                    if (_cardActive.AuraCharges3SpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.AuraCharges3SpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.AuraCharges3SpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData3 = _cardActive.AuraSelf3;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData3, _cardActive.AuraCharges3, _cardActive.AuraCharges3SpecialValueGlobal, _cardActive.AuraCharges3SpecialValue1, _cardActive.AuraCharges3SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                   }
-                  if ((UnityEngine.Object) _acData != (UnityEngine.Object) null)
+                  else if (dmg > 2)
+                  {
+                    CardData.AuraBuffs aura = _cardActive.Auras[dmg - 3];
+                    if (aura != null && (UnityEngine.Object) aura.auraSelf != (UnityEngine.Object) null)
+                    {
+                      auraCurseData3 = aura.auraSelf;
+                      directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData3, aura.auraCharges, aura.auraChargesSpecialValueGlobal, aura.auraChargesSpecialValue1, aura.auraChargesSpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
+                    }
+                  }
+                  if ((UnityEngine.Object) auraCurseData3 != (UnityEngine.Object) null)
                   {
                     if (theCasterHero != null && theCasterHero.Alive)
                     {
-                      theCasterHero.SetAura(theCasterCharacter, _acData, directAttackIteration, CC: _cardActive.CardClass);
+                      theCasterHero.SetAura(theCasterCharacter, auraCurseData3, directAttackIteration, CC: _cardActive.CardClass);
                       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                     }
                     else if (theCasterNPC != null && theCasterNPC.Alive)
                     {
-                      theCasterNPC.SetAura(theCasterCharacter, _acData, directAttackIteration, CC: _cardActive.CardClass);
+                      theCasterNPC.SetAura(theCasterCharacter, auraCurseData3, directAttackIteration, CC: _cardActive.CardClass);
                       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                     }
                     if (!doRedrawInitiatives)
@@ -8791,84 +9291,84 @@ public class MatchManager : MonoBehaviour
                     yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                   }
                 }
+                targetCharacter = (Character) null;
               }
-              AuraCurseData auraCurseData2 = (AuraCurseData) null;
+              AuraCurseData auraCurseData4 = (AuraCurseData) null;
               directAttackIteration = 0;
-              if ((UnityEngine.Object) _cardActive.Curse != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.Curse2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.Curse3 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.AcEnergyBonus != (UnityEngine.Object) null && !_cardActive.AcEnergyBonus.IsAura)
+              i = 0;
+              if ((UnityEngine.Object) _cardActive.Curse != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.Curse2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.Curse3 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.AcEnergyBonus != (UnityEngine.Object) null && !_cardActive.AcEnergyBonus.IsAura || _cardActive.Curses != null && _cardActive.Curses.Length != 0)
               {
+                targetCharacter = theCasterHero != null ? (Character) _npc : (Character) _hero;
+                blockedEventFired = false;
                 fullEvadedDmg = false;
-                fullEvadedDmgSide1 = false;
-                for (dmg = 0; dmg < 5; ++dmg)
+                fullEvadedDmgSide1 = _cardActive.Curses != null && _cardActive.Curses.Length != 0;
+                dmgTotal = fullEvadedDmgSide1 ? _cardActive.Curses.Length + 5 : 5;
+                for (dmg = 0; dmg < dmgTotal; ++dmg)
                 {
-                  AuraCurseData _acData = (AuraCurseData) null;
+                  AuraCurseData auraCurseData5 = (AuraCurseData) null;
                   if (dmg == 0 && (UnityEngine.Object) _cardActive.Curse != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.Curse;
-                    directAttackIteration = _cardActive.CurseCharges;
-                    if (_cardActive.CurseChargesSpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.CurseChargesSpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.CurseChargesSpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData5 = _cardActive.Curse;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData5, _cardActive.CurseCharges, _cardActive.CurseChargesSpecialValueGlobal, _cardActive.CurseChargesSpecialValue1, _cardActive.CurseChargesSpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
+                    i = _cardActive.CurseChargesSides;
                   }
                   else if (dmg == 1 && (UnityEngine.Object) _cardActive.Curse2 != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.Curse2;
-                    directAttackIteration = _cardActive.CurseCharges2;
-                    if (_cardActive.CurseCharges2SpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.CurseCharges2SpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.CurseCharges2SpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData5 = _cardActive.Curse2;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData5, _cardActive.CurseCharges2, _cardActive.CurseCharges2SpecialValueGlobal, _cardActive.CurseCharges2SpecialValue1, _cardActive.CurseCharges2SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                   }
                   else if (dmg == 2 && (UnityEngine.Object) _cardActive.Curse3 != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.Curse3;
-                    directAttackIteration = _cardActive.CurseCharges3;
-                    if (_cardActive.CurseCharges3SpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.CurseCharges3SpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.CurseCharges3SpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData5 = _cardActive.Curse3;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData5, _cardActive.CurseCharges3, _cardActive.CurseCharges3SpecialValueGlobal, _cardActive.CurseCharges3SpecialValue1, _cardActive.CurseCharges3SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
+                  }
+                  else if (fullEvadedDmgSide1 && dmg >= 3 && dmg <= dmgTotal - 3)
+                  {
+                    CardData.CurseDebuffs curse = _cardActive.Curses[dmg - 3];
+                    if (curse != null && (UnityEngine.Object) curse.curse != (UnityEngine.Object) null)
+                    {
+                      auraCurseData5 = curse.curse;
+                      directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData5, curse.curseCharges, curse.curseChargesSpecialValueGlobal, curse.curseChargesSpecialValue1, curse.curseChargesSpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
+                      i = curse.curseChargesSides;
+                    }
                   }
                   if (matchManager.energyAssigned > 0 && (UnityEngine.Object) _cardActive.AcEnergyBonus != (UnityEngine.Object) null && !_cardActive.AcEnergyBonus.IsAura)
                   {
-                    if (dmg == 3 && !fullEvadedDmg)
+                    if (dmg == dmgTotal - 2 && !blockedEventFired)
                     {
-                      _acData = _cardActive.AcEnergyBonus;
+                      auraCurseData5 = _cardActive.AcEnergyBonus;
                       directAttackIteration = _cardActive.AcEnergyBonusQuantity * matchManager.energyAssigned;
-                      fullEvadedDmg = true;
+                      blockedEventFired = true;
                     }
-                    else if (!fullEvadedDmg && (UnityEngine.Object) _acData != (UnityEngine.Object) null && _acData.Id == _cardActive.AcEnergyBonus.Id)
+                    else if (!blockedEventFired && (UnityEngine.Object) auraCurseData5 != (UnityEngine.Object) null && auraCurseData5.Id == _cardActive.AcEnergyBonus.Id)
                     {
                       directAttackIteration += _cardActive.AcEnergyBonusQuantity * matchManager.energyAssigned;
-                      fullEvadedDmg = true;
+                      blockedEventFired = true;
                     }
                   }
                   if (matchManager.energyAssigned > 0 && (UnityEngine.Object) _cardActive.AcEnergyBonus2 != (UnityEngine.Object) null && !_cardActive.AcEnergyBonus2.IsAura)
                   {
-                    if (dmg == 4 && !fullEvadedDmgSide1)
+                    if (dmg == dmgTotal - 1 && !fullEvadedDmg)
                     {
-                      _acData = _cardActive.AcEnergyBonus2;
+                      auraCurseData5 = _cardActive.AcEnergyBonus2;
                       directAttackIteration = _cardActive.AcEnergyBonus2Quantity * matchManager.energyAssigned;
-                      fullEvadedDmgSide1 = true;
+                      fullEvadedDmg = true;
                     }
-                    else if (!fullEvadedDmgSide1 && (UnityEngine.Object) _acData != (UnityEngine.Object) null && _acData.Id == _cardActive.AcEnergyBonus2.Id)
+                    else if (!fullEvadedDmg && (UnityEngine.Object) auraCurseData5 != (UnityEngine.Object) null && auraCurseData5.Id == _cardActive.AcEnergyBonus2.Id)
                     {
                       directAttackIteration += _cardActive.AcEnergyBonus2Quantity * matchManager.energyAssigned;
-                      fullEvadedDmgSide1 = true;
+                      fullEvadedDmg = true;
                     }
                   }
-                  if ((UnityEngine.Object) _acData != (UnityEngine.Object) null)
+                  if ((UnityEngine.Object) auraCurseData5 != (UnityEngine.Object) null)
                   {
                     if (isHero)
                     {
-                      if (_hero != null && _hero.Alive && (!_hero.IsInvulnerable() || !(_acData.Id.ToLower() != "doom")))
+                      if (_hero != null && _hero.Alive && (!_hero.IsInvulnerable() || !(auraCurseData5.Id.ToLower() != "doom")))
                       {
-                        _hero.SetAura(theCasterCharacter, _acData, directAttackIteration, CC: _cardActive.CardClass);
+                        _hero.SetAura(theCasterCharacter, auraCurseData5, directAttackIteration, CC: _cardActive.CardClass);
+                        foreach (Character heroSide in matchManager.GetHeroSides(_hero.Position))
+                          heroSide.SetAura(theCasterCharacter, auraCurseData5, i, CC: _cardActive.CardClass);
                         if ((double) matchManager.castCardDamageDoneTotal <= 0.0)
                           _hero.HeroItem.CharacterHitted();
                         yield return (object) Globals.Instance.WaitForSeconds(0.01f);
@@ -8876,7 +9376,9 @@ public class MatchManager : MonoBehaviour
                     }
                     else if (_npc != null && _npc.Alive && !_npc.IsInvulnerable())
                     {
-                      _npc.SetAura(theCasterCharacter, _acData, directAttackIteration, CC: _cardActive.CardClass);
+                      _npc.SetAura(theCasterCharacter, auraCurseData5, directAttackIteration, CC: _cardActive.CardClass);
+                      foreach (Character npcSide in matchManager.GetNPCSides(_npc.Position))
+                        npcSide.SetAura(theCasterCharacter, auraCurseData5, i, CC: _cardActive.CardClass);
                       if ((double) matchManager.castCardDamageDoneTotal <= 0.0)
                         _npc.NPCItem.CharacterHitted();
                       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
@@ -8886,56 +9388,51 @@ public class MatchManager : MonoBehaviour
                     doRedrawInitiatives = true;
                   yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                 }
+                targetCharacter = (Character) null;
               }
-              auraCurseData2 = (AuraCurseData) null;
+              auraCurseData4 = (AuraCurseData) null;
               directAttackIteration = 0;
-              if (isYourFirstTarget && ((UnityEngine.Object) _cardActive.CurseSelf != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.CurseSelf2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.CurseSelf3 != (UnityEngine.Object) null))
+              if (isYourFirstTarget && ((UnityEngine.Object) _cardActive.CurseSelf != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.CurseSelf2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardActive.CurseSelf3 != (UnityEngine.Object) null || _cardActive.Curses != null && _cardActive.Curses.Length != 0))
               {
-                for (dmg = 0; dmg < 3; ++dmg)
+                targetCharacter = theCasterHero != null ? (Character) _npc : (Character) _hero;
+                fullEvadedDmgSide1 = _cardActive.Curses != null && _cardActive.Curses.Length != 0;
+                dmgTotal = fullEvadedDmgSide1 ? _cardActive.Curses.Length + 3 : 3;
+                for (dmg = 0; dmg < dmgTotal; ++dmg)
                 {
-                  AuraCurseData _acData = (AuraCurseData) null;
+                  AuraCurseData auraCurseData6 = (AuraCurseData) null;
                   if (dmg == 0 && (UnityEngine.Object) _cardActive.CurseSelf != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.CurseSelf;
-                    directAttackIteration = _cardActive.CurseCharges;
-                    if (_cardActive.CurseChargesSpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.CurseChargesSpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.CurseChargesSpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData6 = _cardActive.CurseSelf;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData6, _cardActive.CurseCharges, _cardActive.CurseChargesSpecialValueGlobal, _cardActive.CurseChargesSpecialValue1, _cardActive.CurseChargesSpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                   }
                   else if (dmg == 1 && (UnityEngine.Object) _cardActive.CurseSelf2 != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.CurseSelf2;
-                    directAttackIteration = _cardActive.CurseCharges2;
-                    if (_cardActive.CurseCharges2SpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.CurseCharges2SpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.CurseCharges2SpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData6 = _cardActive.CurseSelf2;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData6, _cardActive.CurseCharges2, _cardActive.CurseCharges2SpecialValueGlobal, _cardActive.CurseCharges2SpecialValue1, _cardActive.CurseCharges2SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                   }
                   else if (dmg == 2 && (UnityEngine.Object) _cardActive.CurseSelf3 != (UnityEngine.Object) null)
                   {
-                    _acData = _cardActive.CurseSelf3;
-                    directAttackIteration = _cardActive.CurseCharges3;
-                    if (_cardActive.CurseCharges3SpecialValueGlobal)
-                      directAttackIteration = cardSpecialValueGlobal;
-                    else if (_cardActive.CurseCharges3SpecialValue1)
-                      directAttackIteration = exahustGenerating;
-                    else if (_cardActive.CurseCharges3SpecialValue2)
-                      directAttackIteration = cardSpecialValue2;
+                    auraCurseData6 = _cardActive.CurseSelf3;
+                    directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData6, _cardActive.CurseCharges3, _cardActive.CurseCharges3SpecialValueGlobal, _cardActive.CurseCharges3SpecialValue1, _cardActive.CurseCharges3SpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
                   }
-                  if ((UnityEngine.Object) _acData != (UnityEngine.Object) null)
+                  else if (fullEvadedDmgSide1 && dmg >= 3 && dmg <= dmgTotal - 3)
+                  {
+                    CardData.CurseDebuffs curse = _cardActive.Curses[dmg - 3];
+                    if (curse != null && (UnityEngine.Object) curse.curseSelf != (UnityEngine.Object) null)
+                    {
+                      auraCurseData6 = curse.curseSelf;
+                      directAttackIteration = matchManager.ResolveAuraCurseCharges(auraCurseData6, curse.curseCharges, curse.curseChargesSpecialValueGlobal, curse.curseChargesSpecialValue1, curse.curseChargesSpecialValue2, targetCharacter, cardSpecialValueGlobal, exahustGenerating, cardSpecialValue2);
+                    }
+                  }
+                  if ((UnityEngine.Object) auraCurseData6 != (UnityEngine.Object) null)
                   {
                     if (matchManager.theHero != null)
                     {
                       if (!matchManager.theHero.IsInvulnerable())
                       {
-                        matchManager.theHero.SetAura(theCasterCharacter, _acData, directAttackIteration, CC: _cardActive.CardClass);
+                        matchManager.theHero.SetAura(theCasterCharacter, auraCurseData6, directAttackIteration, CC: _cardActive.CardClass);
                         if (theCasterCharacter != matchManager.theHero)
-                          theCasterCharacter.SetEvent(Enums.EventActivation.AuraCurseSet, (Character) matchManager.theHero, directAttackIteration, _acData.ACName);
+                          theCasterCharacter.SetEvent(Enums.EventActivation.AuraCurseSet, (Character) matchManager.theHero, directAttackIteration, auraCurseData6.ACName);
                         if ((double) matchManager.castCardDamageDoneTotal <= 0.0)
                           matchManager.theHero.HeroItem.CharacterHitted();
                         yield return (object) Globals.Instance.WaitForSeconds(0.01f);
@@ -8943,9 +9440,9 @@ public class MatchManager : MonoBehaviour
                     }
                     else if (!matchManager.theNPC.IsInvulnerable())
                     {
-                      matchManager.theNPC.SetAura(theCasterCharacter, _acData, directAttackIteration, CC: _cardActive.CardClass);
+                      matchManager.theNPC.SetAura(theCasterCharacter, auraCurseData6, directAttackIteration, CC: _cardActive.CardClass);
                       if (theCasterCharacter != matchManager.theNPC)
-                        theCasterCharacter.SetEvent(Enums.EventActivation.AuraCurseSet, (Character) matchManager.theNPC, directAttackIteration, _acData.ACName);
+                        theCasterCharacter.SetEvent(Enums.EventActivation.AuraCurseSet, (Character) matchManager.theNPC, directAttackIteration, auraCurseData6.ACName);
                       if ((double) matchManager.castCardDamageDoneTotal <= 0.0)
                         matchManager.theNPC.NPCItem.CharacterHitted();
                       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
@@ -8955,20 +9452,21 @@ public class MatchManager : MonoBehaviour
                     doRedrawInitiatives = true;
                   yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                 }
+                targetCharacter = (Character) null;
               }
-              i = 0;
+              blocked = 0;
               if (_cardActive.HealEnergyBonus > 0 && matchManager.energyAssigned > 0)
-                i += _cardActive.HealEnergyBonus * matchManager.energyAssigned;
+                blocked += _cardActive.HealEnergyBonus * matchManager.energyAssigned;
               if (_cardActive.Heal > 0)
               {
                 CastResolutionForCombatText _cast = new CastResolutionForCombatText();
-                int heal = _cardActive.Heal + i;
+                int heal = _cardActive.Heal + blocked;
                 if (_cardActive.HealSpecialValueGlobal)
-                  heal = cardSpecialValueGlobal;
+                  heal += cardSpecialValueGlobal;
                 else if (_cardActive.HealSpecialValue1)
-                  heal = exahustGenerating;
+                  heal += exahustGenerating;
                 else if (_cardActive.HealSpecialValue2)
-                  heal = cardSpecialValue2;
+                  heal += cardSpecialValue2;
                 if (theCasterHero != null)
                   heal = theCasterHero.HealWithCharacterBonus(heal, _cardActive.CardClass);
                 else if (theCasterNPC != null)
@@ -9024,7 +9522,7 @@ public class MatchManager : MonoBehaviour
                   num = cardSpecialValue2;
                 if (num > 0)
                 {
-                  int heal = num + i;
+                  int heal = num + blocked;
                   if (theCasterHero != null)
                   {
                     theCasterHero.SetEvent(Enums.EventActivation.Heal, (Character) theCasterHero);
@@ -9051,7 +9549,7 @@ public class MatchManager : MonoBehaviour
               if (_cardActive.HealSides > 0)
               {
                 CastResolutionForCombatText _cast = new CastResolutionForCombatText();
-                int num = _cardActive.HealSides + i;
+                int num = _cardActive.HealSides + blocked;
                 if (theCasterHero != null)
                   num = theCasterHero.HealWithCharacterBonus(num, _cardActive.CardClass);
                 else if (theCasterNPC != null)
@@ -9080,7 +9578,7 @@ public class MatchManager : MonoBehaviour
                 }
                 yield return (object) null;
               }
-              if (_cardActive.KillPet && _hero != null && _hero.Alive && _hero.Pet != "" && _hero.Pet != "harleyrare")
+              if (_cardActive.KillPet && _hero != null && _hero.Alive && _hero.Pet != "" && _hero.Pet != "harleyrare" && _hero.Pet != "templelurkerpetrare" && _hero.Pet != "mentalscavengerspetrare")
               {
                 matchManager.DestroyedItemInThisTurn(_hero.HeroIndex, _hero.Pet);
                 _hero.Pet = "tombstone";
@@ -9116,19 +9614,19 @@ public class MatchManager : MonoBehaviour
               if (GameManager.Instance.IsMultiplayer() && !_automatic)
               {
                 string codeGen = matchManager.GenerateSyncCodeForCheckingAction();
-                i = 0;
-                while (i < 3)
+                blocked = 0;
+                while (blocked < 3)
                 {
                   yield return (object) Globals.Instance.WaitForSeconds(0.01f);
                   string forCheckingAction = matchManager.GenerateSyncCodeForCheckingAction();
                   if (codeGen == forCheckingAction)
                   {
-                    ++i;
+                    ++blocked;
                   }
                   else
                   {
                     codeGen = forCheckingAction;
-                    i = 0;
+                    blocked = 0;
                   }
                 }
                 codeGen = (string) null;
@@ -9158,9 +9656,9 @@ public class MatchManager : MonoBehaviour
                   {
                     if (matchManager.theNPC != null && (UnityEngine.Object) matchManager.theNPC.NPCItem != (UnityEngine.Object) null)
                     {
-                      if (_cardActive.MoveToCenter)
+                      if (_cardActive.MoveToCenter && !matchManager.IsPhantomArmorSpecialCard(_cardActive.Id))
                         matchManager.theNPC.NPCItem.CharacterAttackAnim();
-                      else if (_cardActive.EffectCasterRepeat && !_cardActive.IsPetCast)
+                      else if (_cardActive.EffectCasterRepeat && !_cardActive.IsPetCast && !matchManager.IsPhantomArmorSpecialCard(_cardActive.Id))
                         matchManager.theNPC.NPCItem.CharacterCastAnim();
                     }
                   }
@@ -9392,6 +9890,7 @@ public class MatchManager : MonoBehaviour
               matchManager.SetEventDirect("CastCardEvent" + _cardActive.Id, false);
               matchManager.StartCoroutine(matchManager.CastCardEnd(_cardActive, _uniqueCastId, _hero, _npc));
             }
+            MatchManager.Instance.RefreshStatusEffects();
             yield return (object) null;
           }
         }
@@ -9399,6 +9898,189 @@ public class MatchManager : MonoBehaviour
       else if (Globals.Instance.ShowDebug)
         Functions.DebugLogGD("[cardIteration] EXIT HERE BECAUSE CARDITERATION DOES NOT CONTAIN " + _cardActive.InternalId, "trace");
     }
+  }
+
+  private CardData GetCardForModify(CardData cardData, Character caster, Character target)
+  {
+    CardIdProvider addCardForModify = cardData.AddCardForModify;
+    CardData cardForModify = (CardData) null;
+    if ((UnityEngine.Object) addCardForModify != (UnityEngine.Object) null)
+    {
+      string cardId = addCardForModify.GetCardID(cardData, caster, target);
+      if (!string.IsNullOrEmpty(cardId))
+        cardForModify = Globals.Instance.GetCardData(cardId, false);
+    }
+    return cardForModify;
+  }
+
+  public int IncreaseDamage(Character character, int dmgTotal)
+  {
+    CardData cardActive = this.cardActive;
+    if ((cardActive != null ? (cardActive.SpecialCardEnum == SpecialCardEnum.MindSpike ? 1 : 0) : 0) != 0)
+      dmgTotal += (int) this.cardActive.SpecialValueModifierGlobal * this.mindSpikeAbility.CurrentSpecialCardsUsedInMatch;
+    float num = 1f;
+    return (int) ((double) dmgTotal * (double) num);
+  }
+
+  private bool IsExposedIllusion(Character character)
+  {
+    return character != null && character.Alive && character.IsIllusion && character.IsIllusionExposed;
+  }
+
+  private bool IsIllusion(Character character)
+  {
+    return character != null && character.Alive && character.IsIllusion;
+  }
+
+  private IEnumerator ApplyNightmareImageCo(CardData data, Character character)
+  {
+    int originalCharacterPositionInTeam = this.GetCharacterPositionInTeam(character);
+    int illusionCharacterPositionInTeam = this.GetNPCAvailablePosition();
+    bool isNPC = character is NPC;
+    CharacterItem originalCharacterItem = isNPC ? (CharacterItem) character.NPCItem : (CharacterItem) character.HeroItem;
+    Vector3 originalCharacterPosition = originalCharacterItem.CalculateLocalPosition(originalCharacterPositionInTeam);
+    Vector3 illusionCharacterPosition = originalCharacterItem.CalculateLocalPosition(illusionCharacterPositionInTeam);
+    originalCharacterItem.MoveToPosition(originalCharacterItem.transform, (originalCharacterPosition + illusionCharacterPosition) / 2f, true, false, 0.3f);
+    yield return (object) new WaitWhile(new Func<bool>(originalCharacterItem.CharIsMoving));
+    bool swapPositions = MapManager.Instance.GetRandomIntRange(0, 2) == 0;
+    if (swapPositions)
+    {
+      int num1 = illusionCharacterPositionInTeam;
+      int num2 = originalCharacterPositionInTeam;
+      originalCharacterPositionInTeam = num1;
+      illusionCharacterPositionInTeam = num2;
+      if (isNPC)
+      {
+        this.TeamNPC[originalCharacterPositionInTeam] = this.TeamNPC[character.NPCIndex];
+        this.NPCHand[originalCharacterPositionInTeam] = this.NPCHand[character.NPCIndex];
+        this.NPCDeckDiscard[originalCharacterPositionInTeam] = this.NPCDeckDiscard[character.NPCIndex];
+        this.NPCDeck[originalCharacterPositionInTeam] = this.NPCDeck[character.NPCIndex];
+        character.SetNPCIndex(originalCharacterPositionInTeam);
+      }
+      else
+      {
+        this.TeamHero[originalCharacterPositionInTeam] = this.TeamHero[character.HeroIndex];
+        this.HeroHand[originalCharacterPositionInTeam] = this.HeroHand[character.HeroIndex];
+        this.HeroDeckDiscard[originalCharacterPositionInTeam] = this.HeroDeckDiscard[character.HeroIndex];
+        this.HeroDeck[originalCharacterPositionInTeam] = this.HeroDeck[character.HeroIndex];
+        character.SetNPCIndex(originalCharacterPositionInTeam);
+      }
+      character.Position = originalCharacterPositionInTeam;
+    }
+    Character illusion = this.CreateIllusion(character, data.EffectTarget, data, illusionCharacterPositionInTeam);
+    CharacterItem illusionCharacterItem = isNPC ? (CharacterItem) illusion.NPCItem : (CharacterItem) illusion.HeroItem;
+    illusionCharacterItem.transform.localPosition = new Vector3(originalCharacterItem.transform.localPosition.x, originalCharacterItem.transform.localPosition.y, originalCharacterItem.transform.localPosition.z);
+    yield return (object) Globals.Instance.WaitForSeconds(0.3f);
+    originalCharacterItem.MoveToPosition(originalCharacterItem.transform, swapPositions ? illusionCharacterPosition : originalCharacterPosition, true, false, 0.3f);
+    illusionCharacterItem.MoveToPosition(illusionCharacterItem.transform, swapPositions ? originalCharacterPosition : illusionCharacterPosition, true, false, 0.3f);
+    yield return (object) new WaitWhile((Func<bool>) (() => originalCharacterItem.CharIsMoving() || illusionCharacterItem.CharIsMoving()));
+    this.RepositionCharacters();
+  }
+
+  private bool CanApplyNightmareImage(CardData card, Character casterCharacter)
+  {
+    if (card.SpecialCardEnum != SpecialCardEnum.NightmareImage || casterCharacter == null || !casterCharacter.Alive)
+      return false;
+    int num = this.EnchantmentExecutedTimes(casterCharacter.Id, card.ItemEnchantment?.Id);
+    ItemData itemEnchantment = card.ItemEnchantment;
+    return (itemEnchantment != null ? (itemEnchantment.DestroyAfterUses != num ? 1 : 0) : 1) == 0;
+  }
+
+  private void UpdateMasterReweaverProgress(Character casterCharacter, NPC npcWithAbility)
+  {
+    npcWithAbility.SetEvent(Enums.EventActivation.CastFightCard, casterCharacter);
+  }
+
+  private bool IsFightCard(CardData activeCard)
+  {
+    return activeCard.Damage > 0 || activeCard.Damage2 > 0 || activeCard.DamageSelf > 0 || activeCard.DamageSelf2 > 0;
+  }
+
+  private void ApplyCorruptedEcho(CardData data, CardItem cardItem, List<NPC> npcsWithAbility)
+  {
+    int num1 = 0;
+    int num2 = 0;
+    foreach (NPC npc in npcsWithAbility)
+    {
+      num1 = Globals.Instance.GetCardData("masterreweaver").ItemEnchantment.DestroyAfterUses;
+      num2 = this.EnchantmentExecutedTimes(npc.Id, "masterreweaver");
+    }
+    if (num1 == 0 || num2 >= num1)
+      return;
+    data.TempAttackSelf = true;
+    data.TargetPosition = Enums.CardTargetPosition.Anywhere;
+    data.TargetSide = Enums.CardTargetSide.Self;
+    data.TargetType = Enums.CardTargetType.Single;
+    data.EffectCastCenter = false;
+    data.SetTarget();
+    if (!(bool) (UnityEngine.Object) cardItem)
+      return;
+    cardItem.TargetTextTM = data.Target;
+  }
+
+  private void ReturnCardDataToOriginalState(CardData data, CardItem cardItem)
+  {
+    CardData cardData = Globals.Instance.GetCardData(data.Id, false);
+    data.TempAttackSelf = false;
+    data.TargetPosition = cardData.TargetPosition;
+    data.TargetSide = cardData.TargetSide;
+    data.TargetType = cardData.TargetType;
+    data.EffectCastCenter = cardData.EffectCastCenter;
+    data.SetTarget();
+    if (!(bool) (UnityEngine.Object) cardItem)
+      return;
+    cardItem.TargetTextTM = data.Target;
+  }
+
+  private int GetCharacterPositionInTeam(Character character)
+  {
+    int characterPositionInTeam = 0;
+    Character[] characterArray = character is NPC ? (Character[]) this.TeamNPC : (Character[]) this.TeamHero;
+    for (int index = 0; index < characterArray.Length; ++index)
+    {
+      if (character == characterArray[index])
+        characterPositionInTeam = index;
+    }
+    return characterPositionInTeam;
+  }
+
+  private bool TryGetTransferPainTarget(CardData cardActive, NPC currentNPC, out NPC targetNPC)
+  {
+    targetNPC = (NPC) null;
+    if (cardActive.SpecialCardEnum != SpecialCardEnum.TransferPain || currentNPC == null || !currentNPC.Alive)
+      return false;
+    foreach (NPC npc in this.TeamNPC)
+    {
+      if (npc != null && npc.Alive && !npc.IsIllusion)
+      {
+        foreach (AICards aiCard in currentNPC.NpcData.AICards)
+        {
+          if (npc.GameName.StartsWith(aiCard.SpecialSecondTargetID, StringComparison.OrdinalIgnoreCase) && npc.GetHp() > currentNPC.GetHp())
+          {
+            targetNPC = npc;
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private bool CanUpdateMindSpikeProgress(CardData data)
+  {
+    return data.SpecialCardEnum == this.mindSpikeAbility.CollectedSpecialCard;
+  }
+
+  private void ApplyTransferPain(NPC currentNPC, NPC targetNPC)
+  {
+    int hp1 = currentNPC.GetHp();
+    int maxHp1 = currentNPC.GetMaxHP();
+    int hp2 = targetNPC.GetHp();
+    int maxHp2 = targetNPC.GetMaxHP();
+    currentNPC.HpCurrent = Mathf.Min(hp2, maxHp1);
+    targetNPC.HpCurrent = Mathf.Min(hp1, maxHp2);
+    currentNPC.SetHP();
+    targetNPC.SetHP();
   }
 
   private IEnumerator CastCardEnd(
@@ -9459,7 +10141,6 @@ public class MatchManager : MonoBehaviour
         this.WriteNewCardsCounter();
         this.RedrawCardsDescriptionPrecalculated();
         this.DrawDeckPileLayer("Cards");
-        this.targetTransform = (Transform) null;
         this.SetGlobalOutlines(false);
         this.SetGameBusy(false);
         this.gameStatus = "PreCastCardEnd";
@@ -9603,7 +10284,16 @@ public class MatchManager : MonoBehaviour
         if (this.theNPCPreAutomatic != null)
           this.theNPC = this.theNPCPreAutomatic;
         if (!this.isBeginTournPhase)
+        {
+          if (this.theNPC.NPCIsBoss() && this.bossNpc != null && this.bossNpc is PhantomArmor)
+          {
+            PhantomArmor pa = this.bossNpc as PhantomArmor;
+            while (!pa.IsSpecialEffectFinished())
+              yield return (object) Globals.Instance.WaitForSeconds(0.1f);
+            pa = (PhantomArmor) null;
+          }
           this.CastNPC();
+        }
       }
     }
     else
@@ -9706,7 +10396,10 @@ public class MatchManager : MonoBehaviour
     this.traitInfoText.text = stringBuilder1.ToString();
   }
 
-  private void AddCardModificationsForCard(CardData _cardActive, CardData _cardTarget)
+  private void AddCardModificationsForCard(
+    CardData _cardActive,
+    CardData _cardTarget,
+    CopyConfig copyConfig = null)
   {
     if ((UnityEngine.Object) _cardTarget != (UnityEngine.Object) null && (UnityEngine.Object) _cardActive != (UnityEngine.Object) null && Globals.Instance.ShowDebug)
       Functions.DebugLogGD("AddCardModification to " + _cardTarget.Id + " from " + _cardActive.Id, "general");
@@ -9726,9 +10419,35 @@ public class MatchManager : MonoBehaviour
       if (Globals.Instance.ShowDebug)
         Functions.DebugLogGD("EnergyCost " + _cardTarget.EnergyCost.ToString(), "general");
     }
-    if (!_cardActive.AddCardVanish)
+    if (_cardActive.AddCardVanish)
+      _cardTarget.Vanish = true;
+    if (copyConfig == null)
       return;
-    _cardTarget.Vanish = true;
+    this.CopyCardDataFromAnotherCard(_cardActive, _cardTarget, copyConfig);
+  }
+
+  public void CopyCardDataFromAnotherCard(
+    CardData _cardActive,
+    CardData _cardTarget,
+    CopyConfig copyConfig)
+  {
+    if ((UnityEngine.Object) _cardTarget == (UnityEngine.Object) null || (UnityEngine.Object) _cardActive == (UnityEngine.Object) null || copyConfig == null)
+      return;
+    if (copyConfig.CopyNameFromOriginal)
+      _cardTarget.CardName = _cardActive.CardName;
+    if (copyConfig.CopyCardUpgradedFromOriginal)
+    {
+      _cardTarget.UpgradedFrom = _cardActive.UpgradedFrom;
+      _cardTarget.UpgradesTo1 = _cardActive.UpgradesTo1;
+      _cardTarget.UpgradesTo2 = _cardActive.UpgradesTo2;
+      _cardTarget.UpgradesToRare = _cardActive.UpgradesToRare;
+      _cardTarget.CardUpgraded = _cardActive.CardUpgraded;
+    }
+    if (copyConfig.CopyImageFromOriginal)
+      _cardTarget.Sprite = _cardActive.Sprite;
+    if (!copyConfig.CopyCardTypeFromOriginal)
+      return;
+    _cardTarget.CardType = _cardActive.CardType;
   }
 
   private void AddCardModificationsForCardForShow(CardData _cardActive, CardData _cardTarget)
@@ -9754,7 +10473,7 @@ public class MatchManager : MonoBehaviour
 
   public void ItemTraitActivated(bool state = true) => this.waitingItemTrait = state;
 
-  private void SortCharacterSprites(bool toFront = false, int heroIndex = -1, int npcIndex = -1)
+  public void SortCharacterSprites(bool toFront = false, int heroIndex = -1, int npcIndex = -1)
   {
     for (int index = 0; index < this.TeamHero.Length; ++index)
     {
@@ -10192,9 +10911,16 @@ public class MatchManager : MonoBehaviour
       return;
     if (state)
     {
-      CardData cardData = this.cardItemTable[cardPosition].CardData;
-      this.cardActive = cardData;
-      this.SetDamagePreview(true, cardData, cardPosition);
+      CardData cData = this.cardItemTable[cardPosition].CardData;
+      CardItem cardItem = this.cardItemTable.FirstOrDefault<CardItem>((Func<CardItem, bool>) (i => i.CardData.Id == cData.Id));
+      List<NPC> npcsWithAbility;
+      bool masterReweaverAbility = this.TryGetNPCsWithMasterReweaverAbility(cData, (Character) this.TeamHero[this.heroActive], out npcsWithAbility);
+      if (!cData.TempAttackSelf & masterReweaverAbility)
+        this.ApplyCorruptedEcho(cData, cardItem, npcsWithAbility);
+      else if (cData.TempAttackSelf && !masterReweaverAbility)
+        this.ReturnCardDataToOriginalState(cData, cardItem);
+      this.cardActive = cData;
+      this.SetDamagePreview(true, cData, cardPosition);
       this.SetOverDeck(true);
       if (this.cardHoverIndex == cardPosition)
         return;
@@ -10504,20 +11230,30 @@ public class MatchManager : MonoBehaviour
     return cardInDictionary2;
   }
 
-  public void ModifyCardInDictionary(string id, CardData cardData)
+  public void ModifyCardInDictionary(string id, CardData cardData, string overrideId = "")
   {
     id = id.ToLower();
     if (!this.cardDictionary.ContainsKey(id))
       return;
     this.cardDictionary[id] = UnityEngine.Object.Instantiate<CardData>(cardData);
     this.cardDictionary[id].InternalId = this.cardDictionary[id].Id = id;
-    if (this.cardItemTable == null)
-      return;
-    for (int index = 0; index < this.cardItemTable.Count; ++index)
+    if (this.cardItemTable != null)
     {
-      if ((UnityEngine.Object) this.cardItemTable[index] != (UnityEngine.Object) null && this.cardItemTable[index].InternalId == id)
-        this.cardItemTable[index].DrawEnergyCost();
+      for (int index = 0; index < this.cardItemTable.Count; ++index)
+      {
+        if ((UnityEngine.Object) this.cardItemTable[index] != (UnityEngine.Object) null && this.cardItemTable[index].InternalId == id)
+          this.cardItemTable[index].DrawEnergyCost();
+      }
     }
+    if (string.IsNullOrEmpty(overrideId))
+      return;
+    this.cardDictionary[id].Id = overrideId;
+    this.cardDictionary[id].InternalId = this.cardDictionary[id].Id = overrideId;
+    CardData cardData1;
+    if (!this.cardDictionary.TryGetValue(id, out cardData1))
+      return;
+    this.cardDictionary[overrideId] = cardData1;
+    this.cardDictionary.Remove(id);
   }
 
   public CardData DuplicateCardData(CardData _cardDestine, CardData _cardSource)
@@ -10647,7 +11383,8 @@ public class MatchManager : MonoBehaviour
     CardData copyDataFromThisCard = null,
     int heroIndex = -1,
     bool isHero = true,
-    int indexForBatch = 0)
+    int indexForBatch = 0,
+    CopyConfig copyConfig = null)
   {
     if (this.MatchIsOver)
       return;
@@ -10660,7 +11397,7 @@ public class MatchManager : MonoBehaviour
         return;
     }
     this.SetGameBusy(true);
-    this.StartCoroutine(this.GenerateNewCardCo(numCards, theCard, createCard, where, cardDataForModification, copyDataFromThisCard, heroIndex, isHero, indexForBatch));
+    this.StartCoroutine(this.GenerateNewCardCo(numCards, theCard, createCard, where, cardDataForModification, copyDataFromThisCard, heroIndex, isHero, indexForBatch, copyConfig));
   }
 
   private IEnumerator GenerateNewCardCo(
@@ -10672,21 +11409,28 @@ public class MatchManager : MonoBehaviour
     CardData copyDataFromThisCard,
     int heroIndex,
     bool isHero,
-    int indexForBatch)
+    int indexForBatch,
+    CopyConfig copyConfig = null)
   {
     MatchManager matchManager1 = this;
     List<string> theCards = new List<string>();
     for (int index = 0; index < numCards; ++index)
     {
-      string id = !createCard ? _theCard : matchManager1.CreateCardInDictionary(_theCard);
+      string id1 = !createCard ? _theCard : matchManager1.CreateCardInDictionary(_theCard);
       if ((UnityEngine.Object) copyDataFromThisCard != (UnityEngine.Object) null)
-        matchManager1.ModifyCardInDictionary(id, copyDataFromThisCard);
+        matchManager1.ModifyCardInDictionary(id1, copyDataFromThisCard);
       if ((UnityEngine.Object) cardDataForModification != (UnityEngine.Object) null)
       {
-        CardData cardData = matchManager1.GetCardData(id);
-        matchManager1.AddCardModificationsForCard(cardDataForModification, cardData);
+        CardData cardData = matchManager1.GetCardData(id1);
+        if (cardData.SpecialCardEnum == SpecialCardEnum.NightmareEchoTemplate)
+        {
+          string id2 = cardData.Id.Split('_', StringSplitOptions.None)[0] + "-" + cardDataForModification.Id;
+          cardData = matchManager1.GetCardData(id2);
+          id1 = id2;
+        }
+        matchManager1.AddCardModificationsForCard(cardDataForModification, cardData, copyConfig);
       }
-      theCards.Add(id);
+      theCards.Add(id1);
     }
     if (matchManager1.heroActive == -1 && matchManager1.npcActive == -1)
       yield return (object) Globals.Instance.WaitForSeconds((float) indexForBatch * 0.1f);
@@ -11004,6 +11748,8 @@ public class MatchManager : MonoBehaviour
     if (matchManager1.generatedCardTimes < 0)
       matchManager1.generatedCardTimes = 0;
     matchManager1.SetEventDirect("GenerateNewCard" + theCards[0], false);
+    foreach (string auxString in theCards)
+      matchManager1.theHero?.SetEvent(Enums.EventActivation.DrawCard, auxString: auxString);
   }
 
   private void MoveCardTo(int numCards, string theCard, Enums.CardPlace cardPlace)
@@ -11130,6 +11876,8 @@ label_13:
       {
         matchManager.CreateLogEntry(true, "dealcards" + matchManager.logDictionary.Count.ToString(), "", (Hero) null, (NPC) null, (Hero) null, (NPC) null, matchManager.currentRound);
         matchManager.NewCard(matchManager.theHero.GetDrawCardsTurn() - 1, Enums.CardFrom.Deck);
+        matchManager.theHero.SetEvent(Enums.EventActivation.DrawCard);
+        matchManager.theHero.SetEvent(Enums.EventActivation.AfterDealCards);
         matchManager.ResetCardHoverIndex();
       }
     }
@@ -11613,7 +12361,6 @@ label_13:
     {
       CardData cardData = Globals.Instance.GetCardData(idCard, false);
       this.cardDictionary.Add(lower, cardData);
-      this.NPCCastCardList(lower, npcIinternalId);
     }
     this.cardDictionary[lower].InitClone(idCard);
     int index1 = 0;
@@ -12444,22 +13191,22 @@ label_13:
     }
     else
     {
-      Character character;
+      Character character1;
       if (theCasterIsHero)
       {
-        character = (Character) this.TeamHero[this.heroActive];
+        character1 = (Character) this.TeamHero[this.heroActive];
         if ((UnityEngine.Object) this.cardActive != (UnityEngine.Object) null)
         {
           if (this.cardActive.SelfHealthLoss > 0)
           {
-            if ((UnityEngine.Object) character.HeroItem != (UnityEngine.Object) null)
+            if ((UnityEngine.Object) character1.HeroItem != (UnityEngine.Object) null)
             {
               int selfHealthLoss = this.cardActive.SelfHealthLoss;
               if (this.cardActive.SelfHealthLossSpecialValue1)
-                selfHealthLoss = Functions.FuncRoundToInt(this.GetCardSpecialValue(this.cardActive, 1, character, (Character) null, character, (Character) null, false));
+                selfHealthLoss = Functions.FuncRoundToInt(this.GetCardSpecialValue(this.cardActive, 1, character1, (Character) null, character1, (Character) null, false));
               else if (this.cardActive.SelfHealthLossSpecialValue2)
-                selfHealthLoss = Functions.FuncRoundToInt(this.GetCardSpecialValue(this.cardActive, 2, character, (Character) null, character, (Character) null, false));
-              character.HeroItem.SetDamagePreview(true, selfHealthLoss, "heart");
+                selfHealthLoss = Functions.FuncRoundToInt(this.GetCardSpecialValue(this.cardActive, 2, character1, (Character) null, character1, (Character) null, false));
+              character1.HeroItem.SetDamagePreview(true, selfHealthLoss, "heart");
               flag2 = true;
             }
           }
@@ -12470,22 +13217,22 @@ label_13:
             if (damageSelf > 0)
             {
               if (this.cardActive.DamageSpecialValueGlobal)
-                damageSelf = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, character, (Character) null, character, (Character) null, true));
+                damageSelf = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, character1, (Character) null, character1, (Character) null, true));
               if (this.cardActive.DamageSpecialValue1)
-                damageSelf = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, character, (Character) null, character, (Character) null, true));
+                damageSelf = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, character1, (Character) null, character1, (Character) null, true));
               if (this.cardActive.DamageSpecialValue2)
-                damageSelf = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, character, (Character) null, character, (Character) null, true));
+                damageSelf = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, character1, (Character) null, character1, (Character) null, true));
             }
             int blocked = 0;
-            int num1 = character.DamageWithCharacterBonus(damageSelf, damageType, cardData.CardClass, energyCost) + character.IncreasedCursedDamagePerStack(damageType);
+            int num1 = character1.DamageWithCharacterBonus(damageSelf, damageType, cardData.CardClass, energyCost) + character1.IncreasedCursedDamagePerStack(damageType);
             if (num1 <= 0)
               num1 = 0;
             int dmg;
-            if (!character.IsImmune(damageType))
+            if (!character1.IsImmune(damageType))
             {
               if (!this.cardActive.GetIgnoreBlock())
               {
-                int num2 = character.GetBlock() - blocked;
+                int num2 = character1.GetBlock() - blocked;
                 if (num2 > 0)
                 {
                   if (num2 >= num1)
@@ -12500,7 +13247,7 @@ label_13:
                   }
                 }
               }
-              int num3 = -1 * character.BonusResists(damageType);
+              int num3 = -1 * character1.BonusResists(damageType);
               dmg = Functions.FuncRoundToInt((float) num1 + (float) ((double) num1 * (double) num3 * 0.0099999997764825821));
             }
             else
@@ -12508,31 +13255,31 @@ label_13:
             string dmgType = Enum.GetName(typeof (Enums.DamageType), (object) damageType).ToLower();
             if (dmgType == "none")
               dmgType = "heart";
-            if ((dmg > 0 || blocked > 0) && (UnityEngine.Object) character.HeroItem != (UnityEngine.Object) null)
+            if ((dmg > 0 || blocked > 0) && (UnityEngine.Object) character1.HeroItem != (UnityEngine.Object) null)
             {
-              character.HeroItem.SetDamagePreview(true, dmg, dmgType, blocked: blocked);
+              character1.HeroItem.SetDamagePreview(true, dmg, dmgType, blocked: blocked);
               flag2 = true;
             }
           }
-          if ((UnityEngine.Object) cardData.HealAuraCurseSelf != (UnityEngine.Object) null && (UnityEngine.Object) character.HeroItem != (UnityEngine.Object) null)
+          if ((UnityEngine.Object) cardData.HealAuraCurseSelf != (UnityEngine.Object) null && (UnityEngine.Object) character1.HeroItem != (UnityEngine.Object) null)
           {
-            character.HeroItem.SetDamagePreview(true, _cardData: this.cardActive);
+            character1.HeroItem.SetDamagePreview(true, _cardData: this.cardActive);
             flag2 = true;
           }
         }
       }
       else
-        character = (Character) this.TeamNPC[this.npcActive];
+        character1 = (Character) this.TeamNPC[this.npcActive];
       List<Transform> castTransformList = this.GetInstaCastTransformList(this.cardActive);
       for (int index1 = 0; index1 < castTransformList.Count; ++index1)
       {
         CharacterItem component;
-        Character _targetHero1;
+        Character character2;
         if ((UnityEngine.Object) castTransformList[index1].GetComponent<NPCItem>() != (UnityEngine.Object) null && castTransformList[index1].GetComponent<NPCItem>().NPC != null)
         {
           component = (CharacterItem) castTransformList[index1].GetComponent<NPCItem>();
           if ((UnityEngine.Object) component != (UnityEngine.Object) null)
-            _targetHero1 = (Character) component.NPC;
+            character2 = (Character) component.NPC;
           else
             continue;
         }
@@ -12540,7 +13287,7 @@ label_13:
         {
           component = (CharacterItem) castTransformList[index1].GetComponent<HeroItem>();
           if ((UnityEngine.Object) component != (UnityEngine.Object) null)
-            _targetHero1 = (Character) component.Hero;
+            character2 = (Character) component.Hero;
           else
             continue;
         }
@@ -12552,10 +13299,10 @@ label_13:
           string[] strArray = new string[2];
           int heal1 = 0;
           int blocked = 0;
-          Character _casterHero = character.IsHero ? character : (Character) null;
-          Character _casterNPC = character.IsHero ? (Character) null : character;
-          Character _targetHero2 = _targetHero1.IsHero ? _targetHero1 : (Character) null;
-          Character _targetNPC = _targetHero1.IsHero ? (Character) null : _targetHero1;
+          Character _casterHero = character1.IsHero ? character1 : (Character) null;
+          Character _casterNPC = character1.IsHero ? (Character) null : character1;
+          Character _targetHero = character2.IsHero ? character2 : (Character) null;
+          Character _targetNPC = character2.IsHero ? (Character) null : character2;
           for (int index2 = 0; index2 < 2; ++index2)
           {
             int num4;
@@ -12567,11 +13314,11 @@ label_13:
               if (num4 > 0)
               {
                 if (this.cardActive.DamageSpecialValueGlobal)
-                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
                 if (this.cardActive.DamageSpecialValue1)
-                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
                 if (this.cardActive.DamageSpecialValue2)
-                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
               }
               if (damageType == cardData.DamageType2)
               {
@@ -12579,17 +13326,17 @@ label_13:
                 bool flag3 = false;
                 if (this.cardActive.Damage2SpecialValueGlobal)
                 {
-                  num5 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num5 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
                   flag3 = true;
                 }
                 else if (this.cardActive.Damage2SpecialValue1)
                 {
-                  num5 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num5 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
                   flag3 = true;
                 }
                 else if (this.cardActive.Damage2SpecialValue2)
                 {
-                  num5 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num5 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
                   flag3 = true;
                 }
                 if (!flag3)
@@ -12604,26 +13351,26 @@ label_13:
               if (num4 > 0)
               {
                 if (this.cardActive.Damage2SpecialValueGlobal)
-                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
                 if (this.cardActive.Damage2SpecialValue1)
-                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
                 if (this.cardActive.Damage2SpecialValue2)
-                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, _casterHero, _casterNPC, _targetHero2, _targetNPC, true));
+                  num4 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, _casterHero, _casterNPC, _targetHero, _targetNPC, true));
               }
             }
             else
               continue;
             if (num4 > 0 || num4 == 0 && damageType != Enums.DamageType.None && cardData.DamageSelf == 0)
             {
-              int num6 = (!theCasterIsHero ? character.DamageWithCharacterBonus(num4, damageType, cardData.CardClass) : character.DamageWithCharacterBonus(num4, damageType, cardData.CardClass, energyCost)) + _targetHero1.IncreasedCursedDamagePerStack(damageType, cardData);
+              int num6 = (!theCasterIsHero ? character1.DamageWithCharacterBonus(num4, damageType, cardData.CardClass) : character1.DamageWithCharacterBonus(num4, damageType, cardData.CardClass, energyCost)) + character2.IncreasedCursedDamagePerStack(damageType, cardData);
               if (num6 <= 0)
                 num6 = 0;
               int num7;
-              if (!_targetHero1.IsImmune(damageType))
+              if (!character2.IsImmune(damageType))
               {
                 if (!cardData.GetIgnoreBlock() && !cardData.GetIgnoreBlockBecausePurge())
                 {
-                  int num8 = _targetHero1.GetBlock() - blocked;
+                  int num8 = character2.GetBlock() - blocked;
                   if (num8 > 0)
                   {
                     if (num8 >= num6)
@@ -12638,8 +13385,9 @@ label_13:
                     }
                   }
                 }
-                int num9 = -1 * _targetHero1.BonusResists(damageType, cardAux: cardData);
-                num7 = Functions.FuncRoundToInt((float) num6 + (float) ((double) num6 * (double) num9 * 0.0099999997764825821));
+                int num9 = -1 * character2.BonusResists(damageType, cardAux: cardData);
+                int dmgTotal = Functions.FuncRoundToInt((float) num6 + (float) ((double) num6 * (double) num9 * 0.0099999997764825821));
+                num7 = this.IncreaseDamage(character2, dmgTotal);
               }
               else
                 num7 = 0;
@@ -12654,13 +13402,13 @@ label_13:
           if (heal2 > 0)
           {
             if (this.cardActive.HealSpecialValueGlobal)
-              heal2 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, character, character, (Character) null, (Character) null, true));
+              heal2 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 0, character1, character1, (Character) null, (Character) null, true));
             if (this.cardActive.HealSpecialValue1)
-              heal2 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, character, (Character) null, _targetHero1, (Character) null, true));
+              heal2 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 1, character1, (Character) null, character2, (Character) null, true));
             if (this.cardActive.HealSpecialValue2)
-              heal2 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, character, (Character) null, _targetHero1, (Character) null, true));
-            int heal3 = character.HealWithCharacterBonus(heal2, cardData.CardClass);
-            heal1 = _targetHero1.HealReceivedFinal(heal3, cardAux: cardData);
+              heal2 = Functions.FuncRoundToInt(this.GetCardSpecialValue(cardData, 2, character1, (Character) null, character2, (Character) null, true));
+            int heal3 = character1.HealWithCharacterBonus(heal2, cardData.CardClass);
+            heal1 = character2.HealReceivedFinal(heal3, cardAux: cardData);
           }
           if (numArray[0] != 99999999 || numArray[1] > 0 || heal1 > 0 || blocked > 0 || (UnityEngine.Object) cardData.Aura != (UnityEngine.Object) null || (UnityEngine.Object) cardData.Curse != (UnityEngine.Object) null || cardData.HealCurses > 0 || cardData.DispelAuras > 0 || cardData.StealAuras > 0 || (UnityEngine.Object) cardData.HealAuraCurseSelf != (UnityEngine.Object) null || (UnityEngine.Object) cardData.HealAuraCurseName != (UnityEngine.Object) null || (UnityEngine.Object) cardData.HealAuraCurseName2 != (UnityEngine.Object) null || (UnityEngine.Object) cardData.HealAuraCurseName3 != (UnityEngine.Object) null || (UnityEngine.Object) cardData.HealAuraCurseName4 != (UnityEngine.Object) null)
           {
@@ -12845,9 +13593,10 @@ label_13:
       return;
     if (!this.npcCardsCasted.ContainsKey(npcInternalId))
       this.npcCardsCasted[npcInternalId] = new List<string>();
-    if (this.npcCardsCasted[npcInternalId].Contains(id))
-      return;
-    this.npcCardsCasted[npcInternalId].Add(id);
+    StringBuilder stringBuilder = new StringBuilder(id);
+    while (this.npcCardsCasted[npcInternalId].Contains(stringBuilder.ToString()))
+      stringBuilder.Append("0");
+    this.npcCardsCasted[npcInternalId].Add(stringBuilder.ToString());
   }
 
   public List<string> GetNPCCardsCastedList(string id)
@@ -12934,7 +13683,7 @@ label_13:
             }
             else
             {
-              bool flag = false;
+              bool flag1 = false;
               AuraCurseData AC = AtOManager.Instance.GlobalAuraCurseModificationByTraitsAndItems("consume", character.AuraList[i].ACData.Id, character, (Character) null);
               if ((UnityEngine.Object) AC == (UnityEngine.Object) null)
                 AC = character.AuraList[i].ACData;
@@ -12943,45 +13692,55 @@ label_13:
                 case "Now":
                   if (AC.Id == auraToConsume.ToLower())
                   {
-                    flag = true;
+                    flag1 = true;
                     break;
                   }
                   break;
                 case "BeginRound":
                   if (AC.ConsumedAtRoundBegin)
                   {
-                    flag = true;
+                    flag1 = true;
                     break;
                   }
                   break;
                 case "BeginTurn":
                   if (AC.ConsumedAtTurnBegin)
+                    flag1 = true;
+                  if (AC.IgnoreUseInEndTurnIfMissingOnBegin)
                   {
-                    flag = true;
+                    Dictionary<Character, bool> dictionary;
+                    if (!this.auraStates.TryGetValue(AC.Id, out dictionary))
+                    {
+                      dictionary = new Dictionary<Character, bool>();
+                      this.auraStates[AC.Id] = dictionary;
+                    }
+                    dictionary[character] = true;
                     break;
                   }
                   break;
                 case "EndTurn":
                   if (AC.ConsumedAtTurn)
                   {
-                    flag = true;
+                    Dictionary<Character, bool> dictionary;
+                    bool flag2;
+                    flag1 = !AC.IgnoreUseInEndTurnIfMissingOnBegin || ((!this.auraStates.TryGetValue(AC.Id, out dictionary) ? 0 : (dictionary.TryGetValue(character, out flag2) ? 1 : 0)) & (flag2 ? 1 : 0)) != 0;
                     break;
                   }
                   break;
                 default:
                   if (whenToConsume == "EndRound" && AC.ConsumedAtRound)
                   {
-                    flag = true;
+                    flag1 = true;
                     if (AC.Id == "block" && !consumeBlock)
                     {
-                      flag = false;
+                      flag1 = false;
                       break;
                     }
                     break;
                   }
                   break;
               }
-              if (flag)
+              if (flag1)
               {
                 if ((AC.ProduceDamageWhenConsumed || AC.ProduceHealWhenConsumed) && !(whenToConsume == "EndRound") && !(whenToConsume == "BeginRound"))
                 {
@@ -13011,6 +13770,8 @@ label_13:
                   int num2 = actCharges;
                   if ((UnityEngine.Object) AC.ConsumedDamageChargesBasedOnACCharges != (UnityEngine.Object) null)
                     num2 = character.GetAuraCharges(AC.ConsumedDamageChargesBasedOnACCharges.Id);
+                  if ((UnityEngine.Object) AC.ConsumeDamageChargesIfACApplied != (UnityEngine.Object) null && character.GetAuraCharges(AC.ConsumeDamageChargesIfACApplied.Id) <= 0)
+                    num2 = 0;
                   int damage1 = num1 + Functions.FuncRoundToInt(AC.DamageWhenConsumedPerCharge * (float) num2);
                   if (AC.DamageSidesWhenConsumed > 0 || AC.DamageSidesWhenConsumedPerCharge > 0)
                   {
@@ -13418,6 +14179,8 @@ label_13:
     if (_npc != null && (UnityEngine.Object) _npc.NPCItem != (UnityEngine.Object) null && (UnityEngine.Object) _npc.NpcData != (UnityEngine.Object) null)
     {
       this.characterKilled = true;
+      if (MatchManager.CanDestroyIllusion((Character) _npc))
+        this.DestroyIllusion((Character) _npc);
       _npc.DestroyCharacter();
       if (_npc.NpcData.IsBoss)
       {
@@ -13461,13 +14224,34 @@ label_13:
         }
       }
       else
+      {
+        if (this.AnyNPCAlive())
+          return;
         this.FinishCombat();
+      }
     }
     else
       Debug.LogError((object) "KILL NPC error because there's no NPC");
   }
 
-  private void RepositionCharacters()
+  private void DestroyIllusion(Character currentCharacter)
+  {
+    if (currentCharacter.IllusionCharacter is Hero illusionCharacter2)
+      this.KillHero(illusionCharacter2);
+    else if (currentCharacter.IllusionCharacter is NPC illusionCharacter1)
+      this.KillNPC(illusionCharacter1);
+    currentCharacter.IllusionCharacter.Alive = false;
+    currentCharacter.IllusionCharacter.HpCurrent = 0;
+    currentCharacter.IllusionCharacter.NpcData = (NPCData) null;
+    currentCharacter.IllusionCharacter = (Character) null;
+  }
+
+  private static bool CanDestroyIllusion(Character currentCharacter)
+  {
+    return currentCharacter.IllusionCharacter != null && currentCharacter.IllusionCharacter.Alive;
+  }
+
+  public void RepositionCharacters()
   {
     int num1 = 0;
     for (int index = 0; index < this.TeamHero.Length; ++index)
@@ -13536,7 +14320,7 @@ label_13:
         this.TeamNPC[index].UpdateAuraCurseFunctions();
       }
     }
-    return false;
+    return this.bossNpc != null && this.bossNpc.npc != null && this.bossNpc.npc.HpCurrent > 0;
   }
 
   public int NumNPCsAlive()
@@ -13558,22 +14342,25 @@ label_13:
   {
     if (Globals.Instance.ShowDebug)
       Functions.DebugLogGD("----- FINISH COMBAT -- " + this.MatchIsOver.ToString() + " ---");
-    if (this.MatchIsOver)
-      return;
-    this.MatchIsOver = true;
-    this.RedrawCardsBorder();
-    if (Globals.Instance.ShowDebug)
-      Functions.DebugLogGD(nameof (FinishCombat));
-    AtOManager.Instance.combatCardDictionary = (Dictionary<string, CardData>) null;
-    AtOManager.Instance.combatGameCode = "";
-    if (Globals.Instance.ShowDebug)
-      Functions.DebugLogGD("GameBusy TRUE", "gamebusy");
-    this.SetGameBusy(true);
-    this.waitingKill = false;
-    this.gameStatus = nameof (FinishCombat);
-    if (Globals.Instance.ShowDebug)
-      Functions.DebugLogGD(this.gameStatus, "gamestatus");
-    this.StartCoroutine(this.FinishCombatCo());
+    if (!this.MatchIsOver)
+    {
+      this.MatchIsOver = true;
+      this.RedrawCardsBorder();
+      if (Globals.Instance.ShowDebug)
+        Functions.DebugLogGD(nameof (FinishCombat));
+      AtOManager.Instance.combatCardDictionary = (Dictionary<string, CardData>) null;
+      AtOManager.Instance.combatGameCode = "";
+      if (Globals.Instance.ShowDebug)
+        Functions.DebugLogGD("GameBusy TRUE", "gamebusy");
+      this.SetGameBusy(true);
+      this.waitingKill = false;
+      this.gameStatus = nameof (FinishCombat);
+      if (Globals.Instance.ShowDebug)
+        Functions.DebugLogGD(this.gameStatus, "gamestatus");
+      this.StartCoroutine(this.FinishCombatCo());
+      AtOManager.Instance.SirenQueenBattle = false;
+    }
+    this.mindSpikeAbility.Reset();
   }
 
   private IEnumerator GoToMainMenu()
@@ -13733,6 +14520,7 @@ label_13:
     {
       ThermometerTierData thermometerTierData = this.combatData.ThermometerTierData;
       ThermometerData _thermometerData = (ThermometerData) null;
+      bool flag = false;
       if ((UnityEngine.Object) thermometerTierData != (UnityEngine.Object) null)
       {
         for (int index = 0; index < thermometerTierData.RoundThermometer.Length; ++index)
@@ -13744,7 +14532,9 @@ label_13:
               break;
           }
         }
-        if (MadnessManager.Instance.IsMadnessTraitActive("equalizer") && (UnityEngine.Object) thermometerTierData != (UnityEngine.Object) null && thermometerTierData.RoundThermometer[1] != null)
+        flag = true;
+        AtOManager.Instance.SetCombatExpertise(_thermometerData);
+        if (MadnessManager.Instance.IsMadnessTraitActive("equalizer") && (UnityEngine.Object) thermometerTierData != (UnityEngine.Object) null && thermometerTierData.RoundThermometer[1] != null && (UnityEngine.Object) _thermometerData != (UnityEngine.Object) null)
         {
           ThermometerData thermometerData = UnityEngine.Object.Instantiate<ThermometerData>(thermometerTierData.RoundThermometer[1].ThermometerData);
           thermometerData.ThermometerId = _thermometerData.ThermometerId;
@@ -13752,7 +14542,8 @@ label_13:
           _thermometerData = thermometerData;
         }
       }
-      AtOManager.Instance.SetCombatExpertise(_thermometerData);
+      if (!flag)
+        AtOManager.Instance.SetCombatExpertise(_thermometerData);
       AtOManager.Instance.SetCombatThermometerData(_thermometerData);
     }
     this.StopCoroutines();
@@ -14098,6 +14889,33 @@ label_13:
     }
   }
 
+  private NPC GetRandomNPC()
+  {
+    NPC[] teamNpc = MatchManager.Instance.GetTeamNPC();
+    List<int> intList = new List<int>();
+    for (int index = 0; index < teamNpc.Length; ++index)
+    {
+      if (teamNpc[index] != null && teamNpc[index].Alive)
+        intList.Add(index);
+    }
+    if (intList.Count > 0)
+    {
+      bool flag = false;
+      int index = MatchManager.Instance.GetRandomIntRange(0, intList.Count, "item");
+      int num = 0;
+      while (!flag)
+      {
+        if (teamNpc[intList[index]] != null && teamNpc[intList[index]].Alive)
+          return teamNpc[intList[index]];
+        index = (index + 1) % teamNpc.Length;
+        ++num;
+        if (num > teamNpc.Length)
+          return (NPC) null;
+      }
+    }
+    return (NPC) null;
+  }
+
   private IEnumerator DoItemCo(
     Character caller,
     Enums.EventActivation theEvent,
@@ -14122,15 +14940,17 @@ label_13:
     {
       if (!this.activationItemsAtBeginTurnList.Contains(item))
         this.activationItemsAtBeginTurnList.Add(item);
-      while (this.activationItemsAtBeginTurnList != null && this.activationItemsAtBeginTurnList.Count > 0 && this.activationItemsAtBeginTurnList[0] != item)
+      do
       {
-        yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-        if (caller == null || !caller.Alive)
-        {
-          this.activationItemsAtBeginTurnList.Clear();
-          break;
-        }
+        List<string> itemsAtBeginTurnList = this.activationItemsAtBeginTurnList;
+        if (itemsAtBeginTurnList != null && itemsAtBeginTurnList.Count > 0 && this.activationItemsAtBeginTurnList[0] != item)
+          yield return (object) Globals.Instance.WaitForSeconds(0.1f);
+        else
+          goto label_16;
       }
+      while (caller != null && caller.Alive);
+      this.activationItemsAtBeginTurnList.Clear();
+label_16:
       while (this.waitingKill)
       {
         if (Globals.Instance.ShowDebug)
@@ -14144,6 +14964,8 @@ label_13:
         this.activationItemsAtBeginTurnList.RemoveAt(0);
       }
     }
+    if ((bool) (UnityEngine.Object) itemData.ItemEnchantment && itemData.ItemEnchantment.HealBasedOnAuraCurse > 0 && (UnityEngine.Object) itemData.ItemEnchantment.AuraCurseSetted != (UnityEngine.Object) null)
+      caller.ModifyHp(itemData.ItemEnchantment.HealBasedOnAuraCurse * caller.GetAuraCharges(itemData.ItemEnchantment.AuraCurseSetted.Id));
     int exhaustEvent = 0;
     if (theEvent == Enums.EventActivation.FinishCast)
     {
@@ -14208,6 +15030,9 @@ label_13:
       caller.DoItem(theEvent, itemData, item, target, auxInt, auxString, timesActivated, _castedCard);
       if (cardData.CardType == Enums.CardType.Corruption && theEvent != Enums.EventActivation.CorruptionBeginRound)
         this.CreateLogEntry(false, _key, item, this.theHero, this.theNPC, (Hero) null, (NPC) null, this.currentRound, Enums.EventActivation.CorruptionBeginRound);
+      ItemData itemEnchantment = cardData.ItemEnchantment;
+      if ((itemEnchantment != null ? (itemEnchantment.Activation == Enums.EventActivation.EndRound ? 1 : 0) : 0) != 0 && this.CanApplyNightmareImage(cardData, caller))
+        yield return (object) this.ApplyNightmareImageCo(cardData, caller);
       this.ResetAutoEndCount();
       this.SetEventDirect("item->" + item, false);
     }
@@ -14555,7 +15380,7 @@ label_13:
     {
       if (this.TeamHero[key] != null)
       {
-        this.TeamHero[key].HpCurrent = this.heroLifeArr[key];
+        this.TeamHero[key].HealToMax();
         this.TeamHero[key].Alive = true;
         if (key < this.heroBeginItems.Count && this.heroBeginItems[key] != null)
         {
@@ -15096,12 +15921,32 @@ label_13:
     matchManager.RestoreCombatStats();
     matchManager.backingDictionary = true;
     matchManager.RestoreCardDictionary();
+    List<NPCState> paramsFromTurnSave = matchManager.npcParamsFromTurnSave;
+    // ISSUE: explicit non-virtual call
+    if ((paramsFromTurnSave != null ? (__nonvirtual (paramsFromTurnSave.Count) > 0 ? 1 : 0) : 0) != 0)
+      matchManager.ApplyNPCState();
     while (matchManager.backingDictionary)
       yield return (object) Globals.Instance.WaitForSeconds(0.01f);
     if (!GameManager.Instance.IsMultiplayer())
       matchManager.StartCoroutine(matchManager.BeginMatch());
     else if (NetworkManager.Instance.IsMaster())
       matchManager.NET_ShareDecks(true);
+  }
+
+  private void ApplyNPCState()
+  {
+    Dictionary<string, NPC> dictionary = ((IEnumerable<NPC>) this.TeamNPC).Where<NPC>((Func<NPC, bool>) (n => n != null)).ToDictionary<NPC, string>((Func<NPC, string>) (n => n.InternalId));
+    foreach (NPCState npcState in this.npcParamsFromTurnSave)
+    {
+      NPCState state = npcState;
+      NPC npc = dictionary.Values.FirstOrDefault<NPC>((Func<NPC, bool>) (n => n.Id.StartsWith(state.Id, StringComparison.CurrentCultureIgnoreCase)));
+      if (npc != null)
+      {
+        npc.IsIllusion = state.IsIllusion;
+        npc.IsIllusionExposed = state.IsIllusionExposed;
+        npc.IllusionCharacter = string.IsNullOrEmpty(state.IllusionCharacterId) ? (Character) null : (Character) dictionary.Values.FirstOrDefault<NPC>((Func<NPC, bool>) (n => n.Id.Contains(state.IllusionCharacterId, StringComparison.InvariantCultureIgnoreCase)));
+      }
+    }
   }
 
   private void StoreCombatStats()
@@ -15292,6 +16137,12 @@ label_13:
         this.ItemExecuteForThisCombatDuplicate();
         break;
     }
+  }
+
+  public void SetCurrentSpecialCardsUsedInMatchForTurnSave(string currentSpecialCardsUsedInMatch)
+  {
+    int result;
+    this.MindSpikeAbility.CurrentSpecialCardsUsedInMatch = int.TryParse(currentSpecialCardsUsedInMatch, out result) ? result : 0;
   }
 
   public void ConsumeStatusForCombatStats(string _target, string _status, int _charges)
@@ -16343,6 +17194,49 @@ label_13:
     this.combatData.DoStepSound();
   }
 
+  private IEnumerator CreateCardCastPet(CardData cardPet, GameObject charGO, Hero _hero, NPC _npc)
+  {
+    MatchManager matchManager = this;
+    matchManager.CreatePet(cardPet, charGO, _hero, _npc, true, cardPet.InternalId);
+    Transform _pet = charGO.transform.Find("thePetEnchantment" + cardPet.InternalId);
+    if ((UnityEngine.Object) _pet != (UnityEngine.Object) null)
+    {
+      matchManager.eventList.Add(nameof (CreateCardCastPet));
+      NPCItem _petNPCItem = _pet.GetComponent<NPCItem>();
+      Animator _petAnimator = _pet.GetComponent<Animator>();
+      _petNPCItem.InstantFadeOutCharacter();
+      matchManager.StartCoroutine(_petNPCItem.FadeInCharacter());
+      yield return (object) Globals.Instance.WaitForSeconds(0.5f);
+      if (cardPet.PetTemporalAttack)
+      {
+        _petAnimator.ResetTrigger("attack");
+        _petAnimator.SetTrigger("attack");
+      }
+      else if (cardPet.PetTemporalCast)
+      {
+        _petAnimator.ResetTrigger("attack");
+        _petAnimator.SetTrigger("attack");
+      }
+      if (cardPet.PetTemporalMoveToCenter)
+      {
+        _petNPCItem.MoveToCenter();
+        if (cardPet.PetTemporalMoveToBack)
+        {
+          yield return (object) Globals.Instance.WaitForSeconds(1f);
+          _petNPCItem.MoveToCenterBack();
+        }
+      }
+      if ((double) cardPet.PetTemporalFadeOutDelay > 0.0)
+        yield return (object) Globals.Instance.WaitForSeconds(cardPet.PetTemporalFadeOutDelay);
+      matchManager.StartCoroutine(_petNPCItem.FadeOutCharacter());
+      yield return (object) Globals.Instance.WaitForSeconds(0.4f);
+      UnityEngine.Object.Destroy((UnityEngine.Object) _pet.gameObject);
+      matchManager.eventList.Remove(nameof (CreateCardCastPet));
+      _petNPCItem = (NPCItem) null;
+      _petAnimator = (Animator) null;
+    }
+  }
+
   public void ControllerMovement(
     bool goingUp = false,
     bool goingRight = false,
@@ -16701,6 +17595,32 @@ label_13:
     this.ResetControllerClickedCard();
   }
 
+  private int ResolveAuraCurseCharges(
+    AuraCurseData auraCurse,
+    int baseCharges,
+    bool useGlobal,
+    bool useSpecialValue1,
+    bool useSpecialValue2,
+    Character targetCharacter,
+    int cardSpecialValueGlobal,
+    int cardSpecialValue1,
+    int cardSpecialValue2,
+    int? additionalAuraCharges = null)
+  {
+    if (targetCharacter != null && targetCharacter.Alive && !auraCurse.IsAura && targetCharacter.IsSleep())
+      return this.CalculateSleepCharges(targetCharacter);
+    int baseCharges1 = baseCharges;
+    if (useGlobal)
+      baseCharges1 = cardSpecialValueGlobal;
+    else if (useSpecialValue1)
+      baseCharges1 = cardSpecialValue1;
+    else if (useSpecialValue2)
+      baseCharges1 = cardSpecialValue2;
+    else if (additionalAuraCharges.HasValue && auraCurse.IsAura)
+      baseCharges1 = additionalAuraCharges.GetValueOrDefault();
+    return this.GetEffectiveCharges(auraCurse, baseCharges1, targetCharacter);
+  }
+
   private void ResetControllerPositions(bool forceIt = false)
   {
     if (!this.IsYourTurn() || !forceIt && !this.controllerClickedCard)
@@ -16733,6 +17653,31 @@ label_13:
   public void ControllerStopDrag() => this.cardItemActive.DoReturnCardToDeckFromDrag();
 
   public void ControllerExecute() => this.cardItemActive.OnMouseUp();
+
+  private int CalculateSleepCharges(Character target)
+  {
+    if (target == null || !target.Alive || target.GetCurseList().Contains("sleep"))
+      return 0;
+    return (double) target.GetHpPercent() <= 50.0 ? 2 : 1;
+  }
+
+  private int GetEffectiveCharges(AuraCurseData curse, int baseCharges, Character character)
+  {
+    if (character == null || !character.Alive)
+      return baseCharges;
+    int max = curse.MaxCharges < 0 ? int.MaxValue : curse.MaxCharges;
+    int chargeMultiplier = this.GetChargeMultiplier(curse, character);
+    return Mathf.Clamp(baseCharges * chargeMultiplier, 0, max);
+  }
+
+  private int GetChargeMultiplier(AuraCurseData curse, Character character)
+  {
+    int chargeMultiplier = 1;
+    if (character == null || !character.Alive || curse.IsAura || !character.GetCurseList().Contains("sleep"))
+      return chargeMultiplier;
+    chargeMultiplier *= 2;
+    return chargeMultiplier;
+  }
 
   public bool CardDrag
   {
@@ -16856,6 +17801,116 @@ label_13:
     set => this.hitSoundIndex = value;
   }
 
+  public void SwapNPCDeck(int index1, int index2)
+  {
+    List<string>[] npcDeck1 = this.NPCDeck;
+    int index3 = index1;
+    List<string>[] npcDeck2 = this.NPCDeck;
+    int num = index2;
+    List<string> stringList1 = this.NPCDeck[index2];
+    List<string> stringList2 = this.NPCDeck[index1];
+    npcDeck1[index3] = stringList1;
+    int index4 = num;
+    List<string> stringList3 = stringList2;
+    npcDeck2[index4] = stringList3;
+  }
+
+  public void SwapNPCDeckDiscard(int index1, int index2)
+  {
+    List<string>[] npcDeckDiscard1 = this.NPCDeckDiscard;
+    int index3 = index1;
+    List<string>[] npcDeckDiscard2 = this.NPCDeckDiscard;
+    int num = index2;
+    List<string> stringList1 = this.NPCDeckDiscard[index2];
+    List<string> stringList2 = this.NPCDeckDiscard[index1];
+    npcDeckDiscard1[index3] = stringList1;
+    int index4 = num;
+    List<string> stringList3 = stringList2;
+    npcDeckDiscard2[index4] = stringList3;
+  }
+
+  public void SwapNPCHand(int index1, int index2)
+  {
+    List<string>[] npcHand1 = this.NPCHand;
+    int index3 = index1;
+    List<string>[] npcHand2 = this.NPCHand;
+    int num = index2;
+    List<string> stringList1 = this.NPCHand[index2];
+    List<string> stringList2 = this.NPCHand[index1];
+    npcHand1[index3] = stringList1;
+    int index4 = num;
+    List<string> stringList3 = stringList2;
+    npcHand2[index4] = stringList3;
+  }
+
+  public List<string> GetNPCDeck(int index) => this.NPCDeck[index];
+
+  public List<string> GetNPCHand(int index) => this.NPCHand[index];
+
+  public void SetNPCDeck(int index, List<string> newDeck) => this.NPCDeck[index] = newDeck;
+
+  public void SetNPCHand(int index, List<string> newHand) => this.NPCHand[index] = newHand;
+
+  public void SwapCharacterOrder(string charId1, string charId2, int index1, int index2)
+  {
+    int index3 = this.CharOrder.FindIndex((Predicate<MatchManager.CharacterForOrder>) (x => x.id == charId1));
+    int index4 = this.CharOrder.FindIndex((Predicate<MatchManager.CharacterForOrder>) (x => x.id == charId2));
+    if (index3 >= 0 && index4 >= 0)
+    {
+      MatchManager.CharacterForOrder characterForOrder1 = this.CharOrder[index3];
+      MatchManager.CharacterForOrder characterForOrder2 = this.CharOrder[index4];
+      int index5 = this.CharOrder[index4].index;
+      int index6 = this.CharOrder[index3].index;
+      characterForOrder1.index = index5;
+      int num1 = index6;
+      characterForOrder2.index = num1;
+      List<MatchManager.CharacterForOrder> charOrder1 = this.CharOrder;
+      int num2 = index3;
+      List<MatchManager.CharacterForOrder> charOrder2 = this.CharOrder;
+      int index7 = index4;
+      MatchManager.CharacterForOrder characterForOrder3 = this.CharOrder[index4];
+      MatchManager.CharacterForOrder characterForOrder4 = this.CharOrder[index3];
+      int index8 = num2;
+      MatchManager.CharacterForOrder characterForOrder5;
+      MatchManager.CharacterForOrder characterForOrder6 = characterForOrder5 = characterForOrder3;
+      charOrder1[index8] = characterForOrder5;
+      charOrder2[index7] = characterForOrder6 = characterForOrder4;
+    }
+    else
+      Debug.LogError((object) "Character not found in CharOrder array of match manager.");
+  }
+
+  public void AddVanishToDeck(int index, bool isHero)
+  {
+    Debug.Log((object) ("XXX Hand: " + this.HeroDeck?.ToString()));
+    Debug.Log((object) ("XXX Deck: " + this.HeroHand?.ToString()));
+    if (isHero)
+    {
+      foreach (string id in this.HeroDeck[index])
+        this.GetCardData(id).Vanish = true;
+      foreach (string id in this.HeroHand[index])
+      {
+        this.GetCardData(id).Vanish = true;
+        foreach (CardItem componentsInChild in this.GO_Hand.GetComponentsInChildren<CardItem>())
+          componentsInChild.SetVanishIcon(true);
+      }
+    }
+    else
+    {
+      foreach (string id in this.NPCDeck[index])
+        this.GetCardData(id).Vanish = true;
+      foreach (string id in this.NPCHand[index])
+        this.GetCardData(id).Vanish = true;
+    }
+  }
+
+  public bool IsPhantomArmorSpecialCard(string cardId)
+  {
+    return this.bossNpc != null && this.bossNpc is PhantomArmor && (this.bossNpc as PhantomArmor).IsSpecialCard(cardId);
+  }
+
+  public Transform GetNPCParent() => this.GO_NPCs.transform;
+
   public class CharacterForOrder
   {
     public int index;
@@ -16879,5 +17934,6 @@ label_13:
     public int energyReductionTemporal;
     public bool energyReductionToZeroPermanent;
     public bool energyReductionToZeroTemporal;
+    public string originalId;
   }
 }

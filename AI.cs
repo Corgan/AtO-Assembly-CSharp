@@ -1,9 +1,10 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: AI
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
+using Cards;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,7 +12,7 @@ using UnityEngine;
 #nullable disable
 public static class AI
 {
-  public static bool DoAI(NPC _npc, Hero[] _teamHero, NPC[] _teamNPC)
+  public static bool DoAI(NPC _npc, Hero[] _teamHero, NPC[] _teamNPC, ref float castDelay)
   {
     if ((UnityEngine.Object) _npc.NPCItem == (UnityEngine.Object) null || _npc.HpCurrent <= 0 || MatchManager.Instance.CheckMatchIsOver())
       return false;
@@ -63,7 +64,7 @@ public static class AI
     int energy = _npc.GetEnergy();
     for (int index = aiCardsList.Count - 1; index >= 0; --index)
     {
-      if ((UnityEngine.Object) aiCardsList[index].Card == (UnityEngine.Object) null || !_npc.CanPlayCard(aiCardsList[index].Card) || !_npc.CanPlayCardSummon(aiCardsList[index].Card) || _npc.GetCardFinalCost(aiCardsList[index].Card) > energy || !stringList.Contains(aiCardsList[index].Card.Id))
+      if ((UnityEngine.Object) aiCardsList[index].Card == (UnityEngine.Object) null || !_npc.CanPlayCard(aiCardsList[index].Card) || !_npc.CanPlayCardSummon(aiCardsList[index].Card) || _npc.GetCardFinalCost(aiCardsList[index].Card) > energy || !stringList.Contains(aiCardsList[index].Card.Id) || !_npc.CheckPlayableIfSpecialCard(aiCardsList[index].Card.Id))
         aiCardsList.RemoveAt(index);
     }
     int count1 = aiCardsList.Count;
@@ -74,10 +75,10 @@ public static class AI
     {
       List<Hero> heroList = new List<Hero>();
       List<NPC> npcList = new List<NPC>();
-      AICards aiCards3 = aiCardsList[index5];
-      if (aiCards3.Card.TargetType == Enums.CardTargetType.Global)
+      AICards theAICard = aiCardsList[index5];
+      if (theAICard.Card.TargetType == Enums.CardTargetType.Global)
       {
-        if (aiCards3.Card.TargetSide == Enums.CardTargetSide.Enemy || aiCards3.Card.TargetSide == Enums.CardTargetSide.Anyone)
+        if (theAICard.Card.TargetSide == Enums.CardTargetSide.Enemy || theAICard.Card.TargetSide == Enums.CardTargetSide.Anyone)
         {
           for (int index6 = 0; index6 < _teamHero.Length; ++index6)
           {
@@ -86,7 +87,7 @@ public static class AI
               heroList.Add(hero);
           }
         }
-        if (aiCards3.Card.TargetSide == Enums.CardTargetSide.Friend || aiCards3.Card.TargetSide == Enums.CardTargetSide.Anyone)
+        if (theAICard.Card.TargetSide == Enums.CardTargetSide.Friend || theAICard.Card.TargetSide == Enums.CardTargetSide.Anyone)
         {
           for (int index7 = 0; index7 < _teamNPC.Length; ++index7)
           {
@@ -96,116 +97,66 @@ public static class AI
           }
         }
       }
-      else if (aiCards3.Card.TargetSide == Enums.CardTargetSide.Enemy || aiCards3.Card.TargetSide == Enums.CardTargetSide.Anyone)
-      {
-        for (int index8 = 0; index8 < _teamHero.Length; ++index8)
-        {
-          Hero hero = _teamHero[index8];
-          if (hero != null && hero.Alive && hero.HasEffect("taunt") && !hero.HasEffect("stealth"))
-          {
-            heroList.Add(hero);
-            flag2 = true;
-          }
-        }
-        if (!flag2)
-        {
-          for (int index9 = 0; index9 < _teamHero.Length; ++index9)
-          {
-            Hero hero = _teamHero[index9];
-            if (hero != null && hero.Alive && !hero.HasEffect("stealth") && (aiCards3.Card.TargetPosition != Enums.CardTargetPosition.Front || MatchManager.Instance.PositionIsFront(true, hero.Position)) && (aiCards3.Card.TargetPosition != Enums.CardTargetPosition.Back || MatchManager.Instance.PositionIsBack((Character) hero)) && (aiCards3.Card.TargetPosition != Enums.CardTargetPosition.Middle || MatchManager.Instance.PositionIsMiddle((Character) hero)))
-            {
-              bool flag3 = false;
-              if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.Always)
-                flag3 = true;
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetLifeLessThanPercent)
-              {
-                float valueCastIf = aiCards3.ValueCastIf;
-                if ((double) hero.GetHpPercent() <= (double) valueCastIf)
-                  flag3 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetHasNotAuraCurse)
-              {
-                string id = aiCards3.AuracurseCastIf.Id;
-                if (!hero.HasEffect(id))
-                  flag3 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetLifeHigherThanPercent)
-              {
-                float valueCastIf = aiCards3.ValueCastIf;
-                if ((double) hero.GetHpPercent() >= (double) valueCastIf)
-                  flag3 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetHasAuraCurse)
-              {
-                string id = aiCards3.AuracurseCastIf.Id;
-                if (hero.HasEffect(id))
-                  flag3 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetHasAnyAura)
-              {
-                if (hero.HasAnyAura())
-                  flag3 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetHasAnyCurse && hero.HasAnyCurse())
-                flag3 = true;
-              if (flag3)
-                heroList.Add(hero);
-            }
-          }
-        }
-      }
       else
       {
-        for (int index10 = 0; index10 < _teamNPC.Length; ++index10)
+        switch (theAICard.Card.TargetSide)
         {
-          NPC npc = _teamNPC[index10];
-          if (npc != null && npc.Alive)
-          {
-            bool flag4 = true;
-            if (aiCards3.Card.TargetSide == Enums.CardTargetSide.Self && _npc.Id != npc.Id)
-              flag4 = false;
-            else if (aiCards3.Card.TargetSide == Enums.CardTargetSide.FriendNotSelf && _npc.Id == npc.Id)
-              flag4 = false;
-            if (flag4 && npc.Alive && (npc.Position <= 0 || aiCards3.Card.TargetPosition != Enums.CardTargetPosition.Front))
+          case Enums.CardTargetSide.Enemy:
+          case Enums.CardTargetSide.Anyone:
+            for (int index8 = 0; index8 < _teamHero.Length; ++index8)
             {
-              bool flag5 = false;
-              if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.Always)
-                flag5 = true;
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetLifeLessThanPercent)
+              Hero hero = _teamHero[index8];
+              if (hero != null && hero.Alive && hero.HasEffect("taunt") && !hero.HasEffect("stealth"))
               {
-                float valueCastIf = aiCards3.ValueCastIf;
-                if ((double) npc.GetHpPercent() <= (double) valueCastIf)
-                  flag5 = true;
+                heroList.Add(hero);
+                flag2 = true;
               }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetHasNotAuraCurse)
-              {
-                string id = aiCards3.AuracurseCastIf.Id;
-                if (!npc.HasEffect(id))
-                  flag5 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetLifeHigherThanPercent)
-              {
-                float valueCastIf = aiCards3.ValueCastIf;
-                if ((double) npc.GetHpPercent() >= (double) valueCastIf)
-                  flag5 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetHasAuraCurse)
-              {
-                string id = aiCards3.AuracurseCastIf.Id;
-                if (npc.HasEffect(id))
-                  flag5 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetHasAnyAura)
-              {
-                if (npc.HasAnyAura())
-                  flag5 = true;
-              }
-              else if (aiCards3.OnlyCastIf == Enums.OnlyCastIf.TargetHasAnyCurse && npc.HasAnyCurse())
-                flag5 = true;
-              if (flag5)
-                npcList.Add(npc);
             }
-          }
+            if (!flag2)
+            {
+              for (int index9 = 0; index9 < _teamHero.Length; ++index9)
+              {
+                Hero target = _teamHero[index9];
+                if (target != null && target.Alive && !target.HasEffect("stealth") && (theAICard.Card.TargetPosition != Enums.CardTargetPosition.Front || MatchManager.Instance.PositionIsFront(true, target.Position)) && (theAICard.Card.TargetPosition != Enums.CardTargetPosition.Back || MatchManager.Instance.PositionIsBack((Character) target)) && (theAICard.Card.TargetPosition != Enums.CardTargetPosition.Middle || MatchManager.Instance.PositionIsMiddle((Character) target)))
+                {
+                  bool addTarget = true;
+                  if (!AI.CheckCondition(theAICard.OnlyCastIf, theAICard.ValueCastIf, theAICard.AuracurseCastIf?.Id, (Character) target, (Character) null))
+                    addTarget = false;
+                  Character specialTarget = AI.tryGetSpecialTarget((IEnumerable<Character>) _teamHero, theAICard.SpecialSecondTargetID);
+                  if (!AI.CheckCondition(theAICard.SecondOnlyCastIf, theAICard.SecondValueCastIf, theAICard.AuracurseCastIf?.Id, (Character) target, specialTarget))
+                    addTarget = false;
+                  if (AI.CanUseNightmareImageCard(theAICard, addTarget, (Character) target))
+                    heroList.Add(target);
+                }
+              }
+              break;
+            }
+            break;
+          default:
+            for (int index10 = 0; index10 < _teamNPC.Length; ++index10)
+            {
+              NPC target = _teamNPC[index10];
+              if (target != null && target.Alive)
+              {
+                bool flag3 = true;
+                if (theAICard.Card.TargetSide == Enums.CardTargetSide.Self && _npc.Id != target.Id)
+                  flag3 = false;
+                else if (theAICard.Card.TargetSide == Enums.CardTargetSide.FriendNotSelf && _npc.Id == target.Id)
+                  flag3 = false;
+                if (flag3 && target.Alive && (target.Position <= 0 || theAICard.Card.TargetPosition != Enums.CardTargetPosition.Front))
+                {
+                  bool addTarget = true;
+                  Character specialTarget = AI.tryGetSpecialTarget((IEnumerable<Character>) _teamNPC, theAICard.SpecialSecondTargetID);
+                  if (!AI.CheckCondition(theAICard.OnlyCastIf, theAICard.ValueCastIf, theAICard.AuracurseCastIf?.Id, (Character) target, specialTarget))
+                    addTarget = false;
+                  if (!AI.CheckCondition(theAICard.SecondOnlyCastIf, theAICard.SecondValueCastIf, theAICard.AuracurseCastIf?.Id, (Character) target, specialTarget))
+                    addTarget = false;
+                  if (AI.CanUseNightmareImageCard(theAICard, addTarget, (Character) target))
+                    npcList.Add(target);
+                }
+              }
+            }
+            break;
         }
       }
       int num1;
@@ -253,87 +204,87 @@ public static class AI
         for (int index12 = heroList.Count - 1; index12 >= 0; --index12)
         {
           Hero hero = heroList[index12];
-          if (aiCards3.Card.TargetPosition == Enums.CardTargetPosition.Slowest)
+          if (theAICard.Card.TargetPosition == Enums.CardTargetPosition.Slowest)
           {
             if (hero.GetSpeed()[0] > num8)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.Card.TargetPosition == Enums.CardTargetPosition.Fastest)
+          else if (theAICard.Card.TargetPosition == Enums.CardTargetPosition.Fastest)
           {
             if (hero.GetSpeed()[0] < num9)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.Card.TargetPosition == Enums.CardTargetPosition.LeastHP)
+          else if (theAICard.Card.TargetPosition == Enums.CardTargetPosition.LeastHP)
           {
             if ((double) hero.GetHp() > (double) num4)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.Card.TargetPosition == Enums.CardTargetPosition.MostHP)
+          else if (theAICard.Card.TargetPosition == Enums.CardTargetPosition.MostHP)
           {
             if ((double) hero.GetHp() < (double) num6)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.Front)
+          else if (theAICard.TargetCast == Enums.TargetCast.Front)
           {
             if (hero.Position > num7)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.Middle)
+          else if (theAICard.TargetCast == Enums.TargetCast.Middle)
           {
             if (count2 > 2 && (hero.Position == num7 || hero.Position == num2))
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.Back)
+          else if (theAICard.TargetCast == Enums.TargetCast.Back)
           {
             if (hero.Position < num2)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.AnyButFront)
+          else if (theAICard.TargetCast == Enums.TargetCast.AnyButFront)
           {
             if (hero.Position == num7)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.AnyButBack)
+          else if (theAICard.TargetCast == Enums.TargetCast.AnyButBack)
           {
             if (hero.Position == num2)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.LessHealthPercent)
+          else if (theAICard.TargetCast == Enums.TargetCast.LessHealthPercent)
           {
             if ((double) hero.GetHpPercent() > (double) num3)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.MoreHealthPercent)
+          else if (theAICard.TargetCast == Enums.TargetCast.MoreHealthPercent)
           {
             if ((double) hero.GetHpPercent() < (double) num5)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.LessHealthFlat)
+          else if (theAICard.TargetCast == Enums.TargetCast.LessHealthFlat)
           {
             if ((double) hero.GetHp() > (double) num4)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.MoreHealthFlat)
+          else if (theAICard.TargetCast == Enums.TargetCast.MoreHealthFlat)
           {
             if ((double) hero.GetHp() < (double) num6)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.LessHealthAbsolute)
+          else if (theAICard.TargetCast == Enums.TargetCast.LessHealthAbsolute)
           {
             if ((double) (hero.GetHp() + hero.GetBlock()) > (double) num11)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.MoreHealthAbsolute)
+          else if (theAICard.TargetCast == Enums.TargetCast.MoreHealthAbsolute)
           {
             if ((double) (hero.GetHp() + hero.GetBlock()) < (double) num10)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.LessInitiative)
+          else if (theAICard.TargetCast == Enums.TargetCast.LessInitiative)
           {
             if (hero.GetSpeed()[0] > num8)
               heroList.RemoveAt(index12);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.MoreInitiative && hero.GetSpeed()[0] < num9)
+          else if (theAICard.TargetCast == Enums.TargetCast.MoreInitiative && hero.GetSpeed()[0] < num9)
             heroList.RemoveAt(index12);
         }
       }
@@ -381,89 +332,89 @@ public static class AI
         for (int index14 = npcList.Count - 1; index14 >= 0; --index14)
         {
           NPC npc = npcList[index14];
-          if (aiCards3.Card.TargetPosition == Enums.CardTargetPosition.Slowest)
+          if (theAICard.Card.TargetPosition == Enums.CardTargetPosition.Slowest)
           {
             if (npc.GetSpeed()[0] > num20)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.Card.TargetPosition == Enums.CardTargetPosition.Fastest)
+          else if (theAICard.Card.TargetPosition == Enums.CardTargetPosition.Fastest)
           {
             if (npc.GetSpeed()[0] < num21)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.Card.TargetPosition == Enums.CardTargetPosition.LeastHP)
+          else if (theAICard.Card.TargetPosition == Enums.CardTargetPosition.LeastHP)
           {
             if ((double) npc.GetHp() > (double) num16)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.Card.TargetPosition == Enums.CardTargetPosition.MostHP)
+          else if (theAICard.Card.TargetPosition == Enums.CardTargetPosition.MostHP)
           {
             if ((double) npc.GetHp() < (double) num18)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.Front)
+          else if (theAICard.TargetCast == Enums.TargetCast.Front)
           {
             if (npc.Position > num19)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.Middle)
+          else if (theAICard.TargetCast == Enums.TargetCast.Middle)
           {
             if (count3 > 2 && (npc.Position == num19 || npc.Position == num14))
               npcList.RemoveAt(index14);
             else if (count3 == 2 && npc.Position == num19)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.Back)
+          else if (theAICard.TargetCast == Enums.TargetCast.Back)
           {
             if (npc.Position < num14)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.AnyButFront)
+          else if (theAICard.TargetCast == Enums.TargetCast.AnyButFront)
           {
             if (npc.Position == num19)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.AnyButBack)
+          else if (theAICard.TargetCast == Enums.TargetCast.AnyButBack)
           {
             if (npc.Position == num14)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.LessHealthPercent)
+          else if (theAICard.TargetCast == Enums.TargetCast.LessHealthPercent)
           {
             if ((double) npc.GetHpPercent() > (double) num15)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.MoreHealthPercent)
+          else if (theAICard.TargetCast == Enums.TargetCast.MoreHealthPercent)
           {
             if ((double) npc.GetHpPercent() < (double) num17)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.LessHealthFlat)
+          else if (theAICard.TargetCast == Enums.TargetCast.LessHealthFlat)
           {
             if ((double) npc.GetHp() > (double) num16)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.MoreHealthFlat)
+          else if (theAICard.TargetCast == Enums.TargetCast.MoreHealthFlat)
           {
             if ((double) npc.GetHp() < (double) num18)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.LessHealthAbsolute)
+          else if (theAICard.TargetCast == Enums.TargetCast.LessHealthAbsolute)
           {
             if ((double) (npc.GetHp() + npc.GetBlock()) > (double) num23)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.MoreHealthAbsolute)
+          else if (theAICard.TargetCast == Enums.TargetCast.MoreHealthAbsolute)
           {
             if ((double) (npc.GetHp() + npc.GetBlock()) < (double) num22)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.LessInitiative)
+          else if (theAICard.TargetCast == Enums.TargetCast.LessInitiative)
           {
             if (npc.GetSpeed()[0] > num20)
               npcList.RemoveAt(index14);
           }
-          else if (aiCards3.TargetCast == Enums.TargetCast.MoreInitiative && npc.GetSpeed()[0] < num21)
+          else if (theAICard.TargetCast == Enums.TargetCast.MoreInitiative && npc.GetSpeed()[0] < num21)
             npcList.RemoveAt(index14);
         }
       }
@@ -473,13 +424,13 @@ public static class AI
       }
       else
       {
-        if (!dictionary1.ContainsKey(aiCards3.Card.Id))
-          dictionary1.Add(aiCards3.Card.Id, heroList);
-        if (!dictionary2.ContainsKey(aiCards3.Card.Id))
-          dictionary2.Add(aiCards3.Card.Id, npcList);
+        if (!dictionary1.ContainsKey(theAICard.Card.Id))
+          dictionary1.Add(theAICard.Card.Id, heroList);
+        if (!dictionary2.ContainsKey(theAICard.Card.Id))
+          dictionary2.Add(theAICard.Card.Id, npcList);
       }
     }
-    string key = "";
+    string str1 = "";
     int index15 = -1;
     if (aiCardsList.Count > 0)
     {
@@ -510,10 +461,15 @@ public static class AI
       }
       if (aiCards1 == null)
         aiCards1 = aiCardsList[0];
-      key = aiCards1.Card.Id;
+      str1 = aiCards1.Card.Id;
+      if (_npc.NPCIsBoss() && MatchManager.Instance.IsPhantomArmorSpecialCard(str1) && (double) castDelay <= 0.0)
+      {
+        castDelay = 2f;
+        return false;
+      }
       for (int position = 0; position < MatchManager.Instance.CountNPCHand(_npc.NPCIndex); ++position)
       {
-        if (MatchManager.Instance.CardFromNPCHand(_npc.NPCIndex, position) != null && MatchManager.Instance.CardFromNPCHand(_npc.NPCIndex, position).Split(char.Parse("_"), StringSplitOptions.None)[0] == key)
+        if (MatchManager.Instance.CardFromNPCHand(_npc.NPCIndex, position) != null && MatchManager.Instance.CardFromNPCHand(_npc.NPCIndex, position).Split(char.Parse("_"), StringSplitOptions.None)[0] == str1)
         {
           index15 = position;
           break;
@@ -524,7 +480,7 @@ public static class AI
       return false;
     for (int index20 = 0; index20 < _npc.NPCItem.cardsCI.Length; ++index20)
     {
-      if ((UnityEngine.Object) _npc.NPCItem.cardsCI[index20] != (UnityEngine.Object) null && (UnityEngine.Object) _npc.NPCItem.cardsCI[index20].CardData != (UnityEngine.Object) null && _npc.NPCItem.cardsCI[index20].CardData.Id == key && (UnityEngine.Object) _npc.NPCItem.cardsCI[index20] != (UnityEngine.Object) null && _npc.NPCItem.cardsCI[index20].IsRevealed())
+      if ((UnityEngine.Object) _npc.NPCItem.cardsCI[index20] != (UnityEngine.Object) null && (UnityEngine.Object) _npc.NPCItem.cardsCI[index20].CardData != (UnityEngine.Object) null && _npc.NPCItem.cardsCI[index20].CardData.Id == str1 && (UnityEngine.Object) _npc.NPCItem.cardsCI[index20] != (UnityEngine.Object) null && _npc.NPCItem.cardsCI[index20].IsRevealed())
       {
         index15 = index20;
         break;
@@ -535,15 +491,15 @@ public static class AI
       return false;
     CardData cardData = _npc.NPCItem.cardsCI[index15].CardData;
     Transform transform2;
-    if (dictionary1[key].Count == 0)
+    if (dictionary1[str1].Count == 0)
     {
-      int randomIntRange = MatchManager.Instance.GetRandomIntRange(0, dictionary2[key].Count);
-      transform2 = dictionary2[key][randomIntRange].NPCItem.transform;
+      int randomIntRange = MatchManager.Instance.GetRandomIntRange(0, dictionary2[str1].Count);
+      transform2 = dictionary2[str1][randomIntRange].NPCItem.transform;
     }
     else
     {
-      int randomIntRange = MatchManager.Instance.GetRandomIntRange(0, dictionary1[key].Count);
-      Hero hero = dictionary1[key][randomIntRange];
+      int randomIntRange = MatchManager.Instance.GetRandomIntRange(0, dictionary1[str1].Count);
+      Hero hero = dictionary1[str1][randomIntRange];
       if (hero == null || !((UnityEngine.Object) hero.HeroItem != (UnityEngine.Object) null))
         return false;
       transform2 = hero.HeroItem.transform;
@@ -554,5 +510,75 @@ public static class AI
     MatchManager.Instance.CastAutomatic(cardData, transform1, transform2);
     MatchManager.Instance.NPCDiscard(_npc.NPCIndex, index15, true);
     return true;
+  }
+
+  private static bool CanUseNightmareImageCard(
+    AICards theAICard,
+    bool addTarget,
+    Character character)
+  {
+    return theAICard.Card.SpecialCardEnum != SpecialCardEnum.NightmareImage ? addTarget : MatchManager.Instance.GetNPCAvailablePosition(character.NpcData.BigModel ? 2 : 1) != -1;
+  }
+
+  private static bool CheckCondition(
+    Enums.OnlyCastIf onlyCastIf,
+    float valueCastIf,
+    string auraCurseId,
+    Character target,
+    Character anotherTarget)
+  {
+    bool flag;
+    switch (onlyCastIf)
+    {
+      case Enums.OnlyCastIf.Always:
+        flag = true;
+        break;
+      case Enums.OnlyCastIf.TargetLifeLessThanPercent:
+        flag = (double) target.GetHpPercent() <= (double) valueCastIf;
+        break;
+      case Enums.OnlyCastIf.TargetHasNotAuraCurse:
+        flag = !target.HasEffect(auraCurseId);
+        break;
+      case Enums.OnlyCastIf.TargetLifeHigherThanPercent:
+        flag = (double) target.GetHpPercent() >= (double) valueCastIf;
+        break;
+      case Enums.OnlyCastIf.TargetHasAuraCurse:
+        flag = target.HasEffect(auraCurseId);
+        break;
+      case Enums.OnlyCastIf.TargetHasAnyAura:
+        flag = target.HasAnyAura();
+        break;
+      case Enums.OnlyCastIf.TargetHasAnyCurse:
+        flag = target.HasAnyCurse();
+        break;
+      case Enums.OnlyCastIf.TeamNpcAllAlive:
+        flag = MatchManager.Instance.NumNPCsAlive() == 4;
+        break;
+      case Enums.OnlyCastIf.LifeInMainTargetHigherThanInSpecialTarget:
+        flag = anotherTarget != null && target.GetHp() > anotherTarget.GetHp();
+        break;
+      case Enums.OnlyCastIf.LifeInMainTargetLessThanInSpecialTarget:
+        flag = anotherTarget != null && target.GetHp() < anotherTarget.GetHp();
+        break;
+      case Enums.OnlyCastIf.TargetNotIllusion:
+        flag = !target.IsIllusion;
+        break;
+      default:
+        flag = false;
+        break;
+    }
+    return flag;
+  }
+
+  private static Character tryGetSpecialTarget(
+    IEnumerable<Character> characterCollection,
+    string targetID)
+  {
+    foreach (Character character in characterCollection)
+    {
+      if (character != null && character.Alive && !character.IsIllusion && !string.IsNullOrEmpty(targetID) && character.GameName.Contains(targetID))
+        return character;
+    }
+    return (Character) null;
   }
 }

@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: FinishRunManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -319,15 +319,15 @@ public class FinishRunManager : MonoBehaviour
           this.bestScore.gameObject.SetActive(true);
           PlayerManager.Instance.SetBestScore(this.gameScore);
         }
-        if ((this.gameScore <= 150000 || level >= 18) && (this.gameScore <= 225000 || level < 18))
+        if ((this.gameScore <= 170000 || level >= 18) && (this.gameScore <= 250000 || level < 18))
           SteamManager.Instance.SetScore(this.gameScore, !GameManager.Instance.IsMultiplayer());
       }
       else if (GameManager.Instance.IsSingularity())
       {
-        if (this.gameScore < 150000)
+        if (this.gameScore < 170000)
           SteamManager.Instance.SetSingularityScore(this.gameScore, !GameManager.Instance.IsMultiplayer());
       }
-      else if (this.gameScore <= 100000)
+      else if (this.gameScore <= 120000)
       {
         if (GameManager.Instance.IsWeeklyChallenge())
         {
@@ -340,9 +340,12 @@ public class FinishRunManager : MonoBehaviour
           }
           int weekly = AtOManager.Instance.GetWeekly();
           SteamManager.Instance.SetWeeklyScore(this.gameScore, weekly, steamName, nickgroup, !GameManager.Instance.IsMultiplayer());
-          ChallengeData weeklyData = Globals.Instance.GetWeeklyData(weekly);
-          if (weeklyData.IdSteam != "")
-            SteamManager.Instance.SetStatInt(weeklyData.IdSteam, 1);
+          ChallengeData weeklyData1 = Globals.Instance.GetWeeklyData(weekly);
+          if ((UnityEngine.Object) weeklyData1 != (UnityEngine.Object) null && weeklyData1.IdSteam != "")
+            SteamManager.Instance.SetStatInt(weeklyData1.IdSteam, 1);
+          ChallengeData weeklyData2 = Globals.Instance.GetWeeklyData(weekly, true);
+          if ((UnityEngine.Object) weeklyData2 != (UnityEngine.Object) null && weeklyData2.IdSteam != "")
+            SteamManager.Instance.SetStatInt(weeklyData2.IdSteam, 1);
         }
         else
           SteamManager.Instance.SetObeliskScore(this.gameScore, !GameManager.Instance.IsMultiplayer());

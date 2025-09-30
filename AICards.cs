@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: AICards
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -17,6 +17,10 @@ public class AICards
   private int unitsInDeck;
   [SerializeField]
   private int addCardRound;
+  [SerializeField]
+  private int _startsAtObeliskMadnessLevel;
+  [SerializeField]
+  private int _startsAtSingularityMadnessLevel;
   [Header("Order of cast (priority: less is first) ")]
   [SerializeField]
   private int priority;
@@ -28,6 +32,12 @@ public class AICards
   [SerializeField]
   private float valueCastIf;
   [SerializeField]
+  private string _specialSecondTargetID;
+  [SerializeField]
+  private Enums.OnlyCastIf _secondOnlyCastIf;
+  [SerializeField]
+  private float _secondValueCastIf;
+  [SerializeField]
   private AuraCurseData auracurseCastIf;
   [Header("If you can cast, choose among the possible targets")]
   [SerializeField]
@@ -38,6 +48,10 @@ public class AICards
     get => this.card;
     set => this.card = value;
   }
+
+  public int StartsAtObeliskMadnessLevel => this._startsAtObeliskMadnessLevel;
+
+  public int StartsAtSingularityMadnessLevel => this._startsAtSingularityMadnessLevel;
 
   public int UnitsInDeck
   {
@@ -73,6 +87,20 @@ public class AICards
   {
     get => this.valueCastIf;
     set => this.valueCastIf = value;
+  }
+
+  public string SpecialSecondTargetID => this._specialSecondTargetID;
+
+  public Enums.OnlyCastIf SecondOnlyCastIf
+  {
+    get => this._secondOnlyCastIf;
+    set => this._secondOnlyCastIf = value;
+  }
+
+  public float SecondValueCastIf
+  {
+    get => this._secondValueCastIf;
+    set => this._secondValueCastIf = value;
   }
 
   public AuraCurseData AuracurseCastIf

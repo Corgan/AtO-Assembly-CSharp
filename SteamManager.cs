@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: SteamManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Steamworks;
@@ -204,6 +204,8 @@ public class SteamManager : MonoBehaviour
 
   public void DoSteam()
   {
+    if (GameManager.Instance.UseTestSteamID)
+      this.releaseAppId = 480U;
     uint releaseAppId = this.releaseAppId;
     try
     {
@@ -236,7 +238,7 @@ public class SteamManager : MonoBehaviour
       GameManager.Instance.SetDemo(false);
     this.steamName = SteamClient.Name;
     this.steamId = SteamClient.SteamId;
-    if (this.steamId.ToString() == "76561198229850604" || this.steamId.ToString() == "76561198018931074" || this.steamId.ToString() == "76561198019918417" || this.steamId.ToString() == "76561198856292125" || this.steamId.ToString() == "76561199225796884" || this.steamId.ToString() == "76561198965756754" || this.steamId.ToString() == "76561198036268174" || this.steamId.ToString() == "76561198180023935" || this.steamId.ToString() == "76561198019330206" || this.steamId.ToString() == "76561198049739831" || this.steamId.ToString() == "76561197995379359")
+    if (this.steamId.ToString() == "76561198229850604" || this.steamId.ToString() == "76561198018931074" || this.steamId.ToString() == "76561198019918417" || this.steamId.ToString() == "76561198856292125" || this.steamId.ToString() == "76561199225796884" || this.steamId.ToString() == "76561198965756754" || this.steamId.ToString() == "76561198036268174" || this.steamId.ToString() == "76561198180023935" || this.steamId.ToString() == "76561198019330206" || this.steamId.ToString() == "76561198049739831" || this.steamId.ToString() == "76561197995379359" || this.steamId.ToString() == "76561199807898203" || this.steamId.ToString() == "76561199803732339" || this.steamId.ToString() == "76561199688659700" || this.steamId.ToString() == "76561199803732339" || this.steamId.ToString() == "76561199692438816")
       GameManager.Instance.SetDeveloperMode(true);
     this.GetDLCInformation();
     SteamFriends.OnGameRichPresenceJoinRequested += new Action<Friend, string>(this.OnGameRichPresenceJoinRequested);
@@ -284,7 +286,7 @@ public class SteamManager : MonoBehaviour
 
   public bool PlayerHaveDLC(string _sku)
   {
-    if (GameManager.Instance.GetDeveloperMode())
+    if (GameManager.Instance.GetDeveloperMode() || GameManager.Instance.CheatMode)
       return true;
     uint _appId = uint.Parse(_sku);
     return SteamApps.IsSubscribedToApp((AppId) _appId) && this.LauncherEnabledDLC(_appId);

@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Node
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -399,7 +399,7 @@ public class Node : MonoBehaviour
 
   public void OnMouseUp()
   {
-    if (!Functions.ClickedThisTransform(this.transform) || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver()) || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.selectedNode || (bool) (UnityEngine.Object) EventManager.Instance)
+    if (!Functions.ClickedThisTransform(this.transform) || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver() || MapManager.Instance.characterWindow.IsActive()) || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.selectedNode || (bool) (UnityEngine.Object) EventManager.Instance)
       return;
     GameManager.Instance.SetCursorPlain();
     MapManager.Instance.HidePopup();
@@ -410,14 +410,14 @@ public class Node : MonoBehaviour
 
   private void OnMouseOver()
   {
-    if (!GameManager.Instance.GetDeveloperMode() || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver()) || (bool) (UnityEngine.Object) EventManager.Instance || EventSystem.current.IsPointerOverGameObject() || !Input.GetMouseButtonUp(1) || GameManager.Instance.IsMultiplayer() && (!GameManager.Instance.IsMultiplayer() || !NetworkManager.Instance.IsMaster()))
+    if (!GameManager.Instance.GetDeveloperMode() || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver() || MapManager.Instance.characterWindow.IsActive()) || (bool) (UnityEngine.Object) EventManager.Instance || EventSystem.current.IsPointerOverGameObject() || !Input.GetMouseButtonUp(1) || GameManager.Instance.IsMultiplayer() && (!GameManager.Instance.IsMultiplayer() || !NetworkManager.Instance.IsMaster()))
       return;
     MapManager.Instance.TravelToThisNode(this);
   }
 
   private void OnMouseEnter()
   {
-    if (AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver()) || (bool) (UnityEngine.Object) EventManager.Instance || EventSystem.current.IsPointerOverGameObject() || !(this.GetNodeAssignedId() != ""))
+    if (AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver() || MapManager.Instance.characterWindow.IsActive()) || (bool) (UnityEngine.Object) EventManager.Instance || EventSystem.current.IsPointerOverGameObject() || !(this.GetNodeAssignedId() != ""))
       return;
     MapManager.Instance.ShowPopup(this);
     GameManager.Instance.PlayLibraryAudio("ui_click");

@@ -1,9 +1,10 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: UnlockedBar
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
@@ -104,10 +105,35 @@ public class UnlockedBar : MonoBehaviour
         List<string> stringList1 = new List<string>();
         List<string> stringList2 = new List<string>();
         this.cardsUnlocked = 0;
-        foreach (KeyValuePair<string, NodeData> keyValuePair in Globals.Instance.NodeDataSource)
+        foreach (KeyValuePair<string, NodeData> message in Globals.Instance.NodeDataSource)
         {
-          if (keyValuePair.Key != "tutorial_0" && keyValuePair.Key != "tutorial_1" && keyValuePair.Key != "tutorial_2" && (keyValuePair.Value.NodeZone.ZoneId == "Aquarfall" || keyValuePair.Value.NodeZone.ZoneId == "Sectarium" || keyValuePair.Value.NodeZone.ZoneId == "Senenthia" || keyValuePair.Value.NodeZone.ZoneId == "Spiderlair" || keyValuePair.Value.NodeZone.ZoneId == "Velkarath" || keyValuePair.Value.NodeZone.ZoneId == "Voidhigh" || keyValuePair.Value.NodeZone.ZoneId == "Voidlow" || keyValuePair.Value.NodeZone.ZoneId == "Faeborg" || keyValuePair.Value.NodeZone.ZoneId == "Frozensewers" || keyValuePair.Value.NodeZone.ZoneId == "Blackforge" || keyValuePair.Value.NodeZone.ZoneId == "Ulminin" || keyValuePair.Value.NodeZone.ZoneId == "Pyramid") && !keyValuePair.Value.GoToTown && !keyValuePair.Value.TravelDestination)
-            stringList1.Add(keyValuePair.Key);
+          try
+          {
+            if (message.Key != "tutorial_0")
+            {
+              if (message.Key != "tutorial_1")
+              {
+                if (message.Key != "tutorial_2")
+                {
+                  if (!(message.Value.NodeZone.ZoneId == "Aquarfall") && !(message.Value.NodeZone.ZoneId == "Sectarium") && !(message.Value.NodeZone.ZoneId == "Senenthia") && !(message.Value.NodeZone.ZoneId == "Spiderlair") && !(message.Value.NodeZone.ZoneId == "Velkarath") && !(message.Value.NodeZone.ZoneId == "Voidhigh") && !(message.Value.NodeZone.ZoneId == "Voidlow") && !(message.Value.NodeZone.ZoneId == "Faeborg") && !(message.Value.NodeZone.ZoneId == "Frozensewers") && !(message.Value.NodeZone.ZoneId == "Blackforge") && !(message.Value.NodeZone.ZoneId == "Ulminin"))
+                  {
+                    if (!(message.Value.NodeZone.ZoneId == "Pyramid"))
+                      continue;
+                  }
+                  if (!message.Value.GoToTown)
+                  {
+                    if (!message.Value.TravelDestination)
+                      stringList1.Add(message.Key);
+                  }
+                }
+              }
+            }
+          }
+          catch (Exception ex)
+          {
+            Debug.Log((object) message);
+            throw;
+          }
         }
         if (PlayerManager.Instance.UnlockedNodes != null)
         {

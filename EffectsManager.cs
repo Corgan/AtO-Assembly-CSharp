@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: EffectsManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System.Collections;
@@ -38,6 +38,44 @@ public class EffectsManager : MonoBehaviour
     }
   }
 
+  public void PlayEffect(string effectName, float posX)
+  {
+    this.StartCoroutine(this.PlayEffectCo(effectName, posX));
+  }
+
+  private IEnumerator PlayEffectCo(string effectName, float posX)
+  {
+    GameObject effectGO = this.GetEffect();
+    Effects effects = effectGO.GetComponent<Effects>();
+    if (!effectGO.gameObject.activeSelf)
+      effectGO.gameObject.SetActive(true);
+    effects.Play(effectName, posX, false, false, false);
+    for (int exhaust = 0; !effects.HasStopped() && exhaust < 50; ++exhaust)
+      yield return (object) Globals.Instance.WaitForSeconds(0.05f);
+    effects.Stop(effectName);
+    this.DestroyEffect(effectGO);
+    yield return (object) null;
+  }
+
+  public void PlayEffect(string effectName, Transform theTransform)
+  {
+    this.StartCoroutine(this.PlayEffectCo(effectName, theTransform));
+  }
+
+  private IEnumerator PlayEffectCo(string effectName, Transform theTransform)
+  {
+    GameObject effectGO = this.GetEffect();
+    Effects effects = effectGO.GetComponent<Effects>();
+    if (!effectGO.gameObject.activeSelf)
+      effectGO.gameObject.SetActive(true);
+    effects.Play(effectName, theTransform, false, false, false);
+    for (int exhaust = 0; !effects.HasStopped() && exhaust < 50; ++exhaust)
+      yield return (object) Globals.Instance.WaitForSeconds(0.05f);
+    effects.Stop(effectName);
+    this.DestroyEffect(effectGO);
+    yield return (object) null;
+  }
+
   public void PlayEffect(
     CardData card,
     bool isCaster,
@@ -48,6 +86,33 @@ public class EffectsManager : MonoBehaviour
     if (!GameManager.Instance.ConfigShowEffects)
       return;
     this.StartCoroutine(this.PlayEffectCo(card, isCaster, isHero, theTransform));
+  }
+
+  public void PlayEffect(
+    string TargetEffect,
+    Transform TargetTransform,
+    bool isHero,
+    bool castInCenter,
+    float delay = 0.0f)
+  {
+    this.StartCoroutine(this.PlayEffectCo(TargetEffect, TargetTransform, isHero, castInCenter, delay));
+  }
+
+  private IEnumerator PlayEffectCo(
+    string TargetEffect,
+    Transform TargetTransform,
+    bool isHero,
+    bool castInCenter,
+    float delay = 0.0f)
+  {
+    EffectsManager effectsManager = this;
+    yield return (object) new WaitForSeconds(delay);
+    GameObject effect = effectsManager.GetEffect();
+    Effects component = effect.GetComponent<Effects>();
+    if (!effect.gameObject.activeSelf)
+      effect.gameObject.SetActive(true);
+    component.Play(TargetEffect, TargetTransform, isHero, !isHero, castInCenter);
+    effectsManager.StartCoroutine(effectsManager.StopEffectWithDelay(effect, component, TargetEffect, 3f));
   }
 
   private IEnumerator PlayEffectCo(
@@ -97,11 +162,12 @@ public class EffectsManager : MonoBehaviour
     bool isHero,
     Transform theTransform,
     bool flip,
-    float delay = 0.0f)
+    float delay = 0.0f,
+    bool casterInCenter = false)
   {
     if (!GameManager.Instance.ConfigShowEffects)
       return;
-    this.StartCoroutine(this.PlayEffectACCo(effect, isHero, theTransform, flip, delay));
+    this.StartCoroutine(this.PlayEffectACCo(effect, isHero, theTransform, flip, delay, casterInCenter));
   }
 
   private IEnumerator PlayEffectACCo(
@@ -109,7 +175,8 @@ public class EffectsManager : MonoBehaviour
     bool isHero,
     Transform theTransform,
     bool flip,
-    float delay)
+    float delay,
+    bool casterInCenter = false)
   {
     yield return (object) Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * delay);
     if (!((Object) theTransform == (Object) null))
@@ -131,7 +198,7 @@ public class EffectsManager : MonoBehaviour
       {
         Effects effects = effectGO.GetComponent<Effects>();
         effectGO.gameObject.SetActive(true);
-        effects.Play(effect, theTransform, isHero, flip, false);
+        effects.Play(effect, theTransform, isHero, flip, casterInCenter);
         for (int _exhaust = 0; !effects.HasStopped() && _exhaust < 50; ++_exhaust)
           yield return (object) Globals.Instance.WaitForSeconds((float) ((double) Time.deltaTime * 60.0 * 0.10000000149011612));
         effects.Stop(effect);
@@ -352,6 +419,17 @@ public class EffectsManager : MonoBehaviour
     if (obj.gameObject.activeSelf)
       obj.gameObject.SetActive(false);
     this.listEffects.Add(obj);
+  }
+
+  private IEnumerator StopEffectWithDelay(
+    GameObject obj,
+    Effects effects,
+    string effect,
+    float delay)
+  {
+    yield return (object) new WaitForSeconds(delay);
+    effects.Stop(effect);
+    this.DestroyEffect(obj);
   }
 
   public void ClearEffects()

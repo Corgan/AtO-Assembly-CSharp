@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: TomeManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Steamworks.Data;
@@ -460,14 +460,26 @@ public class TomeManager : MonoBehaviour
     int num2 = 0;
     string str = "";
     Transform parent = this.glossaryPageIndex;
+    HashSet<string> stringSet = new HashSet<string>()
+    {
+      "daze",
+      "haste",
+      "frail",
+      "reloading",
+      "nightmareecho",
+      "nightmareechoa",
+      "nightmareechob",
+      "transferpain",
+      "corruptedecho"
+    };
     foreach (KeyValuePair<string, KeyNotesData> keyNote in Globals.Instance.KeyNotes)
     {
-      if (!(keyNote.Value.Id == "daze") && !(keyNote.Value.Id == "haste") && !(keyNote.Value.Id == "frail") && !(keyNote.Value.Id == "reloading"))
+      if (!stringSet.Contains(keyNote.Value.Id))
       {
         stringBuilder1.Clear();
         stringBuilder2.Clear();
         stringBuilder1.Append("<voffset=.1><sprite name=");
-        if (keyNote.Value.Id == "chain" || keyNote.Value.Id == "jump" || keyNote.Value.Id == "jump(bonus%)" || keyNote.Value.Id == "overcharge" || keyNote.Value.Id == "repeat" || keyNote.Value.Id == "repeatupto" || keyNote.Value.Id == "dispel" || keyNote.Value.Id == "purge" || keyNote.Value.Id == "discover" || keyNote.Value.Id == "reveal" || keyNote.Value.Id == "transfer" || keyNote.Value.Id == "steal" || keyNote.Value.Id == "aura" || keyNote.Value.Id == "curse" || keyNote.Value.Id == "escapes" || keyNote.Value.Id == "metamorph")
+        if (keyNote.Value.Id == "chain" || keyNote.Value.Id == "jump" || keyNote.Value.Id == "jump(bonus%)" || keyNote.Value.Id == "overcharge" || keyNote.Value.Id == "repeat" || keyNote.Value.Id == "repeatupto" || keyNote.Value.Id == "dispel" || keyNote.Value.Id == "purge" || keyNote.Value.Id == "discover" || keyNote.Value.Id == "reveal" || keyNote.Value.Id == "transfer" || keyNote.Value.Id == "steal" || keyNote.Value.Id == "aura" || keyNote.Value.Id == "curse" || keyNote.Value.Id == "escapes" || keyNote.Value.Id == "metamorph" || keyNote.Value.Id == "nightmareecho" || keyNote.Value.Id == "nightmareimage" || keyNote.Value.Id == "transferpain" || keyNote.Value.Id == "corruptedecho")
           stringBuilder1.Append("cards");
         else if (keyNote.Value.Id == "resistance")
           stringBuilder1.Append("ui_resistance");
@@ -1342,14 +1354,15 @@ public class TomeManager : MonoBehaviour
               this.tomeCards[indexTomeCard].ShowButtons(true);
               float y = -1.452f;
               GameObject gameObject2 = !((UnityEngine.Object) this.cardGOBlue[indexTomeCard] == (UnityEngine.Object) null) ? this.cardGOBlue[indexTomeCard] : UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.tomeTs[indexTomeCard]);
-              if (Globals.Instance.Cards.ContainsKey(card + "a"))
+              string lower1 = Globals.Instance.Cards[card]?.UpgradesTo1.ToLower();
+              if (!string.IsNullOrEmpty(lower1) && Globals.Instance.Cards.ContainsKey(lower1))
               {
                 flag1 = true;
                 if (!gameObject2.gameObject.activeSelf)
                   gameObject2.gameObject.SetActive(true);
                 CardItem component2 = gameObject2.GetComponent<CardItem>();
                 gameObject2.name = "cardblue_" + i.ToString();
-                component2.SetCard(card + "a", GetFromGlobal: true);
+                component2.SetCard(lower1, GetFromGlobal: true);
                 component2.SetLocalScale(new Vector3(0.25f, 0.08f, 1f));
                 component2.CreateColliderAdjusted();
                 component2.ShowBackImage(true);
@@ -1366,14 +1379,15 @@ public class TomeManager : MonoBehaviour
                 this.tomeCards[indexTomeCard].ShowButtons(false);
               }
               GameObject gameObject3 = !((UnityEngine.Object) this.cardGOGold[indexTomeCard] == (UnityEngine.Object) null) ? this.cardGOGold[indexTomeCard] : UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.tomeTs[indexTomeCard]);
-              if (Globals.Instance.Cards.ContainsKey(card + "b"))
+              string lower2 = Globals.Instance.Cards[card]?.UpgradesTo2.ToLower();
+              if (!string.IsNullOrEmpty(lower2) && Globals.Instance.Cards.ContainsKey(lower2))
               {
                 flag2 = true;
                 if (!gameObject3.gameObject.activeSelf)
                   gameObject3.gameObject.SetActive(true);
                 CardItem component3 = gameObject3.GetComponent<CardItem>();
                 gameObject3.name = "cardGold_" + i.ToString();
-                component3.SetCard(card + "b", GetFromGlobal: true);
+                component3.SetCard(lower2, GetFromGlobal: true);
                 component3.SetLocalScale(new Vector3(0.25f, 0.08f, 1f));
                 component3.CreateColliderAdjusted();
                 component3.ShowBackImage(true);
@@ -1390,7 +1404,8 @@ public class TomeManager : MonoBehaviour
                 this.tomeCards[indexTomeCard].ShowButtons(false);
               }
               GameObject gameObject4 = !((UnityEngine.Object) this.cardGORare[indexTomeCard] == (UnityEngine.Object) null) ? this.cardGORare[indexTomeCard] : UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.tomeTs[indexTomeCard]);
-              if (Globals.Instance.Cards.ContainsKey(card + "rare"))
+              string id = Globals.Instance.Cards[card]?.UpgradesToRare?.Id;
+              if (!string.IsNullOrEmpty(id) && Globals.Instance.Cards.ContainsKey(id))
               {
                 flag3 = true;
                 if (!gameObject4.gameObject.activeSelf)
@@ -1398,7 +1413,7 @@ public class TomeManager : MonoBehaviour
                 this.tomeCards[indexTomeCard].ShowButtonRare(true);
                 CardItem component4 = gameObject4.GetComponent<CardItem>();
                 gameObject4.name = "cardRare_" + i.ToString();
-                component4.SetCard(card + "rare", GetFromGlobal: true);
+                component4.SetCard(id, GetFromGlobal: true);
                 component4.SetLocalScale(new Vector3(0.25f, 0.08f, 1f));
                 component4.CreateColliderAdjusted();
                 component4.ShowBackImage(true);

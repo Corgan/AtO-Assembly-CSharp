@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CardCraftManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Photon.Pun;
@@ -14,11 +14,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using WebSocketSharp;
 
 #nullable disable
 public class CardCraftManager : MonoBehaviour
 {
   public Transform deckUI;
+  public Transform itemCorruptionUI;
   public DeckEnergy deckEnergy;
   public Transform canvasSearchT;
   public TMP_InputField searchInput;
@@ -129,6 +131,7 @@ public class CardCraftManager : MonoBehaviour
   public BotonAdvancedCraft buttonAdvancedCraft;
   public BotonAdvancedCraft buttonFilterCraft;
   public Transform filterWindow;
+  public ItemCorruptionIcon[] ItemCorruptionIcons = new ItemCorruptionIcon[4];
   private string itemListId;
   private bool isPetShop;
   private GameObject[] deckGOs;
@@ -607,6 +610,26 @@ public class CardCraftManager : MonoBehaviour
       UnityEngine.Random.InitState((AtOManager.Instance.currentMapNode + AtOManager.Instance.GetGameId() + NetworkManager.Instance.GetPlayerNick() + MapManager.Instance.GetRandomString()).GetDeterministicHashCode());
       this.InitCorruption();
     }
+    else if (this.craftType == 7)
+    {
+      this.corruptAnim.SetTrigger("hide");
+      this.corruptionTry = new int[4];
+      for (int index = 0; index < 4; ++index)
+        this.corruptionTry[index] = 0;
+      this.backgroundCorruption.gameObject.SetActive(true);
+      this.backgroundRemove.gameObject.SetActive(false);
+      this.backgroundTransmute.gameObject.SetActive(false);
+      this.backgroundCraft.gameObject.SetActive(false);
+      this.backgroundDivination.gameObject.SetActive(false);
+      this.backgroundItems.gameObject.SetActive(false);
+      this.backgroundChallenge.gameObject.SetActive(false);
+      this.minCardsT.gameObject.SetActive(false);
+      UnityEngine.Random.InitState((AtOManager.Instance.currentMapNode + AtOManager.Instance.GetGameId() + NetworkManager.Instance.GetPlayerNick() + DateTime.UtcNow.Second.ToString()).GetDeterministicHashCode());
+      this.deckUI.gameObject.SetActive(false);
+      this.itemCorruptionUI.gameObject.SetActive(true);
+      this.ShowCharacterCorruptionItems();
+      this.InitCorruption();
+    }
     if (this.craftType >= 3 && this.craftType != 6)
       return;
     this.CreateDeck(this.heroIndex);
@@ -645,7 +668,10 @@ public class CardCraftManager : MonoBehaviour
       this.searchTerm = "";
       this.canvasSearchCloseT.gameObject.SetActive(false);
     }
-    this.ShowListCardsForCraft(1, true);
+    if (this.craftType == 2)
+      this.ShowListCardsForCraft(1, true);
+    else if (this.craftType == 4)
+      this.ShowItemsForBuy();
   }
 
   private IEnumerator ShowCardsSingle()
@@ -737,6 +763,16 @@ public class CardCraftManager : MonoBehaviour
       this.InitCorruption();
       this.corruptAnim.SetTrigger("hide");
     }
+    else if (this.craftType == 7)
+    {
+      this.ShowCharacterCorruptionItems();
+      if ((UnityEngine.Object) TownManager.Instance != (UnityEngine.Object) null && TownManager.Instance.characterWindow.IsActive())
+        TownManager.Instance.ShowDeck(characterIndex);
+      else if ((UnityEngine.Object) MapManager.Instance != (UnityEngine.Object) null && MapManager.Instance.characterWindow.IsActive())
+        MapManager.Instance.ShowDeck(characterIndex);
+      if (AtOManager.Instance.CharInTown() && AtOManager.Instance.TownTutorialStep == 2)
+        return;
+    }
     if (!((UnityEngine.Object) TownManager.Instance != (UnityEngine.Object) null))
       return;
     if (!GameManager.Instance.IsMultiplayer() || AtOManager.Instance.GetHero(characterIndex).Owner == NetworkManager.Instance.GetPlayerNick())
@@ -789,7 +825,7 @@ public class CardCraftManager : MonoBehaviour
   private void ShowRemainingUses()
   {
     int num = AtOManager.Instance.GetCraftReaminingUses(this.heroIndex);
-    if (this.craftType == 6)
+    if (this.craftType == 6 || this.craftType == 7)
       num = 3 - this.corruptionTry[this.heroIndex];
     if (num > 0)
     {
@@ -1137,7 +1173,7 @@ public class CardCraftManager : MonoBehaviour
       stringBuilder.Append("<sprite name=dust> ");
     else if (this.craftType == 4)
       stringBuilder.Append("<sprite name=gold> ");
-    else if (this.craftType == 6)
+    else if (this.craftType == 6 || this.craftType == 7)
       stringBuilder.Append("<sprite name=dust> ");
     stringBuilder.Append(cost);
     return stringBuilder.ToString();
@@ -1220,7 +1256,7 @@ public class CardCraftManager : MonoBehaviour
         bool flag1 = true;
         bool flag2 = false;
         CardData cardData = Globals.Instance.GetCardData(cardId, false);
-        if (cardData.CardClass == Enums.CardClass.Injury && AtOManager.Instance.GetNgPlus() >= 9)
+        if (cardData.CardClass == Enums.CardClass.Injury && AtOManager.Instance.GetNgPlus() >= 9 && AtOManager.Instance.CharInTown())
           flag2 = true;
         else if (cardData.CardClass == Enums.CardClass.Injury || cardData.CardClass == Enums.CardClass.Boon)
         {
@@ -1439,7 +1475,7 @@ public class CardCraftManager : MonoBehaviour
     }
     else
     {
-      if (this.craftType != 6)
+      if (this.craftType != 6 && this.craftType != 7)
         return;
       this.RefreshCraftButtonsPrices();
     }
@@ -1518,7 +1554,7 @@ public class CardCraftManager : MonoBehaviour
     }
     else
     {
-      if (this.craftType != 6)
+      if (this.craftType != 6 && this.craftType != 7)
         return;
       this.oldcostRemoveText.text = "";
       this.costCorruption = this.SetPrice("Corruption", "");
@@ -1579,11 +1615,11 @@ public class CardCraftManager : MonoBehaviour
       parent = this.cardUpgradeContainer;
     else if (this.craftType == 1)
       parent = this.cardRemoveContainer;
-    else if (this.craftType == 6)
+    else if (this.craftType == 6 || this.craftType == 7)
       parent = this.cardCorruptionContainer;
     GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, parent);
     CardItem component = gameObject.GetComponent<CardItem>();
-    if (this.craftType == 6)
+    if (this.craftType == 6 || this.craftType == 7)
     {
       CardData dataFromCardData = Functions.GetCardDataFromCardData(Globals.Instance.GetCardData(cardId, false), "RARE");
       if ((UnityEngine.Object) dataFromCardData != (UnityEngine.Object) null)
@@ -1635,7 +1671,7 @@ public class CardCraftManager : MonoBehaviour
       component.SetLocalPosition(this.posRemove);
       this.removeAnim.SetTrigger("fade");
     }
-    else if (this.craftType == 6)
+    else if (this.craftType == 6 || this.craftType == 7)
     {
       gameObject.name = "TMP_Plain_" + cardIndex;
       this.CICorruption = component;
@@ -1672,6 +1708,75 @@ public class CardCraftManager : MonoBehaviour
         break;
       }
     }
+  }
+
+  private void ShowCharacterCorruptionItems()
+  {
+    if (this.currentHero == null || (UnityEngine.Object) this.currentHero.HeroData == (UnityEngine.Object) null)
+      return;
+    this.RemoveCorruptionCards();
+    this.AssignCorruptionItemSlots();
+    this.itemsOwner.text = string.Format(Texts.Instance.GetText("heroEquipment"), (object) this.currentHero.SourceName);
+    for (int index = 0; index < 4; ++index)
+    {
+      Hero hero = AtOManager.Instance.GetHero(index);
+      if (hero.Id == this.currentHero.Id)
+      {
+        this.iconDeck.auxInt = index;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.Append(Texts.Instance.GetText("deck"));
+        stringBuilder.Append("\n<color=#bbb><size=-.5>");
+        stringBuilder.Append(string.Format(Texts.Instance.GetText("cardsNum"), (object) hero.Cards.Count));
+        this.iconDeckText.text = stringBuilder.ToString();
+        break;
+      }
+    }
+  }
+
+  private void AssignCorruptionItemSlots()
+  {
+    string[] strArray = new string[4]
+    {
+      this.currentHero.Weapon,
+      this.currentHero.Armor,
+      this.currentHero.Jewelry,
+      this.currentHero.Accesory
+    };
+    for (int index = 0; index < this.ItemCorruptionIcons.Length; ++index)
+    {
+      this.AssignSpriteToCorruptionIcons(this.ItemCorruptionIcons[index], strArray[index]);
+      this.AssignInternalIdToCorruptionIcons(this.ItemCorruptionIcons[index], strArray[index], index);
+      if (strArray[index].ToLower().Contains("rare"))
+      {
+        this.ItemCorruptionIcons[index].AllowInput(false);
+        this.ItemCorruptionIcons[index].ShowRareParticles();
+      }
+      else
+      {
+        bool state = !strArray[index].IsNullOrEmpty();
+        this.ItemCorruptionIcons[index].AllowInput(state);
+        this.ItemCorruptionIcons[index].ShowRareParticles(false);
+      }
+    }
+  }
+
+  private void AssignSpriteToCorruptionIcons(ItemCorruptionIcon iconItem, string type)
+  {
+    Sprite sprite = (Sprite) null;
+    if ((bool) (UnityEngine.Object) iconItem && !type.IsNullOrEmpty())
+      sprite = Globals.Instance.GetCardData(type).Sprite;
+    iconItem.SetSprite(sprite);
+  }
+
+  private void AssignInternalIdToCorruptionIcons(
+    ItemCorruptionIcon iconItem,
+    string itemId,
+    int index)
+  {
+    CardData cardData = Globals.Instance.GetCardData(itemId);
+    if (!(bool) (UnityEngine.Object) iconItem || !(bool) (UnityEngine.Object) cardData || itemId.IsNullOrEmpty())
+      return;
+    iconItem.SetInternalId(itemId + "_" + index.ToString());
   }
 
   public void HoverItem(bool state, Enums.CardType cardType)
@@ -1752,7 +1857,7 @@ public class CardCraftManager : MonoBehaviour
   public void ShowItemsForBuy(int pageNum = 1, string itemBought = "")
   {
     this.SetBlocked(false);
-    List<string> stringList = new List<string>();
+    List<string> stringList1 = new List<string>();
     bool flag1 = true;
     bool flag2 = false;
     this.maxPetNumber.gameObject.SetActive(false);
@@ -1777,7 +1882,7 @@ public class CardCraftManager : MonoBehaviour
     this.rerollButton.gameObject.SetActive(false);
     this.rerollButtonLock.gameObject.SetActive(false);
     this.rerollButtonWarning.gameObject.SetActive(false);
-    List<string> itemList;
+    List<string> stringList2;
     if (!this.isPetShop)
     {
       if (AtOManager.Instance.CharInTown() && PlayerManager.Instance.PlayerHaveSupply("townUpgrade_5_1"))
@@ -1813,7 +1918,7 @@ public class CardCraftManager : MonoBehaviour
         this.petShopButton.GetComponent<BotonGeneric>().Enable();
         this.petShopButton.GetComponent<BotonGeneric>().ShowBackground(false);
       }
-      itemList = AtOManager.Instance.GetItemList(this.itemListId);
+      stringList2 = AtOManager.Instance.GetItemList(this.itemListId);
       LootData lootData = Globals.Instance.GetLootData(this.itemListId);
       if (!AtOManager.Instance.CharInTown() && (UnityEngine.Object) lootData.ShadyModel != (UnityEngine.Object) null)
       {
@@ -1850,149 +1955,150 @@ public class CardCraftManager : MonoBehaviour
         this.itemShopButton.GetComponent<BotonGeneric>().Enable();
         this.itemShopButton.GetComponent<BotonGeneric>().ShowBackground(false);
       }
-      itemList = Globals.Instance.CardItemByType[Enums.CardType.Pet];
+      stringList2 = Globals.Instance.CardItemByType[Enums.CardType.Pet];
     }
-    if (itemList == null)
+    if (stringList2 == null)
     {
       pageNum = this.currentItemsPageNum;
     }
     else
     {
+      if (GameManager.Instance.GetDeveloperMode())
+        stringList2 = stringList2.Where<string>((Func<string, bool>) (item => item.ToLower().Contains(this.searchTerm))).ToList<string>();
       int num1 = 0;
       float num2 = 4f;
       float num3 = num2 * 2f;
-      int total = Mathf.CeilToInt((float) itemList.Count / num3);
+      int total = Mathf.CeilToInt((float) stringList2.Count / num3);
       if (pageNum < 1 || pageNum > total)
       {
         pageNum = this.currentItemsPageNum;
+        if (!GameManager.Instance.GetDeveloperMode())
+          return;
       }
-      else
+      this.currentItemsPageNum = pageNum;
+      this.ClearCraftPages();
+      int num4 = 0;
+      for (int index = 0; index < stringList2.Count; ++index)
       {
-        this.currentItemsPageNum = pageNum;
-        this.ClearCraftPages();
-        int num4 = 0;
-        for (int index = 0; index < itemList.Count; ++index)
+        if ((double) num4 >= (double) (pageNum - 1) * (double) num3 && (double) num4 < (double) pageNum * (double) num3)
         {
-          if ((double) num4 >= (double) (pageNum - 1) * (double) num3 && (double) num4 < (double) pageNum * (double) num3)
+          CardCraftItem component;
+          CardData cardData;
+          if (!this.craftCardItemDict.ContainsKey(num1))
           {
-            CardCraftItem component;
-            CardData cardData;
-            if (!this.craftCardItemDict.ContainsKey(num1))
+            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.cardCraftItem, new Vector3(0.0f, 0.0f, -3f), Quaternion.identity, this.cardItemContainer);
+            component = gameObject.transform.GetComponent<CardCraftItem>();
+            gameObject.name = stringList2[index];
+            this.craftCardItemDict.Add(num1, component);
+            int num5 = Mathf.FloorToInt((float) num1 / num2);
+            float x = (float) ((double) this.cardItemContainer.transform.localPosition.x - 1.2000000476837158 + (double) num1 % (double) num2 * 2.5);
+            float y = (float) ((double) this.cardItemContainer.transform.localPosition.y + 3.0499999523162842 - 4.1999998092651367 * (double) num5);
+            component.SetPosition(new Vector3(x, y, 0.0f));
+            component.SetIndex(num1);
+            component.SetHero(this.currentHero);
+            component.SetGenericCard(true);
+            cardData = Globals.Instance.GetCardData(stringList2[index], false);
+            int cost = this.SetPrice("Item", Enum.GetName(typeof (Enums.CardRarity), (object) cardData.CardRarity), stringList2[index], this.craftTierZone);
+            component.SetButtonTextItem(this.ButtonText(cost));
+            component.SetCard(stringList2[index], this.itemListId, this.currentHero);
+          }
+          else
+          {
+            component = this.craftCardItemDict[num1];
+            component.gameObject.name = stringList2[index];
+            component.gameObject.SetActive(true);
+            cardData = Globals.Instance.GetCardData(stringList2[index], false);
+            int cost = this.SetPrice("Item", Enum.GetName(typeof (Enums.CardRarity), (object) cardData.CardRarity), stringList2[index], this.craftTierZone);
+            component.SetButtonTextItem(this.ButtonText(cost));
+            component.SetCard(stringList2[index], this.itemListId, this.currentHero);
+          }
+          bool flag3 = false;
+          if ((UnityEngine.Object) component != (UnityEngine.Object) null)
+          {
+            string key = this.itemListId + component.cardId;
+            if (AtOManager.Instance.boughtItemInShopByWho != null && AtOManager.Instance.boughtItemInShopByWho.ContainsKey(key))
             {
-              GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.cardCraftItem, new Vector3(0.0f, 0.0f, -3f), Quaternion.identity, this.cardItemContainer);
-              component = gameObject.transform.GetComponent<CardCraftItem>();
-              gameObject.name = itemList[index];
-              this.craftCardItemDict.Add(num1, component);
-              int num5 = Mathf.FloorToInt((float) num1 / num2);
-              float x = (float) ((double) this.cardItemContainer.transform.localPosition.x - 1.2000000476837158 + (double) num1 % (double) num2 * 2.5);
-              float y = (float) ((double) this.cardItemContainer.transform.localPosition.y + 3.0499999523162842 - 4.1999998092651367 * (double) num5);
-              component.SetPosition(new Vector3(x, y, 0.0f));
-              component.SetIndex(num1);
-              component.SetHero(this.currentHero);
-              component.SetGenericCard(true);
-              cardData = Globals.Instance.GetCardData(itemList[index], false);
-              int cost = this.SetPrice("Item", Enum.GetName(typeof (Enums.CardRarity), (object) cardData.CardRarity), itemList[index], this.craftTierZone);
-              component.SetButtonTextItem(this.ButtonText(cost));
-              component.SetCard(itemList[index], this.itemListId, this.currentHero);
+              this.ShowPortraitItemBought(AtOManager.Instance.boughtItemInShopByWho[key], _CCI: component);
+              component.EnableButton(false);
+              component.ShowDisable(true);
+              component.ShowSold(true);
+              flag3 = true;
             }
             else
             {
-              component = this.craftCardItemDict[num1];
-              component.gameObject.name = itemList[index];
-              component.gameObject.SetActive(true);
-              cardData = Globals.Instance.GetCardData(itemList[index], false);
-              int cost = this.SetPrice("Item", Enum.GetName(typeof (Enums.CardRarity), (object) cardData.CardRarity), itemList[index], this.craftTierZone);
-              component.SetButtonTextItem(this.ButtonText(cost));
-              component.SetCard(itemList[index], this.itemListId, this.currentHero);
+              Transform transform = component.transform.GetChild(1).transform.GetChild(0).transform.Find("itemBuyer");
+              if ((UnityEngine.Object) transform != (UnityEngine.Object) null)
+                UnityEngine.Object.Destroy((UnityEngine.Object) transform.gameObject);
             }
-            bool flag3 = false;
-            if ((UnityEngine.Object) component != (UnityEngine.Object) null)
-            {
-              string key = this.itemListId + component.cardId;
-              if (AtOManager.Instance.boughtItemInShopByWho != null && AtOManager.Instance.boughtItemInShopByWho.ContainsKey(key))
-              {
-                this.ShowPortraitItemBought(AtOManager.Instance.boughtItemInShopByWho[key], _CCI: component);
-                component.EnableButton(false);
-                component.ShowDisable(true);
-                component.ShowSold(true);
-                flag3 = true;
-              }
-              else
-              {
-                Transform transform = component.transform.GetChild(1).transform.GetChild(0).transform.Find("itemBuyer");
-                if ((UnityEngine.Object) transform != (UnityEngine.Object) null)
-                  UnityEngine.Object.Destroy((UnityEngine.Object) transform.gameObject);
-              }
-            }
-            if (!this.isPetShop)
-            {
-              if (!PlayerManager.Instance.IsCardUnlocked(itemList[index]))
-              {
-                PlayerManager.Instance.CardUnlock(itemList[index]);
-                if ((UnityEngine.Object) component != (UnityEngine.Object) null)
-                  component.GetCI().ShowUnlocked(false);
-              }
-            }
-            else if ((UnityEngine.Object) component != (UnityEngine.Object) null)
-            {
-              if (!flag3)
-                component.ShowSold(false);
-              if (!flag1 || !PlayerManager.Instance.IsCardUnlocked(itemList[index]))
-              {
-                component.ShowDisable(true);
-                component.EnableButton(false);
-              }
-              else if (!flag3)
-              {
-                component.ShowSold(false);
-                if (CardCraftManager.Instance.CanBuy("Item", component.cardId))
-                {
-                  component.EnableButton(true);
-                  component.ShowDisable(false);
-                }
-                else
-                {
-                  component.EnableButton(false);
-                  component.ShowDisable(true);
-                }
-              }
-            }
-            if ((UnityEngine.Object) component != (UnityEngine.Object) null && component.enabled)
-            {
-              if ((UnityEngine.Object) cardData != (UnityEngine.Object) null && cardData.CardType == Enums.CardType.Pet && cardData.Sku != "" && !SteamManager.Instance.PlayerHaveDLC(cardData.Sku))
-              {
-                component.EnableButton(false);
-                component.ShowDisable(true);
-                string _text = string.Format(Texts.Instance.GetText("requiredDLC"), (object) SteamManager.Instance.GetDLCName(cardData.Sku));
-                component.ShowLock(true, _text);
-              }
-              else
-                component.ShowLock(false);
-            }
-            ++num1;
           }
-          ++num4;
-        }
-        if (total > 1)
-        {
-          if ((double) num1 < (double) num2 * 2.0)
+          if (!this.isPetShop)
           {
-            for (int key = num1; (double) key < (double) num2 * 2.0; ++key)
+            if (!PlayerManager.Instance.IsCardUnlocked(stringList2[index]))
             {
-              if (this.craftCardItemDict.ContainsKey(key))
-                this.craftCardItemDict[key].transform.gameObject.SetActive(false);
+              PlayerManager.Instance.CardUnlock(stringList2[index]);
+              if ((UnityEngine.Object) component != (UnityEngine.Object) null)
+                component.GetCI().ShowUnlocked(false);
             }
           }
-          this.CreateCraftPages(pageNum, total);
+          else if ((UnityEngine.Object) component != (UnityEngine.Object) null)
+          {
+            if (!flag3)
+              component.ShowSold(false);
+            if (!flag1 || !PlayerManager.Instance.IsCardUnlocked(stringList2[index]))
+            {
+              component.ShowDisable(true);
+              component.EnableButton(false);
+            }
+            else if (!flag3)
+            {
+              component.ShowSold(false);
+              if (CardCraftManager.Instance.CanBuy("Item", component.cardId))
+              {
+                component.EnableButton(true);
+                component.ShowDisable(false);
+              }
+              else
+              {
+                component.EnableButton(false);
+                component.ShowDisable(true);
+              }
+            }
+          }
+          if ((UnityEngine.Object) component != (UnityEngine.Object) null && component.enabled)
+          {
+            if ((UnityEngine.Object) cardData != (UnityEngine.Object) null && cardData.CardType == Enums.CardType.Pet && cardData.Sku != "" && !SteamManager.Instance.PlayerHaveDLC(cardData.Sku))
+            {
+              component.EnableButton(false);
+              component.ShowDisable(true);
+              string _text = string.Format(Texts.Instance.GetText("requiredDLC"), (object) SteamManager.Instance.GetDLCName(cardData.Sku));
+              component.ShowLock(true, _text);
+            }
+            else
+              component.ShowLock(false);
+          }
+          ++num1;
         }
-        if (!flag2 || this.shadyDealInitiated)
-          return;
-        this.GetShadyDealRemaining();
-        this.SetShadyDealLeftUses();
-        this.GetShadyDealDustGold(itemList);
-        this.SetShadyDealDustGoldValues();
-        this.shadyDealInitiated = true;
+        ++num4;
       }
+      if (total > 1 || GameManager.Instance.GetDeveloperMode())
+      {
+        if ((double) num1 < (double) num2 * 2.0)
+        {
+          for (int key = num1; (double) key < (double) num2 * 2.0; ++key)
+          {
+            if (this.craftCardItemDict.ContainsKey(key))
+              this.craftCardItemDict[key].transform.gameObject.SetActive(false);
+          }
+        }
+        this.CreateCraftPages(pageNum, total);
+      }
+      if (!flag2 || this.shadyDealInitiated)
+        return;
+      this.GetShadyDealRemaining();
+      this.SetShadyDealLeftUses();
+      this.GetShadyDealDustGold(stringList2);
+      this.SetShadyDealDustGoldValues();
+      this.shadyDealInitiated = true;
     }
   }
 
@@ -2445,6 +2551,8 @@ public class CardCraftManager : MonoBehaviour
       return;
     Enums.CardClass result2 = Enums.CardClass.None;
     Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof (Enums.HeroClass), (object) AtOManager.Instance.GetHero(this.heroIndex).HeroData.HeroSubClass.HeroClassSecondary), out result2);
+    Enums.CardClass result3 = Enums.CardClass.None;
+    Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof (Enums.HeroClass), (object) AtOManager.Instance.GetHero(this.heroIndex).HeroData.HeroSubClass.HeroClassThird), out result3);
     List<string> stringList = new List<string>();
     if (AtOManager.Instance.advancedCraft)
     {
@@ -2458,17 +2566,31 @@ public class CardCraftManager : MonoBehaviour
           stringList.Add(Globals.Instance.CardListByClass[result2][index]);
         stringList.Sort();
       }
+      if (result3 != Enums.CardClass.None)
+      {
+        int count3 = Globals.Instance.CardListByClass[result3].Count;
+        for (int index = 0; index < count3; ++index)
+          stringList.Add(Globals.Instance.CardListByClass[result3][index]);
+        stringList.Sort();
+      }
     }
     else
     {
-      int count3 = Globals.Instance.CardListNotUpgradedByClass[result1].Count;
-      for (int index = 0; index < count3; ++index)
+      int count4 = Globals.Instance.CardListNotUpgradedByClass[result1].Count;
+      for (int index = 0; index < count4; ++index)
         stringList.Add(Globals.Instance.CardListNotUpgradedByClass[result1][index]);
       if (result2 != Enums.CardClass.None)
       {
-        int count4 = Globals.Instance.CardListNotUpgradedByClass[result2].Count;
-        for (int index = 0; index < count4; ++index)
+        int count5 = Globals.Instance.CardListNotUpgradedByClass[result2].Count;
+        for (int index = 0; index < count5; ++index)
           stringList.Add(Globals.Instance.CardListNotUpgradedByClass[result2][index]);
+        stringList.Sort();
+      }
+      if (result3 != Enums.CardClass.None)
+      {
+        int count6 = Globals.Instance.CardListNotUpgradedByClass[result3].Count;
+        for (int index = 0; index < count6; ++index)
+          stringList.Add(Globals.Instance.CardListNotUpgradedByClass[result3][index]);
         stringList.Sort();
       }
     }
@@ -2563,34 +2685,45 @@ public class CardCraftManager : MonoBehaviour
           foreach (string str4 in AtOManager.Instance.craftFilterAura)
           {
             flag = false;
-            string str5 = !(str4 == "stanza") ? str4 : "stanzai";
-            if ((UnityEngine.Object) cardData.Aura != (UnityEngine.Object) null && cardData.Aura.Id == str5)
+            string _aura = "";
+            _aura = !(str4 == "stanza") ? str4 : "stanzai";
+            if ((UnityEngine.Object) cardData.Aura != (UnityEngine.Object) null && cardData.Aura.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.Aura2 != (UnityEngine.Object) null && cardData.Aura2.Id == str5)
+            else if ((UnityEngine.Object) cardData.Aura2 != (UnityEngine.Object) null && cardData.Aura2.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.Aura3 != (UnityEngine.Object) null && cardData.Aura3.Id == str5)
+            else if ((UnityEngine.Object) cardData.Aura3 != (UnityEngine.Object) null && cardData.Aura3.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.AuraSelf != (UnityEngine.Object) null && cardData.AuraSelf.Id == str5)
+            else if ((UnityEngine.Object) cardData.AuraSelf != (UnityEngine.Object) null && cardData.AuraSelf.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.AuraSelf2 != (UnityEngine.Object) null && cardData.AuraSelf2.Id == str5)
+            else if ((UnityEngine.Object) cardData.AuraSelf2 != (UnityEngine.Object) null && cardData.AuraSelf2.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.AuraSelf3 != (UnityEngine.Object) null && cardData.AuraSelf3.Id == str5)
+            else if ((UnityEngine.Object) cardData.AuraSelf3 != (UnityEngine.Object) null && cardData.AuraSelf3.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.SpecialAuraCurseNameGlobal != (UnityEngine.Object) null && cardData.SpecialAuraCurseNameGlobal.Id == str5)
+            else if (cardData.Auras != null && cardData.Auras.Length != 0)
+            {
+              if (((IEnumerable<CardData.AuraBuffs>) cardData.Auras).Any<CardData.AuraBuffs>((Func<CardData.AuraBuffs, bool>) (x =>
+              {
+                if ((UnityEngine.Object) x.aura != (UnityEngine.Object) null && x.aura.Id == _aura)
+                  return true;
+                return (UnityEngine.Object) x.auraSelf != (UnityEngine.Object) null && x.auraSelf.Id == _aura;
+              })))
+                flag = true;
+            }
+            else if ((UnityEngine.Object) cardData.SpecialAuraCurseNameGlobal != (UnityEngine.Object) null && cardData.SpecialAuraCurseNameGlobal.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.SpecialAuraCurseName1 != (UnityEngine.Object) null && cardData.SpecialAuraCurseName1.Id == str5)
+            else if ((UnityEngine.Object) cardData.SpecialAuraCurseName1 != (UnityEngine.Object) null && cardData.SpecialAuraCurseName1.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.SpecialAuraCurseName2 != (UnityEngine.Object) null && cardData.SpecialAuraCurseName2.Id == str5)
+            else if ((UnityEngine.Object) cardData.SpecialAuraCurseName2 != (UnityEngine.Object) null && cardData.SpecialAuraCurseName2.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseSelf != (UnityEngine.Object) null && cardData.HealAuraCurseSelf.Id == str5)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseSelf != (UnityEngine.Object) null && cardData.HealAuraCurseSelf.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseName != (UnityEngine.Object) null && cardData.HealAuraCurseName.Id == str5)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseName != (UnityEngine.Object) null && cardData.HealAuraCurseName.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseName2 != (UnityEngine.Object) null && cardData.HealAuraCurseName2.Id == str5)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseName2 != (UnityEngine.Object) null && cardData.HealAuraCurseName2.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseName3 != (UnityEngine.Object) null && cardData.HealAuraCurseName3.Id == str5)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseName3 != (UnityEngine.Object) null && cardData.HealAuraCurseName3.Id == _aura)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseName4 != (UnityEngine.Object) null && cardData.HealAuraCurseName4.Id == str5)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseName4 != (UnityEngine.Object) null && cardData.HealAuraCurseName4.Id == _aura)
               flag = true;
             if (!flag)
               break;
@@ -2598,36 +2731,47 @@ public class CardCraftManager : MonoBehaviour
         }
         if (flag && AtOManager.Instance.craftFilterCurse.Count > 0)
         {
-          foreach (string str6 in AtOManager.Instance.craftFilterCurse)
+          foreach (string str5 in AtOManager.Instance.craftFilterCurse)
           {
+            string curse = str5;
             flag = false;
-            if ((UnityEngine.Object) cardData.Curse != (UnityEngine.Object) null && cardData.Curse.Id == str6)
+            if ((UnityEngine.Object) cardData.Curse != (UnityEngine.Object) null && cardData.Curse.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.Curse2 != (UnityEngine.Object) null && cardData.Curse2.Id == str6)
+            else if ((UnityEngine.Object) cardData.Curse2 != (UnityEngine.Object) null && cardData.Curse2.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.Curse3 != (UnityEngine.Object) null && cardData.Curse3.Id == str6)
+            else if ((UnityEngine.Object) cardData.Curse3 != (UnityEngine.Object) null && cardData.Curse3.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.CurseSelf != (UnityEngine.Object) null && cardData.CurseSelf.Id == str6)
+            else if ((UnityEngine.Object) cardData.CurseSelf != (UnityEngine.Object) null && cardData.CurseSelf.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.CurseSelf2 != (UnityEngine.Object) null && cardData.CurseSelf2.Id == str6)
+            else if ((UnityEngine.Object) cardData.CurseSelf2 != (UnityEngine.Object) null && cardData.CurseSelf2.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.CurseSelf3 != (UnityEngine.Object) null && cardData.CurseSelf3.Id == str6)
+            else if ((UnityEngine.Object) cardData.CurseSelf3 != (UnityEngine.Object) null && cardData.CurseSelf3.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.SpecialAuraCurseNameGlobal != (UnityEngine.Object) null && cardData.SpecialAuraCurseNameGlobal.Id == str6)
+            else if (cardData.Curses != null && cardData.Curses.Length != 0)
+            {
+              if (((IEnumerable<CardData.CurseDebuffs>) cardData.Curses).Any<CardData.CurseDebuffs>((Func<CardData.CurseDebuffs, bool>) (x =>
+              {
+                if ((UnityEngine.Object) x.curse != (UnityEngine.Object) null && x.curse.Id == curse)
+                  return true;
+                return (UnityEngine.Object) x.curseSelf != (UnityEngine.Object) null && x.curseSelf.Id == curse;
+              })))
+                flag = true;
+            }
+            else if ((UnityEngine.Object) cardData.SpecialAuraCurseNameGlobal != (UnityEngine.Object) null && cardData.SpecialAuraCurseNameGlobal.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.SpecialAuraCurseName1 != (UnityEngine.Object) null && cardData.SpecialAuraCurseName1.Id == str6)
+            else if ((UnityEngine.Object) cardData.SpecialAuraCurseName1 != (UnityEngine.Object) null && cardData.SpecialAuraCurseName1.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.SpecialAuraCurseName2 != (UnityEngine.Object) null && cardData.SpecialAuraCurseName2.Id == str6)
+            else if ((UnityEngine.Object) cardData.SpecialAuraCurseName2 != (UnityEngine.Object) null && cardData.SpecialAuraCurseName2.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseSelf != (UnityEngine.Object) null && cardData.HealAuraCurseSelf.Id == str6)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseSelf != (UnityEngine.Object) null && cardData.HealAuraCurseSelf.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseName != (UnityEngine.Object) null && cardData.HealAuraCurseName.Id == str6)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseName != (UnityEngine.Object) null && cardData.HealAuraCurseName.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseName2 != (UnityEngine.Object) null && cardData.HealAuraCurseName2.Id == str6)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseName2 != (UnityEngine.Object) null && cardData.HealAuraCurseName2.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseName3 != (UnityEngine.Object) null && cardData.HealAuraCurseName3.Id == str6)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseName3 != (UnityEngine.Object) null && cardData.HealAuraCurseName3.Id == curse)
               flag = true;
-            else if ((UnityEngine.Object) cardData.HealAuraCurseName4 != (UnityEngine.Object) null && cardData.HealAuraCurseName4.Id == str6)
+            else if ((UnityEngine.Object) cardData.HealAuraCurseName4 != (UnityEngine.Object) null && cardData.HealAuraCurseName4.Id == curse)
               flag = true;
             if (!flag)
               break;
@@ -3517,7 +3661,12 @@ public class CardCraftManager : MonoBehaviour
     }
     AtOManager.Instance.GetHero(this.heroIndex).Cards = new List<string>();
     for (int index = 0; index < stringList.Count; ++index)
+    {
+      CardData cardData = Globals.Instance.GetCardData(stringList[index], false);
+      if (GameManager.Instance.IsSingularity() && cardData.CardUpgraded != Enums.CardUpgraded.No && !cardData.Starter)
+        stringList[index] = cardData.BaseCard.ToLower();
       _cardList.Add(stringList[index]);
+    }
     AtOManager.Instance.GetHero(this.heroIndex).Cards = _cardList;
     this.loadDeckContainer.gameObject.SetActive(false);
     this.CreateDeck(this.heroIndex);
@@ -3810,7 +3959,16 @@ public class CardCraftManager : MonoBehaviour
   {
     if (!this.CanBuy("Corruption"))
       return;
-    this.craftCoroutine = this.StartCoroutine(this.BuyCorruptionCo());
+    if (this.craftType == 6)
+    {
+      this.craftCoroutine = this.StartCoroutine(this.BuyCorruptionCo());
+    }
+    else
+    {
+      if (this.craftType != 7)
+        return;
+      this.craftCoroutine = this.StartCoroutine(this.BuyItemCorruptionCo());
+    }
   }
 
   private IEnumerator BuyCorruptionCo()
@@ -3865,6 +4023,81 @@ public class CardCraftManager : MonoBehaviour
       yield return (object) Globals.Instance.WaitForSeconds(0.2f);
       cardCraftManager.cardVerticalDeck[cardIndex].ReplaceWithCard(cardDataAux, "RARE");
       cardCraftManager.cardVerticalDeck[cardIndex].ShowLock(true, false);
+      cardCraftManager.corruptAnim.SetTrigger("hide");
+      cardCraftManager.RemoveCorruptionCards();
+      cardCraftManager.ActivateButtonCorruption();
+      cardCraftManager.DeactivateCorruptions();
+      cardCraftManager.SetBlocked(false);
+    }
+  }
+
+  private IEnumerator BuyItemCorruptionCo()
+  {
+    CardCraftManager cardCraftManager = this;
+    if (!cardCraftManager.blocked && !((UnityEngine.Object) cardCraftManager.CICorruption == (UnityEngine.Object) null))
+    {
+      cardCraftManager.SetBlocked(true);
+      cardCraftManager.BG_Corruption.Disable();
+      int cardIndex = int.Parse(cardCraftManager.CICorruption.transform.gameObject.name.Split('_', StringSplitOptions.None)[2]);
+      AtOManager.Instance.PayDust(cardCraftManager.SetPrice("Corruption", ""));
+      AtOManager.Instance.SubstractCraftReaminingUses(cardCraftManager.heroIndex);
+      if (cardCraftManager.IsCorruptionEnabled(1))
+        AtOManager.Instance.AddPerkToHeroGlobal(cardCraftManager.heroIndex, "perkcorruptionspeed" + cardCraftManager.corruptionTry[cardCraftManager.heroIndex].ToString());
+      if (cardCraftManager.IsCorruptionEnabled(2))
+        AtOManager.Instance.AddPerkToHeroGlobal(cardCraftManager.heroIndex, "perkcorruptionhealth" + cardCraftManager.corruptionTry[cardCraftManager.heroIndex].ToString());
+      if (cardCraftManager.IsCorruptionEnabled(3))
+        AtOManager.Instance.AddPerkToHeroGlobal(cardCraftManager.heroIndex, "perkcorruptionresist" + cardCraftManager.corruptionTry[cardCraftManager.heroIndex].ToString());
+      int corruption = cardCraftManager.CalculateCorruption();
+      CardData cardDataAux = (CardData) null;
+      bool success = false;
+      if (corruption < 100)
+      {
+        int _chanceRolled = UnityEngine.Random.Range(0, 100);
+        cardCraftManager.StartCoroutine(cardCraftManager.CorruptionRollForChance(_chanceRolled, corruption));
+        if (_chanceRolled <= corruption)
+          success = true;
+        yield return (object) Globals.Instance.WaitForSeconds(2.5f);
+      }
+      else
+        success = true;
+      if (success)
+      {
+        cardDataAux = Functions.GetCardDataFromCardData(cardCraftManager.cardData, "RARE");
+        AtOManager.Instance.AddItemToHero(cardCraftManager.heroIndex, cardDataAux.Id);
+        cardCraftManager.ItemCorruptionIcons[cardIndex].ShowRareParticles();
+      }
+      else
+      {
+        switch (cardCraftManager.cardData.CardType)
+        {
+          case Enums.CardType.Weapon:
+            cardDataAux = Globals.Instance.GetCardData("brokenitem");
+            break;
+          case Enums.CardType.Armor:
+            cardDataAux = Globals.Instance.GetCardData("burneditem");
+            break;
+          case Enums.CardType.Jewelry:
+            cardDataAux = Globals.Instance.GetCardData("tampereditem");
+            break;
+          case Enums.CardType.Accesory:
+            cardDataAux = Globals.Instance.GetCardData("contaminateditem");
+            break;
+        }
+        if ((UnityEngine.Object) cardDataAux != (UnityEngine.Object) null)
+          AtOManager.Instance.AddItemToHero(cardCraftManager.heroIndex, cardDataAux.Id);
+        else
+          AtOManager.Instance.RemoveItemFromHero(true, cardCraftManager.heroIndex, cardCraftManager.cardData.CardType.ToString().ToLower());
+      }
+      cardCraftManager.AssignCorruptionItemSlots();
+      if (!success)
+        cardCraftManager.ItemCorruptionIcons[cardIndex].AllowInput(false);
+      ++cardCraftManager.corruptionTry[cardCraftManager.heroIndex];
+      cardCraftManager.ShowRemainingUses();
+      cardCraftManager.CICorruption.cardrevealed = true;
+      cardCraftManager.CICorruption.EnableTrail();
+      cardCraftManager.CICorruption.TopLayeringOrder("UI", -2000);
+      cardCraftManager.CICorruption.PlayDissolveParticle();
+      yield return (object) Globals.Instance.WaitForSeconds(0.2f);
       cardCraftManager.corruptAnim.SetTrigger("hide");
       cardCraftManager.RemoveCorruptionCards();
       cardCraftManager.ActivateButtonCorruption();

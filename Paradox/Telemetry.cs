@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Paradox.Telemetry
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using PDX.SDK.Contracts.Enums.Errors;
@@ -21,6 +21,22 @@ namespace Paradox
   public class Telemetry
   {
     private static bool debugTelemetry;
+
+    public static async Task<bool> IsConsentAvailable()
+    {
+      return await Startup.PDXContext.Telemetry.IsTelemetryConsentPresentable();
+    }
+
+    public static async Task<bool> GetConsentChoice()
+    {
+      GetConsentChoiceResult telemetryConsentChoice = await Startup.PDXContext.Telemetry.GetTelemetryConsentChoice();
+      return telemetryConsentChoice.Success && telemetryConsentChoice.ConsentChoice;
+    }
+
+    public static async Task SetConsentChoice(bool value)
+    {
+      PDX.SDK.Contracts.Result result = await Startup.PDXContext.Telemetry.SetTelemetryConsentChoice(value);
+    }
 
     public static async void SendStartGame()
     {
@@ -45,7 +61,32 @@ namespace Paradox
             case "2666340":
               list.Add("Amelia, the Queen");
               continue;
+            case "2879680":
+              list.Add("Nenukil, the Engineer");
+              continue;
+            case "2879690":
+              list.Add("The Obsidian Uprising");
+              continue;
+            case "3185630":
+              list.Add("Shores of Sahti");
+              continue;
+            case "3185640":
+              list.Add("Bernard, the Alchemist");
+              continue;
+            case "3185650":
+              list.Add("Sigrun, the Valkyrie");
+              continue;
+            case "3473700":
+              list.Add("Tulah, the Spider Queen");
+              continue;
+            case "3473720":
+              list.Add("The Sunken Temple");
+              continue;
+            case "3875470":
+              list.Add("Project Necropolis");
+              continue;
             default:
+              list.Add(Globals.Instance.SkuAvailable[index]);
               continue;
           }
         }
@@ -475,6 +516,11 @@ namespace Paradox
       {
         case "aqua":
           zoneName = "Aquarfall";
+          break;
+        case "cast":
+        case "cour":
+        case "wood":
+          zoneName = "Necropolis";
           break;
         case "drea":
           zoneName = "The Dreadnought";

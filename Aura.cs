@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Aura
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -41,6 +41,14 @@ public class Aura
   public void ConsumeAura() => --this.auraCharges;
 
   public void ConsumeAll() => this.auraCharges = 0;
+
+  public Aura DeepClone()
+  {
+    Aura aura = new Aura();
+    aura.ACData = this.acData.DeepClone();
+    aura.SetAura(this.acData, this.auraCharges);
+    return aura;
+  }
 
   public AuraCurseData ACData
   {

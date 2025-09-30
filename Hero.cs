@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Hero
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -14,8 +14,6 @@ public class Hero : Character
 {
   [SerializeField]
   private GameObject gameObjectAnimated;
-  [SerializeField]
-  private string internalId = "";
   private Sprite heroSprite;
   private Sprite borderSprite;
 
@@ -49,9 +47,9 @@ public class Hero : Character
     this.ClassName = this.HeroData.HeroName.ToLower();
     this.SubclassName = heroSubClass.Id;
     if ((UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null)
-      this.internalId = MatchManager.Instance.GetRandomString();
+      this.InternalId = MatchManager.Instance.GetRandomString();
     else
-      this.internalId = Functions.RandomString(6f);
+      this.InternalId = Functions.RandomString(6f);
   }
 
   public void InitHP()
@@ -186,13 +184,13 @@ public class Hero : Character
     this.ImmuneShadow = true;
   }
 
-  public void InitData()
+  public override void InitData()
   {
     if (!((UnityEngine.Object) this.HeroData != (UnityEngine.Object) null))
       return;
     this.InitGeneralData();
     SubClassData heroSubClass = this.HeroData.HeroSubClass;
-    this.Id = heroSubClass.Id + "_" + this.internalId;
+    this.Id = heroSubClass.Id + "_" + this.InternalId;
     this.InitHP();
     this.InitEnergy();
     this.InitSpeed();
@@ -234,6 +232,23 @@ public class Hero : Character
       return false;
     if (traitData.Id == "eternalbond")
       this.Pet = "harleyrare";
+    else if (traitData.Id == "templelurkers")
+    {
+      if (this.Pet.StartsWith("cocoon", StringComparison.OrdinalIgnoreCase) || this.Pet.StartsWith("liante", StringComparison.OrdinalIgnoreCase))
+        this.Pet = "templelurkerpet";
+    }
+    else if (traitData.Id == "mentalscavengers")
+    {
+      if (this.Pet.StartsWith("cocoon", StringComparison.OrdinalIgnoreCase) || this.Pet.StartsWith("liante", StringComparison.OrdinalIgnoreCase))
+        this.Pet = "mentalscavengerspet";
+    }
+    else if (traitData.Id == "spiderqueen")
+    {
+      if (this.Pet == "templelurkerpet")
+        this.Pet = "templelurkerpetrare";
+      else if (this.Pet == "mentalscavengerspet")
+        this.Pet = "mentalscavengerspetrare";
+    }
     int traitLevel = this.HeroData.HeroSubClass.GetTraitLevel(traitName);
     if (traitLevel < 0 || this.Traits[traitLevel] != null && this.Traits[traitLevel] != "")
       return false;
@@ -523,11 +538,5 @@ public class Hero : Character
   {
     get => this.gameObjectAnimated;
     set => this.gameObjectAnimated = value;
-  }
-
-  public string InternalId
-  {
-    get => this.internalId;
-    set => this.internalId = value;
   }
 }

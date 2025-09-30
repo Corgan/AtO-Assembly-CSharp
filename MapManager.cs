@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: MapManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -624,7 +624,7 @@ public class MapManager : MonoBehaviour
     for (int index = 0; index < playerRequeriments.Count; ++index)
     {
       EventRequirementData requirementData = Globals.Instance.GetRequirementData(playerRequeriments[index]);
-      if (requirementData.RequirementTrack && requirementData.CanShowRequeriment(AtOManager.Instance.GetMapZone(AtOManager.Instance.currentMapNode), Enums.Zone.None))
+      if ((UnityEngine.Object) requirementData != (UnityEngine.Object) null && requirementData.RequirementTrack && requirementData.CanShowRequeriment(AtOManager.Instance.GetMapZone(AtOManager.Instance.currentMapNode), Enums.Zone.None))
       {
         GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.eventTrackPrefab, Vector3.zero, Quaternion.identity, this.trackList);
         gameObject.transform.localPosition = new Vector3(0.0f, -0.55f * (float) num, 0.0f);
@@ -1554,9 +1554,10 @@ public class MapManager : MonoBehaviour
     CardPlayerPackData _cardPlayerGamePack = null,
     bool _cardPlayerPairsGame = false,
     CardPlayerPairsPackData _cardPlayerPairsGamePack = null,
-    bool _corruption = false)
+    bool _corruption = false,
+    bool _itemCorruption = false)
   {
-    this.StartCoroutine(this.CloseEventFromEventCo(_destinationNode, _combatData, _eventData, _upgrade, _discount, _maxQuantity, _healer, _craft, _shopListId, _lootListId, _maxCraftRarity, _cardPlayerGame, _cardPlayerGamePack, _cardPlayerPairsGame, _cardPlayerPairsGamePack, _corruption));
+    this.StartCoroutine(this.CloseEventFromEventCo(_destinationNode, _combatData, _eventData, _upgrade, _discount, _maxQuantity, _healer, _craft, _shopListId, _lootListId, _maxCraftRarity, _cardPlayerGame, _cardPlayerGamePack, _cardPlayerPairsGame, _cardPlayerPairsGamePack, _corruption, _itemCorruption));
   }
 
   private IEnumerator CloseEventFromEventCo(
@@ -1575,7 +1576,8 @@ public class MapManager : MonoBehaviour
     CardPlayerPackData _cardPlayerGamePack = null,
     bool _cardPlayerPairsGame = false,
     CardPlayerPairsPackData _cardPlayerPairsGamePack = null,
-    bool _corruption = false)
+    bool _corruption = false,
+    bool _itemCorruption = false)
   {
     MapManager mapManager = this;
     UnityEngine.Object.Destroy((UnityEngine.Object) mapManager.eventGO);
@@ -1622,6 +1624,8 @@ public class MapManager : MonoBehaviour
       AtOManager.Instance.DoCardCraft(_discount, _maxQuantity, _maxCraftRarity);
     else if (_corruption)
       AtOManager.Instance.DoCardCorruption(_discount, _maxQuantity);
+    else if (_itemCorruption)
+      AtOManager.Instance.DoItemCorrupt(_discount, _maxQuantity);
     else if (_shopListId != "")
       AtOManager.Instance.DoItemShop(_shopListId, _discount);
     else if (_lootListId != "")

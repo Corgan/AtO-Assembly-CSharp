@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: NPCItem
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using UnityEngine;
@@ -24,21 +24,22 @@ public class NPCItem : CharacterItem
 
   public override void Start() => base.Start();
 
-  public void Init(NPC _npc)
+  public void Init(NPC _npc, bool useAltModels = false)
   {
     if ((Object) this.npcData == (Object) null)
       return;
     this.NPC = _npc;
     this.Hero = (Hero) null;
+    GameObject original = useAltModels ? this.npcData.GameObjectAnimatedAlternate : this.npcData.GameObjectAnimated;
     this.IsHero = false;
     this.energyT.parent.gameObject.SetActive(false);
     this.GO_Buffs.transform.localPosition = new Vector3(0.03f, -1.05f, 0.0f);
-    if ((Object) this.npcData.GameObjectAnimated != (Object) null)
+    if ((Object) original != (Object) null)
     {
-      GameObject GO = Object.Instantiate<GameObject>(this.npcData.GameObjectAnimated, Vector3.zero, Quaternion.identity, this.transform);
+      GameObject GO = Object.Instantiate<GameObject>(original, Vector3.zero, Quaternion.identity, this.transform);
       this.animatedTransform = GO.transform;
-      GO.transform.localPosition = this.npcData.GameObjectAnimated.transform.localPosition;
-      GO.transform.localRotation = this.npcData.GameObjectAnimated.transform.localRotation;
+      GO.transform.localPosition = original.transform.localPosition;
+      GO.transform.localRotation = original.transform.localRotation;
       this.GetComponent<CharacterItem>().SetOriginalLocalPosition(GO.transform.localPosition);
       GO.name = this.transform.name;
       this.DisableCollider();
@@ -48,6 +49,7 @@ public class NPCItem : CharacterItem
       characterGoItem._characterItem = this.GetComponent<CharacterItem>();
       this.CharImageSR.sprite = (Sprite) null;
       this.Anim = GO.GetComponent<Animator>();
+      this.animatedSprites.Clear();
       this.GetSpritesFromAnimated(GO);
       this.transformForCombatText = GO.transform;
       BoxCollider2D boxCollider2D = GO.GetComponent<BoxCollider2D>();

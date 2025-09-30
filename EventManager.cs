@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: EventManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Photon.Pun;
@@ -48,7 +48,9 @@ public class EventManager : MonoBehaviour
   private TMP_Text[] charTresultKO = new TMP_Text[4];
   private EventData currentEvent;
   private EventReplyData replySelected;
+  [SerializeField]
   private float topReply = 3.3f;
+  [SerializeField]
   private float distanceReply = 1.2f;
   public int optionSelected = -1;
   private Hero[] heroes = new Hero[4];
@@ -72,6 +74,7 @@ public class EventManager : MonoBehaviour
   private bool followUpHealer;
   private bool followUpCraft;
   private bool followUpCorruption;
+  private bool followUpItemCorruption;
   private bool followUpCardPlayerGame;
   private CardPlayerPackData followUpCardPlayerGamePack;
   private bool followUpCardPlayerPairsGame;
@@ -165,7 +168,7 @@ public class EventManager : MonoBehaviour
     PopupManager.Instance.ClosePopup();
     AudioManager.Instance.DoBSO("Map");
     SaveManager.SavePlayerData();
-    MapManager.Instance.CloseEventFromEvent(this.destinationNode, this.followUpCombatData, this.followUpEventData, this.followUpUpgrade, this.followUpDiscount, this.followUpMaxQuantity, this.followUpHealer, this.followUpCraft, this.followUpShopListId, this.followUpLootListId, this.followUpMaxCraftRarity, this.followUpCardPlayerGame, this.followUpCardPlayerGamePack, this.followUpCardPlayerPairsGame, this.followUpCardPlayerPairsGamePack, this.followUpCorruption);
+    MapManager.Instance.CloseEventFromEvent(this.destinationNode, this.followUpCombatData, this.followUpEventData, this.followUpUpgrade, this.followUpDiscount, this.followUpMaxQuantity, this.followUpHealer, this.followUpCraft, this.followUpShopListId, this.followUpLootListId, this.followUpMaxCraftRarity, this.followUpCardPlayerGame, this.followUpCardPlayerGamePack, this.followUpCardPlayerPairsGame, this.followUpCardPlayerPairsGamePack, this.followUpCorruption, this.followUpItemCorruption);
   }
 
   public void SetEvent(EventData _eventData)
@@ -551,7 +554,7 @@ public class EventManager : MonoBehaviour
     {
       if ((UnityEngine.Object) this.replysGOs[_replyIndex] != (UnityEngine.Object) null)
       {
-        this.replysGOs[_replyIndex].transform.localPosition = new Vector3(0.18f, this.topReply - this.distanceReply * (float) _replyOrder, -1f);
+        this.replysGOs[_replyIndex].transform.localPosition = new Vector3(0.0f, this.topReply - this.distanceReply * (float) _replyOrder, -1f);
         this.replys[_replyIndex].Init(this.currentEvent.EventId, _replyIndex, _replyOrder);
         ++_replyOrder;
         replyIndexForAutomaticSelection = _replyIndex;
@@ -1768,6 +1771,12 @@ label_87:
           this.followUpDiscount = this.replySelected.SsDiscount;
           this.followUpMaxQuantity = this.replySelected.SsMaxQuantity;
         }
+        if (this.replySelected.SsItemCorruptionUI)
+        {
+          this.followUpItemCorruption = true;
+          this.followUpDiscount = this.replySelected.SsDiscount;
+          this.followUpMaxQuantity = this.replySelected.SsMaxQuantity;
+        }
         if ((UnityEngine.Object) this.replySelected.SsShopList != (UnityEngine.Object) null)
         {
           this.followUpShopListId = this.replySelected.SsShopList.Id;
@@ -1923,6 +1932,12 @@ label_87:
           this.followUpDiscount = this.replySelected.SscDiscount;
           this.followUpMaxQuantity = this.replySelected.SscMaxQuantity;
         }
+        if (this.replySelected.SscItemCorruptionUI)
+        {
+          this.followUpItemCorruption = true;
+          this.followUpDiscount = this.replySelected.SscDiscount;
+          this.followUpMaxQuantity = this.replySelected.SscMaxQuantity;
+        }
         if ((UnityEngine.Object) this.replySelected.SscShopList != (UnityEngine.Object) null)
         {
           this.followUpShopListId = this.replySelected.SscShopList.Id;
@@ -2048,6 +2063,12 @@ label_87:
           this.followUpDiscount = this.replySelected.FlDiscount;
           this.followUpMaxQuantity = this.replySelected.FlMaxQuantity;
         }
+        if (this.replySelected.FlItemCorruptionUI)
+        {
+          this.followUpItemCorruption = true;
+          this.followUpDiscount = this.replySelected.FlDiscount;
+          this.followUpMaxQuantity = this.replySelected.FlMaxQuantity;
+        }
         if ((UnityEngine.Object) this.replySelected.FlShopList != (UnityEngine.Object) null)
         {
           this.followUpShopListId = this.replySelected.FlShopList.Id;
@@ -2160,6 +2181,12 @@ label_87:
         if (this.replySelected.FlcCorruptionUI)
         {
           this.followUpCorruption = true;
+          this.followUpDiscount = this.replySelected.FlcDiscount;
+          this.followUpMaxQuantity = this.replySelected.FlcMaxQuantity;
+        }
+        if (this.replySelected.FlcItemCorruptionUI)
+        {
+          this.followUpItemCorruption = true;
           this.followUpDiscount = this.replySelected.FlcDiscount;
           this.followUpMaxQuantity = this.replySelected.FlcMaxQuantity;
         }

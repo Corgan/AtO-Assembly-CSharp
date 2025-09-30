@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: NPCData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System.Collections.Generic;
@@ -23,6 +23,8 @@ public class NPCData : ScriptableObject
   private bool isBoss;
   [SerializeField]
   private bool isNamed;
+  [SerializeField]
+  public bool OnlyKillBossWhenHpZero;
   [SerializeField]
   private NPCData baseMonster;
   [SerializeField]
@@ -62,6 +64,13 @@ public class NPCData : ScriptableObject
   private float fluffOffsetX;
   [SerializeField]
   private float fluffOffsetY;
+  [Header("Alternative Game objects")]
+  [SerializeField]
+  private GameObject gameObjectAnimatedAlternate;
+  [SerializeField]
+  private Sprite spriteSpeedAlternate;
+  [SerializeField]
+  private Sprite spritePortraitAlternate;
   [Header("Sound")]
   [SerializeField]
   private AudioClip hitSound;
@@ -126,7 +135,11 @@ public class NPCData : ScriptableObject
     set => this.npcName = value;
   }
 
-  public string Id => this.id;
+  public string Id
+  {
+    get => this.id;
+    set => this.id = value;
+  }
 
   public string Description
   {
@@ -170,9 +183,17 @@ public class NPCData : ScriptableObject
     set => this.gameObjectAnimated = value;
   }
 
+  public GameObject GameObjectAnimatedAlternate
+  {
+    get => this.gameObjectAnimatedAlternate;
+    set => this.gameObjectAnimatedAlternate = value;
+  }
+
   public Sprite Sprite => this.sprite;
 
   public Sprite SpriteSpeed => this.spriteSpeed;
+
+  public Sprite SpriteSpeedAlternate => this.spriteSpeedAlternate;
 
   public float PosBottom
   {
@@ -180,7 +201,11 @@ public class NPCData : ScriptableObject
     set => this.posBottom = value;
   }
 
-  public int Hp => this.hp;
+  public int Hp
+  {
+    get => this.hp;
+    set => this.hp = value;
+  }
 
   public int Energy
   {
@@ -194,7 +219,11 @@ public class NPCData : ScriptableObject
     set => this.energyTurn = value;
   }
 
-  public int Speed => this.speed;
+  public int Speed
+  {
+    get => this.speed;
+    set => this.speed = value;
+  }
 
   public int ResistSlashing
   {
@@ -284,6 +313,12 @@ public class NPCData : ScriptableObject
   {
     get => this.spritePortrait;
     set => this.spritePortrait = value;
+  }
+
+  public Sprite SpritePortraitAlternate
+  {
+    get => this.spritePortraitAlternate;
+    set => this.spritePortraitAlternate = value;
   }
 
   public List<string> AuracurseImmune

@@ -1,13 +1,14 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: ChallengeSelectionManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Photon.Pun;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -816,6 +817,15 @@ public class ChallengeSelectionManager : MonoBehaviour
           this.AddToDictAU(cardData.Aura3.Id, index1);
         if ((UnityEngine.Object) cardData.AuraSelf3 != (UnityEngine.Object) null)
           this.AddToDictAU(cardData.AuraSelf3.Id, index1);
+        if (cardData.Auras != null && cardData.Auras.Length != 0)
+        {
+          foreach (string au in ((IEnumerable<CardData.AuraBuffs>) cardData.Auras).SelectMany<CardData.AuraBuffs, AuraCurseData>((Func<CardData.AuraBuffs, IEnumerable<AuraCurseData>>) (x => (IEnumerable<AuraCurseData>) new AuraCurseData[2]
+          {
+            x.aura,
+            x.auraSelf
+          })).Where<AuraCurseData>((Func<AuraCurseData, bool>) (x => (UnityEngine.Object) x != (UnityEngine.Object) null)).Select<AuraCurseData, string>((Func<AuraCurseData, string>) (x => x.Id)))
+            this.AddToDictAU(au, index1);
+        }
         if ((UnityEngine.Object) cardData.Curse != (UnityEngine.Object) null)
           this.AddToDictAU(cardData.Curse.Id, index1);
         if ((UnityEngine.Object) cardData.CurseSelf != (UnityEngine.Object) null)
@@ -828,6 +838,15 @@ public class ChallengeSelectionManager : MonoBehaviour
           this.AddToDictAU(cardData.Curse3.Id, index1);
         if ((UnityEngine.Object) cardData.CurseSelf3 != (UnityEngine.Object) null)
           this.AddToDictAU(cardData.CurseSelf3.Id, index1);
+        if (cardData.Curses != null && cardData.Curses.Length != 0)
+        {
+          foreach (string au in ((IEnumerable<CardData.CurseDebuffs>) cardData.Curses).SelectMany<CardData.CurseDebuffs, AuraCurseData>((Func<CardData.CurseDebuffs, IEnumerable<AuraCurseData>>) (x => (IEnumerable<AuraCurseData>) new AuraCurseData[2]
+          {
+            x.curse,
+            x.curseSelf
+          })).Where<AuraCurseData>((Func<AuraCurseData, bool>) (x => (UnityEngine.Object) x != (UnityEngine.Object) null)).Select<AuraCurseData, string>((Func<AuraCurseData, string>) (x => x.Id)))
+            this.AddToDictAU(au, index1);
+        }
       }
     }
     StringBuilder stringBuilder = new StringBuilder();
@@ -942,6 +961,15 @@ public class ChallengeSelectionManager : MonoBehaviour
             this.AddToDictAU(cardData.Aura3.Id, index1);
           if ((UnityEngine.Object) cardData.AuraSelf3 != (UnityEngine.Object) null)
             this.AddToDictAU(cardData.AuraSelf3.Id, index1);
+          if (cardData.Auras != null && cardData.Auras.Length != 0)
+          {
+            foreach (string au in ((IEnumerable<CardData.AuraBuffs>) cardData.Auras).SelectMany<CardData.AuraBuffs, AuraCurseData>((Func<CardData.AuraBuffs, IEnumerable<AuraCurseData>>) (x => (IEnumerable<AuraCurseData>) new AuraCurseData[2]
+            {
+              x.aura,
+              x.auraSelf
+            })).Where<AuraCurseData>((Func<AuraCurseData, bool>) (x => (UnityEngine.Object) x != (UnityEngine.Object) null)).Select<AuraCurseData, string>((Func<AuraCurseData, string>) (x => x.Id)))
+              this.AddToDictAU(au, index1);
+          }
           if ((UnityEngine.Object) cardData.Curse != (UnityEngine.Object) null)
             this.AddToDictAU(cardData.Curse.Id, index1);
           if ((UnityEngine.Object) cardData.CurseSelf != (UnityEngine.Object) null)
@@ -954,6 +982,15 @@ public class ChallengeSelectionManager : MonoBehaviour
             this.AddToDictAU(cardData.Curse3.Id, index1);
           if ((UnityEngine.Object) cardData.CurseSelf3 != (UnityEngine.Object) null)
             this.AddToDictAU(cardData.CurseSelf3.Id, index1);
+          if (cardData.Curses != null && cardData.Curses.Length != 0)
+          {
+            foreach (string au in ((IEnumerable<CardData.CurseDebuffs>) cardData.Curses).SelectMany<CardData.CurseDebuffs, AuraCurseData>((Func<CardData.CurseDebuffs, IEnumerable<AuraCurseData>>) (x => (IEnumerable<AuraCurseData>) new AuraCurseData[2]
+            {
+              x.curse,
+              x.curseSelf
+            })).Where<AuraCurseData>((Func<AuraCurseData, bool>) (x => (UnityEngine.Object) x != (UnityEngine.Object) null)).Select<AuraCurseData, string>((Func<AuraCurseData, string>) (x => x.Id)))
+              this.AddToDictAU(au, index1);
+          }
         }
       }
     }

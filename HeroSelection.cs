@@ -1,10 +1,10 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: HeroSelection
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
-using System.Collections;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
@@ -14,8 +14,10 @@ public class HeroSelection : MonoBehaviour
   public bool blocked;
   private Vector3 destination = Vector3.zero;
   private GameObject oldBox;
-  private SubClassData subClassData;
+  internal SubClassData subClassData;
   public Transform sprite;
+  public float selectedPortraitScale = 1.3f;
+  public float selectedPortraitScaleMultiplayer = 0.95f;
   public Transform spriteBackground;
   public TMP_Text nameTM;
   public TMP_Text rankTM;
@@ -32,9 +34,9 @@ public class HeroSelection : MonoBehaviour
   public Transform perkPointsT;
   public Transform botPerks;
   public Transform lockIcon;
-  private Transform parent;
+  public Transform DefaultParent;
   private Transform nameT;
-  private SpriteRenderer spriteSR;
+  internal SpriteRenderer spriteSR;
   private SpriteRenderer spriteBackgroundSR;
   private Vector3 startMousePos;
   private Vector3 startPos;
@@ -44,6 +46,7 @@ public class HeroSelection : MonoBehaviour
   private bool isInOriPosition = true;
   private bool multiplayerBlocked;
   public bool selected;
+  public bool HeroPicked;
   private bool dlcBlocked;
   public Transform whiteSquare;
 
@@ -73,7 +76,6 @@ public class HeroSelection : MonoBehaviour
     this.nameOver.gameObject.SetActive(false);
     this.rankOver.gameObject.SetActive(false);
     this.spriteSR.enabled = false;
-    this.parent = this.gameObject.transform.parent;
     if (GameManager.Instance.IsObeliskChallenge())
       this.botPerks.gameObject.SetActive(false);
     if (this.blocked || this.multiplayerBlocked || this.dlcBlocked)
@@ -122,6 +124,16 @@ public class HeroSelection : MonoBehaviour
   public string GetSubclassName()
   {
     return (Object) this.subClassData != (Object) null ? this.subClassData.SubClassName : "";
+  }
+
+  public string GetHeroClass()
+  {
+    return (Object) this.subClassData != (Object) null ? this.subClassData.HeroClass.ToString() : "";
+  }
+
+  public string GetHeroClassSecondary()
+  {
+    return (Object) this.subClassData != (Object) null ? this.subClassData.HeroClassSecondary.ToString() : "";
   }
 
   public void SetSprite(Sprite _sprite = null, Sprite _spriteBorder = null, Sprite _spriteLocked = null)
@@ -251,16 +263,17 @@ public class HeroSelection : MonoBehaviour
     }
   }
 
-  public void AssignHeroToBox(GameObject _box) => this.StartCoroutine(this.AssignCo(_box));
+  public async void AssignHeroToBox(GameObject _box) => await this.AssignCo(_box);
 
-  private IEnumerator AssignCo(GameObject _box)
+  private async Task AssignCo(GameObject _box)
   {
     HeroSelection _heroSelection = this;
-    yield return (object) Globals.Instance.WaitForSeconds(0.1f);
+    _heroSelection.HeroPicked = true;
+    await Task.Delay(100);
     _heroSelection.isInOriPosition = false;
     _heroSelection.transform.parent = HeroSelectionManager.Instance.boxCharacters;
     _heroSelection.sprite.position = _box.transform.position;
-    _heroSelection.sprite.transform.localScale = new Vector3(1f, 1f, 1f);
+    _heroSelection.sprite.transform.localScale = Vector3.one * (GameManager.Instance.IsMultiplayer() ? _heroSelection.selectedPortraitScaleMultiplayer : _heroSelection.selectedPortraitScale);
     _heroSelection.spriteBackgroundSR.color = new Color(0.3f, 0.3f, 0.3f, 1f);
     _heroSelection.spriteSR.sortingLayerName = "Characters";
     _heroSelection.spriteSR.sortingOrder = 0;
@@ -272,15 +285,16 @@ public class HeroSelection : MonoBehaviour
     _heroSelection.rankOver.GetComponent<Renderer>().sortingOrder = 1;
     _heroSelection.nameDisabled();
     HeroSelectionManager.Instance.FillBox(_box, _heroSelection, true);
-    if (GameManager.Instance.IsObeliskChallenge())
-    {
-      _heroSelection.rankTM.gameObject.SetActive(false);
-      _heroSelection.rankOver.gameObject.SetActive(false);
-    }
+    if (!GameManager.Instance.IsObeliskChallenge())
+      return;
+    _heroSelection.rankTM.gameObject.SetActive(false);
+    _heroSelection.rankOver.gameObject.SetActive(false);
   }
 
   public void MoveToBox(GameObject _box, GameObject _oldBox, bool animation = true)
   {
+    this.HeroPicked = true;
+    HeroSelectionManager.Instance.ShowHeroesByFilterAsync(HeroSelectionManager.Instance.CurrentFilter);
     this.selected = false;
     this.oldBox = _oldBox;
     this.spriteSR.enabled = true;
@@ -299,13 +313,15 @@ public class HeroSelection : MonoBehaviour
   public void GoBackToOri()
   {
     this.selected = false;
+    this.HeroPicked = false;
+    HeroSelectionManager.Instance.ShowHeroesByFilterAsync(HeroSelectionManager.Instance.CurrentFilter);
     this.oldBox = (GameObject) null;
     this.spriteSR.enabled = false;
     this.spriteBackgroundSR.color = new Color(1f, 1f, 1f, 1f);
     this.nameRegular();
     this.nameOver.gameObject.SetActive(false);
     this.rankOver.gameObject.SetActive(false);
-    this.transform.parent = this.parent;
+    this.transform.parent = this.DefaultParent;
     this.sprite.position = this.spriteBackground.position;
     this.isInOriPosition = true;
     this.transform.localPosition = Vector3.zero;
@@ -359,6 +375,7 @@ public class HeroSelection : MonoBehaviour
 
   public void OnMouseDown()
   {
+    HeroSelectionManager.Instance?.charPopupMini.SetSubClassData(this.subClassData);
     this.showWhiteSquare(false);
     if (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode() || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame() || HeroSelectionManager.Instance.charPopup.MoveThis)
       return;
@@ -528,7 +545,7 @@ public class HeroSelection : MonoBehaviour
     this.startPos = this.sprite.position;
     this.startMousePos = Input.mousePosition;
     this.transform.parent = HeroSelectionManager.Instance.boxCharacters;
-    this.sprite.transform.localScale = new Vector3(1f, 1f, 1f);
+    this.sprite.transform.localScale = Vector3.one * (GameManager.Instance.IsMultiplayer() ? this.selectedPortraitScaleMultiplayer : this.selectedPortraitScale);
     this.spriteSR.sortingLayerName = "UI";
     this.spriteSR.sortingOrder = 100;
     this.spriteBackgroundSR.color = new Color(0.3f, 0.3f, 0.3f, 1f);

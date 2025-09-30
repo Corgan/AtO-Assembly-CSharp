@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: TraitData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System.Collections.Generic;
@@ -21,6 +21,10 @@ public class TraitData : ScriptableObject
   private string description;
   [SerializeField]
   private Enums.EventActivation activation;
+  [SerializeField]
+  private bool activateOnRuneTypeAdded;
+  [SerializeField]
+  private bool tryActivateOnEveryEvent;
   [SerializeField]
   private int timesPerTurn;
   [SerializeField]
@@ -56,6 +60,8 @@ public class TraitData : ScriptableObject
   private string auracurseImmune2 = "";
   [SerializeField]
   private string auracurseImmune3 = "";
+  [SerializeField]
+  private int maxBleedDamagePerTurn = -1;
   [Header("AuraCurse bonus")]
   [SerializeField]
   private AuraCurseData auracurseBonus1;
@@ -370,5 +376,23 @@ public class TraitData : ScriptableObject
   {
     get => this.timesPerRound;
     set => this.timesPerRound = value;
+  }
+
+  public bool ActivateOnRuneTypeAdded
+  {
+    get => this.activateOnRuneTypeAdded;
+    set => this.activateOnRuneTypeAdded = value;
+  }
+
+  public bool TryActivateOnEveryEvent
+  {
+    get => this.tryActivateOnEveryEvent;
+    set => this.tryActivateOnEveryEvent = value;
+  }
+
+  public int MaxBleedDamagePerTurn
+  {
+    get => this.maxBleedDamagePerTurn;
+    set => this.maxBleedDamagePerTurn = value;
   }
 }

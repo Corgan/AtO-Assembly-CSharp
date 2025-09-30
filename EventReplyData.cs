@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: EventReplyData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -125,6 +125,8 @@ public class EventReplyData
   [SerializeField]
   private bool ssCorruptionUI;
   [SerializeField]
+  private bool ssItemCorruptionUI;
+  [SerializeField]
   private Enums.CardRarity ssCraftUIMaxType;
   [SerializeField]
   private bool ssMerchantUI;
@@ -218,6 +220,8 @@ public class EventReplyData
   [SerializeField]
   private bool flCorruptionUI;
   [SerializeField]
+  private bool flItemCorruptionUI;
+  [SerializeField]
   private bool flMerchantUI;
   [SerializeField]
   private LootData flShopList;
@@ -293,6 +297,8 @@ public class EventReplyData
   private Enums.CardRarity sscCraftUIMaxType;
   [SerializeField]
   private bool sscCorruptionUI;
+  [SerializeField]
+  private bool sscItemCorruptionUI;
   [SerializeField]
   private bool sscMerchantUI;
   [SerializeField]
@@ -373,6 +379,8 @@ public class EventReplyData
   private Enums.CardRarity flcCraftUIMaxType;
   [SerializeField]
   private bool flcCorruptionUI;
+  [SerializeField]
+  private bool flcItemCorruptionUI;
   [SerializeField]
   private bool flcMerchantUI;
   [SerializeField]
@@ -1332,10 +1340,22 @@ public class EventReplyData
     set => this.ssCorruptionUI = value;
   }
 
+  public bool SsItemCorruptionUI
+  {
+    get => this.ssItemCorruptionUI;
+    set => this.ssItemCorruptionUI = value;
+  }
+
   public bool FlCorruptionUI
   {
     get => this.flCorruptionUI;
     set => this.flCorruptionUI = value;
+  }
+
+  public bool FlItemCorruptionUI
+  {
+    get => this.flItemCorruptionUI;
+    set => this.flItemCorruptionUI = value;
   }
 
   public bool SscCorruptionUI
@@ -1344,10 +1364,22 @@ public class EventReplyData
     set => this.sscCorruptionUI = value;
   }
 
+  public bool SscItemCorruptionUI
+  {
+    get => this.sscItemCorruptionUI;
+    set => this.sscItemCorruptionUI = value;
+  }
+
   public bool FlcCorruptionUI
   {
     get => this.flcCorruptionUI;
     set => this.flcCorruptionUI = value;
+  }
+
+  public bool FlcItemCorruptionUI
+  {
+    get => this.flcItemCorruptionUI;
+    set => this.flcItemCorruptionUI = value;
   }
 
   public int IndexForAnswerTranslation

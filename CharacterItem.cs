@@ -1,16 +1,18 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CharacterItem
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Utils;
 
 #nullable disable
 public class CharacterItem : MonoBehaviour
@@ -82,7 +84,7 @@ public class CharacterItem : MonoBehaviour
   private CombatText CT;
   private SpriteRenderer charImageSR;
   private bool isHero;
-  private bool isDying;
+  public bool IsDying;
   private Color colorFade;
   private Vector3 vectorFade;
   private Vector3 originalLocalPosition;
@@ -93,7 +95,7 @@ public class CharacterItem : MonoBehaviour
   private SpriteRenderer[] energySR;
   private Animator[] energySRAnimator;
   private EnergyPoint[] energyPoint;
-  private List<SpriteRenderer> animatedSprites;
+  internal List<SpriteRenderer> animatedSprites;
   private Dictionary<string, Material> animatedSpritesDefaultMaterial;
   private List<SetSpriteLayerFromBase> animatedSpritesOutOfCharacter;
   private Transform shadowSprite;
@@ -199,7 +201,7 @@ public class CharacterItem : MonoBehaviour
     string str3 = "#00A49E";
     StringBuilder stringBuilder1 = new StringBuilder();
     stringBuilder1.Append("<size=+26><sprite name=skull></size><size=+5>");
-    stringBuilder1.Append(Texts.Instance.GetText("characterDies"));
+    stringBuilder1.Append(string.Format(Texts.Instance.GetText("characterDies"), (object) _characterCaster.SourceName));
     stringBuilder1.Append("</size><size=0><br><br></size>");
     string str4 = stringBuilder1.ToString();
     if (_characterCaster.RoundMoved >= MatchManager.Instance.GetCurrentRound())
@@ -238,138 +240,143 @@ public class CharacterItem : MonoBehaviour
         num6 = characterActive == null || characterActive.Id != _characterCaster.Id ? 1 : 0;
       for (int index2 = 0; index2 < _characterCaster.AuraList.Count; ++index2)
       {
-        AuraCurseData auraCurseData = AtOManager.Instance.GlobalAuraCurseModificationByTraitsAndItems("consume", _characterCaster.AuraList[index2].ACData.Id, _characterCaster, (Character) null);
-        if ((UnityEngine.Object) auraCurseData == (UnityEngine.Object) null)
-          auraCurseData = _characterCaster.AuraList[index2].ACData;
-        if (auraCurseData.ProduceHealWhenConsumed && (auraCurseData.ConsumedAtTurnBegin && num6 == 0 || auraCurseData.ConsumedAtTurn && num6 == 1))
+        if (!((UnityEngine.Object) _characterCaster.AuraList[index2].ACData == (UnityEngine.Object) null))
         {
-          int heal = 0 + auraCurseData.HealWhenConsumed + Functions.FuncRoundToInt((float) _characterCaster.AuraList[index2].AuraCharges * auraCurseData.HealWhenConsumedPerCharge);
-          if (heal > 0)
+          AuraCurseData auraCurseData = AtOManager.Instance.GlobalAuraCurseModificationByTraitsAndItems("consume", _characterCaster.AuraList[index2].ACData.Id, _characterCaster, (Character) null);
+          if ((UnityEngine.Object) auraCurseData == (UnityEngine.Object) null)
+            auraCurseData = _characterCaster.AuraList[index2].ACData;
+          if (auraCurseData.ProduceHealWhenConsumed && (auraCurseData.ConsumedAtTurnBegin && num6 == 0 || auraCurseData.ConsumedAtTurn && num6 == 1))
           {
-            int num7 = _characterCaster.HealReceivedFinal(heal);
-            if (_characterCaster.GetHpLeftForMax() < num7)
-              num7 = _characterCaster.GetHpLeftForMax();
-            if (num7 > 0)
+            int heal = 0 + auraCurseData.HealWhenConsumed + Functions.FuncRoundToInt((float) _characterCaster.AuraList[index2].AuraCharges * auraCurseData.HealWhenConsumedPerCharge);
+            if (heal > 0)
             {
-              hp += num7;
-              if (num1 == 0 && num6 == 0)
+              int num7 = _characterCaster.HealReceivedFinal(heal);
+              if (_characterCaster.GetHpLeftForMax() < num7)
+                num7 = _characterCaster.GetHpLeftForMax();
+              if (num7 > 0)
               {
-                stringBuilder2.Append("<size=-1><color=#FFF>");
-                stringBuilder2.Append(Texts.Instance.GetText("preturnEffects"));
-                stringBuilder2.Append("</color></size>");
+                hp += num7;
+                if (num1 == 0 && num6 == 0)
+                {
+                  stringBuilder2.Append("<size=-1><color=#FFF>");
+                  stringBuilder2.Append(Texts.Instance.GetText("preturnEffects"));
+                  stringBuilder2.Append("</color></size>");
+                  stringBuilder2.Append("<br>");
+                  num1 = 1;
+                }
+                if (num2 == 0 && num6 == 1)
+                {
+                  stringBuilder2.Append("<size=-1><color=#FFF>");
+                  stringBuilder2.Append(Texts.Instance.GetText("postturnEffects"));
+                  stringBuilder2.Append("</color></size>");
+                  stringBuilder2.Append("<br>");
+                  num2 = 1;
+                }
+                stringBuilder2.Append("<color=");
+                stringBuilder2.Append(str3);
+                stringBuilder2.Append("> ");
+                stringBuilder2.Append("+");
+                stringBuilder2.Append(num7);
+                stringBuilder2.Append("  <sprite name=" + auraCurseData.Id);
+                stringBuilder2.Append(">");
+                stringBuilder2.Append("</color>");
+                stringBuilder2.Append("<size=-1.5><voffset=2> <color=#666>|</color>   <voffset=0>");
+                stringBuilder2.Append(hp);
+                stringBuilder2.Append("  <sprite name=heart>");
+                stringBuilder2.Append("</size>");
                 stringBuilder2.Append("<br>");
-                num1 = 1;
+                num3 += num7;
               }
-              if (num2 == 0 && num6 == 1)
-              {
-                stringBuilder2.Append("<size=-1><color=#FFF>");
-                stringBuilder2.Append(Texts.Instance.GetText("postturnEffects"));
-                stringBuilder2.Append("</color></size>");
-                stringBuilder2.Append("<br>");
-                num2 = 1;
-              }
-              stringBuilder2.Append("<color=");
-              stringBuilder2.Append(str3);
-              stringBuilder2.Append("> ");
-              stringBuilder2.Append("+");
-              stringBuilder2.Append(num7);
-              stringBuilder2.Append("  <sprite name=" + auraCurseData.Id);
-              stringBuilder2.Append(">");
-              stringBuilder2.Append("</color>");
-              stringBuilder2.Append("<size=-1.5><voffset=2> <color=#666>|</color>   <voffset=0>");
-              stringBuilder2.Append(hp);
-              stringBuilder2.Append("  <sprite name=heart>");
-              stringBuilder2.Append("</size>");
-              stringBuilder2.Append("<br>");
-              num3 += num7;
             }
           }
-        }
-        if (auraCurseData.ProduceDamageWhenConsumed && (auraCurseData.ConsumedAtTurnBegin && num6 == 0 || auraCurseData.ConsumedAtTurn && num6 == 1) && (auraCurseData.DamageWhenConsumed > 0 || (double) auraCurseData.DamageWhenConsumedPerCharge > 0.0))
-        {
-          int auraCharges3 = _characterCaster.AuraList[index2].AuraCharges;
-          int num8 = 0;
-          int num9 = 0;
-          int num10 = num8 + auraCurseData.DamageWhenConsumed;
-          int num11 = auraCharges3;
-          if ((UnityEngine.Object) auraCurseData.ConsumedDamageChargesBasedOnACCharges != (UnityEngine.Object) null)
-            num11 = _characterCaster.GetAuraCharges(auraCurseData.ConsumedDamageChargesBasedOnACCharges.Id);
-          int num12 = num10 + Functions.FuncRoundToInt(auraCurseData.DamageWhenConsumedPerCharge * (float) num11);
-          if (auraCurseData.DoubleDamageIfCursesLessThan > 0 && _characterCaster.GetAuraCurseTotal(false, true) < auraCurseData.DoubleDamageIfCursesLessThan)
-            num12 *= 2;
-          int num13;
-          if (auraCurseData.DamageTypeWhenConsumed != Enums.DamageType.None)
+          if (auraCurseData.ProduceDamageWhenConsumed && (auraCurseData.ConsumedAtTurnBegin && num6 == 0 || auraCurseData.ConsumedAtTurn && num6 == 1) && (auraCurseData.DamageWhenConsumed > 0 || (double) auraCurseData.DamageWhenConsumedPerCharge > 0.0))
           {
-            num9 = num12 <= num5 ? num12 : num5;
-            num12 -= num9;
-            num5 -= num9;
-            float num14 = (float) (-1 * _characterCaster.BonusResists(auraCurseData.DamageTypeWhenConsumed, _characterCaster.AuraList[index2].ACData.Id, num6 == 0, num6 == 1));
-            num13 = Functions.FuncRoundToInt((float) num12 + (float) ((double) num12 * (double) num14 * 0.0099999997764825821));
-          }
-          else
-            num13 = num12;
-          hp -= num13;
-          if (num6 == 0)
-            num3 -= num13;
-          else
-            num4 -= num13;
-          if (num1 == 0 && num6 == 0)
-          {
-            stringBuilder2.Append("<size=-1><color=#FFF>");
-            stringBuilder2.Append(Texts.Instance.GetText("preturnEffects"));
-            stringBuilder2.Append("</color></size>");
-            stringBuilder2.Append("<br>");
-            num1 = 1;
-          }
-          if (num2 == 0 && num6 == 1)
-          {
-            stringBuilder2.Append("<size=-1><color=#FFF>");
-            stringBuilder2.Append(Texts.Instance.GetText("postturnEffects"));
-            stringBuilder2.Append("</color></size>");
-            stringBuilder2.Append("<br>");
-            num2 = 1;
-          }
-          if (num6 == 0)
-          {
-            stringBuilder2.Append("<color=");
-            stringBuilder2.Append(str1);
-            stringBuilder2.Append("> ");
-          }
-          else
-          {
-            stringBuilder2.Append("<color=");
-            stringBuilder2.Append(str2);
-            stringBuilder2.Append("> ");
-          }
-          if (num13 != 0)
-            stringBuilder2.Append("-");
-          stringBuilder2.Append(num13);
-          stringBuilder2.Append(" ");
-          stringBuilder2.Append(" <sprite name=" + auraCurseData.Id);
-          stringBuilder2.Append(">");
-          stringBuilder2.Append("</color>");
-          stringBuilder2.Append("<size=-1.5><voffset=2> <color=#666>|</color>   <voffset=0>");
-          if (num9 > 0)
-          {
-            stringBuilder2.Append(num9);
-            stringBuilder2.Append(" <sprite name=block> ");
-          }
-          int num15 = (num13 - num12) * -1;
-          if (num15 != 0)
-          {
-            stringBuilder2.Append(num15);
-            stringBuilder2.Append("  <sprite name=ui_resistance>  ");
-          }
-          stringBuilder2.Append(hp);
-          stringBuilder2.Append("  <sprite name=heart>");
-          stringBuilder2.Append("</size>");
-          stringBuilder2.Append("<br>");
-          if (hp <= 0 && !flag1)
-          {
-            stringBuilder2.Append(str4);
+            int auraCharges3 = _characterCaster.AuraList[index2].AuraCharges;
+            int num8 = 0;
+            int num9 = 0;
+            int num10 = num8 + auraCurseData.DamageWhenConsumed;
+            int num11 = auraCharges3;
+            if ((UnityEngine.Object) auraCurseData.ConsumedDamageChargesBasedOnACCharges != (UnityEngine.Object) null)
+              num11 = _characterCaster.GetAuraCharges(auraCurseData.ConsumedDamageChargesBasedOnACCharges.Id);
+            if ((UnityEngine.Object) auraCurseData.ConsumeDamageChargesIfACApplied != (UnityEngine.Object) null && _characterCaster.GetAuraCharges(auraCurseData.ConsumeDamageChargesIfACApplied.Id) <= 0)
+              num11 = 0;
+            int num12 = num10 + Functions.FuncRoundToInt(auraCurseData.DamageWhenConsumedPerCharge * (float) num11);
+            if (auraCurseData.DoubleDamageIfCursesLessThan > 0 && _characterCaster.GetAuraCurseTotal(false, true) < auraCurseData.DoubleDamageIfCursesLessThan)
+              num12 *= 2;
+            int num13;
+            if (auraCurseData.DamageTypeWhenConsumed != Enums.DamageType.None)
+            {
+              num9 = num12 <= num5 ? num12 : num5;
+              num12 -= num9;
+              num5 -= num9;
+              float num14 = (float) (-1 * _characterCaster.BonusResists(auraCurseData.DamageTypeWhenConsumed, _characterCaster.AuraList[index2].ACData.Id, num6 == 0, num6 == 1));
+              num13 = Functions.FuncRoundToInt((float) num12 + (float) ((double) num12 * (double) num14 * 0.0099999997764825821));
+            }
+            else
+              num13 = num12;
+            hp -= num13;
             if (num6 == 0)
-              flag2 = true;
-            flag1 = true;
+              num3 -= num13;
+            else
+              num4 -= num13;
+            if (num1 == 0 && num6 == 0)
+            {
+              stringBuilder2.Append("<size=-1><color=#FFF>");
+              stringBuilder2.Append(Texts.Instance.GetText("preturnEffects"));
+              stringBuilder2.Append("</color></size>");
+              stringBuilder2.Append("<br>");
+              num1 = 1;
+            }
+            if (num2 == 0 && num6 == 1)
+            {
+              stringBuilder2.Append("<size=-1><color=#FFF>");
+              stringBuilder2.Append(Texts.Instance.GetText("postturnEffects"));
+              stringBuilder2.Append("</color></size>");
+              stringBuilder2.Append("<br>");
+              num2 = 1;
+            }
+            if (num6 == 0)
+            {
+              stringBuilder2.Append("<color=");
+              stringBuilder2.Append(str1);
+              stringBuilder2.Append("> ");
+            }
+            else
+            {
+              stringBuilder2.Append("<color=");
+              stringBuilder2.Append(str2);
+              stringBuilder2.Append("> ");
+            }
+            if (num13 != 0)
+              stringBuilder2.Append("-");
+            stringBuilder2.Append(num13);
+            stringBuilder2.Append(" ");
+            stringBuilder2.Append(" <sprite name=" + auraCurseData.Id);
+            stringBuilder2.Append(">");
+            stringBuilder2.Append("</color>");
+            stringBuilder2.Append("<size=-1.5><voffset=2> <color=#666>|</color>   <voffset=0>");
+            if (num9 > 0)
+            {
+              stringBuilder2.Append(num9);
+              stringBuilder2.Append(" <sprite name=block> ");
+            }
+            int num15 = (num13 - num12) * -1;
+            if (num15 != 0)
+            {
+              stringBuilder2.Append(num15);
+              stringBuilder2.Append("  <sprite name=ui_resistance>  ");
+            }
+            stringBuilder2.Append(hp);
+            stringBuilder2.Append("  <sprite name=heart>");
+            stringBuilder2.Append("</size>");
+            stringBuilder2.Append("<br>");
+            if (hp <= 0 && !flag1)
+            {
+              stringBuilder2.Append(str4);
+              if (num6 == 0)
+                flag2 = true;
+              flag1 = true;
+            }
           }
         }
       }
@@ -796,7 +803,7 @@ public class CharacterItem : MonoBehaviour
             this.purgedispelTitle.text = stealAuras <= 0 ? Texts.Instance.GetText("remove") : Texts.Instance.GetText("steal");
           }
         }
-        if ((UnityEngine.Object) _cardData.Aura != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Aura2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Aura3 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Curse != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Curse2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Curse3 != (UnityEngine.Object) null)
+        if ((UnityEngine.Object) _cardData.Aura != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Aura2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Aura3 != (UnityEngine.Object) null || _cardData.Auras != null && _cardData.Auras.Length != 0 || (UnityEngine.Object) _cardData.Curse != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Curse2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Curse3 != (UnityEngine.Object) null || _cardData.Curses != null && _cardData.Curses.Length != 0)
         {
           List<string> _listAuraCurse = new List<string>();
           if ((UnityEngine.Object) _cardData.Aura != (UnityEngine.Object) null)
@@ -805,12 +812,16 @@ public class CharacterItem : MonoBehaviour
             _listAuraCurse.Add(_cardData.Aura2.Id.ToLower());
           if ((UnityEngine.Object) _cardData.Aura3 != (UnityEngine.Object) null)
             _listAuraCurse.Add(_cardData.Aura3.Id.ToLower());
+          if (_cardData.Auras != null && _cardData.Auras.Length != 0)
+            _listAuraCurse.AddRange(((IEnumerable<CardData.AuraBuffs>) _cardData.Auras).Where<CardData.AuraBuffs>((Func<CardData.AuraBuffs, bool>) (x => (UnityEngine.Object) x.aura != (UnityEngine.Object) null)).Select<CardData.AuraBuffs, string>((Func<CardData.AuraBuffs, string>) (x => x.aura.Id.ToLower())));
           if ((UnityEngine.Object) _cardData.Curse != (UnityEngine.Object) null)
             _listAuraCurse.Add(_cardData.Curse.Id.ToLower());
           if ((UnityEngine.Object) _cardData.Curse2 != (UnityEngine.Object) null)
             _listAuraCurse.Add(_cardData.Curse2.Id.ToLower());
           if ((UnityEngine.Object) _cardData.Curse3 != (UnityEngine.Object) null)
             _listAuraCurse.Add(_cardData.Curse3.Id.ToLower());
+          if (_cardData.Curses != null && _cardData.Curses.Length != 0)
+            _listAuraCurse.AddRange(((IEnumerable<CardData.CurseDebuffs>) _cardData.Curses).Where<CardData.CurseDebuffs>((Func<CardData.CurseDebuffs, bool>) (x => (UnityEngine.Object) x.curse != (UnityEngine.Object) null)).Select<CardData.CurseDebuffs, string>((Func<CardData.CurseDebuffs, string>) (x => x.curse.Id.ToLower())));
           this.AmplifyBuffs(_listAuraCurse);
         }
       }
@@ -841,6 +852,21 @@ public class CharacterItem : MonoBehaviour
           stringBuilder4.Append("></size><size=-1><color=#e88>");
           stringBuilder4.Append(Texts.Instance.GetText("immune"));
           stringBuilder4.Append("</color></size><br>");
+        }
+        if (_cardData.Curses != null && _cardData.Curses.Length != 0)
+        {
+          for (int index = 0; index < _cardData.Curses.Length; ++index)
+          {
+            CardData.CurseDebuffs curse = _cardData.Curses[index];
+            if (curse != null && (UnityEngine.Object) curse.curse != (UnityEngine.Object) null)
+            {
+              stringBuilder4.Append("<size=4><sprite name=");
+              stringBuilder4.Append(curse.curse.Id);
+              stringBuilder4.Append("></size><size=-1><color=#e88>");
+              stringBuilder4.Append(Texts.Instance.GetText("immune"));
+              stringBuilder4.Append("</color></size><br>");
+            }
+          }
         }
         if (stringBuilder4.Length > 0)
           stringBuilder1.Append(stringBuilder4.ToString());
@@ -1010,7 +1036,7 @@ public class CharacterItem : MonoBehaviour
         if (this.PetItemEnchantmentFront)
           this.PetItemEnchantment.DrawOrderSprites(true, _order + 1000);
         else
-          this.PetItemEnchantment.DrawOrderSprites(false, _order - 1000 + 2);
+          this.PetItemEnchantment.DrawOrderSprites(false, _order);
       }
     }
     else
@@ -1088,8 +1114,6 @@ public class CharacterItem : MonoBehaviour
           scale -= 0.1f;
           yield return (object) Globals.Instance.WaitForSeconds(0.005f);
         }
-        if ((UnityEngine.Object) characterItem.hpBlockIconT == (UnityEngine.Object) null || (UnityEngine.Object) characterItem.hpBlockIconT.gameObject == (UnityEngine.Object) null)
-          characterItem.hpBlockIconT.localScale = new Vector3(scaleMax, scaleMax, 1f);
       }
       else
       {
@@ -1162,7 +1186,8 @@ public class CharacterItem : MonoBehaviour
         while ((double) t <= 1.0)
         {
           t += Time.deltaTime / seconds;
-          this.hpShieldT.localScale = Vector3.Lerp(new Vector3(0.0f, 0.0f, 1f), new Vector3(scaleMax + 0.1f, scaleMax + 0.1f, 1f), Mathf.SmoothStep(0.0f, 1f, t));
+          if ((UnityEngine.Object) this.hpShieldT != (UnityEngine.Object) null)
+            this.hpShieldT.localScale = Vector3.Lerp(new Vector3(0.0f, 0.0f, 1f), new Vector3(scaleMax + 0.1f, scaleMax + 0.1f, 1f), Mathf.SmoothStep(0.0f, 1f, t));
           yield return (object) null;
         }
         this.hpShieldT.localScale = new Vector3(scaleMax, scaleMax, 1f);
@@ -1277,7 +1302,7 @@ public class CharacterItem : MonoBehaviour
     List<Animator> petAnimators = new List<Animator>();
     for (int index = 0; index < 3; ++index)
     {
-      Transform transform = characterItem.transform.Find("thePetEnchantment" + index.ToString());
+      Transform transform = index != 0 ? (index != 1 ? (!characterItem.isHero ? characterItem.transform.Find("thePetEnchantment" + characterItem._npc.Enchantment3) : characterItem.transform.Find("thePetEnchantment" + characterItem._hero.Enchantment3)) : (!characterItem.isHero ? characterItem.transform.Find("thePetEnchantment" + characterItem._npc.Enchantment2) : characterItem.transform.Find("thePetEnchantment" + characterItem._hero.Enchantment2))) : (!characterItem.isHero ? characterItem.transform.Find("thePetEnchantment" + characterItem._npc.Enchantment) : characterItem.transform.Find("thePetEnchantment" + characterItem._hero.Enchantment));
       if ((UnityEngine.Object) transform != (UnityEngine.Object) null && (UnityEngine.Object) transform.GetComponent<Animator>() != (UnityEngine.Object) null)
         petAnimators.Add(transform.GetComponent<Animator>());
     }
@@ -1296,14 +1321,14 @@ public class CharacterItem : MonoBehaviour
 
   public void PetCastAnim(string animState)
   {
+    if (!((UnityEngine.Object) this.animPet != (UnityEngine.Object) null))
+      return;
     if (!this.isHero)
     {
       this.StartCoroutine(this.PetCastAnimTO(animState));
     }
     else
     {
-      if (!((UnityEngine.Object) this.animPet != (UnityEngine.Object) null))
-        return;
       this.animPet.ResetTrigger(animState);
       this.animPet.SetTrigger(animState);
       if (!(animState == "attack"))
@@ -1409,6 +1434,19 @@ public class CharacterItem : MonoBehaviour
     this.moveCenterCo = this.StartCoroutine(this.SetPositionCO(this.charImageT, new Vector3(-this.charImageT.parent.transform.localPosition.x + this.charImageT.localPosition.x, this.charImageT.localPosition.y, 0.0f), false));
   }
 
+  public void MoveToPosition(
+    Transform targetTransform,
+    Vector3 targetPosition,
+    bool returnBack,
+    bool playSmokeEffect,
+    float movementTimeS,
+    MotionGenerator.EasingType easingType = MotionGenerator.EasingType.EaseOut)
+  {
+    if ((UnityEngine.Object) this.charImageT == (UnityEngine.Object) null)
+      return;
+    this.StartCoroutine(this.MovePositionCo(targetTransform, targetPosition, returnBack, playSmokeEffect, movementTimeS, easingType));
+  }
+
   public void MoveToCenterBack()
   {
     if ((UnityEngine.Object) this.charImageT == (UnityEngine.Object) null || (double) Mathf.Abs(this.charImageT.localPosition.x - this.originalLocalPosition.x) <= 0.019999999552965164)
@@ -1426,40 +1464,26 @@ public class CharacterItem : MonoBehaviour
   {
     if (!instant && this._npc != null && this._npc.NpcData.IsBoss)
       return;
-    float num1 = 2.4f;
-    float y = 0.0f;
-    float num2 = 1.9f;
-    float x1 = 0.0f;
-    int num3 = 0;
-    if (this._hero != null)
+    int position = this._hero == null || _position != -10 ? (this._npc == null || _position != -10 ? _position : this._npc.Position) : this._hero.Position;
+    if (this._npc != null && this._npc.NPCIsBoss() && this._npc.Id.Contains("faebor"))
     {
-      num3 = _position != -10 ? _position : this._hero.Position;
-      x1 = (float) (-(double) num1 - (double) num3 * (double) num2);
+      float x = 2.4f;
+      this.healthBar.transform.localPosition = new Vector3(x, this.healthBar.transform.localPosition.y, this.healthBar.transform.localPosition.z);
+      Vector3 vector3 = new Vector3(x, 0.0f, 0.0f);
+      this.iconEnchantment.transform.position += vector3;
+      this.iconEnchantment2.transform.position += vector3;
+      this.iconEnchantment3.transform.position += vector3;
     }
-    else if (this._npc != null)
-    {
-      num3 = _position != -10 ? _position : this._npc.Position;
-      x1 = num1 + (float) num3 * num2;
-      if (this._npc.IsBigModel())
-      {
-        if (num3 == 0 || num3 == 1)
-          x1 += 0.35f * num2;
-        else
-          x1 += 0.5f * num2;
-      }
-      if (this._npc.NPCIsBoss() && this._npc.Id.Contains("faebor"))
-      {
-        float x2 = 2.4f;
-        this.healthBar.transform.localPosition = new Vector3(x2, this.healthBar.transform.localPosition.y, this.healthBar.transform.localPosition.z);
-        Vector3 vector3 = new Vector3(x2, 0.0f, 0.0f);
-        this.iconEnchantment.transform.position += vector3;
-        this.iconEnchantment2.transform.position += vector3;
-        this.iconEnchantment3.transform.position += vector3;
-      }
-    }
-    if ((double) this.transform.localPosition.x == (double) x1)
+    Vector3 localPosition = this.CalculateLocalPosition(position);
+    if (Mathf.Approximately(this.transform.localPosition.x, localPosition.x) || !instant)
       return;
-    float z = (float) num3 * (1f / 1000f);
+    this.transform.localPosition = localPosition;
+  }
+
+  public Vector3 CalculateLocalPosition(int position)
+  {
+    float positionX = this.CalculatePositionX(position);
+    float z = (float) position * (1f / 1000f);
     this.charImageT.transform.localPosition = new Vector3(this.charImageT.transform.localPosition.x, this.charImageT.transform.localPosition.y, z);
     if (!this.isHero)
     {
@@ -1473,10 +1497,32 @@ public class CharacterItem : MonoBehaviour
       else if (str.StartsWith("launcher_"))
         z = 0.01f;
     }
-    Vector3 vector3_1 = new Vector3(x1, y, z);
-    if (!instant)
-      return;
-    this.transform.localPosition = vector3_1;
+    return new Vector3(positionX, 0.0f, z);
+  }
+
+  public float CalculatePositionX(int _position)
+  {
+    float positionX = 0.0f;
+    float num1 = 2.4f;
+    float num2 = 1.9f;
+    if (this._hero != null)
+    {
+      int num3 = _position != -10 ? _position : this._hero.Position;
+      positionX = (float) (-(double) num1 - (double) num3 * (double) num2);
+    }
+    else if (this._npc != null)
+    {
+      int num4 = _position != -10 ? _position : this._npc.Position;
+      positionX = num1 + (float) num4 * num2;
+      if (this._npc.IsBigModel())
+      {
+        if (num4 == 0 || num4 == 1)
+          positionX += 0.35f * num2;
+        else
+          positionX += 0.5f * num2;
+      }
+    }
+    return positionX;
   }
 
   public bool CharIsMoving() => this.charIsMoving;
@@ -1487,28 +1533,14 @@ public class CharacterItem : MonoBehaviour
     bool returnPosition)
   {
     this.charIsMoving = true;
-    bool flag1 = false;
-    if ((double) Mathf.Abs(theTransform.localPosition.x - vectorPosition.x) < 0.019999999552965164)
-      flag1 = true;
-    else if (this._hero != null && !this._hero.Alive)
-      flag1 = true;
-    else if (this._npc != null && !this._npc.Alive)
-      flag1 = true;
-    if (flag1)
+    if (!this.IsMovementAllowed(theTransform, vectorPosition))
     {
       this.charIsMoving = false;
     }
     else
     {
-      bool flip = true;
-      if ((double) theTransform.localPosition.x < (double) vectorPosition.x)
-        flip = false;
-      if (!returnPosition)
-        MatchManager.Instance.DoStepSound();
-      EffectsManager.Instance.PlayEffectAC("smoke", this.isHero, theTransform, flip);
-      bool flag2 = false;
-      if (!this.isActive)
-        this.CharacterEnableAnim(false);
+      this.PrepareMovement(theTransform, vectorPosition, returnPosition, true);
+      this.charIsMoving = true;
       if (!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
       {
         if ((UnityEngine.Object) theTransform != (UnityEngine.Object) null)
@@ -1516,7 +1548,7 @@ public class CharacterItem : MonoBehaviour
       }
       else
       {
-        for (; !flag2 && (UnityEngine.Object) theTransform != (UnityEngine.Object) null; flag2 = true)
+        for (bool flag = false; !flag && (UnityEngine.Object) theTransform != (UnityEngine.Object) null; flag = true)
         {
           while ((UnityEngine.Object) theTransform != (UnityEngine.Object) null && (double) Mathf.Abs(theTransform.localPosition.x - vectorPosition.x) > 0.05000000074505806)
           {
@@ -1531,6 +1563,58 @@ public class CharacterItem : MonoBehaviour
         this.CharacterEnableAnim(true);
       this.charIsMoving = false;
     }
+  }
+
+  private IEnumerator MovePositionCo(
+    Transform theTransform,
+    Vector3 vectorPosition,
+    bool returnPosition,
+    bool playSmokeEffect,
+    float movementTimeS,
+    MotionGenerator.EasingType easingType)
+  {
+    CharacterItem characterItem = this;
+    characterItem.charIsMoving = true;
+    if (!characterItem.IsMovementAllowed(theTransform, vectorPosition))
+    {
+      characterItem.charIsMoving = false;
+    }
+    else
+    {
+      characterItem.PrepareMovement(theTransform, vectorPosition, returnPosition, playSmokeEffect);
+      yield return (object) characterItem.StartCoroutine(MotionGenerator.MoveWithEasing(theTransform, vectorPosition, movementTimeS, easingType, MotionGenerator.Axis.X));
+      if (!characterItem.isActive)
+        characterItem.CharacterEnableAnim(true);
+      characterItem.charIsMoving = false;
+    }
+  }
+
+  private bool IsMovementAllowed(Transform theTransform, Vector3 vectorPosition)
+  {
+    bool flag = false;
+    if ((double) Mathf.Abs(theTransform.localPosition.x - vectorPosition.x) < 0.019999999552965164)
+      flag = true;
+    else if (this._hero != null && !this._hero.Alive)
+      flag = true;
+    else if (this._npc != null && !this._npc.Alive)
+      flag = true;
+    return !flag;
+  }
+
+  private void PrepareMovement(
+    Transform theTransform,
+    Vector3 targetPosition,
+    bool returnPosition,
+    bool playSmokeEffect)
+  {
+    bool flip = (double) theTransform.localPosition.x >= (double) targetPosition.x;
+    if (!returnPosition)
+      MatchManager.Instance.DoStepSound();
+    if (playSmokeEffect)
+      EffectsManager.Instance.PlayEffectAC("smoke", this.isHero, theTransform, flip);
+    if (this.isActive)
+      return;
+    this.CharacterEnableAnim(false);
   }
 
   public void SetHP()
@@ -1607,7 +1691,7 @@ public class CharacterItem : MonoBehaviour
         this.hpPoison.localScale = new Vector3(0.0f, 1f, 1f);
       if ((UnityEngine.Object) this.hpRegen != (UnityEngine.Object) null)
         this.hpRegen.localScale = new Vector3(0.0f, 1f, 1f);
-      if (this.isDying)
+      if (this.IsDying)
         return;
       this.KillCoroutine = this.StartCoroutine(this.KillCharacterCO());
     }
@@ -1887,19 +1971,38 @@ public class CharacterItem : MonoBehaviour
     }
   }
 
-  public IEnumerator FadeInCharacter()
+  public IEnumerator FadeOutCharacter()
   {
+    float index = 1f;
+    while ((double) index > 0.0)
+    {
+      yield return (object) Globals.Instance.WaitForSeconds(0.03f);
+      index -= 0.1f;
+      if (this.animatedSprites != null && this.animatedSprites.Count > 0)
+      {
+        for (int index1 = 0; index1 < this.animatedSprites.Count; ++index1)
+          this.animatedSprites[index1].color = new Color(1f, 1f, 1f, index);
+      }
+      else if ((UnityEngine.Object) this.charImageSR != (UnityEngine.Object) null)
+        this.charImageSR.color = new Color(1f, 1f, 1f, index);
+    }
+    yield return (object) null;
+  }
+
+  public IEnumerator FadeInCharacter(float delay = 0.0f)
+  {
+    Globals.Instance.WaitForSeconds(delay);
     float index = 0.0f;
     while ((double) index < 1.0)
     {
       yield return (object) Globals.Instance.WaitForSeconds(0.03f);
       index += 0.1f;
-      if ((UnityEngine.Object) this.anim != (UnityEngine.Object) null)
+      if (this.animatedSprites != null && this.animatedSprites.Count > 0)
       {
         for (int index1 = 0; index1 < this.animatedSprites.Count; ++index1)
           this.animatedSprites[index1].color = new Color(1f, 1f, 1f, index);
       }
-      else
+      else if ((UnityEngine.Object) this.charImageSR != (UnityEngine.Object) null)
         this.charImageSR.color = new Color(1f, 1f, 1f, index);
     }
     yield return (object) null;
@@ -1914,8 +2017,8 @@ public class CharacterItem : MonoBehaviour
   {
     CharacterItem characterItem = this;
     if (Globals.Instance.ShowDebug)
-      Functions.DebugLogGD("[KILLCHARACTERCO] isDying -> " + characterItem.isDying.ToString(), "trace");
-    if (!characterItem.isDying)
+      Functions.DebugLogGD("[KILLCHARACTERCO] isDying -> " + characterItem.IsDying.ToString(), "trace");
+    if (!characterItem.IsDying)
     {
       if (characterItem.isHero && characterItem._hero == null || !characterItem.isHero && characterItem._npc == null)
       {
@@ -1923,7 +2026,7 @@ public class CharacterItem : MonoBehaviour
       }
       else
       {
-        characterItem.isDying = true;
+        characterItem.IsDying = true;
         MatchManager.Instance.SetWaitingKill(true);
         StringBuilder stringBuilder = new StringBuilder();
         if (characterItem.isHero && characterItem._hero != null)
@@ -1944,7 +2047,7 @@ public class CharacterItem : MonoBehaviour
             characterItem._hero.ActivateItem(Enums.EventActivation.Killed, (Character) characterItem._hero, 0, "");
             MatchManager.Instance.waitingDeathScreen = false;
             MatchManager.Instance.SetWaitingKill(false);
-            characterItem.isDying = false;
+            characterItem.IsDying = false;
             Debug.Log((object) "Item resurrect");
             Debug.Log((object) characterItem._hero.Alive);
             MatchManager.Instance.CreateLogEntry(true, "", "", characterItem._hero, (NPC) null, (Hero) null, (NPC) null, MatchManager.Instance.GameRound(), Enums.EventActivation.Resurrect);
@@ -1956,7 +2059,7 @@ public class CharacterItem : MonoBehaviour
             yield return (object) Globals.Instance.WaitForSeconds(0.3f);
             if (characterItem._hero.GetHp() > 0)
             {
-              characterItem.isDying = false;
+              characterItem.IsDying = false;
               MatchManager.Instance.SetWaitingKill(false);
               MatchManager.Instance.waitingDeathScreen = false;
               yield break;
@@ -1999,7 +2102,7 @@ public class CharacterItem : MonoBehaviour
           {
             characterItem._npc.ActivateItem(Enums.EventActivation.Killed, (Character) characterItem._npc, 0, "");
             yield return (object) Globals.Instance.WaitForSeconds(0.8f);
-            characterItem.isDying = false;
+            characterItem.IsDying = false;
             MatchManager.Instance.SetWaitingKill(false);
             yield break;
           }
@@ -2015,7 +2118,7 @@ public class CharacterItem : MonoBehaviour
             if (characterItem._npc.GetHp() > 0)
             {
               Debug.Log((object) "[KILLCHARACTERCO] npc resurrect");
-              characterItem.isDying = false;
+              characterItem.IsDying = false;
               MatchManager.Instance.SetWaitingKill(false);
               yield break;
             }
@@ -2038,7 +2141,13 @@ public class CharacterItem : MonoBehaviour
         }
         if (Globals.Instance.ShowDebug)
           Functions.DebugLogGD("[KILLCHARACTERCO] Kill 3", "trace");
+        if (characterItem._npc != null && characterItem._npc.Id.StartsWith("pitt"))
+        {
+          yield return (object) Globals.Instance.WaitForSeconds(0.1f);
+          MatchManager.Instance.DoSahtiRustBackground(false, true);
+        }
         float index = 1f;
+        Color hideColor = new Color(1f, 1f, 1f, 0.0f);
         while ((double) index > 0.0)
         {
           yield return (object) Globals.Instance.WaitForSeconds(0.02f);
@@ -2048,16 +2157,17 @@ public class CharacterItem : MonoBehaviour
             for (int index2 = 0; index2 < characterItem.animatedSprites.Count; ++index2)
             {
               if ((UnityEngine.Object) characterItem.animatedSprites[index2] != (UnityEngine.Object) null)
-                characterItem.animatedSprites[index2].color = new Color(1f, 1f, 1f, index);
+              {
+                hideColor.a = index;
+                characterItem.animatedSprites[index2].color = hideColor;
+              }
             }
           }
           else if ((UnityEngine.Object) characterItem.charImageSR != (UnityEngine.Object) null)
-            characterItem.charImageSR.color = new Color(1f, 1f, 1f, index);
-        }
-        if (characterItem._npc != null && characterItem._npc.Id.StartsWith("pitt"))
-        {
-          yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-          MatchManager.Instance.DoSahtiRustBackground(false, true);
+          {
+            hideColor.a = index;
+            characterItem.charImageSR.color = hideColor;
+          }
         }
         if (characterItem.isHero && (UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null)
           MatchManager.Instance.RemoveFromTransformDict(characterItem._hero.Id);
@@ -2077,6 +2187,7 @@ public class CharacterItem : MonoBehaviour
           MatchManager.Instance.SetWaitingKill(false);
           MatchManager.Instance.KillNPC(characterItem._npc);
         }
+        hideColor = new Color();
       }
     }
   }
@@ -2553,6 +2664,13 @@ public class CharacterItem : MonoBehaviour
       }
       this._npc.ShowPetsFromEnchantments();
     }
+  }
+
+  public void HideEnchatmentIcons()
+  {
+    this.iconEnchantment?.gameObject.SetActive(false);
+    this.iconEnchantment2?.gameObject.SetActive(false);
+    this.iconEnchantment3?.gameObject.SetActive(false);
   }
 
   public IEnumerator EnchantEffectCo()

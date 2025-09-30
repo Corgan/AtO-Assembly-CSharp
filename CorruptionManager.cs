@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CorruptionManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Photon.Pun;
@@ -421,7 +421,7 @@ public class CorruptionManager : MonoBehaviour
       int num3 = 0;
       for (int index = 0; index < combatData.NPCList.Length; ++index)
       {
-        if (AtOManager.Instance.GetMadnessDifficulty() == 0 && combatData.NpcRemoveInMadness0Index == index && AtOManager.Instance.GetActNumberForText() < 3)
+        if ((GameManager.Instance.IsGameAdventure() && AtOManager.Instance.GetMadnessDifficulty() == 0 || GameManager.Instance.IsSingularity() && AtOManager.Instance.GetSingularityMadness() == 0) && combatData.NpcRemoveInMadness0Index == index && AtOManager.Instance.GetActNumberForText() < 3)
           corruptionManager.monsterSprite[index].gameObject.SetActive(false);
         else if ((UnityEngine.Object) combatData.NPCList[index] != (UnityEngine.Object) null)
         {

@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: PlayerManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -14,6 +14,9 @@ public class PlayerManager : MonoBehaviour
 {
   [SerializeField]
   private string playerName;
+  [Header("Add cards to unlock by default")]
+  [SerializeField]
+  private List<string> defaultCardUnlocks = new List<string>();
   [SerializeField]
   private string[] lastUsedTeam;
   [SerializeField]
@@ -515,6 +518,7 @@ public class PlayerManager : MonoBehaviour
     this.CardUnlock("floaty");
     this.CardUnlock("inky");
     this.CardUnlock("jelly");
+    this.UnlockCardsByDefault();
     this.CardUnlock("fireball");
     this.CreatePlayer();
     SaveManager.LoadPlayerPerkConfig();
@@ -537,6 +541,12 @@ public class PlayerManager : MonoBehaviour
         this.AchievementUnlock(theAchievement);
       }
     }
+  }
+
+  private void UnlockCardsByDefault()
+  {
+    for (int index = 0; index < this.defaultCardUnlocks.Count; ++index)
+      this.CardUnlock(this.defaultCardUnlocks[index]);
   }
 
   public void CreatePlayer() => this.playerName = Functions.RandomString(6f);
@@ -630,7 +640,7 @@ public class PlayerManager : MonoBehaviour
     foreach (KeyValuePair<string, SubClassData> keyValuePair in Globals.Instance.SubClass)
     {
       if (keyValuePair.Value.InitialUnlock)
-        this.HeroUnlock(keyValuePair.Value.SubClassName.ToLower(), false, false);
+        this.HeroUnlock(keyValuePair.Value.Id, false, false);
     }
   }
 

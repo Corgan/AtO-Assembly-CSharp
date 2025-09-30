@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: ItemData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System.Collections.Generic;
@@ -39,6 +39,10 @@ public class ItemData : ScriptableObject
   [SerializeField]
   private AuraCurseData auraCurseSetted;
   [SerializeField]
+  private AuraCurseData auraCurseSetted2;
+  [SerializeField]
+  private AuraCurseData auraCurseSetted3;
+  [SerializeField]
   private int auraCurseNumForOneEvent;
   [SerializeField]
   private Enums.CardType castedCardType;
@@ -57,6 +61,8 @@ public class ItemData : ScriptableObject
   [Header("Target for the weapon effects")]
   [SerializeField]
   private Enums.ItemTarget itemTarget;
+  [SerializeField]
+  private bool dontTargetBoss;
   [Header("Draw Cards")]
   [SerializeField]
   private int drawCards;
@@ -155,9 +161,17 @@ public class ItemData : ScriptableObject
   [SerializeField]
   private int healQuantity;
   [SerializeField]
+  private SpecialValues healQuantitySpecialValue;
+  [SerializeField]
   private int healPercentQuantity;
   [SerializeField]
   private int healPercentQuantitySelf;
+  [SerializeField]
+  internal float healSelfPerDamageDonePercent;
+  [SerializeField]
+  internal bool healSelfTeamPerDamageDonePercent;
+  [SerializeField]
+  internal int healBasedOnAuraCurse;
   [Header("Gain Energy for target")]
   [SerializeField]
   private int energyQuantity;
@@ -194,11 +208,15 @@ public class ItemData : ScriptableObject
   [SerializeField]
   private int auracurseGainValue1;
   [SerializeField]
+  internal SpecialValues auracurseGain1SpecialValue;
+  [SerializeField]
   private bool acg1MultiplyByEnergyUsed;
   [SerializeField]
   private AuraCurseData auracurseGain2;
   [SerializeField]
   private int auracurseGainValue2;
+  [SerializeField]
+  internal SpecialValues auracurseGain2SpecialValue;
   [SerializeField]
   private bool acg2MultiplyByEnergyUsed;
   [SerializeField]
@@ -206,8 +224,12 @@ public class ItemData : ScriptableObject
   [SerializeField]
   private int auracurseGainValue3;
   [SerializeField]
+  internal SpecialValues auracurseGain3SpecialValue;
+  [SerializeField]
   private bool acg3MultiplyByEnergyUsed;
-  [Header("AuraCurse gained on self")]
+  [Header("AuraCurse gained on self.")]
+  [SerializeField]
+  private bool chooseOneACToGain;
   [SerializeField]
   private AuraCurseData auracurseGainSelf1;
   [SerializeField]
@@ -216,11 +238,34 @@ public class ItemData : ScriptableObject
   private AuraCurseData auracurseGainSelf2;
   [SerializeField]
   private int auracurseGainSelfValue2;
-  [Header("Chance to dispel")]
+  [SerializeField]
+  private AuraCurseData auracurseGainSelf3;
+  [SerializeField]
+  private int auracurseGainSelfValue3;
+  [Header("AuraCurse to dispel/purge")]
+  [SerializeField]
+  internal AuraCurseData auracurseHeal1;
+  [SerializeField]
+  internal AuraCurseData auracurseHeal2;
+  [SerializeField]
+  internal AuraCurseData auracurseHeal3;
+  [SerializeField]
+  public int StealAuras;
+  [Header("Chance to dispel curses from target")]
   [SerializeField]
   private int chanceToDispel;
   [SerializeField]
   private int chanceToDispelNum;
+  [Header("Chance to purge auras from target")]
+  [SerializeField]
+  private int chanceToPurge;
+  [SerializeField]
+  private int chanceToPurgeNum;
+  [Header("Chance to dispel from self")]
+  [SerializeField]
+  private int chanceToDispelSelf;
+  [SerializeField]
+  private int chanceToDispelNumSelf;
   [Header("Rewards and discounts")]
   [SerializeField]
   private int percentRetentionEndGame;
@@ -241,11 +286,21 @@ public class ItemData : ScriptableObject
   [SerializeField]
   private Enums.DamageType modifiedDamageType;
   [SerializeField]
+  private Enums.DamageType damageToTargetType;
+  [SerializeField]
   private int damageToTarget;
   [SerializeField]
   private bool dttMultiplyByEnergyUsed;
   [SerializeField]
-  private Enums.DamageType damageToTargetType;
+  private SpecialValues dttSpecialValues;
+  [SerializeField]
+  private Enums.DamageType damageToTargetType2;
+  [SerializeField]
+  private int damageToTarget2;
+  [SerializeField]
+  private SpecialValues dttSpecialValues2;
+  [SerializeField]
+  private bool addVanishToDeck;
   [Header("GRAPHICAL & SOUND EFFECTS")]
   [SerializeField]
   private string effectItemOwner = "";
@@ -268,6 +323,50 @@ public class ItemData : ScriptableObject
   private int auracurseCustomModValue1;
   [SerializeField]
   private int auracurseCustomModValue2;
+
+  public int GetModifiedValue(
+    int value,
+    SpecialValues specialValues,
+    ItemData itemData = null,
+    Character target = null)
+  {
+    if (specialValues.Use)
+    {
+      switch (specialValues.Name)
+      {
+        case Enums.SpecialValueModifierName.RuneCharges:
+          if ((bool) (Object) MatchManager.Instance)
+          {
+            Character characterActive = MatchManager.Instance.GetCharacterActive();
+            if (characterActive != null)
+              return (int) ((double) (characterActive.GetAuraCharges("runered") + characterActive.GetAuraCharges("runeblue") + characterActive.GetAuraCharges("runegreen")) * (double) specialValues.Multiplier);
+            break;
+          }
+          break;
+        case Enums.SpecialValueModifierName.DamageDealt:
+          if ((bool) (Object) MatchManager.Instance)
+          {
+            MatchManager.Instance.GetCharacterActive();
+            break;
+          }
+          break;
+        case Enums.SpecialValueModifierName.AuracurseSetCharges:
+          if ((bool) (Object) MatchManager.Instance && target != null)
+            return (int) ((double) target.GetAuraCharges(itemData.AuraCurseSetted.Id) * (double) specialValues.Multiplier);
+          break;
+        case Enums.SpecialValueModifierName.AuraCurseYours:
+          if ((bool) (Object) MatchManager.Instance)
+          {
+            Character characterActive = MatchManager.Instance.GetCharacterActive();
+            if (characterActive != null)
+              return (int) ((double) characterActive.GetAuraCharges(itemData.AuraCurseSetted.Id) * (double) specialValues.Multiplier);
+            break;
+          }
+          break;
+      }
+    }
+    return value;
+  }
 
   public bool DropOnly
   {
@@ -339,6 +438,18 @@ public class ItemData : ScriptableObject
   {
     get => this.healPercentBonus;
     set => this.healPercentBonus = value;
+  }
+
+  public float HealSelfPerDamageDonePercent
+  {
+    get => this.healSelfPerDamageDonePercent;
+    set => this.healSelfPerDamageDonePercent = value;
+  }
+
+  public bool HealSelfTeamPerDamageDonePercent
+  {
+    get => this.healSelfTeamPerDamageDonePercent;
+    set => this.healSelfTeamPerDamageDonePercent = value;
   }
 
   public Enums.DamageType DamageFlatBonus
@@ -515,10 +626,28 @@ public class ItemData : ScriptableObject
     set => this.healQuantity = value;
   }
 
+  public SpecialValues HealQuantitySpecialValue
+  {
+    get => this.healQuantitySpecialValue;
+    set => this.healQuantitySpecialValue = value;
+  }
+
   public AuraCurseData AuraCurseSetted
   {
     get => this.auraCurseSetted;
     set => this.auraCurseSetted = value;
+  }
+
+  public AuraCurseData AuraCurseSetted2
+  {
+    get => this.auraCurseSetted2;
+    set => this.auraCurseSetted2 = value;
+  }
+
+  public AuraCurseData AuraCurseSetted3
+  {
+    get => this.auraCurseSetted3;
+    set => this.auraCurseSetted3 = value;
   }
 
   public int AuraCurseNumForOneEvent
@@ -611,6 +740,18 @@ public class ItemData : ScriptableObject
     set => this.auracurseGainSelfValue2 = value;
   }
 
+  public AuraCurseData AuracurseGainSelf3
+  {
+    get => this.auracurseGainSelf3;
+    set => this.auracurseGainSelf3 = value;
+  }
+
+  public int AuracurseGainSelfValue3
+  {
+    get => this.auracurseGainSelfValue3;
+    set => this.auracurseGainSelfValue3 = value;
+  }
+
   public int CardNum
   {
     get => this.cardNum;
@@ -695,10 +836,34 @@ public class ItemData : ScriptableObject
     set => this.chanceToDispel = value;
   }
 
+  public int ChanceToPurge
+  {
+    get => this.chanceToPurge;
+    set => this.chanceToPurge = value;
+  }
+
+  public int ChanceToDispelSelf
+  {
+    get => this.chanceToDispelSelf;
+    set => this.chanceToDispelSelf = value;
+  }
+
   public int ChanceToDispelNum
   {
     get => this.chanceToDispelNum;
     set => this.chanceToDispelNum = value;
+  }
+
+  public int ChanceToPurgeNum
+  {
+    get => this.chanceToPurgeNum;
+    set => this.chanceToPurgeNum = value;
+  }
+
+  public int ChanceToDispelNumSelf
+  {
+    get => this.chanceToDispelNumSelf;
+    set => this.chanceToDispelNumSelf = value;
   }
 
   public bool DestroyAfterUse
@@ -749,13 +914,13 @@ public class ItemData : ScriptableObject
     set => this.destroyStartOfTurn = value;
   }
 
-  public int DamageToTarget
+  public int DamageToTarget1
   {
     get => this.damageToTarget;
     set => this.damageToTarget = value;
   }
 
-  public Enums.DamageType DamageToTargetType
+  public Enums.DamageType DamageToTargetType1
   {
     get => this.damageToTargetType;
     set => this.damageToTargetType = value;
@@ -963,5 +1128,89 @@ public class ItemData : ScriptableObject
   {
     get => this.costReduceEnergyRequirement;
     set => this.costReduceEnergyRequirement = value;
+  }
+
+  public SpecialValues AuracurseGain1SpecialValue
+  {
+    get => this.auracurseGain1SpecialValue;
+    set => this.auracurseGain1SpecialValue = value;
+  }
+
+  public SpecialValues AuracurseGain2SpecialValue
+  {
+    get => this.auracurseGain2SpecialValue;
+    set => this.auracurseGain2SpecialValue = value;
+  }
+
+  public SpecialValues AuracurseGain3SpecialValue
+  {
+    get => this.auracurseGain3SpecialValue;
+    set => this.auracurseGain3SpecialValue = value;
+  }
+
+  public SpecialValues DttSpecialValues1
+  {
+    get => this.dttSpecialValues;
+    set => this.dttSpecialValues = value;
+  }
+
+  public int DamageToTarget2
+  {
+    get => this.damageToTarget2;
+    set => this.damageToTarget2 = value;
+  }
+
+  public Enums.DamageType DamageToTargetType2
+  {
+    get => this.damageToTargetType2;
+    set => this.damageToTargetType2 = value;
+  }
+
+  public SpecialValues DttSpecialValues2
+  {
+    get => this.dttSpecialValues2;
+    set => this.dttSpecialValues2 = value;
+  }
+
+  public int HealBasedOnAuraCurse
+  {
+    get => this.healBasedOnAuraCurse;
+    set => this.healBasedOnAuraCurse = value;
+  }
+
+  public AuraCurseData AuracurseHeal1
+  {
+    get => this.auracurseHeal1;
+    set => this.auracurseHeal1 = value;
+  }
+
+  public AuraCurseData AuracurseHeal2
+  {
+    get => this.auracurseHeal2;
+    set => this.auracurseHeal2 = value;
+  }
+
+  public AuraCurseData AuracurseHeal3
+  {
+    get => this.auracurseHeal3;
+    set => this.auracurseHeal3 = value;
+  }
+
+  public bool ChooseOneACToGain
+  {
+    get => this.chooseOneACToGain;
+    set => this.chooseOneACToGain = value;
+  }
+
+  public bool AddVanishToDeck
+  {
+    get => this.addVanishToDeck;
+    set => this.addVanishToDeck = value;
+  }
+
+  public bool DontTargetBoss
+  {
+    get => this.dontTargetBoss;
+    set => this.dontTargetBoss = value;
   }
 }

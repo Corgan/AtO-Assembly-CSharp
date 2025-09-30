@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: NetworkManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -9,6 +9,7 @@ using Photon.Pun;
 using Photon.Pun.UtilityScripts;
 using Photon.Realtime;
 using Steamworks;
+using Steamworks.Data;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -246,7 +247,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
       string steamAuthTicket = this.GetSteamAuthTicket(out this.hAuthTicket);
       PhotonNetwork.AuthValues = new AuthenticationValues();
       PhotonNetwork.AuthValues.UserId = SteamManager.Instance.steamId.ToString();
-      PhotonNetwork.AuthValues.AuthType = CustomAuthenticationType.Steam;
+      if (!GameManager.Instance.DisableSteamAuthorizationForPhoton)
+        PhotonNetwork.AuthValues.AuthType = CustomAuthenticationType.Steam;
       PhotonNetwork.AuthValues.AddAuthParameter("ticket", steamAuthTicket);
       PhotonNetwork.ConnectUsingSettings();
       this.connTimeoutCo = this.StartCoroutine(this.ConnectionTimeout());
@@ -1375,8 +1377,10 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
   public string GetSteamAuthTicket(out AuthTicket authTicket)
   {
-    authTicket = SteamUser.GetAuthSessionTicket();
-    if (authTicket == null || authTicket.Data == null)
+    NetIdentity steamId = (NetIdentity) SteamClient.SteamId;
+    authTicket = SteamUser.GetAuthSessionTicket(steamId);
+    AuthTicket authTicket1 = authTicket;
+    if (authTicket1 == null || authTicket1.Data == null)
       return "";
     StringBuilder stringBuilder = new StringBuilder();
     for (int index = 0; index < authTicket.Data.Length; ++index)

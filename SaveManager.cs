@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: SaveManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -184,6 +184,8 @@ public static class SaveManager
 
   public static void SaveGame(int slot, bool backUp = false)
   {
+    if (GameManager.Instance.CheatMode && GameManager.Instance.IsSaveDisabled)
+      slot = -1;
     if (GameManager.Instance.GetDeveloperMode())
       Debug.Log((object) ("******* SAVE GAME (" + slot.ToString() + ") *******"));
     StringBuilder stringBuilder1 = new StringBuilder();
@@ -496,6 +498,8 @@ public static class SaveManager
 
   public static void SaveGameTurn(int slot)
   {
+    if (GameManager.Instance.CheatMode && GameManager.Instance.IsSaveDisabled)
+      return;
     string path = SaveManager.PathSaveGameTurn(slot);
     DESCryptoServiceProvider cryptoServiceProvider = new DESCryptoServiceProvider();
     try
@@ -571,6 +575,8 @@ public static class SaveManager
 
   public static void SavePlayerData(bool cleanThePlayerData = false, bool asBackup = false)
   {
+    if (GameManager.Instance.CheatMode && GameManager.Instance.IsSaveDisabled)
+      return;
     if (GameManager.Instance.GetDeveloperMode())
       Debug.Log((object) nameof (SavePlayerData));
     PlayerData playerData;
@@ -744,6 +750,8 @@ public static class SaveManager
 
   public static void SaveRuns(bool doBackup = false)
   {
+    if (GameManager.Instance.CheatMode && GameManager.Instance.IsSaveDisabled)
+      return;
     StringBuilder stringBuilder = new StringBuilder();
     stringBuilder.Append(Application.persistentDataPath);
     stringBuilder.Append("/");
@@ -864,6 +872,8 @@ public static class SaveManager
 
   public static void SavePlayerDeck()
   {
+    if (GameManager.Instance.CheatMode && GameManager.Instance.IsSaveDisabled)
+      return;
     StringBuilder stringBuilder = new StringBuilder();
     stringBuilder.Append(Application.persistentDataPath);
     stringBuilder.Append("/");
@@ -1151,7 +1161,7 @@ public static class SaveManager
       PlayerManager.Instance.SupplyBought = playerData.SupplyBought;
       PlayerManager.Instance.SkinUsed = playerData.SkinUsed == null ? new Dictionary<string, string>() : playerData.SkinUsed;
       PlayerManager.Instance.CardbackUsed = playerData.CardbackUsed == null ? new Dictionary<string, string>() : playerData.CardbackUsed;
-      if (GameManager.Instance.GetDeveloperMode())
+      if (GameManager.Instance.GetDeveloperMode() || GameManager.Instance.UnlockMadness)
       {
         PlayerManager.Instance.NgLevel = 9;
         PlayerManager.Instance.ObeliskMadnessLevel = 10;

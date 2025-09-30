@@ -1,11 +1,14 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: AuraCurseData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
+using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 #nullable disable
 [CreateAssetMenu(fileName = "New AuraCurse", menuName = "AuraCurse Data", order = 56)]
@@ -18,6 +21,8 @@ public class AuraCurseData : ScriptableObject
   private string id;
   [SerializeField]
   private bool isAura;
+  [SerializeField]
+  private bool ignoreUseInEndTurnIfMissingOnBegin;
   [SerializeField]
   private int maxCharges = -1;
   [SerializeField]
@@ -80,6 +85,9 @@ public class AuraCurseData : ScriptableObject
   private bool produceHealWhenConsumed;
   [SerializeField]
   private bool dieWhenConsumedAll;
+  [Header("Aura Bonusses")]
+  [SerializeField]
+  private List<AuraCurseData.AuraCurseChargesBonus> acBonusData;
   [Header("Aura Damage Bonus")]
   [SerializeField]
   private Enums.DamageType auraDamageType;
@@ -131,6 +139,8 @@ public class AuraCurseData : ScriptableObject
   private float auraDamageIncreasedPercentPerStack4;
   [SerializeField]
   private float auraDamageIncreasedPercentPerStackPerEnergy4;
+  [SerializeField]
+  private AuraCurseData.AuraDamageBonus[] auraDamageConditionalBonuses;
   [Header("Aura Heal Bonus")]
   [SerializeField]
   private int healDoneTotal;
@@ -155,7 +165,12 @@ public class AuraCurseData : ScriptableObject
   private int cardsDrawPerStack;
   [Header("Aura Damage Reflected")]
   [SerializeField]
-  private int damageReflectedPerStack;
+  private int chargesPreReqForDamageReflection;
+  [SerializeField]
+  private Enums.RefectedDamageModifierType damageReflectedModifierType;
+  [SerializeField]
+  [FormerlySerializedAs("damageReflectedPerStack")]
+  private int damageReflectedMultiplier;
   [SerializeField]
   private Enums.DamageType damageReflectedType;
   [SerializeField]
@@ -165,6 +180,10 @@ public class AuraCurseData : ScriptableObject
   private int blockChargesGainedPerStack;
   [SerializeField]
   private bool noRemoveBlockAtTurnEnd;
+  [SerializeField]
+  private bool grantBlockToTeamForAmountOfDamageBlocked;
+  [SerializeField]
+  private int chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked;
   [Header("Prevention")]
   [SerializeField]
   private int damagePreventedPerStack;
@@ -246,11 +265,26 @@ public class AuraCurseData : ScriptableObject
   [Header("Explode at stacks")]
   [SerializeField]
   private int explodeAtStacks;
+  [Header("Explode Effects")]
+  [SerializeField]
+  private int healTotalOnExplode;
+  [SerializeField]
+  private float healPerChargeOnExplode;
+  [SerializeField]
+  private Enums.AuraCurseExplodeHealTarget healTargetOnExplode;
+  [SerializeField]
+  private AuraCurseData acOnExplode;
+  [SerializeField]
+  private int acTotalChargesOnExplode;
+  [SerializeField]
+  private int acChargesPerStackChargeOnExplodeOnExplode;
   [Header("Consume damage")]
   [SerializeField]
   private Enums.DamageType damageTypeWhenConsumed;
   [SerializeField]
   private AuraCurseData consumedDamageChargesBasedOnACCharges;
+  [SerializeField]
+  private AuraCurseData consumeDamageChargesIfACApplied;
   [SerializeField]
   private int damageWhenConsumed;
   [SerializeField]
@@ -309,9 +343,33 @@ public class AuraCurseData : ScriptableObject
 
   public void Init()
   {
-    if (!(this.id == "") && this.id != null)
+    if (!string.IsNullOrEmpty(this.id))
       return;
     this.id = Regex.Replace(this.acName, "\\s+", "").ToLower();
+  }
+
+  public AuraCurseData DeepClone()
+  {
+    AuraCurseData auraCurseData = UnityEngine.Object.Instantiate<AuraCurseData>(this);
+    if ((UnityEngine.Object) this.auraDamageChargesBasedOnACCharges != (UnityEngine.Object) null)
+      auraCurseData.auraDamageChargesBasedOnACCharges = UnityEngine.Object.Instantiate<AuraCurseData>(this.auraDamageChargesBasedOnACCharges);
+    if ((UnityEngine.Object) this.preventedAuraCurse != (UnityEngine.Object) null)
+      auraCurseData.preventedAuraCurse = UnityEngine.Object.Instantiate<AuraCurseData>(this.preventedAuraCurse);
+    if ((UnityEngine.Object) this.consumedDamageChargesBasedOnACCharges != (UnityEngine.Object) null)
+      auraCurseData.consumedDamageChargesBasedOnACCharges = UnityEngine.Object.Instantiate<AuraCurseData>(this.consumedDamageChargesBasedOnACCharges);
+    if ((bool) (UnityEngine.Object) this.removeAuraCurse)
+      auraCurseData.removeAuraCurse = UnityEngine.Object.Instantiate<AuraCurseData>(this.removeAuraCurse);
+    if ((bool) (UnityEngine.Object) this.removeAuraCurse2)
+      auraCurseData.removeAuraCurse2 = UnityEngine.Object.Instantiate<AuraCurseData>(this.removeAuraCurse2);
+    if ((UnityEngine.Object) this.gainAuraCurseConsumption != (UnityEngine.Object) null)
+      auraCurseData.gainAuraCurseConsumption = UnityEngine.Object.Instantiate<AuraCurseData>(this.gainAuraCurseConsumption);
+    if ((UnityEngine.Object) this.gainAuraCurseConsumption2 != (UnityEngine.Object) null)
+      auraCurseData.gainAuraCurseConsumption2 = UnityEngine.Object.Instantiate<AuraCurseData>(this.gainAuraCurseConsumption2);
+    if ((UnityEngine.Object) this.gainChargesFromThisAuraCurse != (UnityEngine.Object) null)
+      auraCurseData.gainChargesFromThisAuraCurse = UnityEngine.Object.Instantiate<AuraCurseData>(this.gainChargesFromThisAuraCurse);
+    if ((UnityEngine.Object) this.gainChargesFromThisAuraCurse2 != (UnityEngine.Object) null)
+      auraCurseData.gainChargesFromThisAuraCurse2 = UnityEngine.Object.Instantiate<AuraCurseData>(this.gainChargesFromThisAuraCurse2);
+    return auraCurseData;
   }
 
   public int GetMaxCharges()
@@ -322,9 +380,9 @@ public class AuraCurseData : ScriptableObject
     return maxCharges;
   }
 
-  public AudioClip GetSound()
+  public AudioClip GetSound(bool useLegacy = false)
   {
-    return !GameManager.Instance.ConfigUseLegacySounds && (Object) this.soundRework != (Object) null ? this.soundRework : this.sound;
+    return !GameManager.Instance.ConfigUseLegacySounds && (UnityEngine.Object) this.soundRework != (UnityEngine.Object) null && !useLegacy ? this.soundRework : this.sound;
   }
 
   public string ACName
@@ -609,6 +667,12 @@ public class AuraCurseData : ScriptableObject
     set => this.auraDamageIncreasedPercentPerStack4 = value;
   }
 
+  public AuraCurseData.AuraDamageBonus[] AuraDamageConditionalBonuses
+  {
+    get => this.auraDamageConditionalBonuses;
+    set => this.auraDamageConditionalBonuses = value;
+  }
+
   public int HealDoneTotal
   {
     get => this.healDoneTotal;
@@ -663,10 +727,22 @@ public class AuraCurseData : ScriptableObject
     set => this.cardsDrawPerStack = value;
   }
 
-  public int DamageReflectedPerStack
+  public int DamageReflectedMultiplier
   {
-    get => this.damageReflectedPerStack;
-    set => this.damageReflectedPerStack = value;
+    get => this.damageReflectedMultiplier;
+    set => this.damageReflectedMultiplier = value;
+  }
+
+  public int ChargesPreReqForDamageReflection
+  {
+    get => this.chargesPreReqForDamageReflection;
+    set => this.chargesPreReqForDamageReflection = value;
+  }
+
+  public Enums.RefectedDamageModifierType DamageReflectedModifierType
+  {
+    get => this.damageReflectedModifierType;
+    set => this.damageReflectedModifierType = value;
   }
 
   public Enums.DamageType DamageReflectedType
@@ -1119,9 +1195,99 @@ public class AuraCurseData : ScriptableObject
     set => this.consumedDamageChargesBasedOnACCharges = value;
   }
 
+  public AuraCurseData ConsumeDamageChargesIfACApplied
+  {
+    get => this.consumeDamageChargesIfACApplied;
+    set => this.consumeDamageChargesIfACApplied = value;
+  }
+
   public AudioClip SoundRework
   {
     get => this.soundRework;
     set => this.soundRework = value;
+  }
+
+  public List<AuraCurseData.AuraCurseChargesBonus> ACBonusData
+  {
+    get => this.acBonusData;
+    set => this.acBonusData = value;
+  }
+
+  public bool GrantBlockToTeamForAmountOfDamageBlocked
+  {
+    get => this.grantBlockToTeamForAmountOfDamageBlocked;
+    set => this.grantBlockToTeamForAmountOfDamageBlocked = value;
+  }
+
+  public int ChargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked
+  {
+    get => this.chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked;
+    set => this.chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked = value;
+  }
+
+  public int HealTotalOnExplode
+  {
+    get => this.healTotalOnExplode;
+    set => this.healTotalOnExplode = value;
+  }
+
+  public float HealPerChargeOnExplode
+  {
+    get => this.healPerChargeOnExplode;
+    set => this.healPerChargeOnExplode = value;
+  }
+
+  public Enums.AuraCurseExplodeHealTarget HealTargetOnExplode
+  {
+    get => this.healTargetOnExplode;
+    set => this.healTargetOnExplode = value;
+  }
+
+  public AuraCurseData ACOnExplode
+  {
+    get => this.acOnExplode;
+    set => this.acOnExplode = value;
+  }
+
+  public int ACTotalChargesOnExplode
+  {
+    get => this.acTotalChargesOnExplode;
+    set => this.acTotalChargesOnExplode = value;
+  }
+
+  public int ACChargesPerStackChargeOnExplode
+  {
+    get => this.acChargesPerStackChargeOnExplodeOnExplode;
+    set => this.acChargesPerStackChargeOnExplodeOnExplode = value;
+  }
+
+  public bool IgnoreUseInEndTurnIfMissingOnBegin => this.ignoreUseInEndTurnIfMissingOnBegin;
+
+  [Serializable]
+  public struct AuraDamageBonus
+  {
+    public Enums.DamageType AuraDamageType;
+    public AuraCurseData AuraDamageBasedOnAC;
+    public int AuraDamageIncreasedTotal;
+    public float AuraDamageIncreasedPerStack;
+    public int AuraDamageIncreasedPercent;
+    public float AuraDamageIncreasedPercentPerStack;
+    public float AuraDamageIncreasedPercentPerStackPerEnergy;
+  }
+
+  [Serializable]
+  public struct AuraCurseChargesBonus
+  {
+    public int requiredChargesForBonus;
+    public AuraCurseData acData;
+    public AuraCurseData.AuraCurseChargesBonus.BonusAmountType bonusType;
+    public int bonusCharges;
+
+    public enum BonusAmountType
+    {
+      flatBonus,
+      percentageBonus,
+      bonusPerCharge,
+    }
   }
 }

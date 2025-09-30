@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: MainMenuManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -15,6 +15,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using WebSocketSharp;
 
 #nullable disable
 public class MainMenuManager : MonoBehaviour
@@ -40,6 +41,7 @@ public class MainMenuManager : MonoBehaviour
   public Transform gameModeSelection2;
   public Transform gameModeSelection3;
   public TMP_Text gameModeWeekly;
+  private string weeklyName;
   public Transform joinT;
   public Transform exitT;
   public Transform logo;
@@ -75,7 +77,6 @@ public class MainMenuManager : MonoBehaviour
   private bool setWeekly;
   private StringBuilder SBWeekly = new StringBuilder();
   private bool singlePlayer = true;
-  private int controllerCurrentOption = -1;
   public List<Transform> menuController0;
   public List<Transform> menuController1;
   public List<Transform> menuControllerModeSelection;
@@ -88,6 +89,7 @@ public class MainMenuManager : MonoBehaviour
   private float creditScrollSpeed = 90f;
   public Transform weeklyReward;
   public SpriteRenderer weeklyRewardCardback;
+  public SpriteRenderer weeklyRewardCardbackSecondary;
   public TMP_Text profileMenuText;
   private string[] profiles;
   private int profileCreateSlot;
@@ -121,6 +123,12 @@ public class MainMenuManager : MonoBehaviour
   public Button DLCbernard;
   public Transform DLCbernardLineOk;
   public Transform DLCbernardLineKo;
+  public Button DLCtemple;
+  public Transform DLCtempleLineOk;
+  public Transform DLCtempleLineKo;
+  public Button DLCspider;
+  public Transform DLCspiderLineOk;
+  public Transform DLCspiderLineKo;
   public Transform DLCpopup;
   public Transform DLCpopupImageWW;
   public Transform DLCpopupImageUlminin;
@@ -131,6 +139,8 @@ public class MainMenuManager : MonoBehaviour
   public Transform DLCpopupImageSahti;
   public Transform DLCpopupImageSigrun;
   public Transform DLCpopupImageBernard;
+  public Transform DLCpopupImageTemple;
+  public Transform DLCpopupImageSpider;
   public Transform DLCExitButton;
   public Transform DLCLinkButton;
   public TMP_Text DLCpopupTitle;
@@ -160,6 +170,7 @@ public class MainMenuManager : MonoBehaviour
   private SortedDictionary<string, string> regionDictionary;
   private Vector2 preLoginBackgroundSize = new Vector2(440f, 260f);
   private Vector2 loginBackgroundSize = new Vector2(440f, 380f);
+  private Vector3 vectorPositionGameMode = new Vector3(-8.2f, 0.0f, 0.0f);
   private List<Transform> controllerList = new List<Transform>();
   public int controllerHorizontalIndex = -1;
   private Vector2 warpPosition = Vector2.zero;
@@ -250,6 +261,15 @@ public class MainMenuManager : MonoBehaviour
           return;
         }
       }
+    }
+    if (GameManager.Instance.CheatMode)
+    {
+      if (GameManager.Instance.UseManyResources)
+        AtOManager.Instance.UseManyResources();
+      if (GameManager.Instance.UnlockAllHeroes)
+        AtOManager.Instance.UnlockAllHeroes();
+      if (GameManager.Instance.UnlockMadness)
+        PlayerManager.Instance.SingularityMadnessLevel = 10;
     }
     GameManager.Instance.SceneLoaded();
   }
@@ -423,6 +443,34 @@ public class MainMenuManager : MonoBehaviour
       this.DLCbernardLineOk.gameObject.SetActive(true);
       this.DLCbernardLineKo.gameObject.SetActive(false);
     }
+    if (!SteamManager.Instance.PlayerHaveDLC(Globals.Instance.SkuAvailable[9]))
+    {
+      this.DLCtemple.colors = this.DLCtemple.colors with
+      {
+        normalColor = color
+      };
+      this.DLCtempleLineOk.gameObject.SetActive(false);
+      this.DLCtempleLineKo.gameObject.SetActive(true);
+    }
+    else
+    {
+      this.DLCtempleLineOk.gameObject.SetActive(true);
+      this.DLCtempleLineKo.gameObject.SetActive(false);
+    }
+    if (!SteamManager.Instance.PlayerHaveDLC(Globals.Instance.SkuAvailable[10]))
+    {
+      this.DLCspider.colors = this.DLCspider.colors with
+      {
+        normalColor = color
+      };
+      this.DLCspiderLineOk.gameObject.SetActive(false);
+      this.DLCspiderLineKo.gameObject.SetActive(true);
+    }
+    else
+    {
+      this.DLCspiderLineOk.gameObject.SetActive(true);
+      this.DLCspiderLineKo.gameObject.SetActive(false);
+    }
   }
 
   public void ShowDLCPopup(int _index)
@@ -438,6 +486,8 @@ public class MainMenuManager : MonoBehaviour
     this.DLCpopupImageSahti.gameObject.SetActive(false);
     this.DLCpopupImageSigrun.gameObject.SetActive(false);
     this.DLCpopupImageBernard.gameObject.SetActive(false);
+    this.DLCpopupImageTemple.gameObject.SetActive(false);
+    this.DLCpopupImageSpider.gameObject.SetActive(false);
     this.DLCpopupTitle.text = SteamManager.Instance.GetDLCName(Globals.Instance.SkuAvailable[this.activePopup]);
     if (this.activePopup == 0)
     {
@@ -485,14 +535,26 @@ public class MainMenuManager : MonoBehaviour
       cpopupDescription.text = cpopupDescription.text + "<br><br>" + Texts.Instance.GetText("howToDLCPet");
       this.DLCpopupImageSigrun.gameObject.SetActive(true);
     }
-    else
+    else if (this.activePopup == 8)
     {
-      if (this.activePopup != 8)
-        return;
       this.DLCpopupDescription.text = Texts.Instance.GetText("howToDLCCharacter");
       TMP_Text cpopupDescription = this.DLCpopupDescription;
       cpopupDescription.text = cpopupDescription.text + "<br><br>" + Texts.Instance.GetText("howToDLCPet");
       this.DLCpopupImageBernard.gameObject.SetActive(true);
+    }
+    else if (this.activePopup == 9)
+    {
+      this.DLCpopupDescription.text = Texts.Instance.GetText("howToDLCTemple");
+      this.DLCpopupImageTemple.gameObject.SetActive(true);
+    }
+    else
+    {
+      if (this.activePopup != 10)
+        return;
+      this.DLCpopupDescription.text = Texts.Instance.GetText("howToDLCCharacter");
+      TMP_Text cpopupDescription = this.DLCpopupDescription;
+      cpopupDescription.text = cpopupDescription.text + "<br><br>" + Texts.Instance.GetText("howToDLCPet");
+      this.DLCpopupImageSpider.gameObject.SetActive(true);
     }
   }
 
@@ -543,7 +605,7 @@ public class MainMenuManager : MonoBehaviour
     GameManager.Instance.PlayAudio(AudioManager.Instance.soundButtonClick);
     this.MenuControllerHoverOff();
     this.challengeLocked = PlayerManager.Instance.GetHighestCharacterRank() >= 3 ? (this.weeklyLocked = false) : (this.weeklyLocked = true);
-    this.singularityLocked = PlayerManager.Instance.GetHighestCharacterRank() < 3;
+    this.singularityLocked = !GameManager.Instance.CheatMode && GameManager.Instance.UnlockMadness || PlayerManager.Instance.GetHighestCharacterRank() < 3;
     this.LoadSaveGames();
     this.ShowMask(true, 0.8f);
     this.profilesT.gameObject.SetActive(false);
@@ -592,7 +654,7 @@ public class MainMenuManager : MonoBehaviour
     if (_index == 0 || _index == 1)
     {
       GameManager.Instance.GameType = global::Enums.GameType.Adventure;
-      this.gameModeSelection0.localPosition = new Vector3(-8f, 0.0f, 0.0f);
+      this.gameModeSelection0.localPosition = this.vectorPositionGameMode;
       this.gameModeSelection0.GetChild(0).GetComponent<BoxCollider2D>().enabled = false;
       this.StartCoroutine(this.BotonMenuGameModeStateOn(0));
       this.gameModeSelectionChoose.GetComponent<TMP_Text>().text = Texts.Instance.GetText("modeAdventure");
@@ -611,7 +673,7 @@ public class MainMenuManager : MonoBehaviour
     if (_index == 2 || _index == 3)
     {
       GameManager.Instance.GameType = global::Enums.GameType.Challenge;
-      this.gameModeSelection1.localPosition = new Vector3(-8f, 0.0f, 0.0f);
+      this.gameModeSelection1.localPosition = this.vectorPositionGameMode;
       this.gameModeSelection1.GetChild(0).GetComponent<BoxCollider2D>().enabled = false;
       this.StartCoroutine(this.BotonMenuGameModeStateOn(1));
       this.gameModeSelectionChoose.GetComponent<TMP_Text>().text = Texts.Instance.GetText("modeObelisk");
@@ -630,7 +692,7 @@ public class MainMenuManager : MonoBehaviour
     if (_index == 4 || _index == 5)
     {
       GameManager.Instance.GameType = global::Enums.GameType.WeeklyChallenge;
-      this.gameModeSelection2.localPosition = new Vector3(-8f, 0.0f, 0.0f);
+      this.gameModeSelection2.localPosition = this.vectorPositionGameMode;
       this.gameModeSelection2.GetChild(0).GetComponent<BoxCollider2D>().enabled = false;
       this.StartCoroutine(this.BotonMenuGameModeStateOn(2));
       this.gameModeSelectionChoose.GetComponent<TMP_Text>().text = Texts.Instance.GetText("modeWeekly");
@@ -638,14 +700,25 @@ public class MainMenuManager : MonoBehaviour
       this.gameModeSelectionDescription.GetComponent<TMP_Text>().text = Texts.Instance.GetText("mainMenuWeeklyDescription");
       this.SetWeeklyLeft();
       this.setWeekly = true;
-      ChallengeData weeklyData = Globals.Instance.GetWeeklyData(Functions.GetCurrentWeeklyWeek());
-      if ((UnityEngine.Object) weeklyData != (UnityEngine.Object) null)
+      ChallengeData weeklyData1 = Globals.Instance.GetWeeklyData(Functions.GetCurrentWeeklyWeek());
+      if ((UnityEngine.Object) weeklyData1 != (UnityEngine.Object) null)
       {
-        CardbackData cardbackData = weeklyData.GetCardbackData();
-        if ((UnityEngine.Object) cardbackData != (UnityEngine.Object) null)
+        CardbackData cardbackData1 = weeklyData1.GetCardbackData();
+        if ((UnityEngine.Object) cardbackData1 != (UnityEngine.Object) null)
         {
           this.weeklyReward.gameObject.SetActive(true);
-          this.weeklyRewardCardback.sprite = cardbackData.CardbackSprite;
+          this.weeklyRewardCardback.sprite = cardbackData1.CardbackSprite;
+        }
+        ChallengeData weeklyData2 = Globals.Instance.GetWeeklyData(Functions.GetCurrentWeeklyWeek(), true);
+        this.weeklyRewardCardbackSecondary.gameObject.SetActive(false);
+        if ((UnityEngine.Object) weeklyData2 != (UnityEngine.Object) null)
+        {
+          CardbackData cardbackData2 = weeklyData2.GetCardbackData();
+          if ((UnityEngine.Object) cardbackData2 != (UnityEngine.Object) null)
+          {
+            this.weeklyRewardCardbackSecondary.sprite = cardbackData2.CardbackSprite;
+            this.weeklyRewardCardbackSecondary.gameObject.SetActive(true);
+          }
         }
       }
     }
@@ -661,7 +734,7 @@ public class MainMenuManager : MonoBehaviour
     if (_index == 6 || _index == 7)
     {
       GameManager.Instance.GameType = global::Enums.GameType.Singularity;
-      this.gameModeSelection3.localPosition = new Vector3(-8f, 0.0f, 0.0f);
+      this.gameModeSelection3.localPosition = this.vectorPositionGameMode;
       this.gameModeSelection3.GetChild(0).GetComponent<BoxCollider2D>().enabled = false;
       this.StartCoroutine(this.BotonMenuGameModeStateOn(3));
       this.gameModeSelectionChoose.GetComponent<TMP_Text>().text = Texts.Instance.GetText("singularity");
@@ -1147,7 +1220,9 @@ public class MainMenuManager : MonoBehaviour
     string str = string.Format("{0:D2}h. {1:D2}m. {2:D2}s.", (object) (int) timeSpan.TotalHours, (object) timeSpan.Minutes, (object) timeSpan.Seconds);
     this.SBWeekly.Clear();
     this.SBWeekly.Append("<b><size=+2>");
-    this.SBWeekly.Append(AtOManager.Instance.GetWeeklyName(Functions.GetCurrentWeeklyWeek()));
+    if (this.weeklyName.IsNullOrEmpty())
+      this.weeklyName = AtOManager.Instance.GetWeeklyName(Functions.GetCurrentWeeklyWeek());
+    this.SBWeekly.Append(this.weeklyName);
     this.SBWeekly.Append("</size></b>\n");
     this.SBWeekly.Append(str);
     this.gameModeWeekly.text = this.SBWeekly.ToString();
@@ -1412,9 +1487,14 @@ public class MainMenuManager : MonoBehaviour
     int num = AlertManager.Instance.GetConfirmAnswer() ? 1 : 0;
     AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.LogoutPDXAction);
     if (num == 0)
-      return;
-    Account.Logout();
-    Startup.userId = "";
+    {
+      this.ShowPDXMask(false);
+    }
+    else
+    {
+      Account.Logout();
+      Startup.userId = "";
+    }
   }
 
   public void LinkSteamPDX()

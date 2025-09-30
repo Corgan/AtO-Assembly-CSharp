@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CharacterWindowUI
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System.Collections;
@@ -10,6 +10,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 #nullable disable
@@ -50,6 +51,8 @@ public class CharacterWindowUI : MonoBehaviour
   public BotonGeneric botCombatVanish;
   public BotonGeneric botNPCCasted;
   public BotonGeneric botNPCStats;
+  [SerializeField]
+  private GameObject botLevelupCharacter;
   private SubClassData currentSCD;
   private Hero currentHero;
   private NPC currentNPC;
@@ -65,7 +68,14 @@ public class CharacterWindowUI : MonoBehaviour
 
   private void Awake() => this.HideAllWindows();
 
-  private void Start() => this.Resize();
+  private void Start()
+  {
+    this.Resize();
+    this.botLevelupCharacter.SetActive(false);
+    if (!GameManager.Instance.GetDeveloperMode() || !(SceneManager.GetActiveScene().name == "Map"))
+      return;
+    this.botLevelupCharacter.SetActive(true);
+  }
 
   public void Resize()
   {
@@ -293,6 +303,13 @@ public class CharacterWindowUI : MonoBehaviour
         return;
       MatchManager.Instance.sideCharacters.InCharacterScreen(true);
     }
+  }
+
+  public void GrantExperienceForLevelUp()
+  {
+    if (this.currentHero == null)
+      return;
+    this.currentHero.GrantExperience(Globals.Instance.GetExperienceByLevel(this.currentHero.Level) - this.currentHero.Experience);
   }
 
   public void ShowMask(bool state, bool instant = false)

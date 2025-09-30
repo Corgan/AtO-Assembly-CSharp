@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Enums
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 #nullable disable
@@ -44,18 +44,20 @@ public class Enums
 
   public enum ItemTarget
   {
-    Self,
-    RandomHero,
-    RandomEnemy,
-    AllHero,
-    AllEnemy,
-    CurrentTarget,
-    SelfEnemy,
-    HighestFlatHpHero,
-    LowestFlatHpHero,
-    HighestFlatHpEnemy,
-    LowestFlatHpEnemy,
-    Random,
+    None = -1, // 0xFFFFFFFF
+    Self = 0,
+    RandomHero = 1,
+    RandomEnemy = 2,
+    AllHero = 3,
+    AllEnemy = 4,
+    CurrentTarget = 5,
+    SelfEnemy = 6,
+    HighestFlatHpHero = 7,
+    LowestFlatHpHero = 8,
+    HighestFlatHpEnemy = 9,
+    LowestFlatHpEnemy = 10, // 0x0000000A
+    Random = 11, // 0x0000000B
+    Custom = 12, // 0x0000000C
   }
 
   public enum ItemSlot
@@ -298,6 +300,10 @@ public class Enums
     TargetHasAuraCurse,
     TargetHasAnyAura,
     TargetHasAnyCurse,
+    TeamNpcAllAlive,
+    LifeInMainTargetHigherThanInSpecialTarget,
+    LifeInMainTargetLessThanInSpecialTarget,
+    TargetNotIllusion,
   }
 
   public enum LogType
@@ -356,6 +362,10 @@ public class Enums
     TraitActivation,
     CharacterKilled,
     FinishFinishCastCorruption,
+    DamagedDueToACConsumption,
+    BlockReachedZero,
+    AfterDealCards,
+    CastFightCard,
   }
 
   public enum Zone
@@ -376,6 +386,10 @@ public class Enums
     Pyramid,
     Sahti,
     Dreadnought,
+    WitchWoods,
+    CastleCourtyard,
+    CastleSpire,
+    Dreams,
   }
 
   public enum NodeGround
@@ -478,6 +492,21 @@ public class Enums
     Sahti_ShipCloudy,
     Sahti_ShipCloudyStorm,
     Sahti_ShipStorm,
+    Sunken_BossBlood,
+    Sunken_BossHoly,
+    Sunken_BossThunder,
+    Sunken_Firstfloor,
+    Sunken_Firstflooraltar,
+    Sunken_Secondfloor,
+    Sunken_Secondflooraltar,
+    Castle_Interior,
+    Outskirts_Graveyard,
+    Castle_Interior_Night,
+    Courtyard_Day,
+    Courtyard_Night,
+    Graveyard_Day,
+    Senenthia_Dia_Nightmare,
+    Senenthia_BosqueEntrada_Nightmare,
   }
 
   public enum CombatStepSound
@@ -594,6 +623,10 @@ public class Enums
     Talk,
     Sing,
     Read,
+    Help,
+    Prepare,
+    Rush,
+    Study,
   }
 
   public enum MapIconShader
@@ -611,5 +644,29 @@ public class Enums
   {
     PerkCostBase = 1,
     PerkCostAdvanced = 3,
+  }
+
+  public enum SpecialValueModifierName
+  {
+    RuneCharges,
+    DamageDealt,
+    AuracurseSetCharges,
+    AuraCurseYours,
+  }
+
+  public enum RefectedDamageModifierType
+  {
+    DamagePerAuraCharge,
+    DamagePerDamageReceived,
+    DamagePerDamageBlocked,
+  }
+
+  public enum AuraCurseExplodeHealTarget
+  {
+    None,
+    Caster,
+    CasterTeam,
+    Target,
+    TargetTeam,
   }
 }

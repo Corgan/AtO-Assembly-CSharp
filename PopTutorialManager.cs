@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: PopTutorialManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System.Text;
@@ -132,6 +132,13 @@ public class PopTutorialManager : MonoBehaviour
         this.MoveCircle(position);
         this.SizeCircle(new Vector3(2.2f, 1.5f, 1f));
         this.HideCircle2();
+        break;
+      case "illusionAbility":
+        this.box.transform.position = new Vector3(Globals.Instance.sizeW * 0.25f, Globals.Instance.sizeH * 0.05f, this.box.transform.position.z);
+        this.popText.text = this.FormatText(Texts.Instance.GetText("illusionTutorialTitle"), Texts.Instance.GetText("illusionTutorialText"));
+        this.HideCircle2();
+        this.MoveCircle(position);
+        this.SizeCircle(new Vector3(4.78f, 1.56f, 1f));
         break;
     }
     CardScreenManager.Instance.ShowCardScreen(false);

@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: AtOManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Newtonsoft.Json;
@@ -137,6 +137,9 @@ public class AtOManager : MonoBehaviour
   public string weeklyForcedId = "";
   private DateTime currentDate;
   private DateTime startDate;
+  public bool SirenQueenBattle;
+  public bool doubleFuryEffect;
+  public bool doublePowerfulEffect;
   private int sandbox_startingEnergy;
   private int sandbox_startingSpeed;
   private int sandbox_additionalGold;
@@ -559,10 +562,27 @@ public class AtOManager : MonoBehaviour
     if (slot == -1)
       slot = this.saveSlot;
     if (slot != -1)
+    {
       SaveManager.LoadGame(slot, comingFromReloadCombat);
+    }
     else
+    {
       this.saveLoadStatus = false;
+      if (!GameManager.Instance.GetDeveloperMode())
+        return;
+      SceneStatic.LoadByName("Combat");
+    }
   }
+
+  public void UseManyResources()
+  {
+    this.GivePlayer(0, 99999);
+    this.GivePlayer(1, 99999);
+    this.GivePlayer(2, 500);
+    PlayerManager.Instance.SetPlayerRankProgress(Globals.Instance.PerkLevel[Globals.Instance.PerkLevel.Count - 1]);
+  }
+
+  public void UnlockAllHeroes() => PlayerManager.Instance.UnlockHeroes();
 
   public void MovePetFromAccesoryItem()
   {
@@ -1077,19 +1097,32 @@ public class AtOManager : MonoBehaviour
     {
       if (_currentMapNode != "")
       {
-        if (_currentMapNode == "sen_0" || _currentMapNode == "tutorial_0" || _currentMapNode == "tutorial_1" || _currentMapNode == "tutorial_2")
-          return 1;
-        actNumberForText1 = this.townTier + 1;
-        if ((UnityEngine.Object) Globals.Instance.GetNodeData(_currentMapNode) != (UnityEngine.Object) null)
+        switch (_currentMapNode)
         {
-          string[] strArray = Globals.Instance.GetNodeData(_currentMapNode).NodeId.Split('_', StringSplitOptions.None);
-          if (strArray.Length == 2 && strArray[1] == "0")
-          {
-            int actNumberForText2 = actNumberForText1 + 1;
-            if (actNumberForText2 > 4)
-              actNumberForText2 = 4;
-            return actNumberForText2;
-          }
+          case "sen_0":
+          case "tutorial_0":
+          case "tutorial_1":
+          case "tutorial_2":
+            return 1;
+          case "dream_0":
+            return this.townTier + 1;
+          case "sunken_0":
+            return 2;
+          default:
+            actNumberForText1 = this.townTier + 1;
+            if ((UnityEngine.Object) Globals.Instance.GetNodeData(_currentMapNode) != (UnityEngine.Object) null)
+            {
+              string[] strArray = Globals.Instance.GetNodeData(_currentMapNode).NodeId.Split('_', StringSplitOptions.None);
+              if (strArray.Length == 2 && strArray[1] == "0")
+              {
+                int actNumberForText2 = actNumberForText1 + 1;
+                if (actNumberForText2 > 4)
+                  actNumberForText2 = 4;
+                return actNumberForText2;
+              }
+              break;
+            }
+            break;
         }
       }
     }
@@ -1424,7 +1457,7 @@ public class AtOManager : MonoBehaviour
 
   public bool IsFirstGame()
   {
-    return (!GameManager.Instance.IsThisAProfile() || !GameManager.Instance.TutorialWatched("firstTurnEnergy")) && PlayerManager.Instance.MonstersKilled < 1 && PlayerManager.Instance.GetHighestCharacterRank() == 0;
+    return (!GameManager.Instance.CheatMode || !GameManager.Instance.SkipTutorial) && (!GameManager.Instance.IsThisAProfile() || !GameManager.Instance.TutorialWatched("firstTurnEnergy")) && PlayerManager.Instance.MonstersKilled < 1 && PlayerManager.Instance.GetHighestCharacterRank() == 0;
   }
 
   public void AskGivePlayerToPlayer(int type, int quantity, string to, string from)
@@ -1877,6 +1910,23 @@ public class AtOManager : MonoBehaviour
     return false;
   }
 
+  public bool AliveTeamHaveTrait(string _id)
+  {
+    _id = _id.ToLower();
+    for (int index1 = 0; index1 < this.teamAtO.Length; ++index1)
+    {
+      if (this.teamAtO[index1].Alive && this.teamAtO[index1].Traits != null)
+      {
+        for (int index2 = 0; index2 < this.teamAtO[index1].Traits.Length; ++index2)
+        {
+          if (this.teamAtO[index1].Traits[index2] == _id)
+            return true;
+        }
+      }
+    }
+    return false;
+  }
+
   public bool CharacterHaveTrait(string _subclassId, string _id)
   {
     _id = _id.ToLower();
@@ -2012,6 +2062,16 @@ public class AtOManager : MonoBehaviour
       _AC.AuraDamageIncreasedPerStack4 += (float) _perStack;
       _AC.AuraDamageIncreasedPercent4 += _percent;
     }
+    for (int index = 0; index < _AC.AuraDamageConditionalBonuses.Length; ++index)
+    {
+      if (_AC.AuraDamageConditionalBonuses[index].AuraDamageType == Enums.DamageType.None || _AC.AuraDamageConditionalBonuses[index].AuraDamageType == _DT)
+      {
+        _AC.AuraDamageConditionalBonuses[index].AuraDamageType = _DT;
+        _AC.AuraDamageConditionalBonuses[index].AuraDamageIncreasedTotal += _value;
+        _AC.AuraDamageConditionalBonuses[index].AuraDamageIncreasedPerStack += (float) _perStack;
+        _AC.AuraDamageConditionalBonuses[index].AuraDamageIncreasedPercent += _percent;
+      }
+    }
     return _AC;
   }
 
@@ -2085,8 +2145,10 @@ public class AtOManager : MonoBehaviour
       if (this.cacheGlobalACModification.ContainsKey(key))
         return this.cacheGlobalACModification[key];
     }
-    AuraCurseData _AC = UnityEngine.Object.Instantiate<AuraCurseData>(Globals.Instance.GetAuraCurseData(_acId));
-    if ((UnityEngine.Object) _AC == (UnityEngine.Object) null)
+    if (string.IsNullOrEmpty(_acId))
+      return (AuraCurseData) null;
+    AuraCurseData AC = UnityEngine.Object.Instantiate<AuraCurseData>(Globals.Instance.GetAuraCurseData(_acId));
+    if ((UnityEngine.Object) AC == (UnityEngine.Object) null)
       return (AuraCurseData) null;
     bool flag1 = false;
     bool flag2 = false;
@@ -2104,45 +2166,53 @@ public class AtOManager : MonoBehaviour
             {
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkfury1c"))
               {
-                _AC.Preventable = false;
-                _AC.DamageWhenConsumedPerCharge = 1.5f;
+                AC.Preventable = false;
+                AC.DamageWhenConsumedPerCharge = 1.5f;
               }
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkbleed2b"))
               {
-                _AC.Removable = false;
-                _AC.ConsumedAtTurnBegin = false;
-                _AC.ConsumedAtTurn = true;
+                AC.Removable = false;
+                AC.ConsumedAtTurnBegin = false;
+                AC.ConsumedAtTurn = true;
               }
             }
-            else if (this.TeamHavePerk("mainperkbleed2c"))
+            else
             {
-              _AC.Preventable = false;
-              _AC.ConsumedAtTurnBegin = false;
-              _AC.ConsumedAtTurn = true;
+              if (this.TeamHavePerk("mainperkbleed2c"))
+              {
+                AC.Preventable = false;
+                AC.ConsumedAtTurnBegin = false;
+                AC.ConsumedAtTurn = true;
+              }
+              if (AtOManager.Instance.AliveTeamHaveTrait("crimsonripple"))
+              {
+                AC.ResistModified = Enums.DamageType.Fire;
+                AC.ResistModifiedPercentagePerStack = -0.5f;
+              }
             }
             if (this.IsChallengeTraitActive("hemorrhage"))
             {
-              _AC.Preventable = false;
+              AC.Preventable = false;
               break;
             }
             break;
           case "consume":
             if (!flag1 && this.TeamHavePerk("mainperkbleed2c"))
             {
-              _AC.ConsumedAtTurnBegin = false;
-              _AC.ConsumedAtTurn = true;
+              AC.ConsumedAtTurnBegin = false;
+              AC.ConsumedAtTurn = true;
             }
             if (_characterCaster != null && this.CharacterHavePerk(_characterCaster.SubclassName, "mainperkbleed2b"))
             {
-              _AC.ConsumedAtTurnBegin = false;
-              _AC.ConsumedAtTurn = true;
+              AC.ConsumedAtTurnBegin = false;
+              AC.ConsumedAtTurn = true;
             }
             if (_characterCaster != null && this.CharacterHavePerk(_characterCaster.SubclassName, "mainperkfury1c"))
-              _AC.DamageWhenConsumedPerCharge = 1.5f;
+              AC.DamageWhenConsumedPerCharge = 1.5f;
             if (this.IsChallengeTraitActive("hemorrhage"))
             {
-              _AC.ConsumedAtTurnBegin = false;
-              _AC.ConsumedAtTurn = true;
+              AC.ConsumedAtTurnBegin = false;
+              AC.ConsumedAtTurn = true;
               break;
             }
             break;
@@ -2156,16 +2226,16 @@ public class AtOManager : MonoBehaviour
             {
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkbless1a"))
               {
-                _AC.AuraDamageIncreasedPerStack = 1.5f;
-                _AC.HealReceivedPerStack = 0;
+                AC.AuraDamageIncreasedPerStack = 1.5f;
+                AC.HealReceivedPerStack = 0;
               }
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkbless1b"))
-                _AC.HealDonePercentPerStack = 1;
+                AC.HealDonePercentPerStack = 1;
               if (this.TeamHavePerk("mainperkbless1c"))
               {
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Holy, 0, 0.5f);
-                _AC.ConsumedAtTurn = false;
-                _AC.AuraConsumed = 0;
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Holy, 0, 0.5f);
+                AC.ConsumedAtTurn = false;
+                AC.AuraConsumed = 0;
                 break;
               }
               break;
@@ -2174,8 +2244,8 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (flag1 && this.TeamHavePerk("mainperkbless1c"))
             {
-              _AC.ConsumedAtTurn = false;
-              _AC.AuraConsumed = 0;
+              AC.ConsumedAtTurn = false;
+              AC.AuraConsumed = 0;
               break;
             }
             break;
@@ -2188,37 +2258,37 @@ public class AtOManager : MonoBehaviour
           {
             if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkburn2b"))
             {
-              _AC.ResistModifiedPercentagePerStack = -0.3f;
-              _AC.CharacterStatModified = Enums.CharacterStat.Speed;
-              _AC.CharacterStatChargesMultiplierNeededForOne = 8;
-              _AC.CharacterStatModifiedValuePerStack = 1;
+              AC.ResistModifiedPercentagePerStack = -0.3f;
+              AC.CharacterStatModified = Enums.CharacterStat.Speed;
+              AC.CharacterStatChargesMultiplierNeededForOne = 8;
+              AC.CharacterStatModifiedValuePerStack = 1;
             }
           }
           else
           {
             if (_characterTarget != null && this.TeamHavePerk("mainperkburn2c"))
             {
-              _AC.ResistModifiedPercentagePerStack = -0.3f;
-              _AC.ResistModified2 = Enums.DamageType.Cold;
-              _AC.ResistModifiedPercentagePerStack2 = -0.3f;
+              AC.ResistModifiedPercentagePerStack = -0.3f;
+              AC.ResistModified2 = Enums.DamageType.Cold;
+              AC.ResistModifiedPercentagePerStack2 = -0.3f;
             }
             if (this.TeamHavePerk("mainperkburn2d"))
-              _AC.DoubleDamageIfCursesLessThan = 3;
+              AC.DoubleDamageIfCursesLessThan = 3;
           }
           if (this.IsChallengeTraitActive("extremeburning"))
-            _AC.DoubleDamageIfCursesLessThan = 3;
+            AC.DoubleDamageIfCursesLessThan = 3;
           if (this.IsChallengeTraitActive("frostfire"))
           {
-            _AC.ResistModifiedPercentagePerStack = -0.3f;
-            _AC.ResistModified2 = Enums.DamageType.Cold;
-            _AC.ResistModifiedPercentagePerStack2 = -0.3f;
+            AC.ResistModifiedPercentagePerStack = -0.3f;
+            AC.ResistModified2 = Enums.DamageType.Cold;
+            AC.ResistModifiedPercentagePerStack2 = -0.3f;
           }
           if (flag2 && _characterTarget != null && this.CharacterHaveTrait(_characterTarget.SubclassName, "righteousflame"))
           {
-            _AC.ProduceDamageWhenConsumed = false;
-            _AC.DamageWhenConsumedPerCharge = 0.0f;
-            _AC.ProduceHealWhenConsumed = true;
-            _AC.HealWhenConsumedPerCharge = 0.3f;
+            AC.ProduceDamageWhenConsumed = false;
+            AC.DamageWhenConsumedPerCharge = 0.0f;
+            AC.ProduceHealWhenConsumed = true;
+            AC.HealWhenConsumedPerCharge = 0.3f;
           }
         }
         if (_type == "consume")
@@ -2226,18 +2296,18 @@ public class AtOManager : MonoBehaviour
           if (!flag1)
           {
             if (this.TeamHavePerk("mainperkburn2c"))
-              _AC.DamageTypeWhenConsumed = Enums.DamageType.Cold;
+              AC.DamageTypeWhenConsumed = Enums.DamageType.Cold;
             if (this.TeamHavePerk("mainperkburn2d"))
-              _AC.DoubleDamageIfCursesLessThan = 3;
+              AC.DoubleDamageIfCursesLessThan = 3;
           }
           if (this.IsChallengeTraitActive("extremeburning"))
-            _AC.DoubleDamageIfCursesLessThan = 3;
+            AC.DoubleDamageIfCursesLessThan = 3;
           if (flag1 && _characterCaster != null && this.CharacterHaveTrait(_characterCaster.SubclassName, "righteousflame"))
           {
-            _AC.ProduceDamageWhenConsumed = false;
-            _AC.DamageWhenConsumedPerCharge = 0.0f;
-            _AC.ProduceHealWhenConsumed = true;
-            _AC.HealWhenConsumedPerCharge = 0.3f;
+            AC.ProduceDamageWhenConsumed = false;
+            AC.DamageWhenConsumedPerCharge = 0.0f;
+            AC.ProduceHealWhenConsumed = true;
+            AC.HealWhenConsumedPerCharge = 0.3f;
             break;
           }
           break;
@@ -2249,15 +2319,15 @@ public class AtOManager : MonoBehaviour
           if (!flag2)
           {
             if (this.TeamHavePerk("mainperkChill2b"))
-              _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Blunt, 0, -0.3f);
+              AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Blunt, 0, -0.3f);
             if (this.TeamHavePerk("mainperkChill2c"))
-              _AC.CharacterStatChargesMultiplierNeededForOne = 4;
+              AC.CharacterStatChargesMultiplierNeededForOne = 4;
           }
           else if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkChill2d"))
-            _AC.CharacterStatChargesMultiplierNeededForOne = 8;
+            AC.CharacterStatChargesMultiplierNeededForOne = 8;
           if (this.IsChallengeTraitActive("intensecold"))
           {
-            _AC.CharacterStatChargesMultiplierNeededForOne = 4;
+            AC.CharacterStatChargesMultiplierNeededForOne = 4;
             break;
           }
           break;
@@ -2267,18 +2337,17 @@ public class AtOManager : MonoBehaviour
         if (_type == "set" && flag2)
         {
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkCourage0"))
-            _AC.Removable = false;
+            AC.Removable = false;
           if (this.TeamHavePerk("mainperkCourage1b"))
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Holy, 35, 0.0f), Enums.DamageType.Shadow, 35, 0.0f), Enums.DamageType.Mind, 35, 0.0f);
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Holy, 35, 0.0f), Enums.DamageType.Shadow, 35, 0.0f), Enums.DamageType.Mind, 35, 0.0f);
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkCourage1c"))
           {
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Holy, 0, 7f), Enums.DamageType.Shadow, 0, 7f), Enums.DamageType.Mind, 0, 7f);
-            _AC.GainCharges = true;
-            _AC.MaxCharges = _AC.MaxMadnessCharges = 8;
-            break;
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Holy, 0, 7f), Enums.DamageType.Shadow, 0, 7f), Enums.DamageType.Mind, 0, 7f);
+            AC.GainCharges = true;
+            AC.MaxCharges = AC.MaxMadnessCharges = 8;
           }
-          break;
         }
+        this.UpdateResistanceModifiersBasedOnAegis(_type, _characterCaster, _characterTarget, ref AC);
         break;
       case "crack":
         int num1 = 0;
@@ -2288,7 +2357,7 @@ public class AtOManager : MonoBehaviour
           num1 = _characterTarget.GetAuraCharges("rust");
         if (num1 > 0)
         {
-          _AC.IncreasedDirectDamageReceivedPerStack *= 1.5f;
+          AC.IncreasedDirectDamageReceivedPerStack *= 1.5f;
           break;
         }
         break;
@@ -2299,28 +2368,28 @@ public class AtOManager : MonoBehaviour
             if (!flag2)
             {
               if (this.TeamHaveItem("thedarkone", 0, true))
-                _AC.ExplodeAtStacks = Globals.Instance.GetItemData("thedarkone").AuracurseCustomModValue1;
+                AC.ExplodeAtStacks = Globals.Instance.GetItemData("thedarkone").AuracurseCustomModValue1;
               else if (this.TeamHaveItem("blackdeck", 0, true))
-                _AC.ExplodeAtStacks = Globals.Instance.GetItemData("blackdeck").AuracurseCustomModValue1;
+                AC.ExplodeAtStacks = Globals.Instance.GetItemData("blackdeck").AuracurseCustomModValue1;
               else if (this.TeamHaveItem("cupofdeath", 0, true))
-                _AC.ExplodeAtStacks = Globals.Instance.GetItemData("cupofdeath").AuracurseCustomModValue1;
+                AC.ExplodeAtStacks = Globals.Instance.GetItemData("cupofdeath").AuracurseCustomModValue1;
               if (this.TeamHaveTrait("putrefaction"))
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Shadow, 0, -1.5f);
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Shadow, 0, -1.5f);
               if (this.TeamHavePerk("mainperkdark2c") || this.TeamHaveTrait("absolutedarkness"))
               {
                 if (this.TeamHavePerk("mainperkdark2c") && this.TeamHaveTrait("absolutedarkness"))
                 {
-                  _AC.DamageWhenConsumedPerCharge += _AC.DamageWhenConsumedPerCharge * 0.7f;
+                  AC.DamageWhenConsumedPerCharge += AC.DamageWhenConsumedPerCharge * 0.7f;
                   break;
                 }
-                _AC.DamageWhenConsumedPerCharge += _AC.DamageWhenConsumedPerCharge * 0.35f;
+                AC.DamageWhenConsumedPerCharge += AC.DamageWhenConsumedPerCharge * 0.35f;
                 break;
               }
               break;
             }
             if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkdark2b"))
             {
-              _AC.ExplodeAtStacks = 38;
+              AC.ExplodeAtStacks = 38;
               break;
             }
             break;
@@ -2330,19 +2399,35 @@ public class AtOManager : MonoBehaviour
               if (this.TeamHavePerk("mainperkdark2c") || this.TeamHaveTrait("absolutedarkness"))
               {
                 if (this.TeamHavePerk("mainperkdark2c") && this.TeamHaveTrait("absolutedarkness"))
-                  _AC.DamageWhenConsumedPerCharge += _AC.DamageWhenConsumedPerCharge * 0.7f;
+                  AC.DamageWhenConsumedPerCharge += AC.DamageWhenConsumedPerCharge * 0.7f;
                 else
-                  _AC.DamageWhenConsumedPerCharge += _AC.DamageWhenConsumedPerCharge * 0.35f;
+                  AC.DamageWhenConsumedPerCharge += AC.DamageWhenConsumedPerCharge * 0.35f;
               }
               if (this.TeamHavePerk("mainperkdark2d"))
-                _AC.ProduceDamageWhenConsumed = true;
+                AC.ProduceDamageWhenConsumed = true;
             }
             if (this.IsChallengeTraitActive("darkestnight"))
             {
-              _AC.ProduceDamageWhenConsumed = true;
+              AC.ProduceDamageWhenConsumed = true;
               break;
             }
             break;
+        }
+        break;
+      case "leech":
+        if (_type == "set" && !flag2)
+        {
+          if (this.TeamHaveItem("bloodlettersfang", 0))
+          {
+            AC.ExplodeAtStacks = Globals.Instance.GetItemData("bloodlettersfang").AuracurseCustomModValue1;
+            break;
+          }
+          if (this.TeamHaveItem("bloodlettersfangrare", 0))
+          {
+            AC.ExplodeAtStacks = Globals.Instance.GetItemData("bloodlettersfang").AuracurseCustomModValue1;
+            break;
+          }
+          break;
         }
         break;
       case "decay":
@@ -2350,12 +2435,12 @@ public class AtOManager : MonoBehaviour
         {
           if (this.TeamHavePerk("mainperkdecay1b"))
           {
-            _AC.HealReceivedPercent = -75;
-            _AC.Removable = false;
+            AC.HealReceivedPercent = -75;
+            AC.Removable = false;
           }
           if (this.TeamHavePerk("mainperkdecay1c"))
           {
-            _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Shadow, 0, -8f);
+            AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Shadow, 0, -8f);
             break;
           }
           break;
@@ -2369,13 +2454,13 @@ public class AtOManager : MonoBehaviour
             {
               if (this.CharacterHaveItem(_characterTarget.SubclassName, "rocketboots") || this.CharacterHaveItem(_characterTarget.SubclassName, "rocketbootsa") || this.CharacterHaveItem(_characterTarget.SubclassName, "rocketbootsb") || this.CharacterHaveItem(_characterTarget.SubclassName, "rocketbootsrare") || this.CharacterHaveItem(_characterTarget.SubclassName, "turboboots") || this.CharacterHaveItem(_characterTarget.SubclassName, "turbobootsrare"))
               {
-                _AC.GainCharges = true;
-                _AC.ConsumeAll = true;
+                AC.GainCharges = true;
+                AC.ConsumeAll = true;
               }
               if (this.CharacterHaveTrait(_characterTarget.SubclassName, "greasedgears"))
               {
-                _AC.AuraDamageType = Enums.DamageType.All;
-                _AC.AuraDamageIncreasedPerStack = 1f;
+                AC.AuraDamageType = Enums.DamageType.All;
+                AC.AuraDamageIncreasedPerStack = 1f;
                 break;
               }
               break;
@@ -2384,7 +2469,7 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (flag1 && _characterCaster != null && (this.CharacterHaveItem(_characterCaster.SubclassName, "rocketboots") || this.CharacterHaveItem(_characterCaster.SubclassName, "rocketbootsa") || this.CharacterHaveItem(_characterCaster.SubclassName, "rocketbootsb") || this.CharacterHaveItem(_characterCaster.SubclassName, "rocketbootsrare") || this.CharacterHaveItem(_characterCaster.SubclassName, "turboboots") || this.CharacterHaveItem(_characterCaster.SubclassName, "turbobootsrare")))
             {
-              _AC.ConsumeAll = true;
+              AC.ConsumeAll = true;
               break;
             }
             break;
@@ -2396,7 +2481,7 @@ public class AtOManager : MonoBehaviour
           num2 = _characterTarget.GetAuraCharges("rust");
         if (num2 > 0)
         {
-          _AC.CharacterStatModifiedValuePerStack = Functions.FuncRoundToInt((float) _AC.CharacterStatModifiedValuePerStack * 0.5f);
+          AC.CharacterStatModifiedValuePerStack = Functions.FuncRoundToInt((float) AC.CharacterStatModifiedValuePerStack * 0.5f);
           break;
         }
         break;
@@ -2408,16 +2493,16 @@ public class AtOManager : MonoBehaviour
             {
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkfortify1a"))
               {
-                _AC.AuraDamageType = Enums.DamageType.Blunt;
-                _AC.AuraDamageIncreasedPerStack = 1f;
-                _AC.AuraDamageType2 = Enums.DamageType.Fire;
-                _AC.AuraDamageIncreasedPerStack2 = 1f;
-                _AC.GainCharges = true;
-                _AC.MaxCharges = _AC.MaxMadnessCharges = 50;
+                AC.AuraDamageType = Enums.DamageType.Blunt;
+                AC.AuraDamageIncreasedPerStack = 1f;
+                AC.AuraDamageType2 = Enums.DamageType.Fire;
+                AC.AuraDamageIncreasedPerStack2 = 1f;
+                AC.GainCharges = true;
+                AC.MaxCharges = AC.MaxMadnessCharges = 50;
               }
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkfortify1b"))
               {
-                _AC.Removable = false;
+                AC.Removable = false;
                 break;
               }
               break;
@@ -2426,13 +2511,14 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (flag1 && this.TeamHavePerk("mainperkfortify1c"))
             {
-              _AC.ConsumeAll = true;
+              AC.ConsumeAll = true;
               break;
             }
             break;
         }
         break;
       case "fury":
+        AC.AuraDamageIncreasedPercentPerStack = 3f;
         switch (_type)
         {
           case "set":
@@ -2440,30 +2526,35 @@ public class AtOManager : MonoBehaviour
             {
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkfury1b"))
               {
-                _AC.AuraDamageIncreasedPercentPerStack = 1f;
-                _AC.GainAuraCurseConsumption = (AuraCurseData) null;
+                AC.AuraDamageIncreasedPercentPerStack = 1f;
+                AC.GainAuraCurseConsumption = (AuraCurseData) null;
               }
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkfury1c"))
-                _AC.AuraDamageIncreasedPercentPerStack = 5f;
+                AC.AuraDamageIncreasedPercentPerStack = 5f;
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkbleed2b"))
-                _AC.MaxCharges = _AC.MaxMadnessCharges = 25;
+                AC.MaxCharges = AC.MaxMadnessCharges = 25;
             }
             if (this.IsChallengeTraitActive("containedfury"))
             {
-              _AC.AuraDamageIncreasedPercentPerStack = 2f;
-              _AC.GainAuraCurseConsumption = (AuraCurseData) null;
+              AC.AuraDamageIncreasedPercentPerStack = 2f;
+              AC.GainAuraCurseConsumption = (AuraCurseData) null;
               break;
             }
             break;
           case "consume":
             if (flag1 && _characterCaster != null && this.CharacterHavePerk(_characterCaster.SubclassName, "mainperkfury1b"))
-              _AC.GainAuraCurseConsumption = (AuraCurseData) null;
+              AC.GainAuraCurseConsumption = (AuraCurseData) null;
             if (this.IsChallengeTraitActive("containedfury"))
             {
-              _AC.GainAuraCurseConsumption = (AuraCurseData) null;
+              AC.GainAuraCurseConsumption = (AuraCurseData) null;
               break;
             }
             break;
+        }
+        if (this.doubleFuryEffect & flag2)
+        {
+          AC.AuraDamageIncreasedPercentPerStack *= 2f;
+          break;
         }
         break;
       case "insane":
@@ -2474,16 +2565,16 @@ public class AtOManager : MonoBehaviour
             {
               if (this.TeamHavePerk("mainperkinsane2c"))
               {
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Mind, 0, 0.5f);
-                _AC.AuraDamageIncreasedPercentPerStack = -0.3f;
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Mind, 0, 0.5f);
+                AC.AuraDamageIncreasedPercentPerStack = -0.3f;
                 break;
               }
               break;
             }
             if (this.TeamHavePerk("mainperkinsane2b"))
             {
-              _AC.CharacterStatModified = Enums.CharacterStat.Hp;
-              _AC.CharacterStatModifiedValuePerStack = -2;
+              AC.CharacterStatModified = Enums.CharacterStat.Hp;
+              AC.CharacterStatModifiedValuePerStack = -2;
               break;
             }
             break;
@@ -2494,13 +2585,13 @@ public class AtOManager : MonoBehaviour
         {
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkInspire0b"))
           {
-            _AC.MaxCharges = _AC.MaxMadnessCharges = 1;
-            _AC.CardsDrawPerStack = 2;
+            AC.MaxCharges = AC.MaxMadnessCharges = 1;
+            AC.CardsDrawPerStack = 2;
           }
           if (this.TeamHaveItem("goldenlaurel", 3, true))
           {
-            _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.All, 0, (float) Globals.Instance.GetItemData("goldenlaurel").AuracurseCustomModValue1);
-            _AC.HealReceivedPercentPerStack = Globals.Instance.GetItemData("goldenlaurel").AuracurseCustomModValue2;
+            AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.All, 0, (float) Globals.Instance.GetItemData("goldenlaurel").AuracurseCustomModValue1);
+            AC.HealReceivedPercentPerStack = Globals.Instance.GetItemData("goldenlaurel").AuracurseCustomModValue2;
             break;
           }
           break;
@@ -2510,18 +2601,17 @@ public class AtOManager : MonoBehaviour
         if (_type == "set" && flag2)
         {
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkInsulate0"))
-            _AC.Removable = false;
+            AC.Removable = false;
           if (this.TeamHavePerk("mainperkInsulate1b"))
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Fire, 35, 0.0f), Enums.DamageType.Cold, 35, 0.0f), Enums.DamageType.Blunt, 35, 0.0f);
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Fire, 35, 0.0f), Enums.DamageType.Cold, 35, 0.0f), Enums.DamageType.Blunt, 35, 0.0f);
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkInsulate1c"))
           {
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Fire, 0, 7f), Enums.DamageType.Cold, 0, 7f), Enums.DamageType.Lightning, 0, 7f);
-            _AC.GainCharges = true;
-            _AC.MaxCharges = _AC.MaxMadnessCharges = 8;
-            break;
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Fire, 0, 7f), Enums.DamageType.Cold, 0, 7f), Enums.DamageType.Lightning, 0, 7f);
+            AC.GainCharges = true;
+            AC.MaxCharges = AC.MaxMadnessCharges = 8;
           }
-          break;
         }
+        this.UpdateResistanceModifiersBasedOnAegis(_type, _characterCaster, _characterTarget, ref AC);
         break;
       case "mark":
         switch (_type)
@@ -2531,12 +2621,15 @@ public class AtOManager : MonoBehaviour
             {
               if (this.TeamHavePerk("mainperkmark1b"))
               {
-                _AC.ConsumedAtTurn = false;
-                _AC.AuraConsumed = 0;
+                AC.ConsumedAtTurn = false;
+                AC.AuraConsumed = 0;
               }
               if (this.TeamHavePerk("mainperkmark1c"))
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Slashing, 0, -0.3f);
+              if (AtOManager.Instance.AliveTeamHaveTrait("runicfocus"))
               {
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Slashing, 0, -0.3f);
+                AC.ChargesMultiplierDescription = 2;
+                AC.IncreasedDirectDamageReceivedPerStack = 2f;
                 break;
               }
               break;
@@ -2545,8 +2638,8 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (!flag1 && this.TeamHavePerk("mainperkmark1b"))
             {
-              _AC.ConsumedAtTurn = false;
-              _AC.AuraConsumed = 0;
+              AC.ConsumedAtTurn = false;
+              AC.AuraConsumed = 0;
               break;
             }
             break;
@@ -2559,30 +2652,30 @@ public class AtOManager : MonoBehaviour
             if (!flag2)
             {
               if (this.TeamHavePerk("mainperkpoison2b"))
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Shadow, 0, -0.3f);
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Shadow, 0, -0.3f);
               if (this.TeamHavePerk("mainperkpoison2c"))
               {
-                _AC.ConsumeAll = true;
-                _AC.DamageWhenConsumedPerCharge = 1.5f;
+                AC.ConsumeAll = true;
+                AC.DamageWhenConsumedPerCharge = 1.5f;
               }
             }
             if (this.IsChallengeTraitActive("lethalpoison"))
             {
-              _AC.ConsumeAll = true;
-              _AC.DamageWhenConsumedPerCharge = 1.5f;
+              AC.ConsumeAll = true;
+              AC.DamageWhenConsumedPerCharge = 1.5f;
               break;
             }
             break;
           case "consume":
             if (!flag1 && this.TeamHavePerk("mainperkpoison2c"))
             {
-              _AC.ConsumeAll = true;
-              _AC.DamageWhenConsumedPerCharge = 1.5f;
+              AC.ConsumeAll = true;
+              AC.DamageWhenConsumedPerCharge = 1.5f;
             }
             if (this.IsChallengeTraitActive("lethalpoison"))
             {
-              _AC.ConsumeAll = true;
-              _AC.DamageWhenConsumedPerCharge = 1.5f;
+              AC.ConsumeAll = true;
+              AC.DamageWhenConsumedPerCharge = 1.5f;
               break;
             }
             break;
@@ -2594,16 +2687,18 @@ public class AtOManager : MonoBehaviour
           num3 = _characterTarget.GetAuraCharges("rust");
         if (num3 > 0)
         {
-          _AC.DamageWhenConsumedPerCharge *= 1.5f;
+          AC.DamageWhenConsumedPerCharge *= 1.5f;
           if (_type == "set" && !flag2 && this.TeamHavePerk("mainperkpoison2b"))
           {
-            _AC.ResistModifiedPercentagePerStack = -0.45f;
+            AC.ResistModifiedPercentagePerStack = -0.45f;
             break;
           }
           break;
         }
         break;
       case "powerful":
+        AC.HealDonePercentPerStack = 5;
+        AC.AuraDamageIncreasedPercentPerStack = 5f;
         switch (_type)
         {
           case "set":
@@ -2611,32 +2706,32 @@ public class AtOManager : MonoBehaviour
             {
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkpowerful1b"))
               {
-                _AC.MaxCharges += 2;
-                _AC.MaxMadnessCharges += 2;
-                _AC.AuraConsumed = 1;
+                AC.MaxCharges += 2;
+                AC.MaxMadnessCharges += 2;
+                AC.AuraConsumed = 1;
               }
               if (this.TeamHaveTrait("valhalla"))
               {
-                _AC.MaxCharges += 8;
-                _AC.MaxMadnessCharges += 8;
+                AC.MaxCharges += 8;
+                AC.MaxMadnessCharges += 8;
               }
               if (this.TeamHaveItem("powercoilrare", 2))
               {
-                _AC.MaxCharges += Globals.Instance.GetItemData("powercoilrare").AuracurseCustomModValue1;
-                _AC.MaxMadnessCharges += Globals.Instance.GetItemData("powercoilrare").AuracurseCustomModValue1;
+                AC.MaxCharges += Globals.Instance.GetItemData("powercoilrare").AuracurseCustomModValue1;
+                AC.MaxMadnessCharges += Globals.Instance.GetItemData("powercoilrare").AuracurseCustomModValue1;
               }
               else if (this.TeamHaveItem("powercoil", 2))
               {
-                _AC.MaxCharges += Globals.Instance.GetItemData("powercoil").AuracurseCustomModValue1;
-                _AC.MaxMadnessCharges += Globals.Instance.GetItemData("powercoil").AuracurseCustomModValue1;
+                AC.MaxCharges += Globals.Instance.GetItemData("powercoil").AuracurseCustomModValue1;
+                AC.MaxMadnessCharges += Globals.Instance.GetItemData("powercoil").AuracurseCustomModValue1;
               }
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkpowerful1c"))
               {
-                _AC.AuraDamageIncreasedPercentPerStack = 8f;
-                _AC.HealDonePercentPerStack = 8;
-                _AC.MaxCharges -= 2;
-                _AC.MaxMadnessCharges -= 2;
-                _AC.ConsumeAll = true;
+                AC.AuraDamageIncreasedPercentPerStack = 8f;
+                AC.HealDonePercentPerStack = 8;
+                AC.MaxCharges -= 2;
+                AC.MaxMadnessCharges -= 2;
+                AC.ConsumeAll = true;
                 break;
               }
               break;
@@ -2646,15 +2741,21 @@ public class AtOManager : MonoBehaviour
             if (flag1)
             {
               if (_characterCaster != null && this.CharacterHavePerk(_characterCaster.SubclassName, "mainperkpowerful1b"))
-                _AC.AuraConsumed = 1;
+                AC.AuraConsumed = 1;
               if (_characterCaster != null && this.CharacterHavePerk(_characterCaster.SubclassName, "mainperkpowerful1c"))
               {
-                _AC.ConsumeAll = true;
+                AC.ConsumeAll = true;
                 break;
               }
               break;
             }
             break;
+        }
+        if (flag2 && this.doublePowerfulEffect)
+        {
+          AC.HealDonePercentPerStack *= 2;
+          AC.AuraDamageIncreasedPercentPerStack *= 2f;
+          break;
         }
         break;
       case "regeneration":
@@ -2664,11 +2765,11 @@ public class AtOManager : MonoBehaviour
             if (flag2)
             {
               if (this.TeamHavePerk("mainperkregeneration1b"))
-                _AC.HealReceivedPercentPerStack = 1;
+                AC.HealReceivedPercentPerStack = 1;
               if (this.TeamHavePerk("mainperkregeneration1c"))
               {
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Shadow, 0, 0.5f);
-                _AC.AuraConsumed = 0;
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Shadow, 0, 0.5f);
+                AC.AuraConsumed = 0;
                 break;
               }
               break;
@@ -2679,12 +2780,12 @@ public class AtOManager : MonoBehaviour
             {
               if (_characterCaster != null && this.CharacterHavePerk(_characterCaster.SubclassName, "mainperkregeneration1a"))
               {
-                _AC.HealSidesWhenConsumed = _AC.HealWhenConsumed;
-                _AC.HealSidesWhenConsumedPerCharge = _AC.HealWhenConsumedPerCharge;
+                AC.HealSidesWhenConsumed = AC.HealWhenConsumed;
+                AC.HealSidesWhenConsumedPerCharge = AC.HealWhenConsumedPerCharge;
               }
               if (this.TeamHavePerk("mainperkregeneration1c"))
               {
-                _AC.AuraConsumed = 0;
+                AC.AuraConsumed = 0;
                 break;
               }
               break;
@@ -2696,23 +2797,22 @@ public class AtOManager : MonoBehaviour
         if (_type == "set" && flag2)
         {
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkReinforce0"))
-            _AC.Removable = false;
+            AC.Removable = false;
           if (this.TeamHavePerk("mainperkReinforce1b"))
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Slashing, 35, 0.0f), Enums.DamageType.Piercing, 35, 0.0f), Enums.DamageType.Blunt, 35, 0.0f);
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Slashing, 35, 0.0f), Enums.DamageType.Piercing, 35, 0.0f), Enums.DamageType.Blunt, 35, 0.0f);
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkReinforce1c"))
           {
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Slashing, 0, 7f), Enums.DamageType.Piercing, 0, 7f), Enums.DamageType.Blunt, 0, 7f);
-            _AC.GainCharges = true;
-            _AC.MaxCharges = _AC.MaxMadnessCharges = 8;
-            break;
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Slashing, 0, 7f), Enums.DamageType.Piercing, 0, 7f), Enums.DamageType.Blunt, 0, 7f);
+            AC.GainCharges = true;
+            AC.MaxCharges = AC.MaxMadnessCharges = 8;
           }
-          break;
         }
+        this.UpdateResistanceModifiersBasedOnAegis(_type, _characterCaster, _characterTarget, ref AC);
         break;
       case "sanctify":
         if (_type == "set" && !flag2 && this.TeamHavePerk("mainperkSanctify2b"))
         {
-          _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Holy, 0, -0.5f);
+          AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Holy, 0, -0.5f);
           break;
         }
         break;
@@ -2720,13 +2820,37 @@ public class AtOManager : MonoBehaviour
         if (_type == "set" && !flag2)
         {
           if (this.TeamHaveTrait("auraofdespair"))
-            _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.All, 0, -5f);
+            AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.All, 0, -5f);
           if (this.TeamHaveTrait("unholyblight"))
           {
-            _AC.GainCharges = true;
+            AC.GainCharges = true;
             break;
           }
           break;
+        }
+        break;
+      case "shackle":
+        switch (_type)
+        {
+          case "set":
+            if (!flag2 && this.TeamHaveTrait("webweaver"))
+            {
+              AC = this.GlobalAuraCurseModifyDamage(AC, Enums.DamageType.All, 0, 0, -30);
+              AC.ConsumedAtTurnBegin = false;
+              AC.ConsumedAtTurn = true;
+              break;
+            }
+            break;
+          case "consume":
+            if (!flag1 && this.TeamHaveTrait("webweaver"))
+            {
+              AC.ConsumedAtTurnBegin = false;
+              AC.ConsumedAtTurn = true;
+              AC.GainAuraCurseConsumption = Globals.Instance.GetAuraCurseData("slow");
+              AC.GainAuraCurseConsumptionPerCharge = 2;
+              break;
+            }
+            break;
         }
         break;
       case "sharp":
@@ -2737,28 +2861,28 @@ public class AtOManager : MonoBehaviour
             {
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkSharp1a"))
               {
-                _AC.AuraDamageIncreasedPerStack = 1.5f;
-                _AC.AuraDamageType2 = Enums.DamageType.None;
-                _AC.AuraDamageIncreasedPerStack2 = 0.0f;
+                AC.AuraDamageIncreasedPerStack = 1.5f;
+                AC.AuraDamageType2 = Enums.DamageType.None;
+                AC.AuraDamageIncreasedPerStack2 = 0.0f;
               }
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkSharp1b"))
               {
-                _AC.AuraDamageType = Enums.DamageType.Piercing;
-                _AC.AuraDamageIncreasedPerStack = 1.5f;
-                _AC.AuraDamageType2 = Enums.DamageType.None;
-                _AC.AuraDamageIncreasedPerStack2 = 0.0f;
+                AC.AuraDamageType = Enums.DamageType.Piercing;
+                AC.AuraDamageIncreasedPerStack = 1.5f;
+                AC.AuraDamageType2 = Enums.DamageType.None;
+                AC.AuraDamageIncreasedPerStack2 = 0.0f;
               }
               if (this.TeamHavePerk("mainperkSharp1c"))
               {
-                _AC.ConsumedAtTurn = false;
-                _AC.AuraConsumed = 0;
-                _AC.Removable = false;
+                AC.ConsumedAtTurn = false;
+                AC.AuraConsumed = 0;
+                AC.Removable = false;
               }
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkSharp1d"))
-                _AC = this.GlobalAuraCurseModifyDamage(_AC, Enums.DamageType.Shadow, 0, 1, 0);
+                AC = this.GlobalAuraCurseModifyDamage(AC, Enums.DamageType.Shadow, 0, 1, 0);
               if (this.TeamHaveTrait("shrilltone"))
               {
-                _AC = this.GlobalAuraCurseModifyDamage(_AC, Enums.DamageType.Mind, 0, 1, 0);
+                AC = this.GlobalAuraCurseModifyDamage(AC, Enums.DamageType.Mind, 0, 1, 0);
                 break;
               }
               break;
@@ -2767,8 +2891,8 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (flag1 && this.TeamHavePerk("mainperkSharp1c"))
             {
-              _AC.ConsumedAtTurn = false;
-              _AC.AuraConsumed = 0;
+              AC.ConsumedAtTurn = false;
+              AC.AuraConsumed = 0;
               break;
             }
             break;
@@ -2780,8 +2904,8 @@ public class AtOManager : MonoBehaviour
           num4 = _characterTarget.GetAuraCharges("rust");
         if (num4 > 0)
         {
-          _AC.AuraDamageIncreasedPerStack *= 0.5f;
-          _AC.AuraDamageIncreasedPerStack2 *= 0.5f;
+          AC.AuraDamageIncreasedPerStack *= 0.5f;
+          AC.AuraDamageIncreasedPerStack2 *= 0.5f;
           break;
         }
         break;
@@ -2792,15 +2916,15 @@ public class AtOManager : MonoBehaviour
             if (!flag2)
             {
               if (this.TeamHavePerk("mainperksight1b"))
-                _AC.Removable = false;
+                AC.Removable = false;
               if (this.TeamHavePerk("mainperksight1c"))
               {
-                _AC.Preventable = false;
-                _AC.ConsumeAll = true;
+                AC.Preventable = false;
+                AC.ConsumeAll = true;
               }
               if (this.TeamHaveTrait("keensight"))
               {
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Piercing, 0, -0.3f);
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Piercing, 0, -0.3f);
                 break;
               }
               break;
@@ -2809,7 +2933,7 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (!flag1 && this.TeamHavePerk("mainperksight1c"))
             {
-              _AC.ConsumeAll = true;
+              AC.ConsumeAll = true;
               break;
             }
             break;
@@ -2823,7 +2947,7 @@ public class AtOManager : MonoBehaviour
           num5 = _characterTarget.GetAuraCharges("rust");
         if (num5 > 0)
         {
-          _AC.CharacterStatModifiedValuePerStack = Functions.FuncRoundToInt((float) _AC.CharacterStatModifiedValuePerStack * 1.5f);
+          AC.CharacterStatModifiedValuePerStack = Functions.FuncRoundToInt((float) AC.CharacterStatModifiedValuePerStack * 1.5f);
           break;
         }
         break;
@@ -2833,14 +2957,14 @@ public class AtOManager : MonoBehaviour
           case "set":
             if (!flag1 && this.TeamHavePerk("mainperkspark1b"))
             {
-              _AC.DamageWhenConsumedPerCharge = 1f;
+              AC.DamageWhenConsumedPerCharge = 1f;
               break;
             }
             break;
           case "consume":
             if (!flag1 && this.TeamHaveTrait("voltaicarc"))
             {
-              _AC.DamageWhenConsumedPerCharge = 1f;
+              AC.DamageWhenConsumedPerCharge = 1f;
               break;
             }
             break;
@@ -2850,15 +2974,15 @@ public class AtOManager : MonoBehaviour
         if (_type == "set" && flag2 && _characterTarget != null)
         {
           if (this.CharacterHaveTrait(_characterTarget.SubclassName, "unlimitedblades"))
-            _AC.MaxCharges = _AC.MaxMadnessCharges = 12;
+            AC.MaxCharges = AC.MaxMadnessCharges = 12;
           if (this.CharacterHaveItem(_characterTarget.SubclassName, "eldritchswordrare"))
           {
-            _AC.MaxCharges += Globals.Instance.GetItemData("eldritchswordrare").AuracurseCustomModValue1;
-            _AC.MaxMadnessCharges += Globals.Instance.GetItemData("eldritchswordrare").AuracurseCustomModValue1;
+            AC.MaxCharges += Globals.Instance.GetItemData("eldritchswordrare").AuracurseCustomModValue1;
+            AC.MaxMadnessCharges += Globals.Instance.GetItemData("eldritchswordrare").AuracurseCustomModValue1;
           }
           if (this.CharacterHaveTrait(_characterTarget.SubclassName, "frostswords"))
           {
-            _AC.AuraDamageIncreasedPerStack = 1f;
+            AC.AuraDamageIncreasedPerStack = 1f;
             break;
           }
           break;
@@ -2870,15 +2994,15 @@ public class AtOManager : MonoBehaviour
           case "set":
             if (flag2 && _characterTarget != null && this.TeamHavePerk("mainperkstanza0a"))
             {
-              _AC.AuraDamageType = Enums.DamageType.All;
+              AC.AuraDamageType = Enums.DamageType.All;
               break;
             }
             break;
           case "consume":
             if (flag1 && _characterCaster != null && this.CharacterHavePerk(_characterCaster.SubclassName, "mainperkstanza0b"))
             {
-              _AC.GainAuraCurseConsumption2 = Globals.Instance.GetAuraCurseData("inspire");
-              _AC.GainAuraCurseConsumptionPerCharge2 = 1;
+              AC.GainAuraCurseConsumption2 = Globals.Instance.GetAuraCurseData("inspire");
+              AC.GainAuraCurseConsumptionPerCharge2 = 1;
               break;
             }
             break;
@@ -2887,7 +3011,7 @@ public class AtOManager : MonoBehaviour
       case "stanzaii":
         if (_type == "set" && flag2 && _characterTarget != null && this.TeamHavePerk("mainperkstanza0a"))
         {
-          _AC.AuraDamageType = Enums.DamageType.All;
+          AC.AuraDamageType = Enums.DamageType.All;
           break;
         }
         break;
@@ -2897,15 +3021,15 @@ public class AtOManager : MonoBehaviour
           case "set":
             if (flag2 && _characterTarget != null && this.TeamHavePerk("mainperkstanza0a"))
             {
-              _AC.AuraDamageType = Enums.DamageType.All;
+              AC.AuraDamageType = Enums.DamageType.All;
               break;
             }
             break;
           case "consume":
             if (flag1 && this.TeamHaveTrait("choir"))
             {
-              _AC.ConsumedAtTurn = false;
-              _AC.AuraConsumed = 0;
+              AC.ConsumedAtTurn = false;
+              AC.AuraConsumed = 0;
               break;
             }
             break;
@@ -2919,17 +3043,17 @@ public class AtOManager : MonoBehaviour
             {
               if (this.TeamHavePerk("mainperkstealth1a"))
               {
-                _AC.AuraDamageIncreasedPercentPerStack = 25f;
-                _AC.HealDonePercentPerStack = 25;
+                AC.AuraDamageIncreasedPercentPerStack = 25f;
+                AC.HealDonePercentPerStack = 25;
               }
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkstealth1b"))
               {
-                _AC.ConsumedAtTurnBegin = false;
-                _AC.AuraConsumed = 0;
+                AC.ConsumedAtTurnBegin = false;
+                AC.AuraConsumed = 0;
               }
               if (this.TeamHavePerk("mainperkstealth1c"))
               {
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.All, 0, 5f);
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.All, 0, 5f);
                 break;
               }
               break;
@@ -2938,8 +3062,8 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (flag1 && _characterCaster != null && this.CharacterHavePerk(_characterCaster.SubclassName, "mainperkstealth1b"))
             {
-              _AC.ConsumedAtTurnBegin = false;
-              _AC.AuraConsumed = 0;
+              AC.ConsumedAtTurnBegin = false;
+              AC.AuraConsumed = 0;
               break;
             }
             break;
@@ -2948,8 +3072,8 @@ public class AtOManager : MonoBehaviour
       case "stealthbonus":
         if (_type == "set" && flag2 && this.TeamHavePerk("mainperkstealth1a"))
         {
-          _AC.AuraDamageIncreasedPercentPerStack = 25f;
-          _AC.HealDonePercentPerStack = 25;
+          AC.AuraDamageIncreasedPercentPerStack = 25f;
+          AC.HealDonePercentPerStack = 25;
           break;
         }
         break;
@@ -2957,12 +3081,12 @@ public class AtOManager : MonoBehaviour
         if (_type == "set" && flag2)
         {
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkTaunt1b"))
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Slashing, 0, 10f), Enums.DamageType.Piercing, 0, 10f), Enums.DamageType.Blunt, 0, 10f);
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Slashing, 0, 10f), Enums.DamageType.Piercing, 0, 10f), Enums.DamageType.Blunt, 0, 10f);
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkTaunt1c"))
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Fire, 0, 10f), Enums.DamageType.Cold, 0, 10f), Enums.DamageType.Lightning, 0, 10f);
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Fire, 0, 10f), Enums.DamageType.Cold, 0, 10f), Enums.DamageType.Lightning, 0, 10f);
           if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkTaunt1d"))
           {
-            _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Mind, 0, 10f), Enums.DamageType.Holy, 0, 10f), Enums.DamageType.Shadow, 0, 10f);
+            AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Mind, 0, 10f), Enums.DamageType.Holy, 0, 10f), Enums.DamageType.Shadow, 0, 10f);
             break;
           }
           break;
@@ -2974,13 +3098,13 @@ public class AtOManager : MonoBehaviour
           if (flag2)
           {
             if (this.TeamHavePerk("mainperkthorns1a"))
-              _AC.DamageReflectedConsumeCharges = 0;
+              AC.DamageReflectedConsumeCharges = 0;
             if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkthorns1b"))
-              _AC.DamageReflectedType = Enums.DamageType.Holy;
+              AC.DamageReflectedType = Enums.DamageType.Holy;
           }
           if (this.IsChallengeTraitActive("sacredthorns"))
           {
-            _AC.DamageReflectedType = Enums.DamageType.Holy;
+            AC.DamageReflectedType = Enums.DamageType.Holy;
             break;
           }
           break;
@@ -2993,12 +3117,12 @@ public class AtOManager : MonoBehaviour
             if (flag2)
             {
               if (_characterTarget != null && this.CharacterHavePerk(_characterTarget.SubclassName, "mainperkvitality1a"))
-                _AC.CharacterStatModifiedValuePerStack = 8;
+                AC.CharacterStatModifiedValuePerStack = 8;
               if (this.TeamHavePerk("mainperkvitality1c"))
               {
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Mind, 0, 0.5f);
-                _AC.ConsumedAtTurnBegin = false;
-                _AC.AuraConsumed = 0;
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Mind, 0, 0.5f);
+                AC.ConsumedAtTurnBegin = false;
+                AC.AuraConsumed = 0;
                 break;
               }
               break;
@@ -3007,8 +3131,8 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (flag1 && this.TeamHavePerk("mainperkvitality1c"))
             {
-              _AC.ConsumedAtTurnBegin = false;
-              _AC.AuraConsumed = 0;
+              AC.ConsumedAtTurnBegin = false;
+              AC.AuraConsumed = 0;
               break;
             }
             break;
@@ -3021,34 +3145,38 @@ public class AtOManager : MonoBehaviour
             if (!flag2)
             {
               if (MadnessManager.Instance.IsMadnessTraitActive("resistantmonsters"))
-                _AC.MaxCharges = _AC.MaxMadnessCharges = 6;
+                AC.MaxCharges = AC.MaxMadnessCharges = 6;
               if (this.TeamHavePerk("mainperkVulnerable0b"))
               {
-                ++_AC.MaxCharges;
-                ++_AC.MaxMadnessCharges;
-                _AC.AuraConsumed = 1;
+                ++AC.MaxCharges;
+                ++AC.MaxMadnessCharges;
+                AC.AuraConsumed = 1;
               }
               if (this.TeamHaveTrait("alkahest"))
               {
-                _AC.MaxCharges += 8;
-                _AC.MaxMadnessCharges += 8;
+                AC.MaxCharges += 8;
+                AC.MaxMadnessCharges += 8;
               }
               if (this.TeamHaveItem("nullifierrare", 3))
               {
-                _AC.MaxCharges += Globals.Instance.GetItemData("nullifierrare").AuracurseCustomModValue1;
-                _AC.MaxMadnessCharges += Globals.Instance.GetItemData("nullifierrare").AuracurseCustomModValue1;
+                AC.MaxCharges += Globals.Instance.GetItemData("nullifierrare").AuracurseCustomModValue1;
+                AC.MaxMadnessCharges += Globals.Instance.GetItemData("nullifierrare").AuracurseCustomModValue1;
               }
               else if (this.TeamHaveItem("nullifier", 3))
               {
-                _AC.MaxCharges += Globals.Instance.GetItemData("nullifier").AuracurseCustomModValue1;
-                _AC.MaxMadnessCharges += Globals.Instance.GetItemData("nullifier").AuracurseCustomModValue1;
+                AC.MaxCharges += Globals.Instance.GetItemData("nullifier").AuracurseCustomModValue1;
+                AC.MaxMadnessCharges += Globals.Instance.GetItemData("nullifier").AuracurseCustomModValue1;
               }
               if (this.TeamHavePerk("mainperkVulnerable0c"))
               {
-                _AC.ResistModified = Enums.DamageType.None;
-                _AC.ResistModifiedValue = 0;
-                _AC.ResistModifiedPercentagePerStack = 0.0f;
-                _AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Slashing, 0, -8f), Enums.DamageType.Piercing, 0, -8f), Enums.DamageType.Blunt, 0, -8f);
+                AC.ResistModified = Enums.DamageType.None;
+                AC.ResistModifiedValue = 0;
+                AC.ResistModifiedPercentagePerStack = 0.0f;
+                AC = this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Slashing, 0, -8f), Enums.DamageType.Piercing, 0, -8f), Enums.DamageType.Blunt, 0, -8f);
+              }
+              if (this.TeamHaveTrait("runicpower"))
+              {
+                AC.MaxCharges += 8;
                 break;
               }
               break;
@@ -3057,7 +3185,7 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (!flag1 && this.TeamHavePerk("mainperkVulnerable0b"))
             {
-              _AC.AuraConsumed = 1;
+              AC.AuraConsumed = 1;
               break;
             }
             break;
@@ -3071,26 +3199,26 @@ public class AtOManager : MonoBehaviour
             {
               if (this.TeamHavePerk("mainperkwet1a"))
               {
-                _AC.IncreasedDamageReceivedType2 = Enums.DamageType.Cold;
-                _AC.IncreasedDirectDamageReceivedPerStack2 = 1f;
+                AC.IncreasedDamageReceivedType2 = Enums.DamageType.Cold;
+                AC.IncreasedDirectDamageReceivedPerStack2 = 1f;
               }
               if (this.TeamHavePerk("mainperkwet1b"))
               {
-                _AC = this.GlobalAuraCurseModifyResist(_AC, Enums.DamageType.Lightning, 0, -1f);
-                _AC.ConsumedAtTurn = false;
-                _AC.AuraConsumed = 0;
+                AC = this.GlobalAuraCurseModifyResist(AC, Enums.DamageType.Lightning, 0, -1f);
+                AC.ConsumedAtTurn = false;
+                AC.AuraConsumed = 0;
               }
             }
             else if (this.TeamHavePerk("mainperkwet1c"))
             {
-              _AC.PreventedAuraCurseStackPerStack = 3;
-              _AC.ConsumedAtTurn = false;
-              _AC.AuraConsumed = 0;
+              AC.PreventedAuraCurseStackPerStack = 3;
+              AC.ConsumedAtTurn = false;
+              AC.AuraConsumed = 0;
             }
             if (this.IsChallengeTraitActive("icydeluge"))
             {
-              _AC.IncreasedDamageReceivedType2 = Enums.DamageType.Cold;
-              _AC.IncreasedDirectDamageReceivedPerStack2 = 1f;
+              AC.IncreasedDamageReceivedType2 = Enums.DamageType.Cold;
+              AC.IncreasedDirectDamageReceivedPerStack2 = 1f;
               break;
             }
             break;
@@ -3099,16 +3227,16 @@ public class AtOManager : MonoBehaviour
             {
               if (this.TeamHavePerk("mainperkwet1b"))
               {
-                _AC.ConsumedAtTurn = false;
-                _AC.AuraConsumed = 0;
+                AC.ConsumedAtTurn = false;
+                AC.AuraConsumed = 0;
                 break;
               }
               break;
             }
             if (this.TeamHavePerk("mainperkwet1c"))
             {
-              _AC.ConsumedAtTurn = false;
-              _AC.AuraConsumed = 0;
+              AC.ConsumedAtTurn = false;
+              AC.AuraConsumed = 0;
               break;
             }
             break;
@@ -3120,11 +3248,11 @@ public class AtOManager : MonoBehaviour
           num6 = _characterTarget.GetAuraCharges("rust");
         if (num6 > 0)
         {
-          _AC.IncreasedDirectDamageReceivedPerStack *= 0.5f;
-          _AC.IncreasedDirectDamageReceivedPerStack2 *= 0.5f;
+          AC.IncreasedDirectDamageReceivedPerStack *= 0.5f;
+          AC.IncreasedDirectDamageReceivedPerStack2 *= 0.5f;
           if (this.TeamHavePerk("mainperkwet1b"))
           {
-            _AC.ResistModifiedPercentagePerStack = -0.5f;
+            AC.ResistModifiedPercentagePerStack = -0.5f;
             break;
           }
           break;
@@ -3138,14 +3266,14 @@ public class AtOManager : MonoBehaviour
             {
               if (_characterTarget != null && this.CharacterHaveTrait(_characterTarget.SubclassName, "zealotry"))
               {
-                _AC.AuraDamageIncreasedPercentPerStack = 1.5f;
-                _AC.ConsumeAll = false;
-                _AC.AuraConsumed = 2;
+                AC.AuraDamageIncreasedPercentPerStack = 1.5f;
+                AC.ConsumeAll = false;
+                AC.AuraConsumed = 2;
               }
               if (_characterTarget != null && this.CharacterHaveTrait(_characterTarget.SubclassName, "righteousflame"))
               {
-                _AC.AuraDamageType2 = Enums.DamageType.All;
-                _AC.AuraDamageIncreasedPercentPerStack2 = 7f;
+                AC.AuraDamageType2 = Enums.DamageType.All;
+                AC.AuraDamageIncreasedPercentPerStack2 = 7f;
                 break;
               }
               break;
@@ -3154,8 +3282,8 @@ public class AtOManager : MonoBehaviour
           case "consume":
             if (flag1 && _characterCaster != null && this.CharacterHaveTrait(_characterCaster.SubclassName, "zealotry"))
             {
-              _AC.ConsumeAll = false;
-              _AC.AuraConsumed = 2;
+              AC.ConsumeAll = false;
+              AC.AuraConsumed = 2;
               break;
             }
             break;
@@ -3165,11 +3293,32 @@ public class AtOManager : MonoBehaviour
     if (this.useCache)
     {
       if (this.cacheGlobalACModification.ContainsKey(key))
-        this.cacheGlobalACModification[key] = _AC;
+        this.cacheGlobalACModification[key] = AC;
       else
-        this.cacheGlobalACModification.Add(key, _AC);
+        this.cacheGlobalACModification.Add(key, AC);
     }
-    return _AC;
+    return AC;
+  }
+
+  private void UpdateResistanceModifiersBasedOnAegis(
+    string _type,
+    Character _characterCaster,
+    Character _characterTarget,
+    ref AuraCurseData AC)
+  {
+    int num = 0;
+    if (_characterCaster != null && _type == "consume")
+      num = _characterCaster.GetAuraCharges("infuse");
+    else if (_characterTarget != null)
+      num = _characterTarget.GetAuraCharges("infuse");
+    if (num <= 0)
+      return;
+    AC.ResistModifiedValue = Functions.FuncRoundToInt((float) AC.ResistModifiedValue * 1.5f);
+    AC.ResistModifiedValue2 = Functions.FuncRoundToInt((float) AC.ResistModifiedValue2 * 1.5f);
+    AC.ResistModifiedValue3 = Functions.FuncRoundToInt((float) AC.ResistModifiedValue3 * 1.5f);
+    AC.ResistModifiedPercentagePerStack = (float) Functions.FuncRoundToInt(AC.ResistModifiedPercentagePerStack * 1.5f);
+    AC.ResistModifiedPercentagePerStack2 = (float) Functions.FuncRoundToInt(AC.ResistModifiedPercentagePerStack2 * 1.5f);
+    AC.ResistModifiedPercentagePerStack3 = (float) Functions.FuncRoundToInt(AC.ResistModifiedPercentagePerStack3 * 1.5f);
   }
 
   public bool ValidCardback(CardbackData cbd, int rankProgressN)
@@ -4051,9 +4200,12 @@ public class AtOManager : MonoBehaviour
     this.SetTownZoneId(Globals.Instance.GetNodeData(this.currentMapNode).NodeZone.ZoneId);
     if (GameManager.Instance.IsWeeklyChallenge() && this.NodeIsObeliskFinal() && this.currentMapNode.Contains("_0"))
     {
-      ChallengeData weeklyData = Globals.Instance.GetWeeklyData(this.weekly);
-      if (weeklyData.IdSteam != "")
-        SteamManager.Instance.SetStatInt(weeklyData.IdSteam, 1);
+      ChallengeData weeklyData1 = Globals.Instance.GetWeeklyData(this.weekly);
+      if ((UnityEngine.Object) weeklyData1 != (UnityEngine.Object) null && weeklyData1.IdSteam != "")
+        SteamManager.Instance.SetStatInt(weeklyData1.IdSteam, 1);
+      ChallengeData weeklyData2 = Globals.Instance.GetWeeklyData(this.weekly, true);
+      if ((UnityEngine.Object) weeklyData2 != (UnityEngine.Object) null && weeklyData2.IdSteam != "")
+        SteamManager.Instance.SetStatInt(weeklyData2.IdSteam, 1);
     }
     this.SetPositionText();
     if (GameManager.Instance.IsMultiplayer())
@@ -4307,7 +4459,7 @@ public class AtOManager : MonoBehaviour
         NPCData npcData = Globals.Instance.GetNPC(this.teamNPCAtO[index]);
         if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.PlayerHasRequirement(Globals.Instance.GetRequirementData("_tier2")) && (UnityEngine.Object) npcData.UpgradedMob != (UnityEngine.Object) null)
           npcData = npcData.UpgradedMob;
-        if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.ngPlus > 0)
+        if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.ngPlus > 0 && (UnityEngine.Object) npcData.NgPlusMob != (UnityEngine.Object) null)
           npcData = npcData.NgPlusMob;
         if ((MadnessManager.Instance.IsMadnessTraitActive("despair") || AtOManager.Instance.IsChallengeTraitActive("despair")) && (UnityEngine.Object) npcData.HellModeMob != (UnityEngine.Object) null)
           npcData = npcData.HellModeMob;
@@ -4506,7 +4658,7 @@ public class AtOManager : MonoBehaviour
           NPCData npcData = Globals.Instance.GetNPC(this.teamNPCAtO[index]);
           if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.PlayerHasRequirement(Globals.Instance.GetRequirementData("_tier2")) && (UnityEngine.Object) npcData.UpgradedMob != (UnityEngine.Object) null)
             npcData = npcData.UpgradedMob;
-          if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.ngPlus > 0)
+          if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.ngPlus > 0 && (UnityEngine.Object) npcData.NgPlusMob != (UnityEngine.Object) null)
             npcData = npcData.NgPlusMob;
           if ((MadnessManager.Instance.IsMadnessTraitActive("despair") || AtOManager.Instance.IsChallengeTraitActive("despair")) && (UnityEngine.Object) npcData.HellModeMob != (UnityEngine.Object) null)
             npcData = npcData.HellModeMob;
@@ -4530,7 +4682,7 @@ public class AtOManager : MonoBehaviour
           NPCData npcData = Globals.Instance.GetNPC(this.teamNPCAtO[index]);
           if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.PlayerHasRequirement(Globals.Instance.GetRequirementData("_tier2")) && (UnityEngine.Object) npcData.UpgradedMob != (UnityEngine.Object) null)
             npcData = npcData.UpgradedMob;
-          if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.ngPlus > 0)
+          if ((UnityEngine.Object) npcData != (UnityEngine.Object) null && this.ngPlus > 0 && (UnityEngine.Object) npcData.NgPlusMob != (UnityEngine.Object) null)
             npcData = npcData.NgPlusMob;
           if ((MadnessManager.Instance.IsMadnessTraitActive("despair") || AtOManager.Instance.IsChallengeTraitActive("despair")) && (UnityEngine.Object) npcData.HellModeMob != (UnityEngine.Object) null)
             npcData = npcData.HellModeMob;
@@ -4823,7 +4975,7 @@ public class AtOManager : MonoBehaviour
       this.teamAtO[_heroIndex].ResetItemDataBySlotCache();
       this.teamAtO[_heroIndex].ClearCaches();
     }
-    if (!(bool) (UnityEngine.Object) TownManager.Instance || cardData1.CardType != Enums.CardType.Pet)
+    if ((!(bool) (UnityEngine.Object) TownManager.Instance || cardData1.CardType != Enums.CardType.Pet) && _itemListId != "TeamManagement")
       PlayerManager.Instance.CardUnlock(itemToAddName);
     if (flag)
     {
@@ -4840,9 +4992,9 @@ public class AtOManager : MonoBehaviour
       this.teamAtO[_heroIndex].ClearCaches();
     }
     this.ClearCacheGlobalACModification();
-    if (_itemListId != "")
+    if (_itemListId != "" && _itemListId != "TeamManagement")
       this.SaveBoughtItem(_heroIndex, _itemListId, _cardId);
-    if (!(bool) (UnityEngine.Object) TownManager.Instance || GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+    if (!(_itemListId != "TeamManagement") || !(bool) (UnityEngine.Object) TownManager.Instance || GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
       return;
     this.SaveGame();
   }
@@ -4880,31 +5032,52 @@ public class AtOManager : MonoBehaviour
     }
     else
       character = (Character) this.teamAtO[_heroIndex];
-    string id = _id.ToLower();
-    if (id != "")
+    string str = _id.ToLower();
+    if (str != "")
     {
-      if (character.Weapon == id)
+      if (character.Weapon == str)
         character.Weapon = "";
-      if (character.Armor == id)
+      if (character.Armor == str)
         character.Armor = "";
-      if (character.Jewelry == id)
+      if (character.Jewelry == str)
         character.Jewelry = "";
-      if (character.Accesory == id)
+      if (character.Accesory == str)
         character.Accesory = "";
-      if (character.Pet == id)
+      if (character.Pet == str)
         character.Pet = "";
-      if (character.Enchantment == id)
+      if (character.Enchantment == str)
       {
+        if (_isHero)
+        {
+          if ((UnityEngine.Object) character.HeroItem != (UnityEngine.Object) null)
+            MatchManager.Instance.RemovePetEnchantment(character.HeroItem.gameObject, str);
+        }
+        else if ((UnityEngine.Object) character.NPCItem != (UnityEngine.Object) null)
+          MatchManager.Instance.RemovePetEnchantment(character.NPCItem.gameObject, str);
         character.Enchantment = "";
         character.ReorganizeEnchantments();
       }
-      if (character.Enchantment2 == id)
+      if (character.Enchantment2 == str)
       {
+        if (_isHero)
+        {
+          if ((UnityEngine.Object) character.HeroItem != (UnityEngine.Object) null)
+            MatchManager.Instance.RemovePetEnchantment(character.HeroItem.gameObject, str);
+        }
+        else if ((UnityEngine.Object) character.NPCItem != (UnityEngine.Object) null)
+          MatchManager.Instance.RemovePetEnchantment(character.NPCItem.gameObject, str);
         character.Enchantment2 = "";
         character.ReorganizeEnchantments();
       }
-      if (character.Enchantment3 == id)
+      if (character.Enchantment3 == str)
       {
+        if (_isHero)
+        {
+          if ((UnityEngine.Object) character.HeroItem != (UnityEngine.Object) null)
+            MatchManager.Instance.RemovePetEnchantment(character.HeroItem.gameObject, str);
+        }
+        else if ((UnityEngine.Object) character.NPCItem != (UnityEngine.Object) null)
+          MatchManager.Instance.RemovePetEnchantment(character.NPCItem.gameObject, str);
         character.Enchantment3 = "";
         character.ReorganizeEnchantments();
       }
@@ -4916,7 +5089,7 @@ public class AtOManager : MonoBehaviour
         case "weapon":
           if (character.Weapon != "")
           {
-            id = character.Weapon;
+            str = character.Weapon;
             character.Weapon = "";
             break;
           }
@@ -4924,7 +5097,7 @@ public class AtOManager : MonoBehaviour
         case "armor":
           if (character.Armor != "")
           {
-            id = character.Armor;
+            str = character.Armor;
             character.Armor = "";
             break;
           }
@@ -4932,7 +5105,7 @@ public class AtOManager : MonoBehaviour
         case "jewelry":
           if (character.Jewelry != "")
           {
-            id = character.Jewelry;
+            str = character.Jewelry;
             character.Jewelry = "";
             break;
           }
@@ -4940,7 +5113,7 @@ public class AtOManager : MonoBehaviour
         case "accesory":
           if (character.Accesory != "")
           {
-            id = character.Accesory;
+            str = character.Accesory;
             character.Accesory = "";
             break;
           }
@@ -4948,7 +5121,7 @@ public class AtOManager : MonoBehaviour
         case "pet":
           if (character.Pet != "")
           {
-            id = character.Pet;
+            str = character.Pet;
             character.Pet = "";
             break;
           }
@@ -4956,7 +5129,7 @@ public class AtOManager : MonoBehaviour
         case "enchantment":
           if (character.Enchantment != "")
           {
-            id = character.Enchantment;
+            str = character.Enchantment;
             character.Enchantment = "";
             break;
           }
@@ -4964,7 +5137,7 @@ public class AtOManager : MonoBehaviour
         case "enchantment2":
           if (character.Enchantment2 != "")
           {
-            id = character.Enchantment2;
+            str = character.Enchantment2;
             character.Enchantment2 = "";
             break;
           }
@@ -4972,7 +5145,7 @@ public class AtOManager : MonoBehaviour
         case "enchantment3":
           if (character.Enchantment3 != "")
           {
-            id = character.Enchantment3;
+            str = character.Enchantment3;
             character.Enchantment3 = "";
             break;
           }
@@ -4980,16 +5153,16 @@ public class AtOManager : MonoBehaviour
         default:
           if (character.Corruption != "")
           {
-            id = character.Corruption;
+            str = character.Corruption;
             character.Corruption = "";
             break;
           }
           break;
       }
     }
-    if (id != "")
+    if (str != "")
     {
-      ItemData itemData = Globals.Instance.GetItemData(id);
+      ItemData itemData = Globals.Instance.GetItemData(str);
       if ((UnityEngine.Object) itemData != (UnityEngine.Object) null && itemData.MaxHealth != 0)
         character.DecreaseMaxHP(itemData.MaxHealth);
     }
@@ -5593,6 +5766,13 @@ public class AtOManager : MonoBehaviour
     if (maxQuantity == 0)
       maxQuantity = -1;
     this.StartCoroutine(this.DoCraftHealerCo(6, discount, maxQuantity));
+  }
+
+  public void DoItemCorrupt(int discount, int maxQuantity = -1)
+  {
+    if (maxQuantity == 0)
+      maxQuantity = -1;
+    this.StartCoroutine(this.DoCraftHealerCo(7, discount, maxQuantity));
   }
 
   public void DoCardCraft(int discount = 0, int maxQuantity = -1, Enums.CardRarity maxCraftRarity = Enums.CardRarity.Common)

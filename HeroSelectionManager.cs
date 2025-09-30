@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: HeroSelectionManager
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Photon.Pun;
@@ -11,6 +11,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -36,13 +37,16 @@ public class HeroSelectionManager : MonoBehaviour
   public GameObject charPopupPrefab;
   public GameObject charPopupGO;
   public CharPopup charPopup;
+  public CharPopupMini charPopupMini;
   public Transform charContainerBg;
   public GameObject charContainerGO;
+  public GameObject allGO;
   public GameObject warriorsGO;
   public GameObject healersGO;
   public GameObject magesGO;
   public GameObject scoutsGO;
   public GameObject dlcsGO;
+  public GameObject lockedGO;
   public TMP_Text _ClassWarriors;
   public TMP_Text _ClassHealers;
   public TMP_Text _ClassMages;
@@ -101,6 +105,13 @@ public class HeroSelectionManager : MonoBehaviour
   private List<Transform> _controllerList = new List<Transform>();
   private List<Transform> _controllerVerticalList = new List<Transform>();
   private Coroutine coroutineMask;
+  private GameObject currentSelectionTab;
+  public GameObject CardBacksPopUp;
+  [SerializeField]
+  private GameObject charPageLeftButton;
+  [SerializeField]
+  private GameObject charPageRightButton;
+  public string CurrentFilter;
 
   public static HeroSelectionManager Instance { get; private set; }
 
@@ -167,10 +178,46 @@ public class HeroSelectionManager : MonoBehaviour
       this.photonView = PhotonView.Get((Component) this);
       this.sceneCamera.gameObject.SetActive(false);
       NetworkManager.Instance.StartStopQueue(true);
+      this.currentSelectionTab = this.allGO;
     }
   }
 
-  private void Start() => this.StartCoroutine(this.StartCo());
+  private async void Start()
+  {
+    HeroSelectionManager selectionManager = this;
+    selectionManager.StartCoroutine(selectionManager.StartCo());
+    await selectionManager.RefreshSelectedCharPortraits();
+    await selectionManager.SetDefaultMiniPopupHero();
+  }
+
+  public void Refresh() => this.StartCoroutine(this.StartCo());
+
+  private async Task RefreshSelectedCharPortraits()
+  {
+    await Task.Delay(350);
+    foreach (KeyValuePair<string, HeroSelection> heroSelection in this.heroSelectionDictionary)
+    {
+      if ((UnityEngine.Object) heroSelection.Value.gameObject.transform.parent != (UnityEngine.Object) heroSelection.Value.DefaultParent)
+      {
+        heroSelection.Value.gameObject.SetActive(true);
+        heroSelection.Value.spriteSR.enabled = true;
+        heroSelection.Value.nameOver.gameObject.SetActive(true);
+        heroSelection.Value.rankOver.gameObject.SetActive(true);
+      }
+    }
+  }
+
+  private async Task SetDefaultMiniPopupHero()
+  {
+    await Task.Delay(40);
+    HeroSelection heroSelection = new HeroSelection();
+    for (int _index = 0; _index < 4; ++_index)
+      heroSelection = this.GetBoxHeroFromIndex(_index);
+    if ((UnityEngine.Object) heroSelection != (UnityEngine.Object) null)
+      this.charPopupMini.SetSubClassData(heroSelection.subClassData);
+    else
+      this.charPopupMini.SetSubClassData(Globals.Instance.GetSubClassData("mercenary"));
+  }
 
   private IEnumerator StartCo()
   {
@@ -225,7 +272,7 @@ public class HeroSelectionManager : MonoBehaviour
       this.boxSelection[index] = this.boxGO[index].GetComponent<BoxSelection>();
     }
     this.ShowDrag(false, Vector3.zero);
-    int length = 5;
+    int length = 7;
     int num1 = 5;
     foreach (KeyValuePair<string, SubClassData> keyValuePair in Globals.Instance.SubClass)
     {
@@ -254,7 +301,7 @@ public class HeroSelectionManager : MonoBehaviour
     this._ClassMages.color = Functions.HexToColor(Globals.Instance.ClassColor["mage"]);
     this._ClassScouts.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
     this._ClassMagicKnights.color = Functions.HexToColor(Globals.Instance.ClassColor["magicknight"]);
-    float num2 = 0.95f;
+    float num2 = 1f;
     float num3 = 0.55f;
     float num4 = 1.75f;
     float y = -0.65f;
@@ -283,6 +330,7 @@ public class HeroSelectionManager : MonoBehaviour
             gameObject1 = this.healersGO;
             break;
           case 4:
+          case 5:
             if (this.subclassDictionary.ContainsKey("dlc"))
             {
               _subclassdata = this.subclassDictionary["dlc"][index2];
@@ -296,7 +344,7 @@ public class HeroSelectionManager : MonoBehaviour
           GameObject gameObject2 = UnityEngine.Object.Instantiate<GameObject>(this.heroSelectionPrefab, Vector3.zero, Quaternion.identity, gameObject1.transform);
           gameObject2.transform.localPosition = new Vector3(num3 + num4 * (float) index2, y, 0.0f);
           gameObject2.transform.localScale = new Vector3(num2, num2, 1f);
-          gameObject2.name = _subclassdata.SubClassName.ToLower();
+          gameObject2.name = _subclassdata.Id;
           HeroSelection component = gameObject2.transform.Find("Portrait").transform.GetComponent<HeroSelection>();
           this.heroSelectionDictionary.Add(gameObject2.name, component);
           component.blocked = !PlayerManager.Instance.IsHeroUnlocked(_subclassdata.Id);
@@ -384,7 +432,7 @@ public class HeroSelectionManager : MonoBehaviour
         SubClassData _subclassdata = nonHistorySubclass.Value;
         GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.heroSelectionPrefab, Vector3.zero, Quaternion.identity);
         gameObject.transform.localPosition = new Vector3(-10f, -10f, 100f);
-        gameObject.name = _subclassdata.SubClassName.ToLower();
+        gameObject.name = _subclassdata.Id;
         HeroSelection component = gameObject.transform.Find("Portrait").transform.GetComponent<HeroSelection>();
         this.heroSelectionDictionary.Add(gameObject.name, component);
         component.blocked = true;
@@ -408,10 +456,9 @@ public class HeroSelectionManager : MonoBehaviour
     }
     else
     {
-      this.charPopupGO = UnityEngine.Object.Instantiate<GameObject>(this.charPopupPrefab, new Vector3(0.0f, 0.0f, -1f), Quaternion.identity);
+      this.charPopupGO = this.charPopup.gameObject;
       this.charPopup = this.charPopupGO.GetComponent<CharPopup>();
       this.charPopup.HideNow();
-      this.separator.gameObject.SetActive(true);
       if (!GameManager.Instance.IsWeeklyChallenge())
       {
         this.titleGroupDefault.gameObject.SetActive(true);
@@ -644,13 +691,13 @@ public class HeroSelectionManager : MonoBehaviour
         if (!GameManager.Instance.IsWeeklyChallenge())
           this.PreAssign();
       }
+      this.RearrangeHerosData();
+      this.ShowHeroesByFilterAsync("all");
       yield return (object) Globals.Instance.WaitForSeconds(0.1f);
       this.RefreshSandboxButton();
       if (!GameManager.Instance.IsWeeklyChallenge())
       {
         this.sandboxButton.gameObject.SetActive(true);
-        this.madnessButton.localPosition = new Vector3(2.43f, this.madnessButton.localPosition.y, this.madnessButton.localPosition.z);
-        this.sandboxButton.localPosition = new Vector3(5.23f, this.sandboxButton.localPosition.y, this.sandboxButton.localPosition.z);
         if (!GameManager.Instance.IsMultiplayer() || GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
         {
           string sandboxMods;
@@ -863,11 +910,11 @@ public class HeroSelectionManager : MonoBehaviour
 
   private void AddToPlayerHeroCardback(string _subclass, string _cardbackId)
   {
-    string lower = _subclass.ToLower();
-    if (!this.playerHeroCardbackDict.ContainsKey(lower))
-      this.playerHeroCardbackDict.Add(lower, _cardbackId);
+    string key = Functions.RemoveWhitespace(_subclass, true);
+    if (!this.playerHeroCardbackDict.ContainsKey(key))
+      this.playerHeroCardbackDict.Add(key, _cardbackId);
     else
-      this.playerHeroCardbackDict[lower] = _cardbackId;
+      this.playerHeroCardbackDict[key] = _cardbackId;
   }
 
   public void SendHeroSkinMP(string _subclass, string _skinId)
@@ -1238,12 +1285,12 @@ public class HeroSelectionManager : MonoBehaviour
     {
       SubClassData subClassData = Globals.Instance.GetSubClassData(_hero);
       subClassData.CharacterName.ToLower();
-      string lower1 = subClassData.Id.ToLower();
-      if (this.SubclassByName.ContainsKey(lower1))
-        lower1 = this.SubclassByName[lower1];
-      string lower2 = lower1.ToLower();
+      string lower = subClassData.Id.ToLower();
+      if (this.SubclassByName.ContainsKey(lower))
+        lower = this.SubclassByName[lower];
+      string key = lower.ToLower().Replace(" ", "");
       int perkRank = PlayerManager.Instance.GetPerkRank(subClassData.Id);
-      this.heroSelectionDictionary[lower2].SetRankBox(perkRank);
+      this.heroSelectionDictionary[key].SetRankBox(perkRank);
       this.AddToPlayerHeroCardback(_hero, PlayerManager.Instance.GetActiveCardback(subClassData.Id));
       if (GameManager.Instance.IsMultiplayer())
       {
@@ -1285,7 +1332,7 @@ public class HeroSelectionManager : MonoBehaviour
     _hero = _hero.ToLower();
     if (this.SubclassByName.ContainsKey(_hero))
       _hero = this.SubclassByName[_hero];
-    _hero = _hero.ToLower();
+    _hero = _hero.ToLower().Replace(" ", "");
     GameObject key = this.boxGO[_boxId];
     if (this.heroSelectionDictionary[_hero].selected)
       this.heroSelectionDictionary[_hero].Reset();
@@ -1307,6 +1354,206 @@ public class HeroSelectionManager : MonoBehaviour
       this.heroSelectionDictionary[_hero].SetSkin(_skinId);
       this.AddToPlayerHeroSkin(_hero, _skinId);
       this.AddToPlayerHeroCardback(_hero, _cardbackId);
+    }
+  }
+
+  public void RearrangeHerosData()
+  {
+    this.heroSelectionDictionary = this.heroSelectionDictionary.OrderBy<KeyValuePair<string, HeroSelection>, bool>((Func<KeyValuePair<string, HeroSelection>, bool>) (kv => kv.Value.lockIcon.gameObject.activeSelf)).ThenByDescending<KeyValuePair<string, HeroSelection>, bool>((Func<KeyValuePair<string, HeroSelection>, bool>) (kv => kv.Value.HeroPicked)).ThenBy<KeyValuePair<string, HeroSelection>, string>((Func<KeyValuePair<string, HeroSelection>, string>) (kv => kv.Value.subClassData.CharacterName)).ToDictionary<KeyValuePair<string, HeroSelection>, string, HeroSelection>((Func<KeyValuePair<string, HeroSelection>, string>) (kv => kv.Key), (Func<KeyValuePair<string, HeroSelection>, HeroSelection>) (kv => kv.Value));
+  }
+
+  public async void ShowHeroesByFilterAsync(string type)
+  {
+    if (type == null)
+      return;
+    this.CurrentFilter = type;
+    this.RearrangeHerosData();
+    this.DisableCharacterSelectionParents();
+    HeroSelectionTabsManager.Instance.EnableTab(type);
+    GameObject selectionParentGo = this.GetHeroSelectionParentGO(type);
+    Func<HeroSelection, bool> heroSelectionFilter = this.GetHeroSelectionFilter(type);
+    this.ArrangeHeroSelections(selectionParentGo, heroSelectionFilter);
+    this.currentSelectionTab = selectionParentGo;
+    selectionParentGo.SetActive(true);
+    await this.UpdateCharSelectArrowStates(100);
+  }
+
+  public async Task UpdateCharSelectArrowStates(int delay = 0)
+  {
+    await Task.Delay(delay);
+    GameObject heroSelectionTab = this.GetActiveHeroSelectionTab();
+    BotonGeneric component1 = this.charPageLeftButton.GetComponent<BotonGeneric>();
+    BotonGeneric component2 = this.charPageRightButton.GetComponent<BotonGeneric>();
+    Color color1 = Functions.HexToColor("#FFBB00");
+    Color color2 = Functions.HexToColor("#9D9D9D");
+    int childCount = heroSelectionTab.transform.childCount;
+    if (childCount == 1)
+    {
+      component1.SetBackgroundColor(color2);
+      component2.SetBackgroundColor(color2);
+      component1.buttonEnabled = false;
+      component2.buttonEnabled = false;
+    }
+    else
+    {
+      if (childCount <= 1)
+        return;
+      if (heroSelectionTab.transform.GetChild(0).gameObject.activeSelf)
+      {
+        component1.SetBackgroundColor(color2);
+        component2.SetBackgroundColor(color1);
+        component1.buttonEnabled = false;
+        component2.buttonEnabled = true;
+      }
+      else if (heroSelectionTab.transform.GetChild(childCount - 1).gameObject.activeSelf)
+      {
+        component1.SetBackgroundColor(color1);
+        component2.SetBackgroundColor(color2);
+        component1.buttonEnabled = true;
+        component2.buttonEnabled = false;
+      }
+      else
+      {
+        component1.SetBackgroundColor(color1);
+        component2.SetBackgroundColor(color1);
+        component1.buttonEnabled = true;
+        component2.buttonEnabled = true;
+      }
+    }
+  }
+
+  private GameObject GetActiveHeroSelectionTab()
+  {
+    if (this.dlcsGO.activeSelf)
+      return this.dlcsGO;
+    if (this.lockedGO.activeSelf)
+      return this.lockedGO;
+    if (this.warriorsGO.activeSelf)
+      return this.warriorsGO;
+    if (this.scoutsGO.activeSelf)
+      return this.scoutsGO;
+    if (this.magesGO.activeSelf)
+      return this.magesGO;
+    return this.healersGO.activeSelf ? this.healersGO : this.allGO;
+  }
+
+  private GameObject GetHeroSelectionParentGO(string type)
+  {
+    switch (type.ToLower())
+    {
+      case "dlc":
+        return this.dlcsGO;
+      case "healer":
+        return this.healersGO;
+      case "locked":
+        return this.lockedGO;
+      case "mage":
+        return this.magesGO;
+      case "scout":
+        return this.scoutsGO;
+      case "warrior":
+        return this.warriorsGO;
+      default:
+        return this.allGO;
+    }
+  }
+
+  private void ArrangeHeroSelections(GameObject parent, Func<HeroSelection, bool> filter)
+  {
+    Vector3 vector3_1 = new Vector3(2f, 0.0f, 0.0f);
+    Vector3 vector3_2 = new Vector3(-0.45f, 0.09f, 0.0f);
+    int num = 0;
+    int index = 0;
+    bool flag = false;
+    if (parent.transform.childCount == 0)
+      flag = true;
+    if (flag)
+      this.CreateChildInTransform(parent.transform, "Page" + index.ToString());
+    foreach (KeyValuePair<string, HeroSelection> heroSelection1 in this.heroSelectionDictionary)
+    {
+      HeroSelection heroSelection2 = heroSelection1.Value;
+      if (filter(heroSelection2))
+      {
+        Transform defaultParent = heroSelection2.DefaultParent;
+        defaultParent.parent = parent.transform.GetChild(index);
+        defaultParent.gameObject.SetActive(true);
+        defaultParent.localPosition = Vector3.zero + vector3_2;
+        ++num;
+        vector3_2 += vector3_1;
+        if (num % 8 == 0)
+          vector3_2 = new Vector3(-0.45f, -1.52f, 0.0f);
+        if (num % 16 == 0)
+        {
+          vector3_2 = new Vector3(-0.45f, 0.09f, 0.0f);
+          ++index;
+          if (flag)
+            this.CreateChildInTransform(parent.transform, "Page" + index.ToString(), false);
+        }
+      }
+    }
+  }
+
+  private Func<HeroSelection, bool> GetHeroSelectionFilter(string type)
+  {
+    string typeLower = type.ToLower();
+    if (typeLower == "all")
+      return (Func<HeroSelection, bool>) (_ => true);
+    if (typeLower == "dlc")
+      return (Func<HeroSelection, bool>) (hero => hero.GetHeroClass().ToLower() != "none" && hero.GetHeroClassSecondary().ToLower() != "none");
+    return typeLower == "locked" ? (Func<HeroSelection, bool>) (hero => hero.blocked) : (Func<HeroSelection, bool>) (hero => hero.GetHeroClass().ToLower() == typeLower && hero.GetHeroClassSecondary().ToLower() == "none");
+  }
+
+  private void DisableCharacterSelectionParents()
+  {
+    this.allGO.SetActive(false);
+    this.warriorsGO.SetActive(false);
+    this.scoutsGO.SetActive(false);
+    this.magesGO.SetActive(false);
+    this.healersGO.SetActive(false);
+    this.dlcsGO.SetActive(false);
+    this.lockedGO.SetActive(false);
+  }
+
+  private void CreateChildInTransform(Transform _transform, string name, bool enable = true)
+  {
+    new GameObject(name)
+    {
+      transform = {
+        parent = _transform,
+        localPosition = Vector3.zero,
+        localScale = Vector3.one,
+        localRotation = Quaternion.identity
+      }
+    }.SetActive(enable);
+  }
+
+  public void moveHeroPageLeft()
+  {
+    int childCount = this.currentSelectionTab.transform.childCount;
+    if (this.currentSelectionTab.transform.childCount <= 1)
+      return;
+    for (int index = 1; index < childCount; ++index)
+    {
+      if (this.currentSelectionTab.transform.GetChild(index).gameObject.activeSelf)
+      {
+        this.currentSelectionTab.transform.GetChild(index).gameObject.SetActive(false);
+        this.currentSelectionTab.transform.GetChild(index - 1).gameObject.SetActive(true);
+      }
+    }
+  }
+
+  public void moveHeroPageRight()
+  {
+    int childCount = this.currentSelectionTab.transform.childCount;
+    if (this.currentSelectionTab.transform.childCount <= 1)
+      return;
+    for (int index = 0; index < childCount - 1; ++index)
+    {
+      if (this.currentSelectionTab.transform.GetChild(index).gameObject.activeSelf)
+      {
+        this.currentSelectionTab.transform.GetChild(index).gameObject.SetActive(false);
+        this.currentSelectionTab.transform.GetChild(index + 1).gameObject.SetActive(true);
+      }
     }
   }
 
@@ -1375,7 +1622,7 @@ public class HeroSelectionManager : MonoBehaviour
     {
       string[] strArray = new string[4];
       for (int index = 0; index < this.boxHero.Count; ++index)
-        strArray[index] = !((UnityEngine.Object) this.boxHero[this.boxGO[index]] != (UnityEngine.Object) null) ? "" : this.boxHero[this.boxGO[index]].GetSubclassName();
+        strArray[index] = !((UnityEngine.Object) this.boxHero[this.boxGO[index]] != (UnityEngine.Object) null) ? "" : Functions.RemoveWhitespace(this.boxHero[this.boxGO[index]].GetSubclassName(), true);
       if (!GameManager.Instance.IsMultiplayer() && !GameManager.Instance.IsWeeklyChallenge())
       {
         PlayerManager.Instance.LastUsedTeam = new string[4];
@@ -1469,6 +1716,7 @@ public class HeroSelectionManager : MonoBehaviour
         this.charPopup.ShowSingularityCards();
         break;
     }
+    this.charPopup.Show();
   }
 
   public void NGBox(int value = -1)

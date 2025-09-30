@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CharacterUnlock
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -24,8 +24,6 @@ public class CharacterUnlock : MonoBehaviour
   {
     Color color = Functions.HexToColor(Globals.Instance.ClassColor[Enum.GetName(typeof (Enums.HeroClass), (object) _scd.HeroClass)]);
     this.nameTMP.text = _scd.CharacterName;
-    if ((UnityEngine.Object) _skd != (UnityEngine.Object) null)
-      this.nameTMP.text = Texts.Instance.GetText("characterSkin");
     if (_scd.CharacterName.ToLower() == "thuls")
       this.characterSPR.transform.localPosition = new Vector3(-0.5f, 0.0f, 0.0f);
     else if (_scd.CharacterName.ToLower() == "malukah")
@@ -49,6 +47,7 @@ public class CharacterUnlock : MonoBehaviour
       this.characterSPR.transform.localPosition = new Vector3(-0.2f, 0.0f, 0.0f);
     else
       this.characterSPR.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
+    this.nameTMP.text = !((UnityEngine.Object) _skd != (UnityEngine.Object) null) ? Globals.Instance.GetSubClassData(_scd.Id).CharacterName : Texts.Instance.GetText("characterSkin");
     this.bgSPR.color = color;
     this.whirlSPR.color = new Color(color.r, color.g, color.b, 0.7f);
     SkinData skinData = !((UnityEngine.Object) _skd == (UnityEngine.Object) null) ? _skd : Globals.Instance.GetSkinData(Globals.Instance.GetSkinBaseIdBySubclass(_scd.Id));

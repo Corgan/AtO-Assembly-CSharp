@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: Globals
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -138,6 +138,7 @@ public class Globals : MonoBehaviour
   public const int townTutorialStepItem = 2;
   public const string tutorialLootItem = "spyglass";
   public const string tutorialLootCharacterName = "Andrin";
+  public const string thePetEnchantmentName = "thePetEnchantment";
   public const int rankNeededForObelisk = 3;
   public const int rankNeededForSingularity = 3;
   public const int upgradeLimitSingularity = 1;
@@ -331,6 +332,11 @@ public class Globals : MonoBehaviour
     this._ItemCost.Add("Accesory_Rare", 696);
     this._ItemCost.Add("Accesory_Epic", 1488);
     this._ItemCost.Add("Accesory_Mythic", 3000);
+    this._ItemCost.Add("Pet_Common", 72);
+    this._ItemCost.Add("Pet_Uncommon", 156);
+    this._ItemCost.Add("Pet_Rare", 348);
+    this._ItemCost.Add("Pet_Epic", 744);
+    this._ItemCost.Add("Pet_Mythic", 1200);
     this._PerkLevel = new List<int>();
     this._PerkLevel.Add(300);
     this._PerkLevel.Add(600);
@@ -404,6 +410,8 @@ public class Globals : MonoBehaviour
     this._SkuAvailable.Add("3185630");
     this._SkuAvailable.Add("3185650");
     this._SkuAvailable.Add("3185640");
+    this._SkuAvailable.Add("3473720");
+    this._SkuAvailable.Add("3473700");
     this._IsoToEnglishCountryNames = new Dictionary<string, string>()
     {
       {
@@ -1434,13 +1442,16 @@ public class Globals : MonoBehaviour
     for (int index = 0; index < cardDataArray.Length; ++index)
     {
       cardDataArray[index].Id = cardDataArray[index].name.ToLower();
-      this._CardsSource.Add(cardDataArray[index].Id, UnityEngine.Object.Instantiate<CardData>(cardDataArray[index]));
-      if (this.saveCardsText)
+      if (!this._CardsSource.ContainsKey(cardDataArray[index].Id))
       {
-        if (cardDataArray[index].CardUpgraded == Enums.CardUpgraded.No && cardDataArray[index].CardClass != Enums.CardClass.MagicKnight)
-          this.cardsText = this.cardsText + "c_" + cardDataArray[index].Id + "_name=" + Functions.NormalizeTextForArchive(cardDataArray[index].CardName) + "\n";
-        if (cardDataArray[index].Fluff != "")
-          this.cardsFluffText = this.cardsFluffText + "c_" + cardDataArray[index].Id + "_fluff=" + Functions.NormalizeTextForArchive(cardDataArray[index].Fluff) + "\n";
+        this._CardsSource.Add(cardDataArray[index].Id, UnityEngine.Object.Instantiate<CardData>(cardDataArray[index]));
+        if (this.saveCardsText)
+        {
+          if (cardDataArray[index].CardUpgraded == Enums.CardUpgraded.No && cardDataArray[index].CardClass != Enums.CardClass.MagicKnight)
+            this.cardsText = this.cardsText + "c_" + cardDataArray[index].Id + "_name=" + Functions.NormalizeTextForArchive(cardDataArray[index].CardName) + "\n";
+          if (cardDataArray[index].Fluff != "")
+            this.cardsFluffText = this.cardsFluffText + "c_" + cardDataArray[index].Id + "_fluff=" + Functions.NormalizeTextForArchive(cardDataArray[index].Fluff) + "\n";
+        }
       }
     }
     HeroData[] heroDataArray = Resources.LoadAll<HeroData>("Heroes");
@@ -2135,24 +2146,63 @@ public class Globals : MonoBehaviour
     return (ChallengeData) null;
   }
 
-  public ChallengeData GetWeeklyData(int _week)
+  public ChallengeData GetWeeklyData(int _week, bool _getSecondary = false)
   {
     string key1 = "week" + _week.ToString();
-    if (this._WeeklyDataSource.ContainsKey(key1))
+    if (this._WeeklyDataSource.ContainsKey(key1) && !_getSecondary)
+    {
+      Debug.Log((object) ("** " + key1));
       return this._WeeklyDataSource[key1];
-    int num1 = this.WeeklyDataSource.Count;
+    }
+    int maxLimit = this.WeeklyDataSource.Count;
     foreach (KeyValuePair<string, ChallengeData> keyValuePair in this.WeeklyDataSource)
     {
       if (keyValuePair.Value.IsDateFixed())
-        --num1;
+        --maxLimit;
     }
-    if (num1 < 1)
-      num1 = 18;
-    int num2 = _week % num1;
-    if (num2 == 0)
-      num2 = num1;
-    string key2 = "week" + num2.ToString();
-    return this._WeeklyDataSource.ContainsKey(key2) ? this._WeeklyDataSource[key2] : (ChallengeData) null;
+    if (maxLimit < 1)
+      maxLimit = 20;
+    int num1 = _week % maxLimit;
+    if (num1 == 0)
+      num1 = maxLimit;
+    string key2 = "week" + num1.ToString();
+    if (!this._WeeklyDataSource.ContainsKey(key2))
+      return (ChallengeData) null;
+    if (_getSecondary)
+    {
+      foreach (KeyValuePair<string, ChallengeData> keyValuePair in this.WeeklyDataSource)
+      {
+        if (keyValuePair.Value.IsDateFixed())
+          ++maxLimit;
+      }
+      int num2 = Functions.GetConsistentRandom(_week, 1, maxLimit);
+      int num3 = num1 - 1;
+      if (num3 < 1)
+        num3 = 20;
+      int num4 = num3;
+      string key3 = "week" + num4.ToString();
+      int consistentRandom = Functions.GetConsistentRandom(num3, 1, maxLimit);
+      string key4 = "week" + consistentRandom.ToString();
+      bool flag = false;
+      int num5 = 0;
+      while (!flag && num5 < 1000)
+      {
+        ++num5;
+        string key5 = "week" + num2.ToString();
+        if (num2 != _week && num2 != num4 && num2 != consistentRandom && this._WeeklyDataSource.ContainsKey(key5) && this._WeeklyDataSource.ContainsKey(key3) && this._WeeklyDataSource.ContainsKey(key4) && this._WeeklyDataSource[key2].IdSteam != this._WeeklyDataSource[key5].IdSteam && this._WeeklyDataSource[key3].IdSteam != this._WeeklyDataSource[key5].IdSteam && this._WeeklyDataSource[key4].IdSteam != this._WeeklyDataSource[key5].IdSteam)
+        {
+          flag = true;
+          key2 = key5;
+        }
+        else
+        {
+          --num2;
+          if (num2 < 1)
+            num2 = maxLimit;
+        }
+      }
+    }
+    return this._WeeklyDataSource[key2];
   }
 
   public List<PerkData> GetPerkDataClass(Enums.CardClass cardClass)
@@ -2175,13 +2225,29 @@ public class Globals : MonoBehaviour
   public CardData GetCardData(string id, bool instantiate = true)
   {
     id = Functions.Sanitize(id).ToLower().Trim().Split("_", StringSplitOptions.None)[0];
-    if (!(id != "") || !this._Cards.ContainsKey(id))
-      return (CardData) null;
-    if (!instantiate)
-      return this._Cards[id];
-    CardData cardData = UnityEngine.Object.Instantiate<CardData>(this._Cards[id]);
-    this._InstantiatedCardData.Add(cardData);
-    return cardData;
+    string id1 = id;
+    if (this.IsCorruptedByNightmareEcho(id1))
+      id = id.Split('-', StringSplitOptions.None)[0];
+    CardData _cardTarget = (CardData) null;
+    if (!string.IsNullOrEmpty(id) && this._Cards.ContainsKey(id))
+    {
+      if (instantiate)
+      {
+        CardData cardData = UnityEngine.Object.Instantiate<CardData>(this._Cards[id]);
+        this._InstantiatedCardData.Add(cardData);
+        _cardTarget = cardData;
+      }
+      else
+        _cardTarget = this._Cards[id];
+    }
+    if (this.IsCorruptedByNightmareEcho(id1))
+      MatchManager.Instance.CopyCardDataFromAnotherCard(MatchManager.Instance.GetCardData(((IEnumerable<string>) id1.Split('-', StringSplitOptions.None)).Last<string>()), _cardTarget, _cardTarget?.CopyConfig);
+    return _cardTarget;
+  }
+
+  private bool IsCorruptedByNightmareEcho(string id)
+  {
+    return id.Contains("-") && id.StartsWith("NightmareEchoTemplate", StringComparison.OrdinalIgnoreCase);
   }
 
   public void CleanInstantiatedCardData()
@@ -2315,21 +2381,27 @@ public class Globals : MonoBehaviour
           switch (position)
           {
             case -1:
-              if (npcForRandom.PreferredPosition == Enums.CardTargetPosition.Anywhere || npcForRandom.PreferredPosition == Enums.CardTargetPosition.Back)
+              switch (npcForRandom.PreferredPosition)
               {
-                flag1 = true;
-                continue;
+                case Enums.CardTargetPosition.Anywhere:
+                case Enums.CardTargetPosition.Back:
+                  flag1 = true;
+                  continue;
+                default:
+                  continue;
               }
-              continue;
             case 0:
               break;
             case 1:
-              if (npcForRandom.PreferredPosition == Enums.CardTargetPosition.Anywhere || npcForRandom.PreferredPosition == Enums.CardTargetPosition.Front)
+              switch (npcForRandom.PreferredPosition)
               {
-                flag1 = true;
-                continue;
+                case Enums.CardTargetPosition.Anywhere:
+                case Enums.CardTargetPosition.Front:
+                  flag1 = true;
+                  continue;
+                default:
+                  continue;
               }
-              continue;
             default:
               continue;
           }

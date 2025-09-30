@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: PopupNode
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -112,7 +112,16 @@ public class PopupNode : MonoBehaviour
           case "nodeicontimerift":
             stringBuilder.Append(ColorUtility.ToHtmlStringRGBA(Globals.Instance.ColorColor["purple"]));
             stringBuilder.Append(">");
-            stringBuilder.Append(Texts.Instance.GetText("uprising"));
+            if (AtOManager.Instance.GetTownZoneId().ToLower() == "aquarfall")
+            {
+              stringBuilder.Append(Texts.Instance.GetText("sunken"));
+              break;
+            }
+            if (AtOManager.Instance.GetTownZoneId().ToLower() == "velkarath")
+            {
+              stringBuilder.Append(Texts.Instance.GetText("uprising"));
+              break;
+            }
             break;
           case "quest-yogger":
             stringBuilder.Append(ColorUtility.ToHtmlStringRGBA(Globals.Instance.RarityColor["mythic"]));
@@ -288,15 +297,22 @@ public class PopupNode : MonoBehaviour
           if ((UnityEngine.Object) combatData.NPCList[index] != (UnityEngine.Object) null)
             ++num9;
         }
-        if (AtOManager.Instance.GetMadnessDifficulty() == 0 && combatData.NpcRemoveInMadness0Index > -1 && AtOManager.Instance.GetActNumberForText() < 3)
+        if ((GameManager.Instance.IsGameAdventure() && AtOManager.Instance.GetMadnessDifficulty() == 0 || GameManager.Instance.IsSingularity() && AtOManager.Instance.GetSingularityMadness() == 0) && combatData.NpcRemoveInMadness0Index > -1 && AtOManager.Instance.GetActNumberForText() < 3)
           --num9;
-        if (num9 == 3)
-          num6 = -0.75f;
+        switch (num9)
+        {
+          case 2:
+            num6 = -0.48f;
+            break;
+          case 3:
+            num6 = -0.75f;
+            break;
+        }
         for (int index = 0; index < 4; ++index)
           this.CharIcon[index].gameObject.SetActive(false);
         for (int index = 0; index < combatData.NPCList.Length; ++index)
         {
-          if ((AtOManager.Instance.GetMadnessDifficulty() != 0 || combatData.NpcRemoveInMadness0Index != index || AtOManager.Instance.GetActNumberForText() >= 3) && (UnityEngine.Object) combatData.NPCList[index] != (UnityEngine.Object) null)
+          if (((!GameManager.Instance.IsGameAdventure() || AtOManager.Instance.GetMadnessDifficulty() != 0) && (!GameManager.Instance.IsSingularity() || AtOManager.Instance.GetSingularityMadness() != 0) || combatData.NpcRemoveInMadness0Index != index || AtOManager.Instance.GetActNumberForText() >= 3) && (UnityEngine.Object) combatData.NPCList[index] != (UnityEngine.Object) null)
           {
             this.CharIcon[index].sprite = combatData.NPCList[index].SpriteSpeed;
             this.CharIcon[index].gameObject.SetActive(true);

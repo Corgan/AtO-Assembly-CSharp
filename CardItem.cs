@@ -1,17 +1,19 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: CardItem
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using WebSocketSharp;
 
 #nullable disable
@@ -188,6 +190,12 @@ public class CardItem : MonoBehaviour
   private float adjustForCardHeight;
   public Transform itemBuyer;
   private string cardAlreadyHaveName;
+
+  public string TargetTextTM
+  {
+    get => this.targetTextTM.text;
+    set => this.targetTextTM.text = value;
+  }
 
   private void Awake()
   {
@@ -764,19 +772,9 @@ public class CardItem : MonoBehaviour
         this.innateT.gameObject.SetActive(false);
     }
     if (this.cardData.Vanish)
-    {
-      if (!this.vanishIconParticle.gameObject.activeSelf)
-        this.vanishIconParticle.gameObject.SetActive(true);
-      if (!this.vanishT.gameObject.activeSelf)
-        this.vanishT.gameObject.SetActive(true);
-    }
+      this.SetVanishIcon(true);
     else
-    {
-      if (this.vanishIconParticle.gameObject.activeSelf)
-        this.vanishIconParticle.gameObject.SetActive(false);
-      if (this.vanishT.gameObject.activeSelf)
-        this.vanishT.gameObject.SetActive(false);
-    }
+      this.SetVanishIcon(false);
     this.ShowRarity(this.cardData);
     if (this.cardData.CardRarity == Enums.CardRarity.Mythic)
     {
@@ -952,7 +950,8 @@ public class CardItem : MonoBehaviour
       this.descriptionTextT.localPosition = new Vector3(this.descriptionTextT.localPosition.x, -0.63f, this.descriptionTextT.localPosition.z);
       this.descriptionTextTM.margin = new Vector4(0.02f, -0.02f, 0.02f, -0.04f);
     }
-    this.CreateColliderHand();
+    if (SceneManager.GetActiveScene().name != "HeroSelection")
+      this.CreateColliderHand();
     if (!((UnityEngine.Object) this.descriptionTextTM != (UnityEngine.Object) null))
       return;
     string str1 = Functions.StripTagsString(this.descriptionTextTM.text);
@@ -1083,6 +1082,12 @@ public class CardItem : MonoBehaviour
       this.backParticleSpark.Play();
     }
     this.StartCoroutine(this.DoRewardCo(fromReward, fromEvent, fromLoot, selectable, modspeed));
+  }
+
+  public void SetVanishIcon(bool state)
+  {
+    this.vanishIconParticle.gameObject.SetActive(state);
+    this.vanishT.gameObject.SetActive(state);
   }
 
   private IEnumerator DoRewardCo(
@@ -1804,9 +1809,15 @@ public class CardItem : MonoBehaviour
     this.cardData.SetHealPrecalculated(theHero.HealWithCharacterBonus(this.cardData.Heal, this.cardData.CardClass));
     this.cardData.SetHealSelfPrecalculated(theHero.HealWithCharacterBonus(this.cardData.HealSelf, this.cardData.CardClass));
     if ((UnityEngine.Object) this.cardData.ItemEnchantment != (UnityEngine.Object) null)
-      this.cardData.SetEnchantDamagePrecalculated(theHero.DamageWithCharacterBonus(this.cardData.ItemEnchantment.DamageToTarget, this.cardData.ItemEnchantment.DamageToTargetType, this.cardData.CardClass));
+    {
+      this.cardData.SetEnchantDamagePrecalculated1(theHero.DamageWithCharacterBonus(this.cardData.ItemEnchantment.DamageToTarget1, this.cardData.ItemEnchantment.DamageToTargetType1, this.cardData.CardClass));
+      this.cardData.SetEnchantDamagePrecalculated2(theHero.DamageWithCharacterBonus(this.cardData.ItemEnchantment.DamageToTarget2, this.cardData.ItemEnchantment.DamageToTargetType2, this.cardData.CardClass));
+    }
     else if ((UnityEngine.Object) this.cardData.Item != (UnityEngine.Object) null)
-      this.cardData.SetEnchantDamagePrecalculated(theHero.DamageWithCharacterBonus(this.cardData.Item.DamageToTarget, this.cardData.Item.DamageToTargetType, this.cardData.CardClass));
+    {
+      this.cardData.SetEnchantDamagePrecalculated1(theHero.DamageWithCharacterBonus(this.cardData.Item.DamageToTarget1, this.cardData.Item.DamageToTargetType1, this.cardData.CardClass));
+      this.cardData.SetEnchantDamagePrecalculated2(theHero.DamageWithCharacterBonus(this.cardData.Item.DamageToTarget2, this.cardData.Item.DamageToTargetType2, this.cardData.CardClass));
+    }
     this.cardData.SetDescriptionNew(true, (Character) theHero, includeInSearch);
     this.descriptionTextTM.text = this.cardData.DescriptionNormalized;
     this.NormalizeHeight(this.descriptionTextTM, this.cardData.Item);
@@ -1835,7 +1846,7 @@ public class CardItem : MonoBehaviour
 
   public void DrawEnergyCost(bool ActualCost = true)
   {
-    if (!this.cardData.Playable)
+    if ((bool) (UnityEngine.Object) this.cardData && !this.cardData.Playable)
       return;
     this.energyText.gameObject.SetActive(true);
     this.energyTextBg.gameObject.SetActive(true);
@@ -2149,9 +2160,15 @@ public class CardItem : MonoBehaviour
     this.cardData.SetHealPrecalculated(theNPC.HealWithCharacterBonus(this.cardData.Heal, this.cardData.CardClass, energyCost));
     this.cardData.SetHealSelfPrecalculated(theNPC.HealWithCharacterBonus(this.cardData.HealSelf, this.cardData.CardClass, energyCost));
     if ((UnityEngine.Object) this.cardData.ItemEnchantment != (UnityEngine.Object) null)
-      this.cardData.SetEnchantDamagePrecalculated(theNPC.DamageWithCharacterBonus(this.cardData.ItemEnchantment.DamageToTarget, this.cardData.ItemEnchantment.DamageToTargetType, this.cardData.CardClass, energyCost));
+    {
+      this.cardData.SetEnchantDamagePrecalculated1(theNPC.DamageWithCharacterBonus(this.cardData.ItemEnchantment.DamageToTarget1, this.cardData.ItemEnchantment.DamageToTargetType1, this.cardData.CardClass, energyCost));
+      this.cardData.SetEnchantDamagePrecalculated2(theNPC.DamageWithCharacterBonus(this.cardData.ItemEnchantment.DamageToTarget2, this.cardData.ItemEnchantment.DamageToTargetType2, this.cardData.CardClass, energyCost));
+    }
     else if ((UnityEngine.Object) this.cardData.Item != (UnityEngine.Object) null)
-      this.cardData.SetEnchantDamagePrecalculated(theNPC.DamageWithCharacterBonus(this.cardData.Item.DamageToTarget, this.cardData.Item.DamageToTargetType, this.cardData.CardClass, energyCost));
+    {
+      this.cardData.SetEnchantDamagePrecalculated1(theNPC.DamageWithCharacterBonus(this.cardData.Item.DamageToTarget1, this.cardData.Item.DamageToTargetType1, this.cardData.CardClass, energyCost));
+      this.cardData.SetEnchantDamagePrecalculated2(theNPC.DamageWithCharacterBonus(this.cardData.Item.DamageToTarget2, this.cardData.Item.DamageToTargetType2, this.cardData.CardClass, energyCost));
+    }
     this.cardData.SetDescriptionNew(true, (Character) theNPC);
     this.descriptionTextTM.text = this.cardData.DescriptionNormalized;
     this.NormalizeHeight(this.descriptionTextTM, this.cardData.Item);
@@ -2166,21 +2183,8 @@ public class CardItem : MonoBehaviour
 
   private IEnumerator CastCardNPCCo(Transform theTransform)
   {
-    // ISSUE: reference to a compiler-generated field
-    int num = this.\u003C\u003E1__state;
     CardItem cardItem = this;
-    if (num != 0)
-    {
-      if (num != 1)
-        return false;
-      // ISSUE: reference to a compiler-generated field
-      this.\u003C\u003E1__state = -1;
-      cardItem.cardnpc = false;
-      cardItem.destinationLocalRotation = Quaternion.Euler(0.0f, 0.0f, 179f);
-      return false;
-    }
-    // ISSUE: reference to a compiler-generated field
-    this.\u003C\u003E1__state = -1;
+    yield return (object) Globals.Instance.WaitForSeconds(0.25f);
     cardItem.cardrevealed = false;
     cardItem.RedrawDescriptionPrecalculatedNPC(cardItem.theNPC);
     Vector3 vector3 = cardItem.transform.parent.localPosition + cardItem.transform.parent.transform.parent.localPosition;
@@ -2192,11 +2196,9 @@ public class CardItem : MonoBehaviour
     cardItem.TopLayeringOrder("Book");
     cardItem.cardnpc = true;
     cardItem.ShowBackImage(false);
-    // ISSUE: reference to a compiler-generated field
-    this.\u003C\u003E2__current = (object) Globals.Instance.WaitForSeconds(0.5f);
-    // ISSUE: reference to a compiler-generated field
-    this.\u003C\u003E1__state = 1;
-    return true;
+    yield return (object) Globals.Instance.WaitForSeconds(0.5f);
+    cardItem.cardnpc = false;
+    cardItem.destinationLocalRotation = Quaternion.Euler(0.0f, 0.0f, 179f);
   }
 
   public void DiscardCardNPC(int i)
@@ -2477,7 +2479,7 @@ public class CardItem : MonoBehaviour
     this.DrawBorder("blue");
     if (TomeManager.Instance.IsActive())
       TomeManager.Instance.ShowCardsMask(true);
-    this.CreateAmplifyOutsideCard();
+    this.CreateAmplifyOutsideCard(disableCollider: true);
     if ((bool) (UnityEngine.Object) RewardsManager.Instance && this.cardoutsidereward && !this.cardAlreadyInDeckText.text.IsNullOrEmpty())
     {
       this.ShowAlreadyHaveAVersion(true);
@@ -2522,6 +2524,8 @@ public class CardItem : MonoBehaviour
       return;
     if (Input.GetMouseButtonUp(1))
       this.RightClick();
+    if (Input.GetMouseButtonUp(0))
+      this.LeftClick();
     if (!((UnityEngine.Object) this.cardAmplifyNPC != (UnityEngine.Object) null))
       return;
     MatchManager.Instance.amplifiedTransformShow = true;
@@ -2563,6 +2567,16 @@ public class CardItem : MonoBehaviour
       this.SetDestinationLocalScale(this.cardmakebigSize);
       this.HideKeyNotes();
     }
+  }
+
+  public void LeftClick()
+  {
+    if ((UnityEngine.Object) this.cardData == (UnityEngine.Object) null || PerkTree.Instance.IsActive() && !TomeManager.Instance.IsActive() || (UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null && (MatchManager.Instance.CardDrag || MatchManager.Instance.waitingDeathScreen) || (UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null && (MatchManager.Instance.DeckCardsWindow.IsActive() || MatchManager.Instance.EnergySelector.IsActive() || MatchManager.Instance.WaitingForActionScreen()) && this.destinationLocalPosition != this.transform.localPosition || (UnityEngine.Object) this.backImageT != (UnityEngine.Object) null && this.backImageT.gameObject.activeSelf && this.backImageT.GetComponent<SpriteRenderer>().enabled && !TomeManager.Instance.IsActive() || !((UnityEngine.Object) TeamManagement.Instance != (UnityEngine.Object) null) || !TomeManager.Instance.IsActive())
+      return;
+    TeamManagement.Instance.AddToSelectedList(this.cardData.Id);
+    if (!Globals.Instance.ShowDebug)
+      return;
+    Functions.DebugLogGD("Added to card " + this.cardData.Id + " to list with new value becomes: " + string.Join(",", TeamManagement.Instance.CardsSelectedFromTome.Select<KeyValuePair<string, int>, string>((Func<KeyValuePair<string, int>, string>) (kv => string.Format("{0}:{1}", (object) kv.Key, (object) kv.Value)))));
   }
 
   public void OnMouseEnter()

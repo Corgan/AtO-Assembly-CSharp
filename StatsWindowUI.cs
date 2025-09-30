@@ -1,10 +1,12 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: StatsWindowUI
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
+using Photon.Realtime;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
@@ -348,47 +350,48 @@ public class StatsWindowUI : MonoBehaviour
       this.yesImmune.gameObject.SetActive(false);
       this.notImmune.gameObject.SetActive(true);
     }
-    Dictionary<string, int> dictionary1 = this.character.AuraCurseModification;
+    Dictionary<string, int> dictionary = this.character.AuraCurseModification;
     Dictionary<string, int> auraCurseModifiers1 = this.character.GetItemAuraCurseModifiers();
     Dictionary<string, int> auraCurseModifiers2 = this.character.GetTraitAuraCurseModifiers();
-    Dictionary<string, int> dictionary2 = new Dictionary<string, int>();
+    Dictionary<string, int> target = new Dictionary<string, int>();
     if ((UnityEngine.Object) this.character.HeroData != (UnityEngine.Object) null && (UnityEngine.Object) this.character.HeroData.HeroSubClass != (UnityEngine.Object) null)
-      dictionary1 = Perk.GetAuraCurseBonusDict(this.character.HeroData.HeroSubClass.Id);
+      dictionary = Perk.GetAuraCurseBonusDict(this.character.HeroData.HeroSubClass.Id);
     foreach (KeyValuePair<string, int> keyValuePair in auraCurseModifiers1)
     {
       if (keyValuePair.Key != "")
       {
-        if (dictionary2.ContainsKey(keyValuePair.Key))
-          dictionary2[keyValuePair.Key] += keyValuePair.Value;
+        if (target.ContainsKey(keyValuePair.Key))
+          target[keyValuePair.Key] += keyValuePair.Value;
         else
-          dictionary2.Add(keyValuePair.Key, keyValuePair.Value);
+          target.Add(keyValuePair.Key, keyValuePair.Value);
       }
     }
     foreach (KeyValuePair<string, int> keyValuePair in auraCurseModifiers2)
     {
       if (keyValuePair.Key != "")
       {
-        if (dictionary2.ContainsKey(keyValuePair.Key))
-          dictionary2[keyValuePair.Key] += keyValuePair.Value;
+        if (target.ContainsKey(keyValuePair.Key))
+          target[keyValuePair.Key] += keyValuePair.Value;
         else
-          dictionary2.Add(keyValuePair.Key, keyValuePair.Value);
+          target.Add(keyValuePair.Key, keyValuePair.Value);
       }
     }
-    foreach (KeyValuePair<string, int> keyValuePair in dictionary1)
+    foreach (KeyValuePair<string, int> keyValuePair in dictionary)
     {
       if (keyValuePair.Key != "")
       {
-        if (dictionary2.ContainsKey(keyValuePair.Key))
-          dictionary2[keyValuePair.Key] += keyValuePair.Value;
+        if (target.ContainsKey(keyValuePair.Key))
+          target[keyValuePair.Key] += keyValuePair.Value;
         else
-          dictionary2.Add(keyValuePair.Key, keyValuePair.Value);
+          target.Add(keyValuePair.Key, keyValuePair.Value);
       }
     }
+    target.Merge((IDictionary) this.character.AuraCurseModificationDueToAuras);
     for (int index = 0; index < this.GO_AuraCurse.transform.childCount; ++index)
       UnityEngine.Object.Destroy((UnityEngine.Object) this.GO_AuraCurse.transform.GetChild(index).gameObject);
-    if (dictionary2.Count > 0)
+    if (target.Count > 0)
     {
-      foreach (KeyValuePair<string, int> keyValuePair in dictionary2)
+      foreach (KeyValuePair<string, int> keyValuePair in target)
       {
         GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.BuffPrefab, Vector3.zero, Quaternion.identity, this.GO_AuraCurse.transform);
         int num17;
@@ -506,16 +509,33 @@ public class StatsWindowUI : MonoBehaviour
         }
       }
     }
-    if (!this.character.IsHero && AtOManager.Instance.IsChallengeTraitActive("vulnerablemonsters"))
+    if (!this.character.IsHero)
     {
-      if (num > 0)
-        stringBuilder.Append("\n");
-      stringBuilder.Append("<color=#DE96C2>");
-      stringBuilder.Append(Texts.Instance.GetText("vulnerablemonsters"));
-      stringBuilder.Append(":</color> -15");
-      if (Functions.SpaceBeforePercentSign())
-        stringBuilder.Append(" ");
-      stringBuilder.Append("%");
+      if (AtOManager.Instance.IsChallengeTraitActive("vulnerablemonsters"))
+      {
+        if (num > 0)
+          stringBuilder.Append("\n");
+        stringBuilder.Append("<color=#DE96C2>");
+        stringBuilder.Append(Texts.Instance.GetText("vulnerablemonsters"));
+        stringBuilder.Append(":</color> -15");
+        if (Functions.SpaceBeforePercentSign())
+          stringBuilder.Append(" ");
+        stringBuilder.Append("%");
+      }
+      if (resistanceType == Enums.DamageType.Shadow && AtOManager.Instance.AliveTeamHaveTrait("crimsonripple"))
+      {
+        int auraCharges = this.character.GetAuraCharges("bleed");
+        if (auraCharges > 0)
+        {
+          if (num > 0)
+            stringBuilder.Append("\n");
+          stringBuilder.Append("<color=#DE96C2>Crimson Ripple</color> -");
+          stringBuilder.Append(auraCharges);
+          if (Functions.SpaceBeforePercentSign())
+            stringBuilder.Append(" ");
+          stringBuilder.Append("%");
+        }
+      }
     }
     if (this.resistancePop == null || resistanceIndex >= this.resistancePop.Length)
       return;

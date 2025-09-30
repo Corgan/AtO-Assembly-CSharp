@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: SkinData
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using UnityEngine;
@@ -46,6 +46,9 @@ public class SkinData : ScriptableObject
   [Header("Text Id")]
   [SerializeField]
   private string skinTextId;
+  [Header("Size Changes For Different Screen")]
+  [SerializeField]
+  private float heroSelectionScreenScale = 1f;
 
   public string SkinId
   {
@@ -129,5 +132,11 @@ public class SkinData : ScriptableObject
   {
     get => this.skinTextId;
     set => this.skinTextId = value;
+  }
+
+  public float HeroSelectionScreenScale
+  {
+    get => this.heroSelectionScreenScale;
+    set => this.heroSelectionScreenScale = value;
   }
 }

@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: BotonCardback
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using Paradox;
@@ -26,6 +26,7 @@ public class BotonCardback : MonoBehaviour
   private Color colorCardbackActive = new Color(1f, 0.68f, 0.09f);
   private Color colorCardbackAvailable = new Color(1f, 1f, 1f, 1f);
   private Color colorCardbackLocked = new Color(0.92f, 0.28f, 0.33f, 1f);
+  private static BotonCardback currentActive;
 
   private void Awake()
   {
@@ -68,6 +69,7 @@ public class BotonCardback : MonoBehaviour
         this.overT.gameObject.SetActive(true);
         this.active = true;
         this.cardbackName.color = this.colorCardbackActive;
+        BotonCardback.currentActive = this;
       }
       else
         this.cardbackName.color = this.colorCardbackAvailable;
@@ -101,7 +103,7 @@ public class BotonCardback : MonoBehaviour
       else if (this.cardbackData.ObeliskLevel > 0)
         theText = this.cardbackData.ObeliskLevel != 1 ? string.Format(Texts.Instance.GetText("requiredObeliskLevel"), (object) this.cardbackData.ObeliskLevel) : Texts.Instance.GetText("requiredObeliskComplete");
       else if (this.cardbackData.SingularityLevel > 0)
-        theText = this.cardbackData.SingularityLevel != 1 ? string.Format(Texts.Instance.GetText("requiredObeliskLevel"), (object) this.cardbackData.SingularityLevel) : Texts.Instance.GetText("requiredObeliskComplete");
+        theText = this.cardbackData.SingularityLevel != 1 ? string.Format(Texts.Instance.GetText("requiredSingularityLevel"), (object) this.cardbackData.SingularityLevel) : Texts.Instance.GetText("requiredSingularityComplete");
       else if (this.cardbackData.RankLevel > 0)
         theText = string.Format(Texts.Instance.GetText("skinRequiredRankLevel"), (object) this.cardbackData.RankLevel);
     }
@@ -137,6 +139,27 @@ public class BotonCardback : MonoBehaviour
       return;
     PlayerManager.Instance.SetCardback(this.subclassName, this.cardbackData.CardbackId);
     HeroSelectionManager.Instance.AssignHeroCardback(this.subclassName, this.cardbackData.CardbackId);
-    HeroSelectionManager.Instance.charPopup.DoCardbacks();
+    if (this.unlocked)
+    {
+      if ((Object) BotonCardback.currentActive != (Object) null && (Object) BotonCardback.currentActive != (Object) this)
+        BotonCardback.currentActive.Deselect();
+      this.lockT.gameObject.SetActive(false);
+      this.overT.gameObject.SetActive(true);
+      this.active = true;
+      this.cardbackName.color = this.colorCardbackActive;
+      BotonCardback.currentActive = this;
+    }
+    else
+    {
+      this.cardbackName.color = this.colorCardbackLocked;
+      this.lockT.gameObject.SetActive(true);
+    }
+  }
+
+  private void Deselect()
+  {
+    this.active = false;
+    this.overT.gameObject.SetActive(false);
+    this.cardbackName.color = this.colorCardbackAvailable;
   }
 }

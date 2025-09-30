@@ -1,7 +1,7 @@
 ﻿// Decompiled with JetBrains decompiler
 // Type: PerkTree
 // Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 7A7FF4DC-8758-4E86-8AC4-2226379516BE
+// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
 // Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
 
 using System;
@@ -446,17 +446,17 @@ public class PerkTree : MonoBehaviour
         {
           if ((UnityEngine.Object) HeroSelectionManager.Instance.GetBoxHeroFromIndex(_index) != (UnityEngine.Object) null)
           {
-            string subclassName = HeroSelectionManager.Instance.GetBoxHeroFromIndex(_index).GetSubclassName();
-            if (subclassName != "" && subclassName != this.subClassId)
+            string _hero = HeroSelectionManager.Instance.GetBoxHeroFromIndex(_index).GetSubclassName().Replace(" ", "");
+            if (_hero != "" && _hero != this.subClassId)
             {
-              List<string> heroPerks = PlayerManager.Instance.GetHeroPerks(subclassName, true);
+              List<string> heroPerks = PlayerManager.Instance.GetHeroPerks(_hero, true);
               if (heroPerks != null)
               {
                 for (int index = 0; index < heroPerks.Count; ++index)
                 {
                   if (!this.teamPerks.ContainsKey(heroPerks[index]))
                     this.teamPerks[heroPerks[index]] = new List<string>();
-                  this.teamPerks[heroPerks[index]].Add(subclassName);
+                  this.teamPerks[heroPerks[index]].Add(_hero);
                 }
               }
             }
