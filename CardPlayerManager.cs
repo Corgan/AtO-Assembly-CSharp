@@ -1,422 +1,513 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CardPlayerManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class CardPlayerManager : MonoBehaviour
 {
-  private PhotonView photonView;
-  public CharacterWindowUI characterWindowUI;
-  public SideCharacters sideCharacters;
-  public Transform cardContainer;
-  public Transform choose;
-  public Transform onlyMaster;
-  private List<string> cardList;
-  private List<CardItem> cards;
-  private List<Vector3> positions;
-  private List<bool> moving;
-  private bool cardsMoved;
-  private bool cardSelected;
-  public Transform botShuffle;
-  private Dictionary<string, int> playerSelectedCard = new Dictionary<string, int>();
-  private CardPlayerPackData _pack;
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
+	private PhotonView photonView;
 
-  public static CardPlayerManager Instance { get; private set; }
+	public CharacterWindowUI characterWindowUI;
 
-  private void Awake()
-  {
-    if ((Object) GameManager.Instance == (Object) null)
-    {
-      SceneStatic.LoadByName("CardPlayer");
-    }
-    else
-    {
-      if ((Object) CardPlayerManager.Instance == (Object) null)
-        CardPlayerManager.Instance = this;
-      else if ((Object) CardPlayerManager.Instance != (Object) this)
-        Object.Destroy((Object) this);
-      GameManager.Instance.SetCamera();
-      this.photonView = PhotonView.Get((Component) this);
-      NetworkManager.Instance.StartStopQueue(true);
-    }
-  }
+	public SideCharacters sideCharacters;
 
-  public bool CanExit() => this.botShuffle.gameObject.activeSelf;
+	public Transform cardContainer;
 
-  private void Start()
-  {
-    this.choose.gameObject.SetActive(false);
-    this.StartCoroutine(this.StartSync());
-  }
+	public Transform choose;
 
-  private IEnumerator StartSync()
-  {
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      Debug.Log((object) "WaitingSyncro cardplayer");
-      if (NetworkManager.Instance.IsMaster())
-      {
-        while (!NetworkManager.Instance.AllPlayersReady("cardplayer"))
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        Functions.DebugLogGD("Game ready, Everybody checked cardplayer");
-        NetworkManager.Instance.PlayersNetworkContinue("cardplayer");
-      }
-      else
-      {
-        NetworkManager.Instance.SetWaitingSyncro("cardplayer", true);
-        NetworkManager.Instance.SetStatusReady("cardplayer");
-        while (NetworkManager.Instance.WaitingSyncro["cardplayer"])
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        Functions.DebugLogGD("cardplayer, we can continue!");
-      }
-    }
-    GameManager.Instance.SceneLoaded();
-    this.sideCharacters.EnableAll();
-    this.botShuffle.GetComponent<BotonGeneric>().Disable();
-    if (!GameManager.Instance.IsMultiplayer())
-      this.onlyMaster.gameObject.SetActive(false);
-    Random.InitState((AtOManager.Instance.currentMapNode + AtOManager.Instance.GetGameId() + MapManager.Instance.GetRandomString()).GetDeterministicHashCode());
-    this.SetCards();
-  }
+	public Transform onlyMaster;
 
-  private Vector3 GetPosition(int _index, bool _bigSize)
-  {
-    return _bigSize ? new Vector3((float) (3.0 * (double) _index - 4.5), 0.0f, 0.0f) : new Vector3((float) (3.7000000476837158 * (double) _index - 5.5), 0.0f, 0.0f);
-  }
+	private List<string> cardList;
 
-  private void SetCards()
-  {
-    this.cardList = new List<string>();
-    this._pack = AtOManager.Instance.cardPlayerPackData;
-    if ((Object) this._pack != (Object) null)
-    {
-      if ((Object) this._pack.Card0 != (Object) null)
-        this.cardList.Add(this._pack.Card0.Id);
-      if ((Object) this._pack.Card1 != (Object) null)
-        this.cardList.Add(this._pack.Card1.Id);
-      if ((Object) this._pack.Card2 != (Object) null)
-        this.cardList.Add(this._pack.Card2.Id);
-      if ((Object) this._pack.Card3 != (Object) null)
-        this.cardList.Add(this._pack.Card3.Id);
-    }
-    this.cards = new List<CardItem>();
-    this.positions = new List<Vector3>();
-    this.moving = new List<bool>();
-    for (int index = 0; index < this.cardList.Count; ++index)
-      this.moving.Add(false);
-    this.StartCoroutine(this.SetCardsCo());
-  }
+	private List<CardItem> cards;
 
-  private IEnumerator SetCardsCo()
-  {
-    for (int i = 0; i < this.cardList.Count; ++i)
-    {
-      string card = this.cardList[i];
-      GameObject gameObject = Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.cardContainer);
-      CardItem component = gameObject.GetComponent<CardItem>();
-      component.DisableCollider();
-      this.cards.Add(component);
-      gameObject.name = card;
-      component.SetCard(this.cardList[i], false);
-      Vector3 position = this.GetPosition(i, true);
-      float x = position.x;
-      float y = position.y;
-      this.positions.Add(position);
-      component.transform.position = new Vector3(x, y, 0.0f);
-      component.DoReward(false, fromLoot: true, selectable: false);
-      component.SetDestination(new Vector3(x, y, 0.0f));
-      component.SetLocalScale(new Vector3(1.4f, 1.4f, 1f));
-      component.SetDestinationLocalScale(1.4f);
-      component.CardPlayerIndex = i;
-      component.GetComponent<Floating>().enabled = true;
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-    }
-    if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
-      this.botShuffle.GetComponent<BotonGeneric>().Enable();
-  }
+	private List<Vector3> positions;
 
-  public void Shuffle(bool fromNet = false)
-  {
-    if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster() && !fromNet)
-      return;
-    this.botShuffle.gameObject.SetActive(false);
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      if (NetworkManager.Instance.IsMaster())
-        this.photonView.RPC("NET_Shuffle", RpcTarget.Others);
-      this.onlyMaster.gameObject.SetActive(false);
-    }
-    Random.InitState((AtOManager.Instance.currentMapNode + AtOManager.Instance.GetGameId() + MapManager.Instance.GetRandomString()).GetDeterministicHashCode());
-    this.StartCoroutine(this.ShuffleCo());
-  }
+	private List<bool> moving;
 
-  [PunRPC]
-  private void NET_Shuffle() => this.Shuffle(true);
+	private bool cardsMoved;
 
-  private IEnumerator ShuffleCo()
-  {
-    for (int index = 0; index < this.cards.Count; ++index)
-    {
-      Vector3 position = this.GetPosition(index, false);
-      float x = position.x;
-      float y = position.y;
-      this.positions[index] = position;
-      this.cards[index].GetComponent<Floating>().enabled = false;
-      this.cards[index].cardrevealed = true;
-      this.cards[index].DisableCollider();
-      this.cards[index].SetDestination(new Vector3(x, y, 0.0f));
-      this.cards[index].SetDestinationLocalScale(1.1f);
-    }
-    yield return (object) Globals.Instance.WaitForSeconds(0.25f);
-    for (int i = 0; i < this.cards.Count; ++i)
-    {
-      this.cards[i].TurnBack();
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-    }
-    yield return (object) Globals.Instance.WaitForSeconds(0.2f);
-    for (int index = 0; index < this.cards.Count; ++index)
-      this.cards[index].enabled = false;
-    yield return (object) Globals.Instance.WaitForSeconds(0.5f);
-    this.Move();
-  }
+	private bool cardSelected;
 
-  private void Move() => this.StartCoroutine(this.MoveCo());
+	public Transform botShuffle;
 
-  private IEnumerator MoveCo()
-  {
-    CardPlayerManager cardPlayerManager = this;
-    int objectToMove = 0;
-    int lastObject = 0;
-    int destineToMove = 0;
-    int iterations = 10 + cardPlayerManager._pack.ModIterations;
-    int speed = 10 + cardPlayerManager._pack.ModSpeed;
-    for (int i = 0; i < iterations; ++i)
-    {
-      speed += 4;
-      objectToMove = lastObject;
-      while (objectToMove == lastObject)
-      {
-        objectToMove = Random.Range(0, cardPlayerManager.cardList.Count);
-        destineToMove = objectToMove;
-      }
-      while (destineToMove == objectToMove)
-        destineToMove = Random.Range(0, cardPlayerManager.cardList.Count);
-      cardPlayerManager.StartCoroutine(cardPlayerManager.MoveIndividualCo(objectToMove, destineToMove, (float) speed));
-      yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-      cardPlayerManager.StartCoroutine(cardPlayerManager.MoveIndividualCo(destineToMove, objectToMove, (float) speed));
-      while (cardPlayerManager.moving[destineToMove])
-        yield return (object) null;
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-    }
-    cardPlayerManager.EnableCards();
-  }
+	private Dictionary<string, int> playerSelectedCard = new Dictionary<string, int>();
 
-  private void EnableCards()
-  {
-    this.choose.gameObject.SetActive(true);
-    for (int index = 0; index < this.cards.Count; ++index)
-    {
-      this.cards[index].enabled = false;
-      this.cards[index].CreateColliderAdjusted();
-      this.cards[index].GetComponent<Floating>().enabled = true;
-    }
-    this.cardsMoved = true;
-  }
+	private CardPlayerPackData _pack;
 
-  public bool CanClick() => !this.cardsMoved || this.cardsMoved && !this.cardSelected;
+	public int controllerHorizontalIndex = -1;
 
-  public void SelectCard(int _index)
-  {
-    if (!this.cardsMoved || this.cardSelected)
-      return;
-    for (int index = 0; index < 4; ++index)
-    {
-      if (this.cards[_index].CardPlayerIndex == _index)
-      {
-        this.cardSelected = true;
-        if (!GameManager.Instance.IsMultiplayer())
-        {
-          this.playerSelectedCard.Add(NetworkManager.Instance.GetPlayerNick(), _index);
-          this.FinishSelection();
-          break;
-        }
-        this.photonView.RPC("NET_AssignSelection", RpcTarget.MasterClient, (object) NetworkManager.Instance.GetPlayerNick(), (object) _index);
-        break;
-      }
-    }
-  }
+	private Vector2 warpPosition = Vector2.zero;
 
-  [PunRPC]
-  private void NET_ShareAssignSelection(string _keys, string _values)
-  {
-    this.playerSelectedCard.Clear();
-    string[] strArray1 = JsonHelper.FromJson<string>(_keys);
-    string[] strArray2 = JsonHelper.FromJson<string>(_values);
-    for (int index = 0; index < strArray1.Length; ++index)
-      this.playerSelectedCard.Add(strArray1[index], int.Parse(strArray2[index]));
-    for (int index = 0; index < 4; ++index)
-      this.cards[index].ClearMPMark();
-    foreach (KeyValuePair<string, int> keyValuePair in this.playerSelectedCard)
-      this.cards[keyValuePair.Value].ShowMPMark(keyValuePair.Key);
-    GameManager.Instance.PlayLibraryAudio("ui_mapnodeselection");
-  }
+	private List<Transform> _controllerList = new List<Transform>();
 
-  [PunRPC]
-  private void NET_AssignSelection(string _nick, int _cardIndex)
-  {
-    if (this.playerSelectedCard.ContainsKey(_nick))
-      return;
-    this.playerSelectedCard.Add(_nick, _cardIndex);
-    string[] array1 = new string[this.playerSelectedCard.Count];
-    this.playerSelectedCard.Keys.CopyTo(array1, 0);
-    int[] array2 = new int[this.playerSelectedCard.Count];
-    this.playerSelectedCard.Values.CopyTo(array2, 0);
-    this.photonView.RPC("NET_ShareAssignSelection", RpcTarget.All, (object) JsonHelper.ToJson<string>(array1), (object) JsonHelper.ToJson<int>(array2));
-    if (this.playerSelectedCard.Count != NetworkManager.Instance.GetNumPlayers())
-      return;
-    this.photonView.RPC("NET_FinishSelection", RpcTarget.All);
-  }
+	public static CardPlayerManager Instance { get; private set; }
 
-  [PunRPC]
-  private void NET_FinishSelection() => this.FinishSelection();
+	private void Awake()
+	{
+		if (GameManager.Instance == null)
+		{
+			SceneStatic.LoadByName("CardPlayer");
+			return;
+		}
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(this);
+		}
+		GameManager.Instance.SetCamera();
+		photonView = PhotonView.Get(this);
+		NetworkManager.Instance.StartStopQueue(state: true);
+	}
 
-  private void FinishSelection() => this.StartCoroutine(this.FinishSelectionCo());
+	public bool CanExit()
+	{
+		return botShuffle.gameObject.activeSelf;
+	}
 
-  private IEnumerator FinishSelectionCo()
-  {
-    this.choose.gameObject.SetActive(false);
-    for (int index = 0; index < 4; ++index)
-    {
-      this.cards[index].DoReward(false, fromLoot: true);
-      this.cards[index].SetLocalScale(new Vector3(1.1f, 1.1f, 1f));
-      this.cards[index].SetDestinationLocalScale(1.1f);
-    }
-    yield return (object) Globals.Instance.WaitForSeconds(0.6f);
-    Hero[] team = AtOManager.Instance.GetTeam();
-    for (int index = 0; index < 4; ++index)
-    {
-      if (team[index] != null && !((Object) team[index].HeroData == (Object) null))
-      {
-        foreach (KeyValuePair<string, int> keyValuePair in this.playerSelectedCard)
-        {
-          if (team[index].Owner == keyValuePair.Key || team[index].Owner == "" || team[index].Owner == null)
-          {
-            Vector3 to = this.sideCharacters.CharacterIconPosition(index);
-            GameManager.Instance.GenerateParticleTrail(0, this.cards[keyValuePair.Value].transform.position, to);
-            bool flag = true;
-            if (this.cards[keyValuePair.Value].CardData.GoldGainQuantity != 0)
-            {
-              flag = false;
-              AtOManager.Instance.GivePlayer(0, this.cards[keyValuePair.Value].CardData.GoldGainQuantity, team[index].Owner);
-            }
-            if (this.cards[keyValuePair.Value].CardData.ShardsGainQuantity != 0)
-            {
-              flag = false;
-              AtOManager.Instance.GivePlayer(1, this.cards[keyValuePair.Value].CardData.ShardsGainQuantity, team[index].Owner);
-            }
-            if (this.cards[keyValuePair.Value].CardData.Id == "success")
-              flag = false;
-            if (flag)
-              AtOManager.Instance.AddCardToHero(index, this.cards[keyValuePair.Value].CardData.Id);
-            PlayerManager.Instance.CardUnlock(this.cards[keyValuePair.Value].CardData.Id);
-            this.cards[keyValuePair.Value].ShowPortrait(team[index].HeroData.HeroSubClass.SpriteSpeed);
-          }
-        }
-      }
-    }
-    if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
-    {
-      SaveManager.SavePlayerData();
-      yield return (object) Globals.Instance.WaitForSeconds(4f);
-      AtOManager.Instance.FinishCardPlayer();
-    }
-  }
+	private void Start()
+	{
+		choose.gameObject.SetActive(value: false);
+		StartCoroutine(StartSync());
+	}
 
-  private IEnumerator MoveIndividualCo(int sourceIndex, int targetIndex, float speed = 24f)
-  {
-    this.moving[sourceIndex] = true;
-    Transform cardT = this.cards[sourceIndex].transform;
-    Vector3 position1 = this.positions[sourceIndex];
-    Vector3 position2 = this.positions[targetIndex];
-    float num1 = Globals.Instance.sizeW * 0.8f;
-    float num2 = Globals.Instance.sizeW * 0.2f;
-    float iterationDelay = 0.5f;
-    if (GameManager.Instance.IsMultiplayer() || GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Fast || GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
-      speed *= 1.4f;
-    else
-      speed *= 1.2f;
-    Vector3 startPos = position1;
-    Vector3 targetPos = position2;
-    float num3 = Mathf.Abs(startPos.x - targetPos.x);
-    bool finished = false;
-    float min = 0.1f;
-    float max = 4f;
-    float arcHeight = Mathf.Clamp(min + (float) (((double) num3 - (double) num2) / ((double) num1 - (double) num2) * ((double) max - (double) min)), min, max);
-    if ((double) position2.x < (double) position1.x)
-      arcHeight *= -1f;
-    while (!finished)
-    {
-      float x1 = startPos.x;
-      float x2 = targetPos.x;
-      float num4 = x2 - x1;
-      float x3 = Mathf.MoveTowards(cardT.position.x, x2, speed * Time.deltaTime);
-      float num5 = Mathf.Lerp(startPos.y, targetPos.y, (x3 - x1) / num4);
-      float num6 = (float) ((double) arcHeight * ((double) x3 - (double) x1) * ((double) x3 - (double) x2) / (-0.25 * (double) num4 * (double) num4));
-      Vector3 vector3 = new Vector3(x3, num5 + num6, cardT.position.z);
-      cardT.position = vector3;
-      if ((double) Mathf.Abs(vector3.x - targetPos.x) < 0.0099999997764825821 && (double) Mathf.Abs(vector3.y - targetPos.y) < 0.0099999997764825821)
-        finished = true;
-      yield return (object) Globals.Instance.WaitForSeconds(Time.deltaTime * iterationDelay);
-    }
-    cardT.position = targetPos;
-    this.cards[targetIndex] = cardT.GetComponent<CardItem>();
-    this.cards[targetIndex].CardPlayerIndex = targetIndex;
-    this.moving[sourceIndex] = false;
-  }
+	private IEnumerator StartSync()
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			Debug.Log("WaitingSyncro cardplayer");
+			if (NetworkManager.Instance.IsMaster())
+			{
+				while (!NetworkManager.Instance.AllPlayersReady("cardplayer"))
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				Functions.DebugLogGD("Game ready, Everybody checked cardplayer");
+				NetworkManager.Instance.PlayersNetworkContinue("cardplayer");
+			}
+			else
+			{
+				NetworkManager.Instance.SetWaitingSyncro("cardplayer", status: true);
+				NetworkManager.Instance.SetStatusReady("cardplayer");
+				while (NetworkManager.Instance.WaitingSyncro["cardplayer"])
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				Functions.DebugLogGD("cardplayer, we can continue!");
+			}
+		}
+		GameManager.Instance.SceneLoaded();
+		sideCharacters.EnableAll();
+		botShuffle.GetComponent<BotonGeneric>().Disable();
+		if (!GameManager.Instance.IsMultiplayer())
+		{
+			onlyMaster.gameObject.SetActive(value: false);
+		}
+		Random.InitState(string.Concat(AtOManager.Instance.currentMapNode + AtOManager.Instance.GetGameId(), MapManager.Instance.GetRandomString()).GetDeterministicHashCode());
+		SetCards();
+	}
 
-  private Quaternion LookAt2D(Vector2 forward)
-  {
-    return Quaternion.Euler(0.0f, 0.0f, Mathf.Atan2(forward.y, forward.x) * 57.29578f);
-  }
+	private Vector3 GetPosition(int _index, bool _bigSize)
+	{
+		if (_bigSize)
+		{
+			return new Vector3(-4.5f + 3f * (float)_index, 0f, 0f);
+		}
+		return new Vector3(-5.5f + 3.7f * (float)_index, 0f, 0f);
+	}
 
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    int absolutePosition = -1)
-  {
-    this._controllerList.Clear();
-    if (Functions.TransformIsVisible(this.botShuffle))
-      this._controllerList.Add(this.botShuffle);
-    for (int index = 0; index < 4; ++index)
-    {
-      if (Functions.TransformIsVisible(this.sideCharacters.charArray[index].transform))
-        this._controllerList.Add(this.sideCharacters.charArray[index].transform.GetChild(0).transform);
-    }
-    if (Functions.TransformIsVisible(PlayerUIManager.Instance.giveGold))
-      this._controllerList.Add(PlayerUIManager.Instance.giveGold);
-    if (this.CanClick())
-    {
-      foreach (Transform transform in this.cardContainer)
-        this._controllerList.Add(transform);
-    }
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((Object) this._controllerList[this.controllerHorizontalIndex] != (Object) null))
-      return;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
+	private void SetCards()
+	{
+		cardList = new List<string>();
+		_pack = AtOManager.Instance.cardPlayerPackData;
+		if (_pack != null)
+		{
+			if (_pack.Card0 != null)
+			{
+				cardList.Add(_pack.Card0.Id);
+			}
+			if (_pack.Card1 != null)
+			{
+				cardList.Add(_pack.Card1.Id);
+			}
+			if (_pack.Card2 != null)
+			{
+				cardList.Add(_pack.Card2.Id);
+			}
+			if (_pack.Card3 != null)
+			{
+				cardList.Add(_pack.Card3.Id);
+			}
+		}
+		cards = new List<CardItem>();
+		positions = new List<Vector3>();
+		moving = new List<bool>();
+		for (int i = 0; i < cardList.Count; i++)
+		{
+			moving.Add(item: false);
+		}
+		StartCoroutine(SetCardsCo());
+	}
+
+	private IEnumerator SetCardsCo()
+	{
+		for (int i = 0; i < cardList.Count; i++)
+		{
+			string text = cardList[i];
+			GameObject obj = Object.Instantiate(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, cardContainer);
+			CardItem component = obj.GetComponent<CardItem>();
+			component.DisableCollider();
+			cards.Add(component);
+			obj.name = text;
+			component.SetCard(cardList[i], deckScale: false);
+			Vector3 position = GetPosition(i, _bigSize: true);
+			float x = position.x;
+			float y = position.y;
+			positions.Add(position);
+			component.transform.position = new Vector3(x, y, 0f);
+			component.DoReward(fromReward: false, fromEvent: false, fromLoot: true, selectable: false);
+			component.SetDestination(new Vector3(x, y, 0f));
+			component.SetLocalScale(new Vector3(1.4f, 1.4f, 1f));
+			component.SetDestinationLocalScale(1.4f);
+			component.CardPlayerIndex = i;
+			component.GetComponent<Floating>().enabled = true;
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+		}
+		if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
+		{
+			botShuffle.GetComponent<BotonGeneric>().Enable();
+		}
+	}
+
+	public void Shuffle(bool fromNet = false)
+	{
+		if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster() && !fromNet)
+		{
+			return;
+		}
+		botShuffle.gameObject.SetActive(value: false);
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			if (NetworkManager.Instance.IsMaster())
+			{
+				photonView.RPC("NET_Shuffle", RpcTarget.Others);
+			}
+			onlyMaster.gameObject.SetActive(value: false);
+		}
+		Random.InitState(string.Concat(AtOManager.Instance.currentMapNode + AtOManager.Instance.GetGameId(), MapManager.Instance.GetRandomString()).GetDeterministicHashCode());
+		StartCoroutine(ShuffleCo());
+	}
+
+	[PunRPC]
+	private void NET_Shuffle()
+	{
+		Shuffle(fromNet: true);
+	}
+
+	private IEnumerator ShuffleCo()
+	{
+		for (int i = 0; i < cards.Count; i++)
+		{
+			Vector3 position = GetPosition(i, _bigSize: false);
+			float x = position.x;
+			float y = position.y;
+			positions[i] = position;
+			cards[i].GetComponent<Floating>().enabled = false;
+			cards[i].cardrevealed = true;
+			cards[i].DisableCollider();
+			cards[i].SetDestination(new Vector3(x, y, 0f));
+			cards[i].SetDestinationLocalScale(1.1f);
+		}
+		yield return Globals.Instance.WaitForSeconds(0.25f);
+		for (int j = 0; j < cards.Count; j++)
+		{
+			cards[j].TurnBack();
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+		}
+		yield return Globals.Instance.WaitForSeconds(0.2f);
+		for (int k = 0; k < cards.Count; k++)
+		{
+			cards[k].enabled = false;
+		}
+		yield return Globals.Instance.WaitForSeconds(0.5f);
+		Move();
+	}
+
+	private void Move()
+	{
+		StartCoroutine(MoveCo());
+	}
+
+	private IEnumerator MoveCo()
+	{
+		int lastObject = 0;
+		int destineToMove = 0;
+		int iterations = 10 + _pack.ModIterations;
+		int speed = 10 + _pack.ModSpeed;
+		for (int i = 0; i < iterations; i++)
+		{
+			speed += 4;
+			int objectToMove = lastObject;
+			while (objectToMove == lastObject)
+			{
+				objectToMove = Random.Range(0, cardList.Count);
+				destineToMove = objectToMove;
+			}
+			while (destineToMove == objectToMove)
+			{
+				destineToMove = Random.Range(0, cardList.Count);
+			}
+			StartCoroutine(MoveIndividualCo(objectToMove, destineToMove, speed));
+			yield return Globals.Instance.WaitForSeconds(0.01f);
+			StartCoroutine(MoveIndividualCo(destineToMove, objectToMove, speed));
+			while (moving[destineToMove])
+			{
+				yield return null;
+			}
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+		}
+		EnableCards();
+	}
+
+	private void EnableCards()
+	{
+		choose.gameObject.SetActive(value: true);
+		for (int i = 0; i < cards.Count; i++)
+		{
+			cards[i].enabled = false;
+			cards[i].CreateColliderAdjusted();
+			cards[i].GetComponent<Floating>().enabled = true;
+		}
+		cardsMoved = true;
+	}
+
+	public bool CanClick()
+	{
+		if (!cardsMoved)
+		{
+			return true;
+		}
+		if (cardsMoved && !cardSelected)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	public void SelectCard(int _index)
+	{
+		if (!cardsMoved || cardSelected)
+		{
+			return;
+		}
+		for (int i = 0; i < 4; i++)
+		{
+			if (cards[_index].CardPlayerIndex == _index)
+			{
+				cardSelected = true;
+				if (!GameManager.Instance.IsMultiplayer())
+				{
+					playerSelectedCard.Add(NetworkManager.Instance.GetPlayerNick(), _index);
+					FinishSelection();
+				}
+				else
+				{
+					photonView.RPC("NET_AssignSelection", RpcTarget.MasterClient, NetworkManager.Instance.GetPlayerNick(), _index);
+				}
+				break;
+			}
+		}
+	}
+
+	[PunRPC]
+	private void NET_ShareAssignSelection(string _keys, string _values)
+	{
+		playerSelectedCard.Clear();
+		string[] array = JsonHelper.FromJson<string>(_keys);
+		string[] array2 = JsonHelper.FromJson<string>(_values);
+		for (int i = 0; i < array.Length; i++)
+		{
+			playerSelectedCard.Add(array[i], int.Parse(array2[i]));
+		}
+		for (int j = 0; j < 4; j++)
+		{
+			cards[j].ClearMPMark();
+		}
+		foreach (KeyValuePair<string, int> item in playerSelectedCard)
+		{
+			cards[item.Value].ShowMPMark(item.Key);
+		}
+		GameManager.Instance.PlayLibraryAudio("ui_mapnodeselection");
+	}
+
+	[PunRPC]
+	private void NET_AssignSelection(string _nick, int _cardIndex)
+	{
+		if (!playerSelectedCard.ContainsKey(_nick))
+		{
+			playerSelectedCard.Add(_nick, _cardIndex);
+			string[] array = new string[playerSelectedCard.Count];
+			playerSelectedCard.Keys.CopyTo(array, 0);
+			int[] array2 = new int[playerSelectedCard.Count];
+			playerSelectedCard.Values.CopyTo(array2, 0);
+			string text = JsonHelper.ToJson(array);
+			string text2 = JsonHelper.ToJson(array2);
+			photonView.RPC("NET_ShareAssignSelection", RpcTarget.All, text, text2);
+			if (playerSelectedCard.Count == NetworkManager.Instance.GetNumPlayers())
+			{
+				photonView.RPC("NET_FinishSelection", RpcTarget.All);
+			}
+		}
+	}
+
+	[PunRPC]
+	private void NET_FinishSelection()
+	{
+		FinishSelection();
+	}
+
+	private void FinishSelection()
+	{
+		StartCoroutine(FinishSelectionCo());
+	}
+
+	private IEnumerator FinishSelectionCo()
+	{
+		choose.gameObject.SetActive(value: false);
+		for (int i = 0; i < 4; i++)
+		{
+			cards[i].DoReward(fromReward: false, fromEvent: false, fromLoot: true);
+			cards[i].SetLocalScale(new Vector3(1.1f, 1.1f, 1f));
+			cards[i].SetDestinationLocalScale(1.1f);
+		}
+		yield return Globals.Instance.WaitForSeconds(0.6f);
+		Hero[] team = AtOManager.Instance.GetTeam();
+		for (int j = 0; j < 4; j++)
+		{
+			if (team[j] == null || team[j].HeroData == null)
+			{
+				continue;
+			}
+			foreach (KeyValuePair<string, int> item in playerSelectedCard)
+			{
+				if (team[j].Owner == item.Key || team[j].Owner == "" || team[j].Owner == null)
+				{
+					Vector3 to = sideCharacters.CharacterIconPosition(j);
+					GameManager.Instance.GenerateParticleTrail(0, cards[item.Value].transform.position, to);
+					bool flag = true;
+					if (cards[item.Value].CardData.GoldGainQuantity != 0)
+					{
+						flag = false;
+						AtOManager.Instance.GivePlayer(0, cards[item.Value].CardData.GoldGainQuantity, team[j].Owner);
+					}
+					if (cards[item.Value].CardData.ShardsGainQuantity != 0)
+					{
+						flag = false;
+						AtOManager.Instance.GivePlayer(1, cards[item.Value].CardData.ShardsGainQuantity, team[j].Owner);
+					}
+					if (cards[item.Value].CardData.Id == "success")
+					{
+						flag = false;
+					}
+					if (flag)
+					{
+						AtOManager.Instance.AddCardToHero(j, cards[item.Value].CardData.Id);
+					}
+					PlayerManager.Instance.CardUnlock(cards[item.Value].CardData.Id);
+					cards[item.Value].ShowPortrait(team[j].HeroData.HeroSubClass.SpriteSpeed);
+				}
+			}
+		}
+		if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
+		{
+			SaveManager.SavePlayerData();
+			yield return Globals.Instance.WaitForSeconds(4f);
+			AtOManager.Instance.FinishCardPlayer();
+		}
+	}
+
+	private IEnumerator MoveIndividualCo(int sourceIndex, int targetIndex, float speed = 24f)
+	{
+		moving[sourceIndex] = true;
+		Transform cardT = cards[sourceIndex].transform;
+		Vector3 vector = positions[sourceIndex];
+		Vector3 vector2 = positions[targetIndex];
+		float num = Globals.Instance.sizeW * 0.8f;
+		float num2 = Globals.Instance.sizeW * 0.2f;
+		float iterationDelay = 0.5f;
+		speed = ((!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed != Enums.ConfigSpeed.Fast && GameManager.Instance.configGameSpeed != Enums.ConfigSpeed.Ultrafast) ? (speed * 1.2f) : (speed * 1.4f));
+		Vector3 startPos = vector;
+		Vector3 targetPos = vector2;
+		float num3 = Mathf.Abs(startPos.x - targetPos.x);
+		bool finished = false;
+		float num4 = 0.1f;
+		float num5 = 4f;
+		float arcHeight = Mathf.Clamp(num4 + (num3 - num2) / (num - num2) * (num5 - num4), num4, num5);
+		if (vector2.x < vector.x)
+		{
+			arcHeight *= -1f;
+		}
+		while (!finished)
+		{
+			float x = startPos.x;
+			float x2 = targetPos.x;
+			float num6 = x2 - x;
+			float num7 = Mathf.MoveTowards(cardT.position.x, x2, speed * Time.deltaTime);
+			float num8 = Mathf.Lerp(startPos.y, targetPos.y, (num7 - x) / num6);
+			float num9 = arcHeight * (num7 - x) * (num7 - x2) / (-0.25f * num6 * num6);
+			Vector3 vector3 = (cardT.position = new Vector3(num7, num8 + num9, cardT.position.z));
+			if (Mathf.Abs(vector3.x - targetPos.x) < 0.01f && Mathf.Abs(vector3.y - targetPos.y) < 0.01f)
+			{
+				finished = true;
+			}
+			yield return Globals.Instance.WaitForSeconds(Time.deltaTime * iterationDelay);
+		}
+		cardT.position = targetPos;
+		cards[targetIndex] = cardT.GetComponent<CardItem>();
+		cards[targetIndex].CardPlayerIndex = targetIndex;
+		moving[sourceIndex] = false;
+	}
+
+	private Quaternion LookAt2D(Vector2 forward)
+	{
+		return Quaternion.Euler(0f, 0f, Mathf.Atan2(forward.y, forward.x) * 57.29578f);
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, int absolutePosition = -1)
+	{
+		_controllerList.Clear();
+		if (Functions.TransformIsVisible(botShuffle))
+		{
+			_controllerList.Add(botShuffle);
+		}
+		for (int i = 0; i < 4; i++)
+		{
+			if (Functions.TransformIsVisible(sideCharacters.charArray[i].transform))
+			{
+				_controllerList.Add(sideCharacters.charArray[i].transform.GetChild(0).transform);
+			}
+		}
+		if (Functions.TransformIsVisible(PlayerUIManager.Instance.giveGold))
+		{
+			_controllerList.Add(PlayerUIManager.Instance.giveGold);
+		}
+		if (CanClick())
+		{
+			foreach (Transform item in cardContainer)
+			{
+				_controllerList.Add(item);
+			}
+		}
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
 }

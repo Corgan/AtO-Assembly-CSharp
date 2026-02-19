@@ -1,75 +1,80 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PerkNodeAmplify
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class PerkNodeAmplify : MonoBehaviour
 {
-  public Transform bg2;
-  public Transform bg3;
-  public Transform bg4;
-  public Transform amplifyNodes;
-  private int hideCounter;
+	public Transform bg2;
 
-  private void Update()
-  {
-    if (Time.frameCount % 4 != 0 || !this.gameObject.activeSelf)
-      return;
-    if (this.hideCounter < 5)
-    {
-      Vector3 worldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-      foreach (RaycastHit2D raycastHit2D in Physics2D.RaycastAll(new Vector2(worldPoint.x, worldPoint.y), Vector2.zero, 0.0f))
-      {
-        if (raycastHit2D.transform.gameObject.name == this.gameObject.name)
-        {
-          this.hideCounter = 0;
-          return;
-        }
-      }
-      ++this.hideCounter;
-    }
-    else
-      this.Hide();
-  }
+	public Transform bg3;
 
-  public void Hide()
-  {
-    this.gameObject.SetActive(false);
-    this.hideCounter = 0;
-  }
+	public Transform bg4;
 
-  public void Show() => this.gameObject.SetActive(true);
+	public Transform amplifyNodes;
 
-  public void SetForNodes(int _numNodes)
-  {
-    PolygonCollider2D component = this.GetComponent<PolygonCollider2D>();
-    if (_numNodes == 2)
-    {
-      this.bg2.gameObject.SetActive(true);
-      this.bg3.gameObject.SetActive(false);
-      this.bg4.gameObject.SetActive(false);
-      this.amplifyNodes.localPosition = new Vector3(-0.7f, this.amplifyNodes.localPosition.y, this.amplifyNodes.localPosition.z);
-      component.points = this.bg2.GetComponent<PolygonCollider2D>().points;
-    }
-    else if (_numNodes == 3)
-    {
-      this.bg2.gameObject.SetActive(false);
-      this.bg3.gameObject.SetActive(true);
-      this.bg4.gameObject.SetActive(false);
-      this.amplifyNodes.localPosition = new Vector3(-1.4f, this.amplifyNodes.localPosition.y, this.amplifyNodes.localPosition.z);
-      component.points = this.bg3.GetComponent<PolygonCollider2D>().points;
-    }
-    else
-    {
-      this.bg2.gameObject.SetActive(false);
-      this.bg3.gameObject.SetActive(false);
-      this.bg4.gameObject.SetActive(true);
-      this.amplifyNodes.localPosition = new Vector3(-2.1f, this.amplifyNodes.localPosition.y, this.amplifyNodes.localPosition.z);
-      component.points = this.bg4.GetComponent<PolygonCollider2D>().points;
-    }
-  }
+	private int hideCounter;
+
+	private void Update()
+	{
+		if (Time.frameCount % 4 != 0 || !base.gameObject.activeSelf)
+		{
+			return;
+		}
+		if (hideCounter < 5)
+		{
+			Vector3 vector = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+			RaycastHit2D[] array = Physics2D.RaycastAll(new Vector2(vector.x, vector.y), Vector2.zero, 0f);
+			foreach (RaycastHit2D raycastHit2D in array)
+			{
+				if (raycastHit2D.transform.gameObject.name == base.gameObject.name)
+				{
+					hideCounter = 0;
+					return;
+				}
+			}
+			hideCounter++;
+		}
+		else
+		{
+			Hide();
+		}
+	}
+
+	public void Hide()
+	{
+		base.gameObject.SetActive(value: false);
+		hideCounter = 0;
+	}
+
+	public void Show()
+	{
+		base.gameObject.SetActive(value: true);
+	}
+
+	public void SetForNodes(int _numNodes)
+	{
+		PolygonCollider2D component = GetComponent<PolygonCollider2D>();
+		switch (_numNodes)
+		{
+		case 2:
+			bg2.gameObject.SetActive(value: true);
+			bg3.gameObject.SetActive(value: false);
+			bg4.gameObject.SetActive(value: false);
+			amplifyNodes.localPosition = new Vector3(-0.7f, amplifyNodes.localPosition.y, amplifyNodes.localPosition.z);
+			component.points = bg2.GetComponent<PolygonCollider2D>().points;
+			break;
+		case 3:
+			bg2.gameObject.SetActive(value: false);
+			bg3.gameObject.SetActive(value: true);
+			bg4.gameObject.SetActive(value: false);
+			amplifyNodes.localPosition = new Vector3(-1.4f, amplifyNodes.localPosition.y, amplifyNodes.localPosition.z);
+			component.points = bg3.GetComponent<PolygonCollider2D>().points;
+			break;
+		default:
+			bg2.gameObject.SetActive(value: false);
+			bg3.gameObject.SetActive(value: false);
+			bg4.gameObject.SetActive(value: true);
+			amplifyNodes.localPosition = new Vector3(-2.1f, amplifyNodes.localPosition.y, amplifyNodes.localPosition.z);
+			component.points = bg4.GetComponent<PolygonCollider2D>().points;
+			break;
+		}
+	}
 }

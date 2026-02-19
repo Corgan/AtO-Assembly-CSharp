@@ -1,125 +1,152 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: FinishProgression
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class FinishProgression : MonoBehaviour
 {
-  public TMP_Text charName;
-  public TMP_Text charProgress;
-  public TMP_Text charMin;
-  public TMP_Text charMax;
-  public TMP_Text charRank;
-  public TMP_Text charPoints;
-  public Transform progressBarMask;
-  public SpriteRenderer progressBar;
-  public Transform progressBarParticles;
-  private string characterName = "";
-  private string className = "";
-  private string subclassId = "";
-  private int iniProgress;
-  private int maxProgress;
-  private int charIndex = -1;
-  private Coroutine coIncrement;
+	public TMP_Text charName;
 
-  public void SetCharacter(string _charName, string _className, string _subclassId, int _index)
-  {
-    this.characterName = _charName;
-    this.className = _className;
-    this.subclassId = _subclassId;
-    this.charIndex = _index;
-    this.charName.text = _charName;
-    this.DoProgress();
-  }
+	public TMP_Text charProgress;
 
-  public void DoProgress()
-  {
-    int progress = PlayerManager.Instance.GetProgress(this.subclassId);
-    this.iniProgress = progress;
-    int perkPrevLevelPoints = PlayerManager.Instance.GetPerkPrevLevelPoints(this.subclassId);
-    int perkNextLevelPoints = PlayerManager.Instance.GetPerkNextLevelPoints(this.subclassId);
-    this.maxProgress = perkNextLevelPoints;
-    this.charProgress.text = progress.ToString();
-    if (perkNextLevelPoints != 0)
-    {
-      this.charMin.text = perkPrevLevelPoints.ToString();
-      this.charMax.text = perkNextLevelPoints.ToString();
-    }
-    else
-    {
-      this.charMax.text = "";
-      this.charMin.text = "";
-    }
-    float x = (float) (((double) progress - (double) perkPrevLevelPoints) / ((double) perkNextLevelPoints - (double) perkPrevLevelPoints) * 1.6489449739456177);
-    if (perkNextLevelPoints == 0)
-    {
-      x = 1.648945f;
-      this.progressBarParticles.gameObject.SetActive(false);
-      this.StopBlockProgress();
-    }
-    this.progressBarMask.localScale = new Vector3(x, this.progressBarMask.localScale.y, this.progressBarMask.localScale.z);
-    this.progressBar.color = this.charProgress.color = Functions.HexToColor(Globals.Instance.ClassColor[this.className]);
-    this.charRank.text = string.Format(Texts.Instance.GetText("rankProgress"), (object) PlayerManager.Instance.GetPerkRank(this.subclassId));
-    int perkPointsAvailable = PlayerManager.Instance.GetPerkPointsAvailable(this.subclassId);
-    if (perkPointsAvailable > 0)
-    {
-      this.charPoints.text = string.Format(Texts.Instance.GetText("rankPerkPoints"), (object) (perkPointsAvailable.ToString() + " <sprite name=experience>"));
-      this.charPoints.gameObject.SetActive(true);
-    }
-    else
-      this.charPoints.gameObject.SetActive(false);
-  }
+	public TMP_Text charMin;
 
-  public void Increment(int finalProgress)
-  {
-    this.coIncrement = this.StartCoroutine(this.IncrementTimeout(finalProgress));
-  }
+	public TMP_Text charMax;
 
-  private IEnumerator IncrementTimeout(int destine)
-  {
-    FinishProgression finishProgression = this;
-    yield return (object) Globals.Instance.WaitForSeconds(0.03f);
-    int _quantity = 0;
-    if (destine > 500)
-      _quantity = 500;
-    else if (destine > 100)
-      _quantity = 100;
-    else if (destine > 25)
-      _quantity = 25;
-    else if (destine > 10)
-      _quantity = 10;
-    else if (destine > 0)
-      _quantity = 1;
-    finishProgression.iniProgress += _quantity;
-    destine -= _quantity;
-    PlayerManager.Instance.ModifyProgress(finishProgression.subclassId, _quantity, finishProgression.charIndex);
-    if (destine <= 0)
-    {
-      if (finishProgression.coIncrement != null)
-        finishProgression.StopCoroutine(finishProgression.coIncrement);
-      finishProgression.StopBlockProgress();
-    }
-    else
-    {
-      finishProgression.DoProgress();
-      finishProgression.Increment(destine);
-    }
-  }
+	public TMP_Text charRank;
 
-  private void StopBlockProgress()
-  {
-    this.progressBarParticles.gameObject.SetActive(false);
-    this.charProgress.text = PlayerManager.Instance.GetProgress(this.subclassId).ToString();
-    FinishRunManager.Instance.UnlockState(this.charIndex);
-  }
+	public TMP_Text charPoints;
 
-  public bool IsActive() => this.gameObject.activeSelf;
+	public Transform progressBarMask;
 
-  public void Hide() => this.gameObject.SetActive(false);
+	public SpriteRenderer progressBar;
+
+	public Transform progressBarParticles;
+
+	private string characterName = "";
+
+	private string className = "";
+
+	private string subclassId = "";
+
+	private int iniProgress;
+
+	private int maxProgress;
+
+	private int charIndex = -1;
+
+	private Coroutine coIncrement;
+
+	public void SetCharacter(string _charName, string _className, string _subclassId, int _index)
+	{
+		characterName = _charName;
+		className = _className;
+		subclassId = _subclassId;
+		charIndex = _index;
+		charName.text = _charName;
+		DoProgress();
+	}
+
+	public void DoProgress()
+	{
+		int num = (iniProgress = PlayerManager.Instance.GetProgress(subclassId));
+		int perkPrevLevelPoints = PlayerManager.Instance.GetPerkPrevLevelPoints(subclassId);
+		int num2 = (maxProgress = PlayerManager.Instance.GetPerkNextLevelPoints(subclassId));
+		charProgress.text = num.ToString();
+		if (num2 != 0)
+		{
+			charMin.text = perkPrevLevelPoints.ToString();
+			charMax.text = num2.ToString();
+		}
+		else
+		{
+			charMax.text = "";
+			charMin.text = "";
+		}
+		float x = ((float)num - (float)perkPrevLevelPoints) / ((float)num2 - (float)perkPrevLevelPoints) * 1.648945f;
+		if (num2 == 0)
+		{
+			x = 1.648945f;
+			progressBarParticles.gameObject.SetActive(value: false);
+			StopBlockProgress();
+		}
+		progressBarMask.localScale = new Vector3(x, progressBarMask.localScale.y, progressBarMask.localScale.z);
+		SpriteRenderer spriteRenderer = progressBar;
+		Color color = (charProgress.color = Functions.HexToColor(Globals.Instance.ClassColor[className]));
+		spriteRenderer.color = color;
+		charRank.text = string.Format(Texts.Instance.GetText("rankProgress"), PlayerManager.Instance.GetPerkRank(subclassId));
+		int perkPointsAvailable = PlayerManager.Instance.GetPerkPointsAvailable(subclassId);
+		if (perkPointsAvailable > 0)
+		{
+			charPoints.text = string.Format(Texts.Instance.GetText("rankPerkPoints"), perkPointsAvailable + " <sprite name=experience>");
+			charPoints.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			charPoints.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void Increment(int finalProgress)
+	{
+		coIncrement = StartCoroutine(IncrementTimeout(finalProgress));
+	}
+
+	private IEnumerator IncrementTimeout(int destine)
+	{
+		yield return Globals.Instance.WaitForSeconds(0.03f);
+		int num = 0;
+		if (destine > 500)
+		{
+			num = 500;
+		}
+		else if (destine > 100)
+		{
+			num = 100;
+		}
+		else if (destine > 25)
+		{
+			num = 25;
+		}
+		else if (destine > 10)
+		{
+			num = 10;
+		}
+		else if (destine > 0)
+		{
+			num = 1;
+		}
+		iniProgress += num;
+		destine -= num;
+		PlayerManager.Instance.ModifyProgress(subclassId, num, charIndex);
+		if (destine <= 0)
+		{
+			if (coIncrement != null)
+			{
+				StopCoroutine(coIncrement);
+			}
+			StopBlockProgress();
+		}
+		else
+		{
+			DoProgress();
+			Increment(destine);
+		}
+	}
+
+	private void StopBlockProgress()
+	{
+		progressBarParticles.gameObject.SetActive(value: false);
+		charProgress.text = PlayerManager.Instance.GetProgress(subclassId).ToString();
+		FinishRunManager.Instance.UnlockState(charIndex);
+	}
+
+	public bool IsActive()
+	{
+		return base.gameObject.activeSelf;
+	}
+
+	public void Hide()
+	{
+		base.gameObject.SetActive(value: false);
+	}
 }

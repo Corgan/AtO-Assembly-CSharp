@@ -1,117 +1,222 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EpicToonFX.ETFXSceneManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-#nullable disable
-namespace EpicToonFX
+namespace EpicToonFX;
+
+public class ETFXSceneManager : MonoBehaviour
 {
-  public class ETFXSceneManager : MonoBehaviour
-  {
-    public bool GUIHide;
-    public bool GUIHide2;
-    public bool GUIHide3;
-    public bool GUIHide4;
+	public bool GUIHide;
 
-    public void LoadScene2DDemo() => SceneManager.LoadScene("etfx_2ddemo");
+	public bool GUIHide2;
 
-    public void LoadSceneCards() => SceneManager.LoadScene("etfx_cards");
+	public bool GUIHide3;
 
-    public void LoadSceneCombat() => SceneManager.LoadScene("etfx_combat");
+	public bool GUIHide4;
 
-    public void LoadSceneDecals() => SceneManager.LoadScene("etfx_decals");
+	public void LoadScene2DDemo()
+	{
+		SceneManager.LoadScene("etfx_2ddemo");
+	}
 
-    public void LoadSceneDecals2() => SceneManager.LoadScene("etfx_decals2");
+	public void LoadSceneCards()
+	{
+		SceneManager.LoadScene("etfx_cards");
+	}
 
-    public void LoadSceneEmojis() => SceneManager.LoadScene("etfx_emojis");
+	public void LoadSceneCombat()
+	{
+		SceneManager.LoadScene("etfx_combat");
+	}
 
-    public void LoadSceneEmojis2() => SceneManager.LoadScene("etfx_emojis2");
+	public void LoadSceneDecals()
+	{
+		SceneManager.LoadScene("etfx_decals");
+	}
 
-    public void LoadSceneExplosions() => SceneManager.LoadScene("etfx_explosions");
+	public void LoadSceneDecals2()
+	{
+		SceneManager.LoadScene("etfx_decals2");
+	}
 
-    public void LoadSceneExplosions2() => SceneManager.LoadScene("etfx_explosions2");
+	public void LoadSceneEmojis()
+	{
+		SceneManager.LoadScene("etfx_emojis");
+	}
 
-    public void LoadSceneFire() => SceneManager.LoadScene("etfx_fire");
+	public void LoadSceneEmojis2()
+	{
+		SceneManager.LoadScene("etfx_emojis2");
+	}
 
-    public void LoadSceneOnomatopoeia() => SceneManager.LoadScene("etfx_onomatopoeia");
+	public void LoadSceneExplosions()
+	{
+		SceneManager.LoadScene("etfx_explosions");
+	}
 
-    public void LoadSceneFireworks() => SceneManager.LoadScene("etfx_fireworks");
+	public void LoadSceneExplosions2()
+	{
+		SceneManager.LoadScene("etfx_explosions2");
+	}
 
-    public void LoadSceneFlares() => SceneManager.LoadScene("etfx_flares");
+	public void LoadSceneFire()
+	{
+		SceneManager.LoadScene("etfx_fire");
+	}
 
-    public void LoadSceneMagic() => SceneManager.LoadScene("etfx_magic");
+	public void LoadSceneOnomatopoeia()
+	{
+		SceneManager.LoadScene("etfx_onomatopoeia");
+	}
 
-    public void LoadSceneMagic2() => SceneManager.LoadScene("etfx_magic2");
+	public void LoadSceneFireworks()
+	{
+		SceneManager.LoadScene("etfx_fireworks");
+	}
 
-    public void LoadSceneMagic3() => SceneManager.LoadScene("etfx_magic3");
+	public void LoadSceneFlares()
+	{
+		SceneManager.LoadScene("etfx_flares");
+	}
 
-    public void LoadSceneMainDemo() => SceneManager.LoadScene("etfx_maindemo");
+	public void LoadSceneMagic()
+	{
+		SceneManager.LoadScene("etfx_magic");
+	}
 
-    public void LoadSceneMissiles() => SceneManager.LoadScene("etfx_missiles");
+	public void LoadSceneMagic2()
+	{
+		SceneManager.LoadScene("etfx_magic2");
+	}
 
-    public void LoadScenePortals() => SceneManager.LoadScene("etfx_portals");
+	public void LoadSceneMagic3()
+	{
+		SceneManager.LoadScene("etfx_magic3");
+	}
 
-    public void LoadScenePortals2() => SceneManager.LoadScene("etfx_portals2");
+	public void LoadSceneMainDemo()
+	{
+		SceneManager.LoadScene("etfx_maindemo");
+	}
 
-    public void LoadScenePowerups() => SceneManager.LoadScene("etfx_powerups");
+	public void LoadSceneMissiles()
+	{
+		SceneManager.LoadScene("etfx_missiles");
+	}
 
-    public void LoadScenePowerups2() => SceneManager.LoadScene("etfx_powerups2");
+	public void LoadScenePortals()
+	{
+		SceneManager.LoadScene("etfx_portals");
+	}
 
-    public void LoadScenePowerups3() => SceneManager.LoadScene("etfx_powerups3");
+	public void LoadScenePortals2()
+	{
+		SceneManager.LoadScene("etfx_portals2");
+	}
 
-    public void LoadSceneSparkles() => SceneManager.LoadScene("etfx_sparkles");
+	public void LoadScenePowerups()
+	{
+		SceneManager.LoadScene("etfx_powerups");
+	}
 
-    public void LoadSceneSwordCombat() => SceneManager.LoadScene("etfx_swordcombat");
+	public void LoadScenePowerups2()
+	{
+		SceneManager.LoadScene("etfx_powerups2");
+	}
 
-    public void LoadSceneSwordCombat2() => SceneManager.LoadScene("etfx_swordcombat2");
+	public void LoadScenePowerups3()
+	{
+		SceneManager.LoadScene("etfx_powerups3");
+	}
 
-    public void LoadSceneMoney() => SceneManager.LoadScene("etfx_money");
+	public void LoadSceneSparkles()
+	{
+		SceneManager.LoadScene("etfx_sparkles");
+	}
 
-    public void LoadSceneHealing() => SceneManager.LoadScene("etfx_healing");
+	public void LoadSceneSwordCombat()
+	{
+		SceneManager.LoadScene("etfx_swordcombat");
+	}
 
-    public void LoadSceneWind() => SceneManager.LoadScene("etfx_wind");
+	public void LoadSceneSwordCombat2()
+	{
+		SceneManager.LoadScene("etfx_swordcombat2");
+	}
 
-    public void LoadSceneWater() => SceneManager.LoadScene("etfx_water");
+	public void LoadSceneMoney()
+	{
+		SceneManager.LoadScene("etfx_money");
+	}
 
-    public void LoadSceneFruit() => SceneManager.LoadScene("etfx_fruit");
+	public void LoadSceneHealing()
+	{
+		SceneManager.LoadScene("etfx_healing");
+	}
 
-    private void Update()
-    {
-      if (Input.GetKeyDown(KeyCode.L))
-      {
-        this.GUIHide = !this.GUIHide;
-        if (this.GUIHide)
-          GameObject.Find("CanvasSceneSelect").GetComponent<Canvas>().enabled = false;
-        else
-          GameObject.Find("CanvasSceneSelect").GetComponent<Canvas>().enabled = true;
-      }
-      if (Input.GetKeyDown(KeyCode.J))
-      {
-        this.GUIHide2 = !this.GUIHide2;
-        if (this.GUIHide2)
-          GameObject.Find("Canvas").GetComponent<Canvas>().enabled = false;
-        else
-          GameObject.Find("Canvas").GetComponent<Canvas>().enabled = true;
-      }
-      if (Input.GetKeyDown(KeyCode.H))
-      {
-        this.GUIHide3 = !this.GUIHide3;
-        if (this.GUIHide3)
-          GameObject.Find("ParticleSysDisplayCanvas").GetComponent<Canvas>().enabled = false;
-        else
-          GameObject.Find("ParticleSysDisplayCanvas").GetComponent<Canvas>().enabled = true;
-      }
-      if (!Input.GetKeyDown(KeyCode.K))
-        return;
-      this.GUIHide4 = !this.GUIHide4;
-      if (this.GUIHide3)
-        GameObject.Find("CanvasTips").GetComponent<Canvas>().enabled = false;
-      else
-        GameObject.Find("CanvasTips").GetComponent<Canvas>().enabled = true;
-    }
-  }
+	public void LoadSceneWind()
+	{
+		SceneManager.LoadScene("etfx_wind");
+	}
+
+	public void LoadSceneWater()
+	{
+		SceneManager.LoadScene("etfx_water");
+	}
+
+	public void LoadSceneFruit()
+	{
+		SceneManager.LoadScene("etfx_fruit");
+	}
+
+	private void Update()
+	{
+		if (Input.GetKeyDown(KeyCode.L))
+		{
+			GUIHide = !GUIHide;
+			if (GUIHide)
+			{
+				GameObject.Find("CanvasSceneSelect").GetComponent<Canvas>().enabled = false;
+			}
+			else
+			{
+				GameObject.Find("CanvasSceneSelect").GetComponent<Canvas>().enabled = true;
+			}
+		}
+		if (Input.GetKeyDown(KeyCode.J))
+		{
+			GUIHide2 = !GUIHide2;
+			if (GUIHide2)
+			{
+				GameObject.Find("Canvas").GetComponent<Canvas>().enabled = false;
+			}
+			else
+			{
+				GameObject.Find("Canvas").GetComponent<Canvas>().enabled = true;
+			}
+		}
+		if (Input.GetKeyDown(KeyCode.H))
+		{
+			GUIHide3 = !GUIHide3;
+			if (GUIHide3)
+			{
+				GameObject.Find("ParticleSysDisplayCanvas").GetComponent<Canvas>().enabled = false;
+			}
+			else
+			{
+				GameObject.Find("ParticleSysDisplayCanvas").GetComponent<Canvas>().enabled = true;
+			}
+		}
+		if (Input.GetKeyDown(KeyCode.K))
+		{
+			GUIHide4 = !GUIHide4;
+			if (GUIHide3)
+			{
+				GameObject.Find("CanvasTips").GetComponent<Canvas>().enabled = false;
+			}
+			else
+			{
+				GameObject.Find("CanvasTips").GetComponent<Canvas>().enabled = true;
+			}
+		}
+	}
 }

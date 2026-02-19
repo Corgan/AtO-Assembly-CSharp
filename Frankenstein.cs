@@ -1,54 +1,55 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Frankenstein
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using UnityEngine;
 
-#nullable disable
 [Serializable]
 public class Frankenstein : BossNPC
 {
-  private const string LIGHTNING_BOLT_VFX_NAME = "frankylightning";
-  private const int LIGHTNING_SLOT_JUMP_STEP = 1;
-  private int _currentLightningSlot;
+	private const string LIGHTNING_BOLT_VFX_NAME = "frankylightning";
 
-  public Frankenstein(NPC npc)
-    : base(npc)
-  {
-    MatchManager.Instance.OnLoadCombatFinished += new Action(this.SetupCombatStartEffects);
-    MatchManager.Instance.OnCardCastedByHero += new Action<Hero, CardData>(this.TriggerLightningBolt);
-  }
+	private const int LIGHTNING_SLOT_JUMP_STEP = 1;
 
-  public override void Dispose()
-  {
-    base.Dispose();
-    MatchManager.Instance.OnLoadCombatFinished -= new Action(this.SetupCombatStartEffects);
-    MatchManager.Instance.OnCardCastedByHero -= new Action<Hero, CardData>(this.TriggerLightningBolt);
-  }
+	private int _currentLightningSlot;
 
-  private void SetupCombatStartEffects()
-  {
-    this.npc.SetAura((Character) null, Globals.Instance.GetAuraCurseData("invulnerable"), 1);
-  }
+	public Frankenstein(NPC npc)
+		: base(npc)
+	{
+		MatchManager instance = MatchManager.Instance;
+		instance.OnLoadCombatFinished = (Action)Delegate.Combine(instance.OnLoadCombatFinished, new Action(SetupCombatStartEffects));
+		MatchManager instance2 = MatchManager.Instance;
+		instance2.OnCardCastedByHero = (Action<Hero, CardData>)Delegate.Combine(instance2.OnCardCastedByHero, new Action<Hero, CardData>(TriggerLightningBolt));
+	}
 
-  private void TriggerLightningBolt(Hero hero, CardData card)
-  {
-    EffectsManager.Instance.PlayEffect("frankylightning", this.npc.NPCItem.CalculatePositionX(this._currentLightningSlot));
-    this.DamageIfLightningHit();
-    this._currentLightningSlot = (this._currentLightningSlot + 1) % 4;
-  }
+	public override void Dispose()
+	{
+		base.Dispose();
+		MatchManager instance = MatchManager.Instance;
+		instance.OnLoadCombatFinished = (Action)Delegate.Remove(instance.OnLoadCombatFinished, new Action(SetupCombatStartEffects));
+		MatchManager instance2 = MatchManager.Instance;
+		instance2.OnCardCastedByHero = (Action<Hero, CardData>)Delegate.Remove(instance2.OnCardCastedByHero, new Action<Hero, CardData>(TriggerLightningBolt));
+	}
 
-  private void DamageIfLightningHit()
-  {
-    if (this._currentLightningSlot != this.npc.NPCIndex)
-      return;
-    Debug.Log((object) "Lightning has hit the Frankenstein.");
-    this.npc.HealCursesName(singleCurse: "invulnerable");
-    this.npc.IndirectDamage(Enums.DamageType.Lightning, 11);
-    this.npc.SetAura((Character) null, Globals.Instance.GetAuraCurseData("spark"), 3);
-    this.npc.NPCItem.CharacterHitted(true);
-  }
+	private void SetupCombatStartEffects()
+	{
+		npc.SetAura(null, Globals.Instance.GetAuraCurseData("invulnerable"), 1);
+	}
+
+	private void TriggerLightningBolt(Hero hero, CardData card)
+	{
+		float posX = npc.NPCItem.CalculatePositionX(_currentLightningSlot);
+		EffectsManager.Instance.PlayEffect("frankylightning", posX);
+		DamageIfLightningHit();
+		_currentLightningSlot = (_currentLightningSlot + 1) % 4;
+	}
+
+	private void DamageIfLightningHit()
+	{
+		if (_currentLightningSlot == npc.NPCIndex)
+		{
+			Debug.Log("Lightning has hit the Frankenstein.");
+			npc.HealCursesName(null, "invulnerable");
+			npc.IndirectDamage(Enums.DamageType.Lightning, 11);
+			npc.SetAura(null, Globals.Instance.GetAuraCurseData("spark"), 3);
+			npc.NPCItem.CharacterHitted(fromHit: true);
+		}
+	}
 }

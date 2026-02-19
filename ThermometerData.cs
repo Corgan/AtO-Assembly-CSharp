@@ -1,93 +1,155 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ThermometerData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Thermometer", menuName = "Thermometer Data", order = 69)]
 public class ThermometerData : ScriptableObject
 {
-  [SerializeField]
-  private string thermometerId;
-  [SerializeField]
-  private Color thermometerColor;
-  [SerializeField]
-  private float goldBonus;
-  [SerializeField]
-  private float expBonus;
-  [SerializeField]
-  private int cardBonus;
-  [SerializeField]
-  private bool cardReward;
-  [SerializeField]
-  private int expertiseBonus;
-  [SerializeField]
-  private int uiGold;
-  [SerializeField]
-  private int uiExp;
-  [SerializeField]
-  private int uiCard;
+	[SerializeField]
+	private string thermometerId;
 
-  public string ThermometerId
-  {
-    get => this.thermometerId;
-    set => this.thermometerId = value;
-  }
+	[SerializeField]
+	private Color thermometerColor;
 
-  public float GoldBonus
-  {
-    get => this.goldBonus;
-    set => this.goldBonus = value;
-  }
+	[SerializeField]
+	private float goldBonus;
 
-  public float ExpBonus
-  {
-    get => this.expBonus;
-    set => this.expBonus = value;
-  }
+	[SerializeField]
+	private float expBonus;
 
-  public int CardBonus
-  {
-    get => this.cardBonus;
-    set => this.cardBonus = value;
-  }
+	[SerializeField]
+	private int cardBonus;
 
-  public int ExpertiseBonus
-  {
-    get => this.expertiseBonus;
-    set => this.expertiseBonus = value;
-  }
+	[SerializeField]
+	private bool cardReward;
 
-  public Color ThermometerColor
-  {
-    get => this.thermometerColor;
-    set => this.thermometerColor = value;
-  }
+	[SerializeField]
+	private int expertiseBonus;
 
-  public bool CardReward
-  {
-    get => this.cardReward;
-    set => this.cardReward = value;
-  }
+	[SerializeField]
+	private int uiGold;
 
-  public int UiGold
-  {
-    get => this.uiGold;
-    set => this.uiGold = value;
-  }
+	[SerializeField]
+	private int uiExp;
 
-  public int UiExp
-  {
-    get => this.uiExp;
-    set => this.uiExp = value;
-  }
+	[SerializeField]
+	private int uiCard;
 
-  public int UiCard
-  {
-    get => this.uiCard;
-    set => this.uiCard = value;
-  }
+	public string ThermometerId
+	{
+		get
+		{
+			return thermometerId;
+		}
+		set
+		{
+			thermometerId = value;
+		}
+	}
+
+	public float GoldBonus
+	{
+		get
+		{
+			return goldBonus;
+		}
+		set
+		{
+			goldBonus = value;
+		}
+	}
+
+	public float ExpBonus
+	{
+		get
+		{
+			return expBonus;
+		}
+		set
+		{
+			expBonus = value;
+		}
+	}
+
+	public int CardBonus
+	{
+		get
+		{
+			return cardBonus;
+		}
+		set
+		{
+			cardBonus = value;
+		}
+	}
+
+	public int ExpertiseBonus
+	{
+		get
+		{
+			return expertiseBonus;
+		}
+		set
+		{
+			expertiseBonus = value;
+		}
+	}
+
+	public Color ThermometerColor
+	{
+		get
+		{
+			return thermometerColor;
+		}
+		set
+		{
+			thermometerColor = value;
+		}
+	}
+
+	public bool CardReward
+	{
+		get
+		{
+			return cardReward;
+		}
+		set
+		{
+			cardReward = value;
+		}
+	}
+
+	public int UiGold
+	{
+		get
+		{
+			return uiGold;
+		}
+		set
+		{
+			uiGold = value;
+		}
+	}
+
+	public int UiExp
+	{
+		get
+		{
+			return uiExp;
+		}
+		set
+		{
+			uiExp = value;
+		}
+	}
+
+	public int UiCard
+	{
+		get
+		{
+			return uiCard;
+		}
+		set
+		{
+			uiCard = value;
+		}
+	}
 }

@@ -1,1293 +1,2370 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: AuraCurseData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New AuraCurse", menuName = "AuraCurse Data", order = 56)]
 public class AuraCurseData : ScriptableObject
 {
-  [Header("General Attributes")]
-  [SerializeField]
-  private string acName;
-  [SerializeField]
-  private string id;
-  [SerializeField]
-  private bool isAura;
-  [SerializeField]
-  private bool ignoreUseInEndTurnIfMissingOnBegin;
-  [SerializeField]
-  private int maxCharges = -1;
-  [SerializeField]
-  private int maxMadnessCharges = -1;
-  [SerializeField]
-  private int auraConsumed = 1;
-  [TextArea]
-  [SerializeField]
-  private string description;
-  [Tooltip("Field to use for plain charges, 1/1. Introduce the value for each charge, f.e. stealth 20%/charge => 20")]
-  [SerializeField]
-  private int chargesMultiplierDescription = 1;
-  [Tooltip("First Field to use for a 1/N format. Introduce the number of charges for one bonus, f.e. 1/3 => 3")]
-  [SerializeField]
-  private int chargesAuxNeedForOne1 = 1;
-  [Tooltip("Second Field to use for a 1/N format. Introduce the number of charges for one bonus, f.e. 1/3 => 3")]
-  [SerializeField]
-  private int chargesAuxNeedForOne2 = 1;
-  [SerializeField]
-  private Sprite sprite;
-  [SerializeField]
-  private string effectTick;
-  [SerializeField]
-  private string effectTickSides;
-  [Header("Sound")]
-  [SerializeField]
-  private AudioClip sound;
-  [Header("Sound (new)")]
-  [SerializeField]
-  private AudioClip soundRework;
-  [Header("Config")]
-  [SerializeField]
-  private bool removable = true;
-  [SerializeField]
-  private bool gainCharges = true;
-  [SerializeField]
-  private bool iconShow = true;
-  [SerializeField]
-  private bool combatlogShow = true;
-  [SerializeField]
-  private bool preventable = true;
-  [Header("Expiration")]
-  [SerializeField]
-  private int priorityOnConsumption;
-  [SerializeField]
-  private bool consumeAll;
-  [SerializeField]
-  private bool consumedAtCast;
-  [SerializeField]
-  private bool consumedAtTurnBegin;
-  [SerializeField]
-  private bool consumedAtTurn;
-  [SerializeField]
-  private bool consumedAtRoundBegin;
-  [SerializeField]
-  private bool consumedAtRound;
-  [SerializeField]
-  private bool produceDamageWhenConsumed;
-  [SerializeField]
-  private bool produceHealWhenConsumed;
-  [SerializeField]
-  private bool dieWhenConsumedAll;
-  [Header("Aura Bonusses")]
-  [SerializeField]
-  private List<AuraCurseData.AuraCurseChargesBonus> acBonusData;
-  [Header("Aura Damage Bonus")]
-  [SerializeField]
-  private Enums.DamageType auraDamageType;
-  [SerializeField]
-  private AuraCurseData auraDamageChargesBasedOnACCharges;
-  [SerializeField]
-  private int auraDamageIncreasedTotal;
-  [SerializeField]
-  private float auraDamageIncreasedPerStack;
-  [SerializeField]
-  private int auraDamageIncreasedPercent;
-  [SerializeField]
-  private float auraDamageIncreasedPercentPerStack;
-  [SerializeField]
-  private float auraDamageIncreasedPercentPerStackPerEnergy;
-  [SerializeField]
-  private Enums.DamageType auraDamageType2;
-  [SerializeField]
-  private int auraDamageIncreasedTotal2;
-  [SerializeField]
-  private float auraDamageIncreasedPerStack2;
-  [SerializeField]
-  private int auraDamageIncreasedPercent2;
-  [SerializeField]
-  private float auraDamageIncreasedPercentPerStack2;
-  [SerializeField]
-  private float auraDamageIncreasedPercentPerStackPerEnergy2;
-  [SerializeField]
-  private Enums.DamageType auraDamageType3;
-  [SerializeField]
-  private int auraDamageIncreasedTotal3;
-  [SerializeField]
-  private float auraDamageIncreasedPerStack3;
-  [SerializeField]
-  private int auraDamageIncreasedPercent3;
-  [SerializeField]
-  private float auraDamageIncreasedPercentPerStack3;
-  [SerializeField]
-  private float auraDamageIncreasedPercentPerStackPerEnergy3;
-  [SerializeField]
-  private Enums.DamageType auraDamageType4;
-  [SerializeField]
-  private int auraDamageIncreasedTotal4;
-  [SerializeField]
-  private float auraDamageIncreasedPerStack4;
-  [SerializeField]
-  private int auraDamageIncreasedPercent4;
-  [SerializeField]
-  private float auraDamageIncreasedPercentPerStack4;
-  [SerializeField]
-  private float auraDamageIncreasedPercentPerStackPerEnergy4;
-  [SerializeField]
-  private AuraCurseData.AuraDamageBonus[] auraDamageConditionalBonuses;
-  [Header("Aura Heal Bonus")]
-  [SerializeField]
-  private int healDoneTotal;
-  [SerializeField]
-  private int healDonePerStack;
-  [SerializeField]
-  private int healDonePercent;
-  [SerializeField]
-  private int healDonePercentPerStack;
-  [SerializeField]
-  private int healDonePercentPerStackPerEnergy;
-  [SerializeField]
-  private int healReceivedTotal;
-  [SerializeField]
-  private int healReceivedPerStack;
-  [SerializeField]
-  private int healReceivedPercent;
-  [SerializeField]
-  private int healReceivedPercentPerStack;
-  [Header("Aura Draw Bonus")]
-  [SerializeField]
-  private int cardsDrawPerStack;
-  [Header("Aura Damage Reflected")]
-  [SerializeField]
-  private int chargesPreReqForDamageReflection;
-  [SerializeField]
-  private Enums.RefectedDamageModifierType damageReflectedModifierType;
-  [SerializeField]
-  [FormerlySerializedAs("damageReflectedPerStack")]
-  private int damageReflectedMultiplier;
-  [SerializeField]
-  private Enums.DamageType damageReflectedType;
-  [SerializeField]
-  private int damageReflectedConsumeCharges;
-  [Header("Block")]
-  [SerializeField]
-  private int blockChargesGainedPerStack;
-  [SerializeField]
-  private bool noRemoveBlockAtTurnEnd;
-  [SerializeField]
-  private bool grantBlockToTeamForAmountOfDamageBlocked;
-  [SerializeField]
-  private int chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked;
-  [Header("Prevention")]
-  [SerializeField]
-  private int damagePreventedPerStack;
-  [SerializeField]
-  private int cursePreventedPerStack;
-  [SerializeField]
-  private AuraCurseData preventedAuraCurse;
-  [SerializeField]
-  private int preventedAuraCurseStackPerStack;
-  [Header("Damage received")]
-  [SerializeField]
-  private Enums.DamageType increasedDamageReceivedType;
-  [SerializeField]
-  private int increasedDirectDamageChargesMultiplierNeededForOne = 1;
-  [SerializeField]
-  private int increasedDirectDamageReceivedPerTurn;
-  [SerializeField]
-  private float increasedDirectDamageReceivedPerStack;
-  [SerializeField]
-  private int increasedPercentDamageReceivedPerTurn;
-  [SerializeField]
-  private int increasedPercentDamageReceivedPerStack;
-  [SerializeField]
-  private Enums.DamageType increasedDamageReceivedType2;
-  [SerializeField]
-  private int increasedDirectDamageChargesMultiplierNeededForOne2 = 1;
-  [SerializeField]
-  private int increasedDirectDamageReceivedPerTurn2;
-  [SerializeField]
-  private float increasedDirectDamageReceivedPerStack2;
-  [SerializeField]
-  private int increasedPercentDamageReceivedPerTurn2;
-  [SerializeField]
-  private int increasedPercentDamageReceivedPerStack2;
-  [Header("Damage prevented")]
-  [SerializeField]
-  private Enums.DamageType preventedDamageTypePerStack;
-  [SerializeField]
-  private int preventedDamagePerStack;
-  [Header("Heal attacker")]
-  [SerializeField]
-  private int healAttackerPerStack;
-  [SerializeField]
-  private int healAttackerConsumeCharges;
-  [Header("Character stat modification")]
-  [SerializeField]
-  private Enums.CharacterStat characterStatModified;
-  [SerializeField]
-  private int characterStatChargesMultiplierNeededForOne = 1;
-  [SerializeField]
-  private int characterStatModifiedValue;
-  [SerializeField]
-  private int characterStatModifiedValuePerStack;
-  [SerializeField]
-  private bool characterStatAbsolute;
-  [SerializeField]
-  private int characterStatAbsoluteValue;
-  [SerializeField]
-  private int characterStatAbsoluteValuePerStack;
-  [Header("Resist modification")]
-  [SerializeField]
-  private Enums.DamageType resistModified;
-  [SerializeField]
-  private int resistModifiedValue;
-  [SerializeField]
-  private float resistModifiedPercentagePerStack;
-  [SerializeField]
-  private Enums.DamageType resistModified2;
-  [SerializeField]
-  private int resistModifiedValue2;
-  [SerializeField]
-  private float resistModifiedPercentagePerStack2;
-  [SerializeField]
-  private Enums.DamageType resistModified3;
-  [SerializeField]
-  private int resistModifiedValue3;
-  [SerializeField]
-  private float resistModifiedPercentagePerStack3;
-  [Header("Explode at stacks")]
-  [SerializeField]
-  private int explodeAtStacks;
-  [Header("Explode Effects")]
-  [SerializeField]
-  private int healTotalOnExplode;
-  [SerializeField]
-  private float healPerChargeOnExplode;
-  [SerializeField]
-  private Enums.AuraCurseExplodeHealTarget healTargetOnExplode;
-  [SerializeField]
-  private AuraCurseData acOnExplode;
-  [SerializeField]
-  private int acTotalChargesOnExplode;
-  [SerializeField]
-  private int acChargesPerStackChargeOnExplodeOnExplode;
-  [Header("Consume damage")]
-  [SerializeField]
-  private Enums.DamageType damageTypeWhenConsumed;
-  [SerializeField]
-  private AuraCurseData consumedDamageChargesBasedOnACCharges;
-  [SerializeField]
-  private AuraCurseData consumeDamageChargesIfACApplied;
-  [SerializeField]
-  private int damageWhenConsumed;
-  [SerializeField]
-  private float damageWhenConsumedPerCharge;
-  [SerializeField]
-  private int damageSidesWhenConsumed;
-  [SerializeField]
-  private int damageSidesWhenConsumedPerCharge;
-  [SerializeField]
-  private int doubleDamageIfCursesLessThan;
-  [Header("Consume heal")]
-  [SerializeField]
-  private int healWhenConsumed;
-  [SerializeField]
-  private float healWhenConsumedPerCharge;
-  [SerializeField]
-  private int healSidesWhenConsumed;
-  [SerializeField]
-  private float healSidesWhenConsumedPerCharge;
-  [Header("Remove Aura Curse")]
-  [SerializeField]
-  private AuraCurseData removeAuraCurse;
-  [SerializeField]
-  private AuraCurseData removeAuraCurse2;
-  [Header("Aura Curse Gained on Consumption")]
-  [SerializeField]
-  private AuraCurseData gainAuraCurseConsumption;
-  [SerializeField]
-  private int gainAuraCurseConsumptionPerCharge;
-  [SerializeField]
-  private AuraCurseData gainChargesFromThisAuraCurse;
-  [SerializeField]
-  private AuraCurseData gainAuraCurseConsumption2;
-  [SerializeField]
-  private int gainAuraCurseConsumptionPerCharge2;
-  [SerializeField]
-  private AuraCurseData gainChargesFromThisAuraCurse2;
-  [Header("Reveal Cards")]
-  [SerializeField]
-  private int revealCardsPerCharge;
-  [Header("Cost Cards")]
-  [SerializeField]
-  private int modifyCardCostPerChargeNeededForOne;
-  [Header("Disabled Cards")]
-  [SerializeField]
-  private Enums.CardType[] disabledCardTypes;
-  [Header("Misc")]
-  [SerializeField]
-  private bool invulnerable;
-  [SerializeField]
-  private bool stealth;
-  [SerializeField]
-  private bool taunt;
-  [SerializeField]
-  private bool skipsNextTurn;
-
-  public void Init()
-  {
-    if (!string.IsNullOrEmpty(this.id))
-      return;
-    this.id = Regex.Replace(this.acName, "\\s+", "").ToLower();
-  }
-
-  public AuraCurseData DeepClone()
-  {
-    AuraCurseData auraCurseData = UnityEngine.Object.Instantiate<AuraCurseData>(this);
-    if ((UnityEngine.Object) this.auraDamageChargesBasedOnACCharges != (UnityEngine.Object) null)
-      auraCurseData.auraDamageChargesBasedOnACCharges = UnityEngine.Object.Instantiate<AuraCurseData>(this.auraDamageChargesBasedOnACCharges);
-    if ((UnityEngine.Object) this.preventedAuraCurse != (UnityEngine.Object) null)
-      auraCurseData.preventedAuraCurse = UnityEngine.Object.Instantiate<AuraCurseData>(this.preventedAuraCurse);
-    if ((UnityEngine.Object) this.consumedDamageChargesBasedOnACCharges != (UnityEngine.Object) null)
-      auraCurseData.consumedDamageChargesBasedOnACCharges = UnityEngine.Object.Instantiate<AuraCurseData>(this.consumedDamageChargesBasedOnACCharges);
-    if ((bool) (UnityEngine.Object) this.removeAuraCurse)
-      auraCurseData.removeAuraCurse = UnityEngine.Object.Instantiate<AuraCurseData>(this.removeAuraCurse);
-    if ((bool) (UnityEngine.Object) this.removeAuraCurse2)
-      auraCurseData.removeAuraCurse2 = UnityEngine.Object.Instantiate<AuraCurseData>(this.removeAuraCurse2);
-    if ((UnityEngine.Object) this.gainAuraCurseConsumption != (UnityEngine.Object) null)
-      auraCurseData.gainAuraCurseConsumption = UnityEngine.Object.Instantiate<AuraCurseData>(this.gainAuraCurseConsumption);
-    if ((UnityEngine.Object) this.gainAuraCurseConsumption2 != (UnityEngine.Object) null)
-      auraCurseData.gainAuraCurseConsumption2 = UnityEngine.Object.Instantiate<AuraCurseData>(this.gainAuraCurseConsumption2);
-    if ((UnityEngine.Object) this.gainChargesFromThisAuraCurse != (UnityEngine.Object) null)
-      auraCurseData.gainChargesFromThisAuraCurse = UnityEngine.Object.Instantiate<AuraCurseData>(this.gainChargesFromThisAuraCurse);
-    if ((UnityEngine.Object) this.gainChargesFromThisAuraCurse2 != (UnityEngine.Object) null)
-      auraCurseData.gainChargesFromThisAuraCurse2 = UnityEngine.Object.Instantiate<AuraCurseData>(this.gainChargesFromThisAuraCurse2);
-    return auraCurseData;
-  }
-
-  public int GetMaxCharges()
-  {
-    int maxCharges = this.maxCharges;
-    if (MadnessManager.Instance.IsMadnessTraitActive("restrictedpower") || AtOManager.Instance.IsChallengeTraitActive("restrictedpower"))
-      maxCharges = this.maxMadnessCharges;
-    return maxCharges;
-  }
-
-  public AudioClip GetSound(bool useLegacy = false)
-  {
-    return !GameManager.Instance.ConfigUseLegacySounds && (UnityEngine.Object) this.soundRework != (UnityEngine.Object) null && !useLegacy ? this.soundRework : this.sound;
-  }
-
-  public string ACName
-  {
-    get => this.acName;
-    set => this.acName = value;
-  }
-
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
-
-  public bool IsAura
-  {
-    get => this.isAura;
-    set => this.isAura = value;
-  }
-
-  public int MaxCharges
-  {
-    get => this.maxCharges;
-    set => this.maxCharges = value;
-  }
-
-  public int AuraConsumed
-  {
-    get => this.auraConsumed;
-    set => this.auraConsumed = value;
-  }
-
-  public string Description
-  {
-    get => this.description;
-    set => this.description = value;
-  }
-
-  public int ChargesMultiplierDescription
-  {
-    get => this.chargesMultiplierDescription;
-    set => this.chargesMultiplierDescription = value;
-  }
-
-  public int ChargesAuxNeedForOne1
-  {
-    get => this.chargesAuxNeedForOne1;
-    set => this.chargesAuxNeedForOne1 = value;
-  }
-
-  public int ChargesAuxNeedForOne2
-  {
-    get => this.chargesAuxNeedForOne2;
-    set => this.chargesAuxNeedForOne2 = value;
-  }
-
-  public Sprite Sprite
-  {
-    get => this.sprite;
-    set => this.sprite = value;
-  }
-
-  public AudioClip Sound
-  {
-    get => this.sound;
-    set => this.sound = value;
-  }
-
-  public string EffectTick
-  {
-    get => this.effectTick;
-    set => this.effectTick = value;
-  }
-
-  public string EffectTickSides
-  {
-    get => this.effectTickSides;
-    set => this.effectTickSides = value;
-  }
-
-  public bool Removable
-  {
-    get => this.removable;
-    set => this.removable = value;
-  }
-
-  public bool GainCharges
-  {
-    get => this.gainCharges;
-    set => this.gainCharges = value;
-  }
-
-  public bool IconShow
-  {
-    get => this.iconShow;
-    set => this.iconShow = value;
-  }
-
-  public bool CombatlogShow
-  {
-    get => this.combatlogShow;
-    set => this.combatlogShow = value;
-  }
-
-  public int PriorityOnConsumption
-  {
-    get => this.priorityOnConsumption;
-    set => this.priorityOnConsumption = value;
-  }
-
-  public bool ConsumeAll
-  {
-    get => this.consumeAll;
-    set => this.consumeAll = value;
-  }
-
-  public bool ConsumedAtCast
-  {
-    get => this.consumedAtCast;
-    set => this.consumedAtCast = value;
-  }
-
-  public bool ConsumedAtTurnBegin
-  {
-    get => this.consumedAtTurnBegin;
-    set => this.consumedAtTurnBegin = value;
-  }
-
-  public bool ConsumedAtTurn
-  {
-    get => this.consumedAtTurn;
-    set => this.consumedAtTurn = value;
-  }
-
-  public bool ConsumedAtRoundBegin
-  {
-    get => this.consumedAtRoundBegin;
-    set => this.consumedAtRoundBegin = value;
-  }
-
-  public bool ConsumedAtRound
-  {
-    get => this.consumedAtRound;
-    set => this.consumedAtRound = value;
-  }
-
-  public bool ProduceDamageWhenConsumed
-  {
-    get => this.produceDamageWhenConsumed;
-    set => this.produceDamageWhenConsumed = value;
-  }
-
-  public bool ProduceHealWhenConsumed
-  {
-    get => this.produceHealWhenConsumed;
-    set => this.produceHealWhenConsumed = value;
-  }
-
-  public bool DieWhenConsumedAll
-  {
-    get => this.dieWhenConsumedAll;
-    set => this.dieWhenConsumedAll = value;
-  }
-
-  public Enums.DamageType AuraDamageType
-  {
-    get => this.auraDamageType;
-    set => this.auraDamageType = value;
-  }
-
-  public int AuraDamageIncreasedTotal
-  {
-    get => this.auraDamageIncreasedTotal;
-    set => this.auraDamageIncreasedTotal = value;
-  }
-
-  public float AuraDamageIncreasedPerStack
-  {
-    get => this.auraDamageIncreasedPerStack;
-    set => this.auraDamageIncreasedPerStack = value;
-  }
-
-  public int AuraDamageIncreasedPercent
-  {
-    get => this.auraDamageIncreasedPercent;
-    set => this.auraDamageIncreasedPercent = value;
-  }
-
-  public float AuraDamageIncreasedPercentPerStack
-  {
-    get => this.auraDamageIncreasedPercentPerStack;
-    set => this.auraDamageIncreasedPercentPerStack = value;
-  }
-
-  public Enums.DamageType AuraDamageType2
-  {
-    get => this.auraDamageType2;
-    set => this.auraDamageType2 = value;
-  }
-
-  public int AuraDamageIncreasedTotal2
-  {
-    get => this.auraDamageIncreasedTotal2;
-    set => this.auraDamageIncreasedTotal2 = value;
-  }
-
-  public float AuraDamageIncreasedPerStack2
-  {
-    get => this.auraDamageIncreasedPerStack2;
-    set => this.auraDamageIncreasedPerStack2 = value;
-  }
-
-  public int AuraDamageIncreasedPercent2
-  {
-    get => this.auraDamageIncreasedPercent2;
-    set => this.auraDamageIncreasedPercent2 = value;
-  }
-
-  public float AuraDamageIncreasedPercentPerStack2
-  {
-    get => this.auraDamageIncreasedPercentPerStack2;
-    set => this.auraDamageIncreasedPercentPerStack2 = value;
-  }
-
-  public Enums.DamageType AuraDamageType3
-  {
-    get => this.auraDamageType3;
-    set => this.auraDamageType3 = value;
-  }
-
-  public int AuraDamageIncreasedTotal3
-  {
-    get => this.auraDamageIncreasedTotal3;
-    set => this.auraDamageIncreasedTotal3 = value;
-  }
-
-  public float AuraDamageIncreasedPerStack3
-  {
-    get => this.auraDamageIncreasedPerStack3;
-    set => this.auraDamageIncreasedPerStack3 = value;
-  }
-
-  public int AuraDamageIncreasedPercent3
-  {
-    get => this.auraDamageIncreasedPercent3;
-    set => this.auraDamageIncreasedPercent3 = value;
-  }
-
-  public float AuraDamageIncreasedPercentPerStack3
-  {
-    get => this.auraDamageIncreasedPercentPerStack3;
-    set => this.auraDamageIncreasedPercentPerStack3 = value;
-  }
-
-  public Enums.DamageType AuraDamageType4
-  {
-    get => this.auraDamageType4;
-    set => this.auraDamageType4 = value;
-  }
-
-  public int AuraDamageIncreasedTotal4
-  {
-    get => this.auraDamageIncreasedTotal4;
-    set => this.auraDamageIncreasedTotal4 = value;
-  }
-
-  public float AuraDamageIncreasedPerStack4
-  {
-    get => this.auraDamageIncreasedPerStack4;
-    set => this.auraDamageIncreasedPerStack4 = value;
-  }
-
-  public int AuraDamageIncreasedPercent4
-  {
-    get => this.auraDamageIncreasedPercent4;
-    set => this.auraDamageIncreasedPercent4 = value;
-  }
-
-  public float AuraDamageIncreasedPercentPerStack4
-  {
-    get => this.auraDamageIncreasedPercentPerStack4;
-    set => this.auraDamageIncreasedPercentPerStack4 = value;
-  }
-
-  public AuraCurseData.AuraDamageBonus[] AuraDamageConditionalBonuses
-  {
-    get => this.auraDamageConditionalBonuses;
-    set => this.auraDamageConditionalBonuses = value;
-  }
-
-  public int HealDoneTotal
-  {
-    get => this.healDoneTotal;
-    set => this.healDoneTotal = value;
-  }
-
-  public int HealDonePerStack
-  {
-    get => this.healDonePerStack;
-    set => this.healDonePerStack = value;
-  }
-
-  public int HealDonePercent
-  {
-    get => this.healDonePercent;
-    set => this.healDonePercent = value;
-  }
-
-  public int HealDonePercentPerStack
-  {
-    get => this.healDonePercentPerStack;
-    set => this.healDonePercentPerStack = value;
-  }
-
-  public int HealReceivedTotal
-  {
-    get => this.healReceivedTotal;
-    set => this.healReceivedTotal = value;
-  }
-
-  public int HealReceivedPerStack
-  {
-    get => this.healReceivedPerStack;
-    set => this.healReceivedPerStack = value;
-  }
-
-  public int HealReceivedPercent
-  {
-    get => this.healReceivedPercent;
-    set => this.healReceivedPercent = value;
-  }
-
-  public int HealReceivedPercentPerStack
-  {
-    get => this.healReceivedPercentPerStack;
-    set => this.healReceivedPercentPerStack = value;
-  }
-
-  public int CardsDrawPerStack
-  {
-    get => this.cardsDrawPerStack;
-    set => this.cardsDrawPerStack = value;
-  }
-
-  public int DamageReflectedMultiplier
-  {
-    get => this.damageReflectedMultiplier;
-    set => this.damageReflectedMultiplier = value;
-  }
-
-  public int ChargesPreReqForDamageReflection
-  {
-    get => this.chargesPreReqForDamageReflection;
-    set => this.chargesPreReqForDamageReflection = value;
-  }
-
-  public Enums.RefectedDamageModifierType DamageReflectedModifierType
-  {
-    get => this.damageReflectedModifierType;
-    set => this.damageReflectedModifierType = value;
-  }
-
-  public Enums.DamageType DamageReflectedType
-  {
-    get => this.damageReflectedType;
-    set => this.damageReflectedType = value;
-  }
-
-  public int BlockChargesGainedPerStack
-  {
-    get => this.blockChargesGainedPerStack;
-    set => this.blockChargesGainedPerStack = value;
-  }
-
-  public bool NoRemoveBlockAtTurnEnd
-  {
-    get => this.noRemoveBlockAtTurnEnd;
-    set => this.noRemoveBlockAtTurnEnd = value;
-  }
-
-  public int DamagePreventedPerStack
-  {
-    get => this.damagePreventedPerStack;
-    set => this.damagePreventedPerStack = value;
-  }
-
-  public int CursePreventedPerStack
-  {
-    get => this.cursePreventedPerStack;
-    set => this.cursePreventedPerStack = value;
-  }
-
-  public Enums.DamageType IncreasedDamageReceivedType
-  {
-    get => this.increasedDamageReceivedType;
-    set => this.increasedDamageReceivedType = value;
-  }
-
-  public int IncreasedDirectDamageChargesMultiplierNeededForOne
-  {
-    get => this.increasedDirectDamageChargesMultiplierNeededForOne;
-    set => this.increasedDirectDamageChargesMultiplierNeededForOne = value;
-  }
-
-  public int IncreasedDirectDamageReceivedPerTurn
-  {
-    get => this.increasedDirectDamageReceivedPerTurn;
-    set => this.increasedDirectDamageReceivedPerTurn = value;
-  }
-
-  public float IncreasedDirectDamageReceivedPerStack
-  {
-    get => this.increasedDirectDamageReceivedPerStack;
-    set => this.increasedDirectDamageReceivedPerStack = value;
-  }
-
-  public int IncreasedPercentDamageReceivedPerTurn
-  {
-    get => this.increasedPercentDamageReceivedPerTurn;
-    set => this.increasedPercentDamageReceivedPerTurn = value;
-  }
-
-  public int IncreasedPercentDamageReceivedPerStack
-  {
-    get => this.increasedPercentDamageReceivedPerStack;
-    set => this.increasedPercentDamageReceivedPerStack = value;
-  }
-
-  public Enums.DamageType PreventedDamageTypePerStack
-  {
-    get => this.preventedDamageTypePerStack;
-    set => this.preventedDamageTypePerStack = value;
-  }
-
-  public int PreventedDamagePerStack
-  {
-    get => this.preventedDamagePerStack;
-    set => this.preventedDamagePerStack = value;
-  }
-
-  public AuraCurseData PreventedAuraCurse
-  {
-    get => this.preventedAuraCurse;
-    set => this.preventedAuraCurse = value;
-  }
-
-  public int PreventedAuraCurseStackPerStack
-  {
-    get => this.preventedAuraCurseStackPerStack;
-    set => this.preventedAuraCurseStackPerStack = value;
-  }
-
-  public int HealAttackerPerStack
-  {
-    get => this.healAttackerPerStack;
-    set => this.healAttackerPerStack = value;
-  }
-
-  public int HealAttackerConsumeCharges
-  {
-    get => this.healAttackerConsumeCharges;
-    set => this.healAttackerConsumeCharges = value;
-  }
-
-  public Enums.CharacterStat CharacterStatModified
-  {
-    get => this.characterStatModified;
-    set => this.characterStatModified = value;
-  }
-
-  public int CharacterStatChargesMultiplierNeededForOne
-  {
-    get => this.characterStatChargesMultiplierNeededForOne;
-    set => this.characterStatChargesMultiplierNeededForOne = value;
-  }
-
-  public int CharacterStatModifiedValue
-  {
-    get => this.characterStatModifiedValue;
-    set => this.characterStatModifiedValue = value;
-  }
-
-  public int CharacterStatModifiedValuePerStack
-  {
-    get => this.characterStatModifiedValuePerStack;
-    set => this.characterStatModifiedValuePerStack = value;
-  }
-
-  public bool CharacterStatAbsolute
-  {
-    get => this.characterStatAbsolute;
-    set => this.characterStatAbsolute = value;
-  }
-
-  public int CharacterStatAbsoluteValue
-  {
-    get => this.characterStatAbsoluteValue;
-    set => this.characterStatAbsoluteValue = value;
-  }
-
-  public int CharacterStatAbsoluteValuePerStack
-  {
-    get => this.characterStatAbsoluteValuePerStack;
-    set => this.characterStatAbsoluteValuePerStack = value;
-  }
-
-  public Enums.DamageType ResistModified
-  {
-    get => this.resistModified;
-    set => this.resistModified = value;
-  }
-
-  public int ResistModifiedValue
-  {
-    get => this.resistModifiedValue;
-    set => this.resistModifiedValue = value;
-  }
-
-  public float ResistModifiedPercentagePerStack
-  {
-    get => this.resistModifiedPercentagePerStack;
-    set => this.resistModifiedPercentagePerStack = value;
-  }
-
-  public Enums.DamageType ResistModified2
-  {
-    get => this.resistModified2;
-    set => this.resistModified2 = value;
-  }
-
-  public int ResistModifiedValue2
-  {
-    get => this.resistModifiedValue2;
-    set => this.resistModifiedValue2 = value;
-  }
-
-  public float ResistModifiedPercentagePerStack2
-  {
-    get => this.resistModifiedPercentagePerStack2;
-    set => this.resistModifiedPercentagePerStack2 = value;
-  }
-
-  public Enums.DamageType ResistModified3
-  {
-    get => this.resistModified3;
-    set => this.resistModified3 = value;
-  }
-
-  public int ResistModifiedValue3
-  {
-    get => this.resistModifiedValue3;
-    set => this.resistModifiedValue3 = value;
-  }
-
-  public float ResistModifiedPercentagePerStack3
-  {
-    get => this.resistModifiedPercentagePerStack3;
-    set => this.resistModifiedPercentagePerStack3 = value;
-  }
-
-  public int ExplodeAtStacks
-  {
-    get => this.explodeAtStacks;
-    set => this.explodeAtStacks = value;
-  }
-
-  public Enums.DamageType DamageTypeWhenConsumed
-  {
-    get => this.damageTypeWhenConsumed;
-    set => this.damageTypeWhenConsumed = value;
-  }
-
-  public int DamageWhenConsumed
-  {
-    get => this.damageWhenConsumed;
-    set => this.damageWhenConsumed = value;
-  }
-
-  public float DamageWhenConsumedPerCharge
-  {
-    get => this.damageWhenConsumedPerCharge;
-    set => this.damageWhenConsumedPerCharge = value;
-  }
-
-  public int DamageSidesWhenConsumed
-  {
-    get => this.damageSidesWhenConsumed;
-    set => this.damageSidesWhenConsumed = value;
-  }
-
-  public int DamageSidesWhenConsumedPerCharge
-  {
-    get => this.damageSidesWhenConsumedPerCharge;
-    set => this.damageSidesWhenConsumedPerCharge = value;
-  }
-
-  public int HealWhenConsumed
-  {
-    get => this.healWhenConsumed;
-    set => this.healWhenConsumed = value;
-  }
-
-  public float HealWhenConsumedPerCharge
-  {
-    get => this.healWhenConsumedPerCharge;
-    set => this.healWhenConsumedPerCharge = value;
-  }
-
-  public int HealSidesWhenConsumed
-  {
-    get => this.healSidesWhenConsumed;
-    set => this.healSidesWhenConsumed = value;
-  }
-
-  public AuraCurseData RemoveAuraCurse
-  {
-    get => this.removeAuraCurse;
-    set => this.removeAuraCurse = value;
-  }
-
-  public AuraCurseData RemoveAuraCurse2
-  {
-    get => this.removeAuraCurse2;
-    set => this.removeAuraCurse2 = value;
-  }
-
-  public AuraCurseData GainAuraCurseConsumption
-  {
-    get => this.gainAuraCurseConsumption;
-    set => this.gainAuraCurseConsumption = value;
-  }
-
-  public int GainAuraCurseConsumptionPerCharge
-  {
-    get => this.gainAuraCurseConsumptionPerCharge;
-    set => this.gainAuraCurseConsumptionPerCharge = value;
-  }
-
-  public AuraCurseData GainChargesFromThisAuraCurse
-  {
-    get => this.gainChargesFromThisAuraCurse;
-    set => this.gainChargesFromThisAuraCurse = value;
-  }
-
-  public AuraCurseData GainAuraCurseConsumption2
-  {
-    get => this.gainAuraCurseConsumption2;
-    set => this.gainAuraCurseConsumption2 = value;
-  }
-
-  public int GainAuraCurseConsumptionPerCharge2
-  {
-    get => this.gainAuraCurseConsumptionPerCharge2;
-    set => this.gainAuraCurseConsumptionPerCharge2 = value;
-  }
-
-  public AuraCurseData GainChargesFromThisAuraCurse2
-  {
-    get => this.gainChargesFromThisAuraCurse2;
-    set => this.gainChargesFromThisAuraCurse2 = value;
-  }
-
-  public int RevealCardsPerCharge
-  {
-    get => this.revealCardsPerCharge;
-    set => this.revealCardsPerCharge = value;
-  }
-
-  public int ModifyCardCostPerChargeNeededForOne
-  {
-    get => this.modifyCardCostPerChargeNeededForOne;
-    set => this.modifyCardCostPerChargeNeededForOne = value;
-  }
-
-  public Enums.CardType[] DisabledCardTypes
-  {
-    get => this.disabledCardTypes;
-    set => this.disabledCardTypes = value;
-  }
-
-  public bool Invulnerable
-  {
-    get => this.invulnerable;
-    set => this.invulnerable = value;
-  }
-
-  public bool Stealth
-  {
-    get => this.stealth;
-    set => this.stealth = value;
-  }
-
-  public bool Taunt
-  {
-    get => this.taunt;
-    set => this.taunt = value;
-  }
-
-  public bool SkipsNextTurn
-  {
-    get => this.skipsNextTurn;
-    set => this.skipsNextTurn = value;
-  }
-
-  public int DamageReflectedConsumeCharges
-  {
-    get => this.damageReflectedConsumeCharges;
-    set => this.damageReflectedConsumeCharges = value;
-  }
-
-  public int MaxMadnessCharges
-  {
-    get => this.maxMadnessCharges;
-    set => this.maxMadnessCharges = value;
-  }
-
-  public bool Preventable
-  {
-    get => this.preventable;
-    set => this.preventable = value;
-  }
-
-  public float AuraDamageIncreasedPercentPerStackPerEnergy
-  {
-    get => this.auraDamageIncreasedPercentPerStackPerEnergy;
-    set => this.auraDamageIncreasedPercentPerStackPerEnergy = value;
-  }
-
-  public float AuraDamageIncreasedPercentPerStackPerEnergy2
-  {
-    get => this.auraDamageIncreasedPercentPerStackPerEnergy2;
-    set => this.auraDamageIncreasedPercentPerStackPerEnergy2 = value;
-  }
-
-  public int HealDonePercentPerStackPerEnergy
-  {
-    get => this.healDonePercentPerStackPerEnergy;
-    set => this.healDonePercentPerStackPerEnergy = value;
-  }
-
-  public float AuraDamageIncreasedPercentPerStackPerEnergy3
-  {
-    get => this.auraDamageIncreasedPercentPerStackPerEnergy3;
-    set => this.auraDamageIncreasedPercentPerStackPerEnergy3 = value;
-  }
-
-  public float HealSidesWhenConsumedPerCharge
-  {
-    get => this.healSidesWhenConsumedPerCharge;
-    set => this.healSidesWhenConsumedPerCharge = value;
-  }
-
-  public Enums.DamageType IncreasedDamageReceivedType2
-  {
-    get => this.increasedDamageReceivedType2;
-    set => this.increasedDamageReceivedType2 = value;
-  }
-
-  public int IncreasedDirectDamageChargesMultiplierNeededForOne2
-  {
-    get => this.increasedDirectDamageChargesMultiplierNeededForOne2;
-    set => this.increasedDirectDamageChargesMultiplierNeededForOne2 = value;
-  }
-
-  public int IncreasedDirectDamageReceivedPerTurn2
-  {
-    get => this.increasedDirectDamageReceivedPerTurn2;
-    set => this.increasedDirectDamageReceivedPerTurn2 = value;
-  }
-
-  public float IncreasedDirectDamageReceivedPerStack2
-  {
-    get => this.increasedDirectDamageReceivedPerStack2;
-    set => this.increasedDirectDamageReceivedPerStack2 = value;
-  }
-
-  public int IncreasedPercentDamageReceivedPerTurn2
-  {
-    get => this.increasedPercentDamageReceivedPerTurn2;
-    set => this.increasedPercentDamageReceivedPerTurn2 = value;
-  }
-
-  public int IncreasedPercentDamageReceivedPerStack2
-  {
-    get => this.increasedPercentDamageReceivedPerStack2;
-    set => this.increasedPercentDamageReceivedPerStack2 = value;
-  }
-
-  public float AuraDamageIncreasedPercentPerStackPerEnergy4
-  {
-    get => this.auraDamageIncreasedPercentPerStackPerEnergy4;
-    set => this.auraDamageIncreasedPercentPerStackPerEnergy4 = value;
-  }
-
-  public int DoubleDamageIfCursesLessThan
-  {
-    get => this.doubleDamageIfCursesLessThan;
-    set => this.doubleDamageIfCursesLessThan = value;
-  }
-
-  public AuraCurseData AuraDamageChargesBasedOnACCharges
-  {
-    get => this.auraDamageChargesBasedOnACCharges;
-    set => this.auraDamageChargesBasedOnACCharges = value;
-  }
-
-  public AuraCurseData ConsumedDamageChargesBasedOnACCharges
-  {
-    get => this.consumedDamageChargesBasedOnACCharges;
-    set => this.consumedDamageChargesBasedOnACCharges = value;
-  }
-
-  public AuraCurseData ConsumeDamageChargesIfACApplied
-  {
-    get => this.consumeDamageChargesIfACApplied;
-    set => this.consumeDamageChargesIfACApplied = value;
-  }
-
-  public AudioClip SoundRework
-  {
-    get => this.soundRework;
-    set => this.soundRework = value;
-  }
-
-  public List<AuraCurseData.AuraCurseChargesBonus> ACBonusData
-  {
-    get => this.acBonusData;
-    set => this.acBonusData = value;
-  }
-
-  public bool GrantBlockToTeamForAmountOfDamageBlocked
-  {
-    get => this.grantBlockToTeamForAmountOfDamageBlocked;
-    set => this.grantBlockToTeamForAmountOfDamageBlocked = value;
-  }
-
-  public int ChargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked
-  {
-    get => this.chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked;
-    set => this.chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked = value;
-  }
-
-  public int HealTotalOnExplode
-  {
-    get => this.healTotalOnExplode;
-    set => this.healTotalOnExplode = value;
-  }
-
-  public float HealPerChargeOnExplode
-  {
-    get => this.healPerChargeOnExplode;
-    set => this.healPerChargeOnExplode = value;
-  }
-
-  public Enums.AuraCurseExplodeHealTarget HealTargetOnExplode
-  {
-    get => this.healTargetOnExplode;
-    set => this.healTargetOnExplode = value;
-  }
-
-  public AuraCurseData ACOnExplode
-  {
-    get => this.acOnExplode;
-    set => this.acOnExplode = value;
-  }
-
-  public int ACTotalChargesOnExplode
-  {
-    get => this.acTotalChargesOnExplode;
-    set => this.acTotalChargesOnExplode = value;
-  }
-
-  public int ACChargesPerStackChargeOnExplode
-  {
-    get => this.acChargesPerStackChargeOnExplodeOnExplode;
-    set => this.acChargesPerStackChargeOnExplodeOnExplode = value;
-  }
-
-  public bool IgnoreUseInEndTurnIfMissingOnBegin => this.ignoreUseInEndTurnIfMissingOnBegin;
-
-  [Serializable]
-  public struct AuraDamageBonus
-  {
-    public Enums.DamageType AuraDamageType;
-    public AuraCurseData AuraDamageBasedOnAC;
-    public int AuraDamageIncreasedTotal;
-    public float AuraDamageIncreasedPerStack;
-    public int AuraDamageIncreasedPercent;
-    public float AuraDamageIncreasedPercentPerStack;
-    public float AuraDamageIncreasedPercentPerStackPerEnergy;
-  }
-
-  [Serializable]
-  public struct AuraCurseChargesBonus
-  {
-    public int requiredChargesForBonus;
-    public AuraCurseData acData;
-    public AuraCurseData.AuraCurseChargesBonus.BonusAmountType bonusType;
-    public int bonusCharges;
-
-    public enum BonusAmountType
-    {
-      flatBonus,
-      percentageBonus,
-      bonusPerCharge,
-    }
-  }
+	[Serializable]
+	public struct AuraDamageBonus
+	{
+		public Enums.DamageType AuraDamageType;
+
+		public AuraCurseData AuraDamageBasedOnAC;
+
+		public int AuraDamageIncreasedTotal;
+
+		public float AuraDamageIncreasedPerStack;
+
+		public int AuraDamageIncreasedPercent;
+
+		public float AuraDamageIncreasedPercentPerStack;
+
+		public float AuraDamageIncreasedPercentPerStackPerEnergy;
+	}
+
+	[Serializable]
+	public struct AuraCurseChargesBonus
+	{
+		public enum BonusAmountType
+		{
+			flatBonus,
+			percentageBonus,
+			bonusPerCharge
+		}
+
+		public int requiredChargesForBonus;
+
+		public AuraCurseData acData;
+
+		public BonusAmountType bonusType;
+
+		public int bonusCharges;
+	}
+
+	[Serializable]
+	public struct ConsumeDamageBasedOnAuraCurse
+	{
+		public Enums.DamageType DamageTypeWhenConsumed;
+
+		public AuraCurseData ConsumedDamageChargesBasedOnACCharges;
+
+		public int DamageWhenConsumedPerCharge;
+	}
+
+	[Header("General Attributes")]
+	[SerializeField]
+	private string acName;
+
+	[SerializeField]
+	private string id;
+
+	[SerializeField]
+	private bool isAura;
+
+	[SerializeField]
+	private bool ignoreUseInEndTurnIfMissingOnBegin;
+
+	[SerializeField]
+	private int maxCharges = -1;
+
+	[SerializeField]
+	private int maxMadnessCharges = -1;
+
+	[SerializeField]
+	private int auraConsumed = 1;
+
+	[TextArea]
+	[SerializeField]
+	private string description;
+
+	[HideInInspector]
+	public int CustomAuxValue;
+
+	[Tooltip("Field to use for plain charges, 1/1. Introduce the value for each charge, f.e. stealth 20%/charge => 20")]
+	[SerializeField]
+	private int chargesMultiplierDescription = 1;
+
+	[Tooltip("First Field to use for a 1/N format. Introduce the number of charges for one bonus, f.e. 1/3 => 3")]
+	[SerializeField]
+	private float chargesAuxNeedForOne1 = 1f;
+
+	[Tooltip("Second Field to use for a 1/N format. Introduce the number of charges for one bonus, f.e. 1/3 => 3")]
+	[SerializeField]
+	private int chargesAuxNeedForOne2 = 1;
+
+	[SerializeField]
+	private Sprite sprite;
+
+	[SerializeField]
+	private string effectTick;
+
+	[SerializeField]
+	private string effectTickSides;
+
+	[Header("Sound")]
+	[SerializeField]
+	private AudioClip sound;
+
+	[Header("Sound (new)")]
+	[SerializeField]
+	private AudioClip soundRework;
+
+	[Header("Config")]
+	[SerializeField]
+	private bool removable = true;
+
+	[SerializeField]
+	private bool gainCharges = true;
+
+	[SerializeField]
+	private bool iconShow = true;
+
+	[SerializeField]
+	private bool combatlogShow = true;
+
+	[SerializeField]
+	private bool preventable = true;
+
+	[SerializeField]
+	private bool canBeAddedToImmunityDespiteNotBeingPreventable;
+
+	[Header("Expiration")]
+	[SerializeField]
+	private int priorityOnConsumption;
+
+	[SerializeField]
+	private bool consumeAll;
+
+	[SerializeField]
+	private bool consumedAtCast;
+
+	[SerializeField]
+	private bool consumedAtTurnBegin;
+
+	[SerializeField]
+	private bool consumedAtTurn;
+
+	[SerializeField]
+	private bool consumedAtRoundBegin;
+
+	[SerializeField]
+	private bool consumedAtRound;
+
+	[SerializeField]
+	private bool produceDamageWhenConsumed;
+
+	[SerializeField]
+	private bool produceHealWhenConsumed;
+
+	[SerializeField]
+	private bool dieWhenConsumedAll;
+
+	[Header("Aura Bonusses")]
+	[SerializeField]
+	private List<AuraCurseChargesBonus> acBonusData;
+
+	[Header("Aura Damage Bonus")]
+	[SerializeField]
+	private Enums.DamageType auraDamageType;
+
+	[SerializeField]
+	private AuraCurseData auraDamageChargesBasedOnACCharges;
+
+	[SerializeField]
+	private int auraDamageIncreasedTotal;
+
+	[SerializeField]
+	private float auraDamageIncreasedPerStack;
+
+	[SerializeField]
+	private int auraDamageIncreasedPercent;
+
+	[SerializeField]
+	private float auraDamageIncreasedPercentPerStack;
+
+	[SerializeField]
+	private float auraDamageIncreasedPercentPerStackPerEnergy;
+
+	[SerializeField]
+	private Enums.DamageType auraDamageType2;
+
+	[SerializeField]
+	private int auraDamageIncreasedTotal2;
+
+	[SerializeField]
+	private float auraDamageIncreasedPerStack2;
+
+	[SerializeField]
+	private int auraDamageIncreasedPercent2;
+
+	[SerializeField]
+	private float auraDamageIncreasedPercentPerStack2;
+
+	[SerializeField]
+	private float auraDamageIncreasedPercentPerStackPerEnergy2;
+
+	[SerializeField]
+	private Enums.DamageType auraDamageType3;
+
+	[SerializeField]
+	private int auraDamageIncreasedTotal3;
+
+	[SerializeField]
+	private float auraDamageIncreasedPerStack3;
+
+	[SerializeField]
+	private int auraDamageIncreasedPercent3;
+
+	[SerializeField]
+	private float auraDamageIncreasedPercentPerStack3;
+
+	[SerializeField]
+	private float auraDamageIncreasedPercentPerStackPerEnergy3;
+
+	[SerializeField]
+	private Enums.DamageType auraDamageType4;
+
+	[SerializeField]
+	private int auraDamageIncreasedTotal4;
+
+	[SerializeField]
+	private float auraDamageIncreasedPerStack4;
+
+	[SerializeField]
+	private int auraDamageIncreasedPercent4;
+
+	[SerializeField]
+	private float auraDamageIncreasedPercentPerStack4;
+
+	[SerializeField]
+	private float auraDamageIncreasedPercentPerStackPerEnergy4;
+
+	[SerializeField]
+	private AuraDamageBonus[] auraDamageConditionalBonuses;
+
+	[Header("Aura Heal Bonus")]
+	[SerializeField]
+	private int healDoneTotal;
+
+	[SerializeField]
+	private int healDonePerStack;
+
+	[SerializeField]
+	private int healDonePercent;
+
+	[SerializeField]
+	private int healDonePercentPerStack;
+
+	[SerializeField]
+	private int healDonePercentPerStackPerEnergy;
+
+	[SerializeField]
+	private int healReceivedTotal;
+
+	[SerializeField]
+	private int healReceivedPerStack;
+
+	[SerializeField]
+	private int healReceivedPercent;
+
+	[SerializeField]
+	private int healReceivedPercentPerStack;
+
+	[Header("Aura Draw Bonus")]
+	[SerializeField]
+	private int cardsDrawPerStack;
+
+	[Header("Aura Damage Reflected")]
+	[SerializeField]
+	private int chargesPreReqForDamageReflection;
+
+	[SerializeField]
+	private Enums.RefectedDamageModifierType damageReflectedModifierType;
+
+	[SerializeField]
+	[FormerlySerializedAs("damageReflectedPerStack")]
+	private int damageReflectedMultiplier;
+
+	[SerializeField]
+	private Enums.DamageType damageReflectedType;
+
+	[SerializeField]
+	private int damageReflectedConsumeCharges;
+
+	[Header("Block")]
+	[SerializeField]
+	private int blockChargesGainedPerStack;
+
+	[SerializeField]
+	private bool noRemoveBlockAtTurnEnd;
+
+	[SerializeField]
+	private bool grantBlockToTeamForAmountOfDamageBlocked;
+
+	[SerializeField]
+	private int chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked;
+
+	[Header("Prevention")]
+	[SerializeField]
+	private int damagePreventedPerStack;
+
+	[SerializeField]
+	private int cursePreventedPerStack;
+
+	[SerializeField]
+	private AuraCurseData preventedAuraCurse;
+
+	[SerializeField]
+	private int preventedAuraCurseStackPerStack;
+
+	[Header("Damage received")]
+	[SerializeField]
+	private Enums.DamageType increasedDamageReceivedType;
+
+	[SerializeField]
+	private int increasedDirectDamageChargesMultiplierNeededForOne = 1;
+
+	[SerializeField]
+	private int increasedDirectDamageReceivedPerTurn;
+
+	[SerializeField]
+	private float increasedDirectDamageReceivedPerStack;
+
+	[SerializeField]
+	private int increasedPercentDamageReceivedPerTurn;
+
+	[SerializeField]
+	private int increasedPercentDamageReceivedPerStack;
+
+	[SerializeField]
+	private Enums.DamageType increasedDamageReceivedType2;
+
+	[SerializeField]
+	private int increasedDirectDamageChargesMultiplierNeededForOne2 = 1;
+
+	[SerializeField]
+	private int increasedDirectDamageReceivedPerTurn2;
+
+	[SerializeField]
+	private float increasedDirectDamageReceivedPerStack2;
+
+	[SerializeField]
+	private int increasedPercentDamageReceivedPerTurn2;
+
+	[SerializeField]
+	private int increasedPercentDamageReceivedPerStack2;
+
+	[Header("Damage prevented")]
+	[SerializeField]
+	private Enums.DamageType preventedDamageTypePerStack;
+
+	[SerializeField]
+	private int preventedDamagePerStack;
+
+	[Header("Heal attacker")]
+	[SerializeField]
+	private int healAttackerPerStack;
+
+	[SerializeField]
+	private int healAttackerConsumeCharges;
+
+	[Header("Character stat modification")]
+	[SerializeField]
+	private Enums.CharacterStat characterStatModified;
+
+	[SerializeField]
+	private int characterStatChargesMultiplierNeededForOne = 1;
+
+	[SerializeField]
+	private int characterStatModifiedValue;
+
+	[SerializeField]
+	private float characterStatModifiedValuePerStack;
+
+	[SerializeField]
+	private bool characterStatAbsolute;
+
+	[SerializeField]
+	private int characterStatAbsoluteValue;
+
+	[SerializeField]
+	private int characterStatAbsoluteValuePerStack;
+
+	[Header("Resist modification")]
+	[SerializeField]
+	private Enums.DamageType resistModified;
+
+	[SerializeField]
+	private float resistModifiedValue;
+
+	[SerializeField]
+	private float resistModifiedPercentagePerStack;
+
+	[SerializeField]
+	private Enums.DamageType resistModified2;
+
+	[SerializeField]
+	private float resistModifiedValue2;
+
+	[SerializeField]
+	private float resistModifiedPercentagePerStack2;
+
+	[SerializeField]
+	private Enums.DamageType resistModified3;
+
+	[SerializeField]
+	private float resistModifiedValue3;
+
+	[SerializeField]
+	private float resistModifiedPercentagePerStack3;
+
+	[Header("Explode at stacks")]
+	[SerializeField]
+	private int explodeAtStacks;
+
+	[Header("Explode Effects")]
+	[SerializeField]
+	private int healTotalOnExplode;
+
+	[SerializeField]
+	private float healPerChargeOnExplode;
+
+	[SerializeField]
+	private Enums.AuraCurseExplodeHealTarget healTargetOnExplode;
+
+	[SerializeField]
+	private AuraCurseData acOnExplode;
+
+	[SerializeField]
+	private int acTotalChargesOnExplode;
+
+	[SerializeField]
+	private int acChargesPerStackChargeOnExplodeOnExplode;
+
+	[Header("Consume damage")]
+	[SerializeField]
+	private Enums.DamageType damageTypeWhenConsumed;
+
+	[SerializeField]
+	private AuraCurseData consumedDamageChargesBasedOnACCharges;
+
+	[SerializeField]
+	private AuraCurseData consumeDamageChargesIfACApplied;
+
+	[SerializeField]
+	private int damageWhenConsumed;
+
+	[SerializeField]
+	private float damageWhenConsumedPerCharge;
+
+	[SerializeField]
+	private int damageSidesWhenConsumed;
+
+	[SerializeField]
+	private int damageSidesWhenConsumedPerCharge;
+
+	[SerializeField]
+	private int doubleDamageIfCursesLessThan;
+
+	[Header("Consume heal")]
+	[SerializeField]
+	private int healWhenConsumed;
+
+	[SerializeField]
+	private float healWhenConsumedPerCharge;
+
+	[SerializeField]
+	private int healSidesWhenConsumed;
+
+	[SerializeField]
+	private float healSidesWhenConsumedPerCharge;
+
+	[Header("Remove Aura Curse")]
+	[SerializeField]
+	private AuraCurseData removeAuraCurse;
+
+	[SerializeField]
+	private AuraCurseData removeAuraCurse2;
+
+	[Header("Aura Curse Gained on Consumption")]
+	[SerializeField]
+	private AuraCurseData gainAuraCurseConsumption;
+
+	[SerializeField]
+	private int gainAuraCurseConsumptionPerCharge;
+
+	[SerializeField]
+	private AuraCurseData gainChargesFromThisAuraCurse;
+
+	[SerializeField]
+	private AuraCurseData gainAuraCurseConsumption2;
+
+	[SerializeField]
+	private int gainAuraCurseConsumptionPerCharge2;
+
+	[SerializeField]
+	private AuraCurseData gainChargesFromThisAuraCurse2;
+
+	[Header("Reveal Cards")]
+	[SerializeField]
+	private int revealCardsPerCharge;
+
+	[Header("Cost Cards")]
+	[SerializeField]
+	private int modifyCardCostPerChargeNeededForOne;
+
+	[Header("Disabled Cards")]
+	[SerializeField]
+	private Enums.CardType[] disabledCardTypes;
+
+	[Header("Misc")]
+	[SerializeField]
+	private bool invulnerable;
+
+	[SerializeField]
+	private bool stealth;
+
+	[SerializeField]
+	private bool taunt;
+
+	[SerializeField]
+	private bool skipsNextTurn;
+
+	public string ACName
+	{
+		get
+		{
+			return acName;
+		}
+		set
+		{
+			acName = value;
+		}
+	}
+
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
+
+	public bool IsAura
+	{
+		get
+		{
+			return isAura;
+		}
+		set
+		{
+			isAura = value;
+		}
+	}
+
+	public int MaxCharges
+	{
+		get
+		{
+			return maxCharges;
+		}
+		set
+		{
+			maxCharges = value;
+		}
+	}
+
+	public int AuraConsumed
+	{
+		get
+		{
+			return auraConsumed;
+		}
+		set
+		{
+			auraConsumed = value;
+		}
+	}
+
+	public string Description
+	{
+		get
+		{
+			return description;
+		}
+		set
+		{
+			description = value;
+		}
+	}
+
+	public int ChargesMultiplierDescription
+	{
+		get
+		{
+			return chargesMultiplierDescription;
+		}
+		set
+		{
+			chargesMultiplierDescription = value;
+		}
+	}
+
+	public float ChargesAuxNeedForOne1
+	{
+		get
+		{
+			return chargesAuxNeedForOne1;
+		}
+		set
+		{
+			chargesAuxNeedForOne1 = value;
+		}
+	}
+
+	public int ChargesAuxNeedForOne2
+	{
+		get
+		{
+			return chargesAuxNeedForOne2;
+		}
+		set
+		{
+			chargesAuxNeedForOne2 = value;
+		}
+	}
+
+	public Sprite Sprite
+	{
+		get
+		{
+			return sprite;
+		}
+		set
+		{
+			sprite = value;
+		}
+	}
+
+	public AudioClip Sound
+	{
+		get
+		{
+			return sound;
+		}
+		set
+		{
+			sound = value;
+		}
+	}
+
+	public string EffectTick
+	{
+		get
+		{
+			return effectTick;
+		}
+		set
+		{
+			effectTick = value;
+		}
+	}
+
+	public string EffectTickSides
+	{
+		get
+		{
+			return effectTickSides;
+		}
+		set
+		{
+			effectTickSides = value;
+		}
+	}
+
+	public bool Removable
+	{
+		get
+		{
+			return removable;
+		}
+		set
+		{
+			removable = value;
+		}
+	}
+
+	public bool GainCharges
+	{
+		get
+		{
+			return gainCharges;
+		}
+		set
+		{
+			gainCharges = value;
+		}
+	}
+
+	public bool IconShow
+	{
+		get
+		{
+			return iconShow;
+		}
+		set
+		{
+			iconShow = value;
+		}
+	}
+
+	public bool CombatlogShow
+	{
+		get
+		{
+			return combatlogShow;
+		}
+		set
+		{
+			combatlogShow = value;
+		}
+	}
+
+	public int PriorityOnConsumption
+	{
+		get
+		{
+			return priorityOnConsumption;
+		}
+		set
+		{
+			priorityOnConsumption = value;
+		}
+	}
+
+	public bool ConsumeAll
+	{
+		get
+		{
+			return consumeAll;
+		}
+		set
+		{
+			consumeAll = value;
+		}
+	}
+
+	public bool ConsumedAtCast
+	{
+		get
+		{
+			return consumedAtCast;
+		}
+		set
+		{
+			consumedAtCast = value;
+		}
+	}
+
+	public bool ConsumedAtTurnBegin
+	{
+		get
+		{
+			return consumedAtTurnBegin;
+		}
+		set
+		{
+			consumedAtTurnBegin = value;
+		}
+	}
+
+	public bool ConsumedAtTurn
+	{
+		get
+		{
+			return consumedAtTurn;
+		}
+		set
+		{
+			consumedAtTurn = value;
+		}
+	}
+
+	public bool ConsumedAtRoundBegin
+	{
+		get
+		{
+			return consumedAtRoundBegin;
+		}
+		set
+		{
+			consumedAtRoundBegin = value;
+		}
+	}
+
+	public bool ConsumedAtRound
+	{
+		get
+		{
+			return consumedAtRound;
+		}
+		set
+		{
+			consumedAtRound = value;
+		}
+	}
+
+	public bool ProduceDamageWhenConsumed
+	{
+		get
+		{
+			return produceDamageWhenConsumed;
+		}
+		set
+		{
+			produceDamageWhenConsumed = value;
+		}
+	}
+
+	public bool ProduceHealWhenConsumed
+	{
+		get
+		{
+			return produceHealWhenConsumed;
+		}
+		set
+		{
+			produceHealWhenConsumed = value;
+		}
+	}
+
+	public bool DieWhenConsumedAll
+	{
+		get
+		{
+			return dieWhenConsumedAll;
+		}
+		set
+		{
+			dieWhenConsumedAll = value;
+		}
+	}
+
+	public Enums.DamageType AuraDamageType
+	{
+		get
+		{
+			return auraDamageType;
+		}
+		set
+		{
+			auraDamageType = value;
+		}
+	}
+
+	public int AuraDamageIncreasedTotal
+	{
+		get
+		{
+			return auraDamageIncreasedTotal;
+		}
+		set
+		{
+			auraDamageIncreasedTotal = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPerStack
+	{
+		get
+		{
+			return auraDamageIncreasedPerStack;
+		}
+		set
+		{
+			auraDamageIncreasedPerStack = value;
+		}
+	}
+
+	public int AuraDamageIncreasedPercent
+	{
+		get
+		{
+			return auraDamageIncreasedPercent;
+		}
+		set
+		{
+			auraDamageIncreasedPercent = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPercentPerStack
+	{
+		get
+		{
+			return auraDamageIncreasedPercentPerStack;
+		}
+		set
+		{
+			auraDamageIncreasedPercentPerStack = value;
+		}
+	}
+
+	public Enums.DamageType AuraDamageType2
+	{
+		get
+		{
+			return auraDamageType2;
+		}
+		set
+		{
+			auraDamageType2 = value;
+		}
+	}
+
+	public int AuraDamageIncreasedTotal2
+	{
+		get
+		{
+			return auraDamageIncreasedTotal2;
+		}
+		set
+		{
+			auraDamageIncreasedTotal2 = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPerStack2
+	{
+		get
+		{
+			return auraDamageIncreasedPerStack2;
+		}
+		set
+		{
+			auraDamageIncreasedPerStack2 = value;
+		}
+	}
+
+	public int AuraDamageIncreasedPercent2
+	{
+		get
+		{
+			return auraDamageIncreasedPercent2;
+		}
+		set
+		{
+			auraDamageIncreasedPercent2 = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPercentPerStack2
+	{
+		get
+		{
+			return auraDamageIncreasedPercentPerStack2;
+		}
+		set
+		{
+			auraDamageIncreasedPercentPerStack2 = value;
+		}
+	}
+
+	public Enums.DamageType AuraDamageType3
+	{
+		get
+		{
+			return auraDamageType3;
+		}
+		set
+		{
+			auraDamageType3 = value;
+		}
+	}
+
+	public int AuraDamageIncreasedTotal3
+	{
+		get
+		{
+			return auraDamageIncreasedTotal3;
+		}
+		set
+		{
+			auraDamageIncreasedTotal3 = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPerStack3
+	{
+		get
+		{
+			return auraDamageIncreasedPerStack3;
+		}
+		set
+		{
+			auraDamageIncreasedPerStack3 = value;
+		}
+	}
+
+	public int AuraDamageIncreasedPercent3
+	{
+		get
+		{
+			return auraDamageIncreasedPercent3;
+		}
+		set
+		{
+			auraDamageIncreasedPercent3 = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPercentPerStack3
+	{
+		get
+		{
+			return auraDamageIncreasedPercentPerStack3;
+		}
+		set
+		{
+			auraDamageIncreasedPercentPerStack3 = value;
+		}
+	}
+
+	public Enums.DamageType AuraDamageType4
+	{
+		get
+		{
+			return auraDamageType4;
+		}
+		set
+		{
+			auraDamageType4 = value;
+		}
+	}
+
+	public int AuraDamageIncreasedTotal4
+	{
+		get
+		{
+			return auraDamageIncreasedTotal4;
+		}
+		set
+		{
+			auraDamageIncreasedTotal4 = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPerStack4
+	{
+		get
+		{
+			return auraDamageIncreasedPerStack4;
+		}
+		set
+		{
+			auraDamageIncreasedPerStack4 = value;
+		}
+	}
+
+	public int AuraDamageIncreasedPercent4
+	{
+		get
+		{
+			return auraDamageIncreasedPercent4;
+		}
+		set
+		{
+			auraDamageIncreasedPercent4 = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPercentPerStack4
+	{
+		get
+		{
+			return auraDamageIncreasedPercentPerStack4;
+		}
+		set
+		{
+			auraDamageIncreasedPercentPerStack4 = value;
+		}
+	}
+
+	public AuraDamageBonus[] AuraDamageConditionalBonuses
+	{
+		get
+		{
+			return auraDamageConditionalBonuses;
+		}
+		set
+		{
+			auraDamageConditionalBonuses = value;
+		}
+	}
+
+	public int HealDoneTotal
+	{
+		get
+		{
+			return healDoneTotal;
+		}
+		set
+		{
+			healDoneTotal = value;
+		}
+	}
+
+	public int HealDonePerStack
+	{
+		get
+		{
+			return healDonePerStack;
+		}
+		set
+		{
+			healDonePerStack = value;
+		}
+	}
+
+	public int HealDonePercent
+	{
+		get
+		{
+			return healDonePercent;
+		}
+		set
+		{
+			healDonePercent = value;
+		}
+	}
+
+	public int HealDonePercentPerStack
+	{
+		get
+		{
+			return healDonePercentPerStack;
+		}
+		set
+		{
+			healDonePercentPerStack = value;
+		}
+	}
+
+	public int HealReceivedTotal
+	{
+		get
+		{
+			return healReceivedTotal;
+		}
+		set
+		{
+			healReceivedTotal = value;
+		}
+	}
+
+	public int HealReceivedPerStack
+	{
+		get
+		{
+			return healReceivedPerStack;
+		}
+		set
+		{
+			healReceivedPerStack = value;
+		}
+	}
+
+	public int HealReceivedPercent
+	{
+		get
+		{
+			return healReceivedPercent;
+		}
+		set
+		{
+			healReceivedPercent = value;
+		}
+	}
+
+	public int HealReceivedPercentPerStack
+	{
+		get
+		{
+			return healReceivedPercentPerStack;
+		}
+		set
+		{
+			healReceivedPercentPerStack = value;
+		}
+	}
+
+	public int CardsDrawPerStack
+	{
+		get
+		{
+			return cardsDrawPerStack;
+		}
+		set
+		{
+			cardsDrawPerStack = value;
+		}
+	}
+
+	public int DamageReflectedMultiplier
+	{
+		get
+		{
+			return damageReflectedMultiplier;
+		}
+		set
+		{
+			damageReflectedMultiplier = value;
+		}
+	}
+
+	public int ChargesPreReqForDamageReflection
+	{
+		get
+		{
+			return chargesPreReqForDamageReflection;
+		}
+		set
+		{
+			chargesPreReqForDamageReflection = value;
+		}
+	}
+
+	public Enums.RefectedDamageModifierType DamageReflectedModifierType
+	{
+		get
+		{
+			return damageReflectedModifierType;
+		}
+		set
+		{
+			damageReflectedModifierType = value;
+		}
+	}
+
+	public Enums.DamageType DamageReflectedType
+	{
+		get
+		{
+			return damageReflectedType;
+		}
+		set
+		{
+			damageReflectedType = value;
+		}
+	}
+
+	public int BlockChargesGainedPerStack
+	{
+		get
+		{
+			return blockChargesGainedPerStack;
+		}
+		set
+		{
+			blockChargesGainedPerStack = value;
+		}
+	}
+
+	public bool NoRemoveBlockAtTurnEnd
+	{
+		get
+		{
+			return noRemoveBlockAtTurnEnd;
+		}
+		set
+		{
+			noRemoveBlockAtTurnEnd = value;
+		}
+	}
+
+	public int DamagePreventedPerStack
+	{
+		get
+		{
+			return damagePreventedPerStack;
+		}
+		set
+		{
+			damagePreventedPerStack = value;
+		}
+	}
+
+	public int CursePreventedPerStack
+	{
+		get
+		{
+			return cursePreventedPerStack;
+		}
+		set
+		{
+			cursePreventedPerStack = value;
+		}
+	}
+
+	public Enums.DamageType IncreasedDamageReceivedType
+	{
+		get
+		{
+			return increasedDamageReceivedType;
+		}
+		set
+		{
+			increasedDamageReceivedType = value;
+		}
+	}
+
+	public int IncreasedDirectDamageChargesMultiplierNeededForOne
+	{
+		get
+		{
+			return increasedDirectDamageChargesMultiplierNeededForOne;
+		}
+		set
+		{
+			increasedDirectDamageChargesMultiplierNeededForOne = value;
+		}
+	}
+
+	public int IncreasedDirectDamageReceivedPerTurn
+	{
+		get
+		{
+			return increasedDirectDamageReceivedPerTurn;
+		}
+		set
+		{
+			increasedDirectDamageReceivedPerTurn = value;
+		}
+	}
+
+	public float IncreasedDirectDamageReceivedPerStack
+	{
+		get
+		{
+			return increasedDirectDamageReceivedPerStack;
+		}
+		set
+		{
+			increasedDirectDamageReceivedPerStack = value;
+		}
+	}
+
+	public int IncreasedPercentDamageReceivedPerTurn
+	{
+		get
+		{
+			return increasedPercentDamageReceivedPerTurn;
+		}
+		set
+		{
+			increasedPercentDamageReceivedPerTurn = value;
+		}
+	}
+
+	public int IncreasedPercentDamageReceivedPerStack
+	{
+		get
+		{
+			return increasedPercentDamageReceivedPerStack;
+		}
+		set
+		{
+			increasedPercentDamageReceivedPerStack = value;
+		}
+	}
+
+	public Enums.DamageType PreventedDamageTypePerStack
+	{
+		get
+		{
+			return preventedDamageTypePerStack;
+		}
+		set
+		{
+			preventedDamageTypePerStack = value;
+		}
+	}
+
+	public int PreventedDamagePerStack
+	{
+		get
+		{
+			return preventedDamagePerStack;
+		}
+		set
+		{
+			preventedDamagePerStack = value;
+		}
+	}
+
+	public AuraCurseData PreventedAuraCurse
+	{
+		get
+		{
+			return preventedAuraCurse;
+		}
+		set
+		{
+			preventedAuraCurse = value;
+		}
+	}
+
+	public int PreventedAuraCurseStackPerStack
+	{
+		get
+		{
+			return preventedAuraCurseStackPerStack;
+		}
+		set
+		{
+			preventedAuraCurseStackPerStack = value;
+		}
+	}
+
+	public int HealAttackerPerStack
+	{
+		get
+		{
+			return healAttackerPerStack;
+		}
+		set
+		{
+			healAttackerPerStack = value;
+		}
+	}
+
+	public int HealAttackerConsumeCharges
+	{
+		get
+		{
+			return healAttackerConsumeCharges;
+		}
+		set
+		{
+			healAttackerConsumeCharges = value;
+		}
+	}
+
+	public Enums.CharacterStat CharacterStatModified
+	{
+		get
+		{
+			return characterStatModified;
+		}
+		set
+		{
+			characterStatModified = value;
+		}
+	}
+
+	public int CharacterStatChargesMultiplierNeededForOne
+	{
+		get
+		{
+			return characterStatChargesMultiplierNeededForOne;
+		}
+		set
+		{
+			characterStatChargesMultiplierNeededForOne = value;
+		}
+	}
+
+	public int CharacterStatModifiedValue
+	{
+		get
+		{
+			return characterStatModifiedValue;
+		}
+		set
+		{
+			characterStatModifiedValue = value;
+		}
+	}
+
+	public float CharacterStatModifiedValuePerStack
+	{
+		get
+		{
+			return characterStatModifiedValuePerStack;
+		}
+		set
+		{
+			characterStatModifiedValuePerStack = value;
+		}
+	}
+
+	public bool CharacterStatAbsolute
+	{
+		get
+		{
+			return characterStatAbsolute;
+		}
+		set
+		{
+			characterStatAbsolute = value;
+		}
+	}
+
+	public int CharacterStatAbsoluteValue
+	{
+		get
+		{
+			return characterStatAbsoluteValue;
+		}
+		set
+		{
+			characterStatAbsoluteValue = value;
+		}
+	}
+
+	public int CharacterStatAbsoluteValuePerStack
+	{
+		get
+		{
+			return characterStatAbsoluteValuePerStack;
+		}
+		set
+		{
+			characterStatAbsoluteValuePerStack = value;
+		}
+	}
+
+	public Enums.DamageType ResistModified
+	{
+		get
+		{
+			return resistModified;
+		}
+		set
+		{
+			resistModified = value;
+		}
+	}
+
+	public float ResistModifiedValue
+	{
+		get
+		{
+			return resistModifiedValue;
+		}
+		set
+		{
+			resistModifiedValue = value;
+		}
+	}
+
+	public float ResistModifiedPercentagePerStack
+	{
+		get
+		{
+			return resistModifiedPercentagePerStack;
+		}
+		set
+		{
+			resistModifiedPercentagePerStack = value;
+		}
+	}
+
+	public Enums.DamageType ResistModified2
+	{
+		get
+		{
+			return resistModified2;
+		}
+		set
+		{
+			resistModified2 = value;
+		}
+	}
+
+	public float ResistModifiedValue2
+	{
+		get
+		{
+			return resistModifiedValue2;
+		}
+		set
+		{
+			resistModifiedValue2 = value;
+		}
+	}
+
+	public float ResistModifiedPercentagePerStack2
+	{
+		get
+		{
+			return resistModifiedPercentagePerStack2;
+		}
+		set
+		{
+			resistModifiedPercentagePerStack2 = value;
+		}
+	}
+
+	public Enums.DamageType ResistModified3
+	{
+		get
+		{
+			return resistModified3;
+		}
+		set
+		{
+			resistModified3 = value;
+		}
+	}
+
+	public float ResistModifiedValue3
+	{
+		get
+		{
+			return resistModifiedValue3;
+		}
+		set
+		{
+			resistModifiedValue3 = value;
+		}
+	}
+
+	public float ResistModifiedPercentagePerStack3
+	{
+		get
+		{
+			return resistModifiedPercentagePerStack3;
+		}
+		set
+		{
+			resistModifiedPercentagePerStack3 = value;
+		}
+	}
+
+	public int ExplodeAtStacks
+	{
+		get
+		{
+			return explodeAtStacks;
+		}
+		set
+		{
+			explodeAtStacks = value;
+		}
+	}
+
+	public Enums.DamageType DamageTypeWhenConsumed
+	{
+		get
+		{
+			return damageTypeWhenConsumed;
+		}
+		set
+		{
+			damageTypeWhenConsumed = value;
+		}
+	}
+
+	public int DamageWhenConsumed
+	{
+		get
+		{
+			return damageWhenConsumed;
+		}
+		set
+		{
+			damageWhenConsumed = value;
+		}
+	}
+
+	public float DamageWhenConsumedPerCharge
+	{
+		get
+		{
+			return damageWhenConsumedPerCharge;
+		}
+		set
+		{
+			damageWhenConsumedPerCharge = value;
+		}
+	}
+
+	public int DamageSidesWhenConsumed
+	{
+		get
+		{
+			return damageSidesWhenConsumed;
+		}
+		set
+		{
+			damageSidesWhenConsumed = value;
+		}
+	}
+
+	public int DamageSidesWhenConsumedPerCharge
+	{
+		get
+		{
+			return damageSidesWhenConsumedPerCharge;
+		}
+		set
+		{
+			damageSidesWhenConsumedPerCharge = value;
+		}
+	}
+
+	public int HealWhenConsumed
+	{
+		get
+		{
+			return healWhenConsumed;
+		}
+		set
+		{
+			healWhenConsumed = value;
+		}
+	}
+
+	public float HealWhenConsumedPerCharge
+	{
+		get
+		{
+			return healWhenConsumedPerCharge;
+		}
+		set
+		{
+			healWhenConsumedPerCharge = value;
+		}
+	}
+
+	public int HealSidesWhenConsumed
+	{
+		get
+		{
+			return healSidesWhenConsumed;
+		}
+		set
+		{
+			healSidesWhenConsumed = value;
+		}
+	}
+
+	public AuraCurseData RemoveAuraCurse
+	{
+		get
+		{
+			return removeAuraCurse;
+		}
+		set
+		{
+			removeAuraCurse = value;
+		}
+	}
+
+	public AuraCurseData RemoveAuraCurse2
+	{
+		get
+		{
+			return removeAuraCurse2;
+		}
+		set
+		{
+			removeAuraCurse2 = value;
+		}
+	}
+
+	public AuraCurseData GainAuraCurseConsumption
+	{
+		get
+		{
+			return gainAuraCurseConsumption;
+		}
+		set
+		{
+			gainAuraCurseConsumption = value;
+		}
+	}
+
+	public int GainAuraCurseConsumptionPerCharge
+	{
+		get
+		{
+			return gainAuraCurseConsumptionPerCharge;
+		}
+		set
+		{
+			gainAuraCurseConsumptionPerCharge = value;
+		}
+	}
+
+	public AuraCurseData GainChargesFromThisAuraCurse
+	{
+		get
+		{
+			return gainChargesFromThisAuraCurse;
+		}
+		set
+		{
+			gainChargesFromThisAuraCurse = value;
+		}
+	}
+
+	public AuraCurseData GainAuraCurseConsumption2
+	{
+		get
+		{
+			return gainAuraCurseConsumption2;
+		}
+		set
+		{
+			gainAuraCurseConsumption2 = value;
+		}
+	}
+
+	public int GainAuraCurseConsumptionPerCharge2
+	{
+		get
+		{
+			return gainAuraCurseConsumptionPerCharge2;
+		}
+		set
+		{
+			gainAuraCurseConsumptionPerCharge2 = value;
+		}
+	}
+
+	public AuraCurseData GainChargesFromThisAuraCurse2
+	{
+		get
+		{
+			return gainChargesFromThisAuraCurse2;
+		}
+		set
+		{
+			gainChargesFromThisAuraCurse2 = value;
+		}
+	}
+
+	public int RevealCardsPerCharge
+	{
+		get
+		{
+			return revealCardsPerCharge;
+		}
+		set
+		{
+			revealCardsPerCharge = value;
+		}
+	}
+
+	public int ModifyCardCostPerChargeNeededForOne
+	{
+		get
+		{
+			return modifyCardCostPerChargeNeededForOne;
+		}
+		set
+		{
+			modifyCardCostPerChargeNeededForOne = value;
+		}
+	}
+
+	public Enums.CardType[] DisabledCardTypes
+	{
+		get
+		{
+			return disabledCardTypes;
+		}
+		set
+		{
+			disabledCardTypes = value;
+		}
+	}
+
+	public bool Invulnerable
+	{
+		get
+		{
+			return invulnerable;
+		}
+		set
+		{
+			invulnerable = value;
+		}
+	}
+
+	public bool Stealth
+	{
+		get
+		{
+			return stealth;
+		}
+		set
+		{
+			stealth = value;
+		}
+	}
+
+	public bool Taunt
+	{
+		get
+		{
+			return taunt;
+		}
+		set
+		{
+			taunt = value;
+		}
+	}
+
+	public bool SkipsNextTurn
+	{
+		get
+		{
+			return skipsNextTurn;
+		}
+		set
+		{
+			skipsNextTurn = value;
+		}
+	}
+
+	public int DamageReflectedConsumeCharges
+	{
+		get
+		{
+			return damageReflectedConsumeCharges;
+		}
+		set
+		{
+			damageReflectedConsumeCharges = value;
+		}
+	}
+
+	public int MaxMadnessCharges
+	{
+		get
+		{
+			return maxMadnessCharges;
+		}
+		set
+		{
+			maxMadnessCharges = value;
+		}
+	}
+
+	public bool Preventable
+	{
+		get
+		{
+			return preventable;
+		}
+		set
+		{
+			preventable = value;
+		}
+	}
+
+	public bool CanBeAddedToImmunityDespiteNotBeingPreventable
+	{
+		get
+		{
+			return canBeAddedToImmunityDespiteNotBeingPreventable;
+		}
+		set
+		{
+			canBeAddedToImmunityDespiteNotBeingPreventable = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPercentPerStackPerEnergy
+	{
+		get
+		{
+			return auraDamageIncreasedPercentPerStackPerEnergy;
+		}
+		set
+		{
+			auraDamageIncreasedPercentPerStackPerEnergy = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPercentPerStackPerEnergy2
+	{
+		get
+		{
+			return auraDamageIncreasedPercentPerStackPerEnergy2;
+		}
+		set
+		{
+			auraDamageIncreasedPercentPerStackPerEnergy2 = value;
+		}
+	}
+
+	public int HealDonePercentPerStackPerEnergy
+	{
+		get
+		{
+			return healDonePercentPerStackPerEnergy;
+		}
+		set
+		{
+			healDonePercentPerStackPerEnergy = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPercentPerStackPerEnergy3
+	{
+		get
+		{
+			return auraDamageIncreasedPercentPerStackPerEnergy3;
+		}
+		set
+		{
+			auraDamageIncreasedPercentPerStackPerEnergy3 = value;
+		}
+	}
+
+	public float HealSidesWhenConsumedPerCharge
+	{
+		get
+		{
+			return healSidesWhenConsumedPerCharge;
+		}
+		set
+		{
+			healSidesWhenConsumedPerCharge = value;
+		}
+	}
+
+	public Enums.DamageType IncreasedDamageReceivedType2
+	{
+		get
+		{
+			return increasedDamageReceivedType2;
+		}
+		set
+		{
+			increasedDamageReceivedType2 = value;
+		}
+	}
+
+	public int IncreasedDirectDamageChargesMultiplierNeededForOne2
+	{
+		get
+		{
+			return increasedDirectDamageChargesMultiplierNeededForOne2;
+		}
+		set
+		{
+			increasedDirectDamageChargesMultiplierNeededForOne2 = value;
+		}
+	}
+
+	public int IncreasedDirectDamageReceivedPerTurn2
+	{
+		get
+		{
+			return increasedDirectDamageReceivedPerTurn2;
+		}
+		set
+		{
+			increasedDirectDamageReceivedPerTurn2 = value;
+		}
+	}
+
+	public float IncreasedDirectDamageReceivedPerStack2
+	{
+		get
+		{
+			return increasedDirectDamageReceivedPerStack2;
+		}
+		set
+		{
+			increasedDirectDamageReceivedPerStack2 = value;
+		}
+	}
+
+	public int IncreasedPercentDamageReceivedPerTurn2
+	{
+		get
+		{
+			return increasedPercentDamageReceivedPerTurn2;
+		}
+		set
+		{
+			increasedPercentDamageReceivedPerTurn2 = value;
+		}
+	}
+
+	public int IncreasedPercentDamageReceivedPerStack2
+	{
+		get
+		{
+			return increasedPercentDamageReceivedPerStack2;
+		}
+		set
+		{
+			increasedPercentDamageReceivedPerStack2 = value;
+		}
+	}
+
+	public float AuraDamageIncreasedPercentPerStackPerEnergy4
+	{
+		get
+		{
+			return auraDamageIncreasedPercentPerStackPerEnergy4;
+		}
+		set
+		{
+			auraDamageIncreasedPercentPerStackPerEnergy4 = value;
+		}
+	}
+
+	public int DoubleDamageIfCursesLessThan
+	{
+		get
+		{
+			return doubleDamageIfCursesLessThan;
+		}
+		set
+		{
+			doubleDamageIfCursesLessThan = value;
+		}
+	}
+
+	public AuraCurseData AuraDamageChargesBasedOnACCharges
+	{
+		get
+		{
+			return auraDamageChargesBasedOnACCharges;
+		}
+		set
+		{
+			auraDamageChargesBasedOnACCharges = value;
+		}
+	}
+
+	public AuraCurseData ConsumedDamageChargesBasedOnACCharges
+	{
+		get
+		{
+			return consumedDamageChargesBasedOnACCharges;
+		}
+		set
+		{
+			consumedDamageChargesBasedOnACCharges = value;
+		}
+	}
+
+	public AuraCurseData ConsumeDamageChargesIfACApplied
+	{
+		get
+		{
+			return consumeDamageChargesIfACApplied;
+		}
+		set
+		{
+			consumeDamageChargesIfACApplied = value;
+		}
+	}
+
+	public AudioClip SoundRework
+	{
+		get
+		{
+			return soundRework;
+		}
+		set
+		{
+			soundRework = value;
+		}
+	}
+
+	public List<AuraCurseChargesBonus> ACBonusData
+	{
+		get
+		{
+			return acBonusData;
+		}
+		set
+		{
+			acBonusData = value;
+		}
+	}
+
+	public bool GrantBlockToTeamForAmountOfDamageBlocked
+	{
+		get
+		{
+			return grantBlockToTeamForAmountOfDamageBlocked;
+		}
+		set
+		{
+			grantBlockToTeamForAmountOfDamageBlocked = value;
+		}
+	}
+
+	public int ChargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked
+	{
+		get
+		{
+			return chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked;
+		}
+		set
+		{
+			chargesPreReqForGrantBlockToTeamForAmountOfDamageBlocked = value;
+		}
+	}
+
+	public int HealTotalOnExplode
+	{
+		get
+		{
+			return healTotalOnExplode;
+		}
+		set
+		{
+			healTotalOnExplode = value;
+		}
+	}
+
+	public float HealPerChargeOnExplode
+	{
+		get
+		{
+			return healPerChargeOnExplode;
+		}
+		set
+		{
+			healPerChargeOnExplode = value;
+		}
+	}
+
+	public Enums.AuraCurseExplodeHealTarget HealTargetOnExplode
+	{
+		get
+		{
+			return healTargetOnExplode;
+		}
+		set
+		{
+			healTargetOnExplode = value;
+		}
+	}
+
+	public AuraCurseData ACOnExplode
+	{
+		get
+		{
+			return acOnExplode;
+		}
+		set
+		{
+			acOnExplode = value;
+		}
+	}
+
+	public int ACTotalChargesOnExplode
+	{
+		get
+		{
+			return acTotalChargesOnExplode;
+		}
+		set
+		{
+			acTotalChargesOnExplode = value;
+		}
+	}
+
+	public int ACChargesPerStackChargeOnExplode
+	{
+		get
+		{
+			return acChargesPerStackChargeOnExplodeOnExplode;
+		}
+		set
+		{
+			acChargesPerStackChargeOnExplodeOnExplode = value;
+		}
+	}
+
+	public bool IgnoreUseInEndTurnIfMissingOnBegin => ignoreUseInEndTurnIfMissingOnBegin;
+
+	public void Init()
+	{
+		if (string.IsNullOrEmpty(id))
+		{
+			id = Regex.Replace(acName, "\\s+", "").ToLower();
+		}
+	}
+
+	public AuraCurseData DeepClone()
+	{
+		AuraCurseData auraCurseData = UnityEngine.Object.Instantiate(this);
+		if (auraDamageChargesBasedOnACCharges != null)
+		{
+			auraCurseData.auraDamageChargesBasedOnACCharges = UnityEngine.Object.Instantiate(auraDamageChargesBasedOnACCharges);
+		}
+		if (preventedAuraCurse != null)
+		{
+			auraCurseData.preventedAuraCurse = UnityEngine.Object.Instantiate(preventedAuraCurse);
+		}
+		if (consumedDamageChargesBasedOnACCharges != null)
+		{
+			auraCurseData.consumedDamageChargesBasedOnACCharges = UnityEngine.Object.Instantiate(consumedDamageChargesBasedOnACCharges);
+		}
+		if ((bool)removeAuraCurse)
+		{
+			auraCurseData.removeAuraCurse = UnityEngine.Object.Instantiate(removeAuraCurse);
+		}
+		if ((bool)removeAuraCurse2)
+		{
+			auraCurseData.removeAuraCurse2 = UnityEngine.Object.Instantiate(removeAuraCurse2);
+		}
+		if (gainAuraCurseConsumption != null)
+		{
+			auraCurseData.gainAuraCurseConsumption = UnityEngine.Object.Instantiate(gainAuraCurseConsumption);
+		}
+		if (gainAuraCurseConsumption2 != null)
+		{
+			auraCurseData.gainAuraCurseConsumption2 = UnityEngine.Object.Instantiate(gainAuraCurseConsumption2);
+		}
+		if (gainChargesFromThisAuraCurse != null)
+		{
+			auraCurseData.gainChargesFromThisAuraCurse = UnityEngine.Object.Instantiate(gainChargesFromThisAuraCurse);
+		}
+		if (gainChargesFromThisAuraCurse2 != null)
+		{
+			auraCurseData.gainChargesFromThisAuraCurse2 = UnityEngine.Object.Instantiate(gainChargesFromThisAuraCurse2);
+		}
+		return auraCurseData;
+	}
+
+	public int GetMaxCharges()
+	{
+		int result = maxCharges;
+		if (MadnessManager.Instance.IsMadnessTraitActive("restrictedpower") || AtOManager.Instance.IsChallengeTraitActive("restrictedpower"))
+		{
+			result = maxMadnessCharges;
+		}
+		return result;
+	}
+
+	public AudioClip GetSound(bool useLegacy = false)
+	{
+		if (!GameManager.Instance.ConfigUseLegacySounds && soundRework != null && !useLegacy)
+		{
+			return soundRework;
+		}
+		return sound;
+	}
 }

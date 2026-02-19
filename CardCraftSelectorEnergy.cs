@@ -1,58 +1,62 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CardCraftSelectorEnergy
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class CardCraftSelectorEnergy : MonoBehaviour
 {
-  public TMP_Text tText;
-  public Transform tOn;
-  public Transform tOff;
-  private bool enabled;
+	public TMP_Text tText;
 
-  private void Start() => this.SetEnable(false);
+	public Transform tOn;
 
-  public void SetText(string text) => this.tText.text = text;
+	public Transform tOff;
 
-  public void SetEnable(bool state)
-  {
-    this.enabled = state;
-    if (state)
-    {
-      this.tOn.gameObject.SetActive(true);
-      this.tOff.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.tOn.gameObject.SetActive(false);
-      this.tOff.gameObject.SetActive(true);
-    }
-  }
+	private new bool enabled;
 
-  private void OnMouseEnter()
-  {
-    if (this.enabled)
-      return;
-    this.tOn.gameObject.SetActive(true);
-    this.tOff.gameObject.SetActive(false);
-  }
+	private void Start()
+	{
+		SetEnable(state: false);
+	}
 
-  private void OnMouseExit()
-  {
-    if (this.enabled)
-      return;
-    this.tOn.gameObject.SetActive(false);
-    this.tOff.gameObject.SetActive(true);
-  }
+	public void SetText(string text)
+	{
+		tText.text = text;
+	}
 
-  private void OnMouseUp()
-  {
-    this.SetEnable(true);
-    CardCraftManager.Instance.CraftSelectorEnergy(this, this.tText.text);
-  }
+	public void SetEnable(bool state)
+	{
+		enabled = state;
+		if (state)
+		{
+			tOn.gameObject.SetActive(value: true);
+			tOff.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			tOn.gameObject.SetActive(value: false);
+			tOff.gameObject.SetActive(value: true);
+		}
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!enabled)
+		{
+			tOn.gameObject.SetActive(value: true);
+			tOff.gameObject.SetActive(value: false);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!enabled)
+		{
+			tOn.gameObject.SetActive(value: false);
+			tOff.gameObject.SetActive(value: true);
+		}
+	}
+
+	private void OnMouseUp()
+	{
+		SetEnable(state: true);
+		CardCraftManager.Instance.CraftSelectorEnergy(this, tText.text);
+	}
 }

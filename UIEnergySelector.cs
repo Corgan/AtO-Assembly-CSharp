@@ -1,134 +1,171 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: UIEnergySelector
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class UIEnergySelector : MonoBehaviour
 {
-  public TMP_Text textAssignEnergy;
-  public TMP_Text textInstructions;
-  public Transform mask;
-  public Canvas canvas;
-  public Transform buttonMore;
-  public Transform buttonLess;
-  public Transform buttonAccept;
-  private int maxEnergy = 10;
-  private int maxEnergyToBeAssigned = 10;
-  private int currentEnergy;
-  private string instructions;
-  private string instructionsMax;
+	public TMP_Text textAssignEnergy;
 
-  private void Awake() => this.canvas.gameObject.SetActive(false);
+	public TMP_Text textInstructions;
 
-  private void Start()
-  {
-    this.instructions = Texts.Instance.GetText("chooseEnergy") + "<line-height=110%><br></line-height><size=3><color=#bbb>" + Texts.Instance.GetText("chooseEnergyAvailable") + " <color=green>%energy%</color></size></color>";
-    this.instructionsMax = "\n<size=3><color=#bbb>" + Texts.Instance.GetText("chooseEnergyMax") + " <color=green>%energyMax%</color>";
-  }
+	public Transform mask;
 
-  public bool IsActive() => this.canvas.gameObject.activeSelf;
+	public Canvas canvas;
 
-  private void TextEnergy() => this.textAssignEnergy.text = this.currentEnergy.ToString();
+	public Transform buttonMore;
 
-  public void TurnOn(int energy, int maxToBeAssigned = 0)
-  {
-    MatchManager.Instance.ShowMask(true);
-    MatchManager.Instance.lockHideMask = true;
-    if (GameManager.Instance.IsMultiplayer() && !MatchManager.Instance.IsYourTurn())
-    {
-      this.buttonMore.gameObject.SetActive(false);
-      this.buttonLess.gameObject.SetActive(false);
-      this.buttonAccept.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.buttonMore.gameObject.SetActive(true);
-      this.buttonLess.gameObject.SetActive(true);
-      this.buttonAccept.gameObject.SetActive(true);
-    }
-    this.currentEnergy = 0;
-    this.maxEnergy = energy;
-    if (maxToBeAssigned == 0)
-      maxToBeAssigned = 10;
-    this.maxEnergyToBeAssigned = maxToBeAssigned;
-    string str = this.instructions.Replace("%energy%", energy.ToString());
-    if (maxToBeAssigned > 0)
-      str += this.instructionsMax.Replace("%energyMax%", maxToBeAssigned.ToString());
-    this.textInstructions.text = str;
-    this.TextEnergy();
-    this.canvas.gameObject.SetActive(true);
-  }
+	public Transform buttonLess;
 
-  public void TurnOff()
-  {
-    MatchManager.Instance.lockHideMask = false;
-    MatchManager.Instance.ShowMask(false);
-    this.canvas.gameObject.SetActive(false);
-  }
+	public Transform buttonAccept;
 
-  public void AssignEnergyZero()
-  {
-    if ((Object) CardScreenManager.Instance != (Object) null && CardScreenManager.Instance.IsActive() || TomeManager.Instance.IsActive() || !this.buttonAccept.gameObject.activeSelf)
-      return;
-    this.buttonMore.gameObject.SetActive(false);
-    this.buttonLess.gameObject.SetActive(false);
-    this.buttonAccept.gameObject.SetActive(false);
-    MatchManager.Instance.AssignEnergyAction(0);
-  }
+	private int maxEnergy = 10;
 
-  public void AssignEnergyAction()
-  {
-    if ((Object) CardScreenManager.Instance != (Object) null && CardScreenManager.Instance.IsActive() || TomeManager.Instance.IsActive() || !this.buttonAccept.gameObject.activeSelf)
-      return;
-    this.buttonMore.gameObject.SetActive(false);
-    this.buttonLess.gameObject.SetActive(false);
-    this.buttonAccept.gameObject.SetActive(false);
-    MatchManager.Instance.AssignEnergyAction(this.currentEnergy);
-  }
+	private int maxEnergyToBeAssigned = 10;
 
-  public void AssignEnergyFromOutside(int _energy)
-  {
-    if (_energy > this.maxEnergy)
-      _energy = this.maxEnergy;
-    if (_energy > this.maxEnergyToBeAssigned)
-      _energy = this.maxEnergyToBeAssigned;
-    this.currentEnergy = _energy;
-    this.TextEnergy();
-  }
+	private int currentEnergy;
 
-  public void AssignEnergyMore()
-  {
-    if ((Object) CardScreenManager.Instance != (Object) null && CardScreenManager.Instance.IsActive() || TomeManager.Instance.IsActive())
-      return;
-    ++this.currentEnergy;
-    if (this.currentEnergy > this.maxEnergy)
-      this.currentEnergy = this.maxEnergy;
-    if (this.currentEnergy > this.maxEnergyToBeAssigned)
-      this.currentEnergy = this.maxEnergyToBeAssigned;
-    this.ShareEnergy();
-    this.TextEnergy();
-  }
+	private string instructions;
 
-  public void AssignEnergyLess()
-  {
-    if ((Object) CardScreenManager.Instance != (Object) null && CardScreenManager.Instance.IsActive() || TomeManager.Instance.IsActive())
-      return;
-    --this.currentEnergy;
-    if (this.currentEnergy < 0)
-      this.currentEnergy = 0;
-    this.ShareEnergy();
-    this.TextEnergy();
-  }
+	private string instructionsMax;
 
-  private void ShareEnergy()
-  {
-    if (!GameManager.Instance.IsMultiplayer() || !MatchManager.Instance.IsYourTurn())
-      return;
-    MatchManager.Instance.AssignEnergyMultiplayer(this.currentEnergy);
-  }
+	private void Awake()
+	{
+		canvas.gameObject.SetActive(value: false);
+	}
+
+	private void Start()
+	{
+		string text = "110%";
+		if (Globals.Instance?.CurrentLang == "zh-CN" || Globals.Instance?.CurrentLang == "zh-TW" || Globals.Instance?.CurrentLang == "jp")
+		{
+			text = "50%";
+		}
+		instructions = Texts.Instance.GetText("chooseEnergy") + "<line-height=" + text + "><br></line-height><size=3><color=#bbb>" + Texts.Instance.GetText("chooseEnergyAvailable") + " <color=green>%energy%</color></size></color>";
+		instructionsMax = "\n<size=3><color=#bbb>" + Texts.Instance.GetText("chooseEnergyMax") + " <color=green>%energyMax%</color>";
+	}
+
+	public bool IsActive()
+	{
+		return canvas.gameObject.activeSelf;
+	}
+
+	private void TextEnergy()
+	{
+		textAssignEnergy.text = currentEnergy.ToString();
+	}
+
+	public void TurnOn(int energy, int maxToBeAssigned = 0)
+	{
+		MatchManager.Instance.ShowMask(state: true);
+		MatchManager.Instance.lockHideMask = true;
+		if (GameManager.Instance.IsMultiplayer() && !MatchManager.Instance.IsYourTurn())
+		{
+			buttonMore.gameObject.SetActive(value: false);
+			buttonLess.gameObject.SetActive(value: false);
+			buttonAccept.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			buttonMore.gameObject.SetActive(value: true);
+			buttonLess.gameObject.SetActive(value: true);
+			buttonAccept.gameObject.SetActive(value: true);
+		}
+		currentEnergy = 0;
+		maxEnergy = energy;
+		if (maxToBeAssigned == 0)
+		{
+			maxToBeAssigned = 10;
+		}
+		maxEnergyToBeAssigned = maxToBeAssigned;
+		string text = instructions.Replace("%energy%", energy.ToString());
+		if (maxToBeAssigned > 0)
+		{
+			text += instructionsMax.Replace("%energyMax%", maxToBeAssigned.ToString());
+		}
+		textInstructions.text = text;
+		TextEnergy();
+		canvas.gameObject.SetActive(value: true);
+	}
+
+	public void TurnOff()
+	{
+		MatchManager.Instance.lockHideMask = false;
+		MatchManager.Instance.ShowMask(state: false);
+		canvas.gameObject.SetActive(value: false);
+	}
+
+	public void AssignEnergyZero()
+	{
+		if ((!(CardScreenManager.Instance != null) || !CardScreenManager.Instance.IsActive()) && !TomeManager.Instance.IsActive() && buttonAccept.gameObject.activeSelf)
+		{
+			buttonMore.gameObject.SetActive(value: false);
+			buttonLess.gameObject.SetActive(value: false);
+			buttonAccept.gameObject.SetActive(value: false);
+			MatchManager.Instance.AssignEnergyAction(0);
+		}
+	}
+
+	public void AssignEnergyAction()
+	{
+		if ((!(CardScreenManager.Instance != null) || !CardScreenManager.Instance.IsActive()) && !TomeManager.Instance.IsActive() && buttonAccept.gameObject.activeSelf)
+		{
+			buttonMore.gameObject.SetActive(value: false);
+			buttonLess.gameObject.SetActive(value: false);
+			buttonAccept.gameObject.SetActive(value: false);
+			MatchManager.Instance.AssignEnergyAction(currentEnergy);
+		}
+	}
+
+	public void AssignEnergyFromOutside(int _energy)
+	{
+		if (_energy > maxEnergy)
+		{
+			_energy = maxEnergy;
+		}
+		if (_energy > maxEnergyToBeAssigned)
+		{
+			_energy = maxEnergyToBeAssigned;
+		}
+		currentEnergy = _energy;
+		TextEnergy();
+	}
+
+	public void AssignEnergyMore()
+	{
+		if ((!(CardScreenManager.Instance != null) || !CardScreenManager.Instance.IsActive()) && !TomeManager.Instance.IsActive())
+		{
+			currentEnergy++;
+			if (currentEnergy > maxEnergy)
+			{
+				currentEnergy = maxEnergy;
+			}
+			if (currentEnergy > maxEnergyToBeAssigned)
+			{
+				currentEnergy = maxEnergyToBeAssigned;
+			}
+			ShareEnergy();
+			TextEnergy();
+		}
+	}
+
+	public void AssignEnergyLess()
+	{
+		if ((!(CardScreenManager.Instance != null) || !CardScreenManager.Instance.IsActive()) && !TomeManager.Instance.IsActive())
+		{
+			currentEnergy--;
+			if (currentEnergy < 0)
+			{
+				currentEnergy = 0;
+			}
+			ShareEnergy();
+			TextEnergy();
+		}
+	}
+
+	private void ShareEnergy()
+	{
+		if (GameManager.Instance.IsMultiplayer() && MatchManager.Instance.IsYourTurn())
+		{
+			MatchManager.Instance.AssignEnergyMultiplayer(currentEnergy);
+		}
+	}
 }

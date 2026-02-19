@@ -1,197 +1,244 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TMPro.TMP_TextEventHandler
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 
-#nullable disable
-namespace TMPro
+namespace TMPro;
+
+public class TMP_TextEventHandler : MonoBehaviour, IPointerEnterHandler, IEventSystemHandler, IPointerExitHandler
 {
-  public class TMP_TextEventHandler : 
-    MonoBehaviour,
-    IPointerEnterHandler,
-    IEventSystemHandler,
-    IPointerExitHandler
-  {
-    [SerializeField]
-    private TMP_TextEventHandler.CharacterSelectionEvent m_OnCharacterSelection = new TMP_TextEventHandler.CharacterSelectionEvent();
-    [SerializeField]
-    private TMP_TextEventHandler.SpriteSelectionEvent m_OnSpriteSelection = new TMP_TextEventHandler.SpriteSelectionEvent();
-    [SerializeField]
-    private TMP_TextEventHandler.WordSelectionEvent m_OnWordSelection = new TMP_TextEventHandler.WordSelectionEvent();
-    [SerializeField]
-    private TMP_TextEventHandler.LineSelectionEvent m_OnLineSelection = new TMP_TextEventHandler.LineSelectionEvent();
-    [SerializeField]
-    private TMP_TextEventHandler.LinkSelectionEvent m_OnLinkSelection = new TMP_TextEventHandler.LinkSelectionEvent();
-    private TMP_Text m_TextComponent;
-    private Camera m_Camera;
-    private Canvas m_Canvas;
-    private int m_selectedLink = -1;
-    private int m_lastCharIndex = -1;
-    private int m_lastWordIndex = -1;
-    private int m_lastLineIndex = -1;
+	[Serializable]
+	public class CharacterSelectionEvent : UnityEvent<char, int>
+	{
+	}
 
-    public TMP_TextEventHandler.CharacterSelectionEvent onCharacterSelection
-    {
-      get => this.m_OnCharacterSelection;
-      set => this.m_OnCharacterSelection = value;
-    }
+	[Serializable]
+	public class SpriteSelectionEvent : UnityEvent<char, int>
+	{
+	}
 
-    public TMP_TextEventHandler.SpriteSelectionEvent onSpriteSelection
-    {
-      get => this.m_OnSpriteSelection;
-      set => this.m_OnSpriteSelection = value;
-    }
+	[Serializable]
+	public class WordSelectionEvent : UnityEvent<string, int, int>
+	{
+	}
 
-    public TMP_TextEventHandler.WordSelectionEvent onWordSelection
-    {
-      get => this.m_OnWordSelection;
-      set => this.m_OnWordSelection = value;
-    }
+	[Serializable]
+	public class LineSelectionEvent : UnityEvent<string, int, int>
+	{
+	}
 
-    public TMP_TextEventHandler.LineSelectionEvent onLineSelection
-    {
-      get => this.m_OnLineSelection;
-      set => this.m_OnLineSelection = value;
-    }
+	[Serializable]
+	public class LinkSelectionEvent : UnityEvent<string, string, int>
+	{
+	}
 
-    public TMP_TextEventHandler.LinkSelectionEvent onLinkSelection
-    {
-      get => this.m_OnLinkSelection;
-      set => this.m_OnLinkSelection = value;
-    }
+	[SerializeField]
+	private CharacterSelectionEvent m_OnCharacterSelection = new CharacterSelectionEvent();
 
-    private void Awake()
-    {
-      this.m_TextComponent = this.gameObject.GetComponent<TMP_Text>();
-      if (this.m_TextComponent.GetType() == typeof (TextMeshProUGUI))
-      {
-        this.m_Canvas = this.gameObject.GetComponentInParent<Canvas>();
-        if (!((UnityEngine.Object) this.m_Canvas != (UnityEngine.Object) null))
-          return;
-        if (this.m_Canvas.renderMode == RenderMode.ScreenSpaceOverlay)
-          this.m_Camera = (Camera) null;
-        else
-          this.m_Camera = this.m_Canvas.worldCamera;
-      }
-      else
-        this.m_Camera = Camera.main;
-    }
+	[SerializeField]
+	private SpriteSelectionEvent m_OnSpriteSelection = new SpriteSelectionEvent();
 
-    private void LateUpdate()
-    {
-      if (!TMP_TextUtilities.IsIntersectingRectTransform(this.m_TextComponent.rectTransform, Input.mousePosition, this.m_Camera))
-        return;
-      int intersectingCharacter = TMP_TextUtilities.FindIntersectingCharacter(this.m_TextComponent, Input.mousePosition, this.m_Camera, true);
-      if (intersectingCharacter != -1 && intersectingCharacter != this.m_lastCharIndex)
-      {
-        this.m_lastCharIndex = intersectingCharacter;
-        switch (this.m_TextComponent.textInfo.characterInfo[intersectingCharacter].elementType)
-        {
-          case TMP_TextElementType.Character:
-            this.SendOnCharacterSelection(this.m_TextComponent.textInfo.characterInfo[intersectingCharacter].character, intersectingCharacter);
-            break;
-          case TMP_TextElementType.Sprite:
-            this.SendOnSpriteSelection(this.m_TextComponent.textInfo.characterInfo[intersectingCharacter].character, intersectingCharacter);
-            break;
-        }
-      }
-      int intersectingWord = TMP_TextUtilities.FindIntersectingWord(this.m_TextComponent, Input.mousePosition, this.m_Camera);
-      if (intersectingWord != -1 && intersectingWord != this.m_lastWordIndex)
-      {
-        this.m_lastWordIndex = intersectingWord;
-        TMP_WordInfo tmpWordInfo = this.m_TextComponent.textInfo.wordInfo[intersectingWord];
-        this.SendOnWordSelection(tmpWordInfo.GetWord(), tmpWordInfo.firstCharacterIndex, tmpWordInfo.characterCount);
-      }
-      int intersectingLine = TMP_TextUtilities.FindIntersectingLine(this.m_TextComponent, Input.mousePosition, this.m_Camera);
-      if (intersectingLine != -1 && intersectingLine != this.m_lastLineIndex)
-      {
-        this.m_lastLineIndex = intersectingLine;
-        TMP_LineInfo tmpLineInfo = this.m_TextComponent.textInfo.lineInfo[intersectingLine];
-        char[] chArray = new char[tmpLineInfo.characterCount];
-        for (int index = 0; index < tmpLineInfo.characterCount && index < this.m_TextComponent.textInfo.characterInfo.Length; ++index)
-          chArray[index] = this.m_TextComponent.textInfo.characterInfo[index + tmpLineInfo.firstCharacterIndex].character;
-        this.SendOnLineSelection(new string(chArray), tmpLineInfo.firstCharacterIndex, tmpLineInfo.characterCount);
-      }
-      int intersectingLink = TMP_TextUtilities.FindIntersectingLink(this.m_TextComponent, Input.mousePosition, this.m_Camera);
-      if (intersectingLink == -1 || intersectingLink == this.m_selectedLink)
-        return;
-      this.m_selectedLink = intersectingLink;
-      TMP_LinkInfo tmpLinkInfo = this.m_TextComponent.textInfo.linkInfo[intersectingLink];
-      this.SendOnLinkSelection(tmpLinkInfo.GetLinkID(), tmpLinkInfo.GetLinkText(), intersectingLink);
-    }
+	[SerializeField]
+	private WordSelectionEvent m_OnWordSelection = new WordSelectionEvent();
 
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-    }
+	[SerializeField]
+	private LineSelectionEvent m_OnLineSelection = new LineSelectionEvent();
 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-    }
+	[SerializeField]
+	private LinkSelectionEvent m_OnLinkSelection = new LinkSelectionEvent();
 
-    private void SendOnCharacterSelection(char character, int characterIndex)
-    {
-      if (this.onCharacterSelection == null)
-        return;
-      this.onCharacterSelection.Invoke(character, characterIndex);
-    }
+	private TMP_Text m_TextComponent;
 
-    private void SendOnSpriteSelection(char character, int characterIndex)
-    {
-      if (this.onSpriteSelection == null)
-        return;
-      this.onSpriteSelection.Invoke(character, characterIndex);
-    }
+	private Camera m_Camera;
 
-    private void SendOnWordSelection(string word, int charIndex, int length)
-    {
-      if (this.onWordSelection == null)
-        return;
-      this.onWordSelection.Invoke(word, charIndex, length);
-    }
+	private Canvas m_Canvas;
 
-    private void SendOnLineSelection(string line, int charIndex, int length)
-    {
-      if (this.onLineSelection == null)
-        return;
-      this.onLineSelection.Invoke(line, charIndex, length);
-    }
+	private int m_selectedLink = -1;
 
-    private void SendOnLinkSelection(string linkID, string linkText, int linkIndex)
-    {
-      if (this.onLinkSelection == null)
-        return;
-      this.onLinkSelection.Invoke(linkID, linkText, linkIndex);
-    }
+	private int m_lastCharIndex = -1;
 
-    [Serializable]
-    public class CharacterSelectionEvent : UnityEvent<char, int>
-    {
-    }
+	private int m_lastWordIndex = -1;
 
-    [Serializable]
-    public class SpriteSelectionEvent : UnityEvent<char, int>
-    {
-    }
+	private int m_lastLineIndex = -1;
 
-    [Serializable]
-    public class WordSelectionEvent : UnityEvent<string, int, int>
-    {
-    }
+	public CharacterSelectionEvent onCharacterSelection
+	{
+		get
+		{
+			return m_OnCharacterSelection;
+		}
+		set
+		{
+			m_OnCharacterSelection = value;
+		}
+	}
 
-    [Serializable]
-    public class LineSelectionEvent : UnityEvent<string, int, int>
-    {
-    }
+	public SpriteSelectionEvent onSpriteSelection
+	{
+		get
+		{
+			return m_OnSpriteSelection;
+		}
+		set
+		{
+			m_OnSpriteSelection = value;
+		}
+	}
 
-    [Serializable]
-    public class LinkSelectionEvent : UnityEvent<string, string, int>
-    {
-    }
-  }
+	public WordSelectionEvent onWordSelection
+	{
+		get
+		{
+			return m_OnWordSelection;
+		}
+		set
+		{
+			m_OnWordSelection = value;
+		}
+	}
+
+	public LineSelectionEvent onLineSelection
+	{
+		get
+		{
+			return m_OnLineSelection;
+		}
+		set
+		{
+			m_OnLineSelection = value;
+		}
+	}
+
+	public LinkSelectionEvent onLinkSelection
+	{
+		get
+		{
+			return m_OnLinkSelection;
+		}
+		set
+		{
+			m_OnLinkSelection = value;
+		}
+	}
+
+	private void Awake()
+	{
+		m_TextComponent = base.gameObject.GetComponent<TMP_Text>();
+		if (m_TextComponent.GetType() == typeof(TextMeshProUGUI))
+		{
+			m_Canvas = base.gameObject.GetComponentInParent<Canvas>();
+			if (m_Canvas != null)
+			{
+				if (m_Canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+				{
+					m_Camera = null;
+				}
+				else
+				{
+					m_Camera = m_Canvas.worldCamera;
+				}
+			}
+		}
+		else
+		{
+			m_Camera = Camera.main;
+		}
+	}
+
+	private void LateUpdate()
+	{
+		if (!TMP_TextUtilities.IsIntersectingRectTransform(m_TextComponent.rectTransform, Input.mousePosition, m_Camera))
+		{
+			return;
+		}
+		int num = TMP_TextUtilities.FindIntersectingCharacter(m_TextComponent, Input.mousePosition, m_Camera, visibleOnly: true);
+		if (num != -1 && num != m_lastCharIndex)
+		{
+			m_lastCharIndex = num;
+			switch (m_TextComponent.textInfo.characterInfo[num].elementType)
+			{
+			case TMP_TextElementType.Character:
+				SendOnCharacterSelection(m_TextComponent.textInfo.characterInfo[num].character, num);
+				break;
+			case TMP_TextElementType.Sprite:
+				SendOnSpriteSelection(m_TextComponent.textInfo.characterInfo[num].character, num);
+				break;
+			}
+		}
+		int num2 = TMP_TextUtilities.FindIntersectingWord(m_TextComponent, Input.mousePosition, m_Camera);
+		if (num2 != -1 && num2 != m_lastWordIndex)
+		{
+			m_lastWordIndex = num2;
+			TMP_WordInfo tMP_WordInfo = m_TextComponent.textInfo.wordInfo[num2];
+			SendOnWordSelection(tMP_WordInfo.GetWord(), tMP_WordInfo.firstCharacterIndex, tMP_WordInfo.characterCount);
+		}
+		int num3 = TMP_TextUtilities.FindIntersectingLine(m_TextComponent, Input.mousePosition, m_Camera);
+		if (num3 != -1 && num3 != m_lastLineIndex)
+		{
+			m_lastLineIndex = num3;
+			TMP_LineInfo tMP_LineInfo = m_TextComponent.textInfo.lineInfo[num3];
+			char[] array = new char[tMP_LineInfo.characterCount];
+			for (int i = 0; i < tMP_LineInfo.characterCount && i < m_TextComponent.textInfo.characterInfo.Length; i++)
+			{
+				array[i] = m_TextComponent.textInfo.characterInfo[i + tMP_LineInfo.firstCharacterIndex].character;
+			}
+			string line = new string(array);
+			SendOnLineSelection(line, tMP_LineInfo.firstCharacterIndex, tMP_LineInfo.characterCount);
+		}
+		int num4 = TMP_TextUtilities.FindIntersectingLink(m_TextComponent, Input.mousePosition, m_Camera);
+		if (num4 != -1 && num4 != m_selectedLink)
+		{
+			m_selectedLink = num4;
+			TMP_LinkInfo tMP_LinkInfo = m_TextComponent.textInfo.linkInfo[num4];
+			SendOnLinkSelection(tMP_LinkInfo.GetLinkID(), tMP_LinkInfo.GetLinkText(), num4);
+		}
+	}
+
+	public void OnPointerEnter(PointerEventData eventData)
+	{
+	}
+
+	public void OnPointerExit(PointerEventData eventData)
+	{
+	}
+
+	private void SendOnCharacterSelection(char character, int characterIndex)
+	{
+		if (onCharacterSelection != null)
+		{
+			onCharacterSelection.Invoke(character, characterIndex);
+		}
+	}
+
+	private void SendOnSpriteSelection(char character, int characterIndex)
+	{
+		if (onSpriteSelection != null)
+		{
+			onSpriteSelection.Invoke(character, characterIndex);
+		}
+	}
+
+	private void SendOnWordSelection(string word, int charIndex, int length)
+	{
+		if (onWordSelection != null)
+		{
+			onWordSelection.Invoke(word, charIndex, length);
+		}
+	}
+
+	private void SendOnLineSelection(string line, int charIndex, int length)
+	{
+		if (onLineSelection != null)
+		{
+			onLineSelection.Invoke(line, charIndex, length);
+		}
+	}
+
+	private void SendOnLinkSelection(string linkID, string linkText, int linkIndex)
+	{
+		if (onLinkSelection != null)
+		{
+			onLinkSelection.Invoke(linkID, linkText, linkIndex);
+		}
+	}
 }

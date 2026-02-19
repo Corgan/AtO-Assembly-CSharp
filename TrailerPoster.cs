@@ -1,49 +1,58 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TrailerPoster
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class TrailerPoster : MonoBehaviour
 {
-  public GameObject[] poster;
+	public GameObject[] poster;
 
-  public static TrailerPoster Instance { get; private set; }
+	public static TrailerPoster Instance { get; private set; }
 
-  private void Awake()
-  {
-    if ((Object) TrailerPoster.Instance == (Object) null)
-      TrailerPoster.Instance = this;
-    else if ((Object) TrailerPoster.Instance != (Object) this)
-      Object.Destroy((Object) this);
-    Object.DontDestroyOnLoad((Object) this.gameObject);
-  }
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(this);
+		}
+		Object.DontDestroyOnLoad(base.gameObject);
+	}
 
-  private void Update()
-  {
-    if (Input.GetKeyDown(KeyCode.Alpha1))
-      this.ShowPoster(0);
-    if (Input.GetKeyDown(KeyCode.Alpha2))
-      this.ShowPoster(1);
-    if (Input.GetKeyDown(KeyCode.Alpha3))
-      this.ShowPoster(2);
-    if (Input.GetKeyDown(KeyCode.Alpha4))
-      this.ShowPoster(3);
-    if (!Input.GetKeyDown(KeyCode.Alpha5))
-      return;
-    this.ShowPoster(4);
-  }
+	private void Update()
+	{
+		if (Input.GetKeyDown(KeyCode.Alpha1))
+		{
+			ShowPoster(0);
+		}
+		if (Input.GetKeyDown(KeyCode.Alpha2))
+		{
+			ShowPoster(1);
+		}
+		if (Input.GetKeyDown(KeyCode.Alpha3))
+		{
+			ShowPoster(2);
+		}
+		if (Input.GetKeyDown(KeyCode.Alpha4))
+		{
+			ShowPoster(3);
+		}
+		if (Input.GetKeyDown(KeyCode.Alpha5))
+		{
+			ShowPoster(4);
+		}
+	}
 
-  private void ShowPoster(int _poster)
-  {
-    Debug.Log((object) ("Show Poster " + _poster.ToString()));
-    for (int index = 0; index < this.poster.Length; ++index)
-      this.poster[index].gameObject.SetActive(false);
-    if (_poster >= this.poster.Length || !((Object) this.poster[_poster] != (Object) null))
-      return;
-    this.poster[_poster].gameObject.SetActive(true);
-  }
+	private void ShowPoster(int _poster)
+	{
+		Debug.Log("Show Poster " + _poster);
+		for (int i = 0; i < poster.Length; i++)
+		{
+			poster[i].gameObject.SetActive(value: false);
+		}
+		if (_poster < poster.Length && poster[_poster] != null)
+		{
+			poster[_poster].gameObject.SetActive(value: true);
+		}
+	}
 }

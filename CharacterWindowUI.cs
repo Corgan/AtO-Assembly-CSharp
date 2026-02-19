@@ -1,820 +1,1032 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CharacterWindowUI
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-#nullable disable
 public class CharacterWindowUI : MonoBehaviour
 {
-  public SpriteRenderer portraitSR;
-  public Transform exitButton;
-  public Transform nonCombatButtons;
-  public Transform combatButtons;
-  public Transform globalButtons;
-  public Transform npcButtons;
-  public Transform mainCharacterButtons;
-  public DeckEnergy deckEnergy;
-  public DeckWindowUI deckWindow;
-  public LevelWindowUI levelWindow;
-  public ItemsWindowUI itemsWindow;
-  public StatsWindowUI statsWindow;
-  public PerksWindowUI perksWindow;
-  public Image imageBg;
-  public Transform elements;
-  public Transform buttons;
-  public SpriteRenderer borderDecoBg;
-  public SpriteRenderer characterLevelSprite;
-  public TMP_Text characterLevelText;
-  public TMP_Text perkText;
-  public TraitLevel[] traitLevel;
-  public TMP_Text[] traitLevelText;
-  public Transform[] itemCardsBack;
-  public CardItem[] itemCardsCI;
-  public BotonGeneric botDeck;
-  public BotonGeneric botLevel;
-  public BotonGeneric botItems;
-  public BotonGeneric botStats;
-  public BotonGeneric botPerks;
-  public Transform botPerksSeparator;
-  public BotonGeneric botCombatDeck;
-  public BotonGeneric botCombatDiscard;
-  public BotonGeneric botCombatVanish;
-  public BotonGeneric botNPCCasted;
-  public BotonGeneric botNPCStats;
-  [SerializeField]
-  private GameObject botLevelupCharacter;
-  private SubClassData currentSCD;
-  private Hero currentHero;
-  private NPC currentNPC;
-  public int heroIndex;
-  private int npcIndex = -1;
-  private string activeTab = "deck";
-  private Coroutine coroutineMask;
-  private bool windowActive;
-  public List<BotonGeneric> allButtons;
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
+	public SpriteRenderer portraitSR;
 
-  private void Awake() => this.HideAllWindows();
+	public Transform exitButton;
 
-  private void Start()
-  {
-    this.Resize();
-    this.botLevelupCharacter.SetActive(false);
-    if (!GameManager.Instance.GetDeveloperMode() || !(SceneManager.GetActiveScene().name == "Map"))
-      return;
-    this.botLevelupCharacter.SetActive(true);
-  }
+	public Transform nonCombatButtons;
 
-  public void Resize()
-  {
-    this.GetComponent<RectTransform>().sizeDelta = new Vector2(Globals.Instance.sizeW, Globals.Instance.sizeH);
-    this.exitButton.transform.localPosition = new Vector3((float) (-(double) Globals.Instance.sizeW * 0.5 + 1.0 * (double) Globals.Instance.multiplierX), (float) (-(double) Globals.Instance.sizeH * 0.5 + 3.9000000953674316 * (double) Globals.Instance.multiplierY), this.exitButton.transform.localPosition.z);
-  }
+	public Transform combatButtons;
 
-  public bool IsActive() => this.elements.gameObject.activeSelf;
+	public Transform globalButtons;
 
-  public void ShowUpgradedCards(List<string> upgradedCards)
-  {
-    if (upgradedCards.Count <= 0)
-      return;
-    this.HideButtons();
-    this.Show("unlockedCards", -2);
-    this.deckWindow.ShowUpgradedCards(upgradedCards);
-  }
+	public Transform npcButtons;
 
-  public void ShowUnlockedCards(List<string> unlockedCards)
-  {
-    if (unlockedCards.Count <= 0)
-      return;
-    this.HideButtons();
-    this.Show(nameof (unlockedCards), -2);
-    this.deckWindow.ShowUnlockedCards(unlockedCards);
-  }
+	public Transform mainCharacterButtons;
 
-  public void Show(string _element = "", int _heroIndex = -1, bool isHero = true)
-  {
-    if (!this.IsActive() && _element != "unlockedCards")
-      GameManager.Instance.PlayLibraryAudio("action_bag");
-    this.gameObject.SetActive(true);
-    PopupManager.Instance.ClosePopup();
-    this.portraitSR.gameObject.SetActive(false);
-    this.npcButtons.gameObject.SetActive(false);
-    this.globalButtons.gameObject.SetActive(true);
-    if ((bool) (Object) MatchManager.Instance)
-      this.globalButtons.transform.localPosition = new Vector3(this.globalButtons.transform.localPosition.x, -0.7f, this.globalButtons.transform.localPosition.z);
-    else
-      this.globalButtons.transform.localPosition = new Vector3(this.globalButtons.transform.localPosition.x, 0.0f, this.globalButtons.transform.localPosition.z);
-    if (GameManager.Instance.IsObeliskChallenge())
-    {
-      this.botPerks.gameObject.SetActive(false);
-      this.botPerksSeparator.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.botPerks.gameObject.SetActive(true);
-      this.botPerksSeparator.gameObject.SetActive(true);
-    }
-    if (isHero)
-      this.npcIndex = -1;
-    if (_element != "unlockedCards")
-    {
-      if (!(bool) (Object) MatchManager.Instance)
-      {
-        this.combatButtons.gameObject.SetActive(false);
-        this.nonCombatButtons.gameObject.SetActive(true);
-      }
-      else
-      {
-        this.combatButtons.gameObject.SetActive(true);
-        this.nonCombatButtons.gameObject.SetActive(false);
-      }
-      this.ShowMask(true);
-      if (isHero)
-      {
-        this.buttons.gameObject.SetActive(true);
-        if (_heroIndex == -1)
-          _heroIndex = this.heroIndex;
-        if (_heroIndex > -1)
-        {
-          this.heroIndex = _heroIndex;
-          this.currentHero = AtOManager.Instance.GetHero(this.heroIndex);
-          if ((Object) this.currentHero.HeroData == (Object) null)
-            return;
-          this.currentSCD = this.currentHero.HeroData.HeroSubClass;
-          if (this.currentSCD.MainCharacter)
-            this.mainCharacterButtons.gameObject.SetActive(true);
-          else
-            this.mainCharacterButtons.gameObject.SetActive(false);
-        }
-      }
-      else if ((Object) MatchManager.Instance != (Object) null)
-      {
-        this.npcIndex = _heroIndex != -1 ? (this.heroIndex = _heroIndex) : this.heroIndex;
-        this.currentNPC = MatchManager.Instance.GetNPCCharacter(this.npcIndex);
-        if (this.currentNPC == null)
-          return;
-      }
-      this.deckEnergy.gameObject.SetActive(true);
-    }
-    else
-    {
-      this.ShowMask(true, true);
-      this.deckEnergy.gameObject.SetActive(false);
-    }
-    if (_element == "")
-      _element = this.windowActive || !this.currentHero.IsReadyForLevelUp() ? this.activeTab : "level";
-    if (_element != "perks")
-    {
-      this.activeTab = _element;
-      this.HideAllWindows(_element);
-    }
-    switch (_element)
-    {
-      case "deck":
-        this.deckWindow.Show(_heroIndex);
-        this.botDeck.Disable();
-        this.botDeck.SetTextColor(new Color(1f, 0.6f, 0.07f));
-        this.botDeck.transform.localPosition = new Vector3(7.4f, this.botDeck.transform.localPosition.y, this.botDeck.transform.localPosition.z);
-        if (!((Object) RewardsManager.Instance != (Object) null))
-        {
-          int num1 = (Object) LootManager.Instance != (Object) null ? 1 : 0;
-        }
-        if ((Object) CardCraftManager.Instance != (Object) null)
-          CardCraftManager.Instance.gameObject.SetActive(false);
-        this.deckEnergy.WriteEnergy(_heroIndex, 0);
-        break;
-      case "combatdeck":
-        this.deckWindow.Show(_heroIndex);
-        this.botCombatDeck.Disable();
-        this.botCombatDeck.SetTextColor(new Color(1f, 0.6f, 0.07f));
-        this.botCombatDeck.transform.localPosition = new Vector3(7.4f, this.botCombatDeck.transform.localPosition.y, this.botCombatDeck.transform.localPosition.z);
-        this.deckEnergy.WriteEnergy(_heroIndex, 1);
-        break;
-      case "combatdiscard":
-        if (isHero)
-        {
-          this.deckWindow.Show(_heroIndex, discard: true);
-          this.botCombatDiscard.Disable();
-          this.botCombatDiscard.SetTextColor(new Color(1f, 0.6f, 0.07f));
-          this.botCombatDiscard.transform.localPosition = new Vector3(7.4f, this.botCombatDiscard.transform.localPosition.y, this.botCombatDiscard.transform.localPosition.z);
-          this.deckEnergy.WriteEnergy(_heroIndex, 2);
-          break;
-        }
-        this.deckEnergy.gameObject.SetActive(false);
-        this.portraitSR.gameObject.SetActive(true);
-        this.portraitSR.sprite = this.currentNPC.SpritePortrait;
-        List<string> listCards = new List<string>();
-        List<string> npcCardsCastedList = MatchManager.Instance.GetNPCCardsCastedList(this.currentNPC.InternalId);
-        for (int index = npcCardsCastedList.Count - 1; index >= 0; --index)
-          listCards.Add(npcCardsCastedList[index]);
-        this.deckWindow.Show(this.npcIndex, listCards, sort: false);
-        this.deckWindow.HideInjury();
-        this.deckWindow.SetTitle(Texts.Instance.GetText("heroCastedCards").Replace("<hero>", this.currentNPC.SourceName), listCards.Count);
-        this.buttons.gameObject.SetActive(true);
-        this.nonCombatButtons.gameObject.SetActive(false);
-        this.combatButtons.gameObject.SetActive(false);
-        this.globalButtons.gameObject.SetActive(false);
-        this.npcButtons.gameObject.SetActive(true);
-        this.botNPCCasted.Disable();
-        this.botNPCCasted.SetTextColor(new Color(1f, 0.6f, 0.07f));
-        this.botNPCCasted.transform.localPosition = new Vector3(7.4f, this.botNPCCasted.transform.localPosition.y, this.botNPCCasted.transform.localPosition.z);
-        break;
-      case "combatvanish":
-        this.deckEnergy.WriteEnergy(_heroIndex, 3);
-        List<string> heroVanish = MatchManager.Instance.GetHeroVanish(_heroIndex);
-        this.deckWindow.Show(0, heroVanish, sort: false);
-        this.deckWindow.HideInjury();
-        this.deckWindow.SetTitle(Texts.Instance.GetText("heroVanishedCards").Replace("<hero>", this.currentHero.SourceName), heroVanish.Count);
-        this.botCombatVanish.Disable();
-        this.botCombatVanish.SetTextColor(new Color(1f, 0.6f, 0.07f));
-        this.botCombatVanish.transform.localPosition = new Vector3(7.4f, this.botCombatVanish.transform.localPosition.y, this.botCombatVanish.transform.localPosition.z);
-        break;
-      case "level":
-        this.levelWindow.Show(_heroIndex);
-        this.botLevel.Disable();
-        this.botLevel.SetTextColor(new Color(1f, 0.6f, 0.07f));
-        this.botLevel.transform.localPosition = new Vector3(7.4f, this.botLevel.transform.localPosition.y, this.botLevel.transform.localPosition.z);
-        this.DoLevelWindow();
-        break;
-      case "perks":
-        PerkTree.Instance.Show(this.currentHero.HeroData.HeroSubClass.Id, this.heroIndex);
-        break;
-      case "items":
-        this.botItems.Disable();
-        this.botItems.SetTextColor(new Color(1f, 0.6f, 0.07f));
-        this.botItems.transform.localPosition = new Vector3(7.4f, this.botItems.transform.localPosition.y, this.botItems.transform.localPosition.z);
-        this.DoItemsWindow();
-        break;
-      case "deckreward":
-        this.deckWindow.Show(_heroIndex);
-        this.botDeck.Disable();
-        this.botDeck.SetTextColor(new Color(1f, 0.6f, 0.07f));
-        this.botDeck.transform.localPosition = new Vector3(7.4f, this.botDeck.transform.localPosition.y, this.botDeck.transform.localPosition.z);
-        break;
-      case "stats":
-        if (isHero)
-        {
-          this.statsWindow.DoStats((Character) this.currentHero);
-          this.botStats.Disable();
-          this.botStats.SetTextColor(new Color(1f, 0.6f, 0.07f));
-          this.botStats.transform.localPosition = new Vector3(7.4f, this.botStats.transform.localPosition.y, this.botStats.transform.localPosition.z);
-          break;
-        }
-        this.portraitSR.gameObject.SetActive(true);
-        this.portraitSR.sprite = this.currentNPC.SpritePortrait;
-        this.buttons.gameObject.SetActive(true);
-        this.nonCombatButtons.gameObject.SetActive(false);
-        this.combatButtons.gameObject.SetActive(false);
-        this.globalButtons.gameObject.SetActive(false);
-        this.npcButtons.gameObject.SetActive(true);
-        this.statsWindow.DoStats((Character) this.currentNPC);
-        this.botNPCStats.Disable();
-        this.botNPCStats.SetTextColor(new Color(1f, 0.6f, 0.07f));
-        this.botNPCStats.transform.localPosition = new Vector3(7.4f, this.botNPCStats.transform.localPosition.y, this.botNPCStats.transform.localPosition.z);
-        break;
-      default:
-        int num2 = _element == "unlockedCards" ? 1 : 0;
-        break;
-    }
-    this.windowActive = true;
-    if (!isHero || !(_element != "unlockedCards"))
-      return;
-    if ((Object) MapManager.Instance != (Object) null)
-      MapManager.Instance.sideCharacters.InCharacterScreen(true);
-    else if ((Object) TownManager.Instance != (Object) null)
-    {
-      TownManager.Instance.sideCharacters.InCharacterScreen(true);
-    }
-    else
-    {
-      if (!((Object) MatchManager.Instance != (Object) null))
-        return;
-      MatchManager.Instance.sideCharacters.InCharacterScreen(true);
-    }
-  }
+	public DeckEnergy deckEnergy;
 
-  public void GrantExperienceForLevelUp()
-  {
-    if (this.currentHero == null)
-      return;
-    this.currentHero.GrantExperience(Globals.Instance.GetExperienceByLevel(this.currentHero.Level) - this.currentHero.Experience);
-  }
+	public DeckWindowUI deckWindow;
 
-  public void ShowMask(bool state, bool instant = false)
-  {
-    if (this.coroutineMask != null)
-      this.StopCoroutine(this.coroutineMask);
-    this.coroutineMask = this.StartCoroutine(this.ShowMaskCo(state, true));
-  }
+	public LevelWindowUI levelWindow;
 
-  private IEnumerator ShowMaskCo(bool state, bool instant)
-  {
-    float maxAlplha = 0.935f;
-    float step = 0.07f;
-    if (instant)
-    {
-      this.imageBg.color = new Color(0.0f, 0.0f, 0.0f, maxAlplha);
-    }
-    else
-    {
-      float index = this.imageBg.color.a;
-      if (!state)
-      {
-        while ((double) index > 0.0)
-        {
-          this.imageBg.color = new Color(0.0f, 0.0f, 0.0f, index);
-          index -= step;
-          yield return (object) null;
-        }
-        this.imageBg.color = new Color(0.0f, 0.0f, 0.0f, 0.0f);
-      }
-      else
-      {
-        while ((double) index < (double) maxAlplha)
-        {
-          this.imageBg.color = new Color(0.0f, 0.0f, 0.0f, index);
-          index += step;
-          yield return (object) null;
-        }
-        this.imageBg.color = new Color(0.0f, 0.0f, 0.0f, maxAlplha);
-      }
-    }
-  }
+	public ItemsWindowUI itemsWindow;
 
-  public void ReDrawLevel()
-  {
-    if (this.currentHero == null)
-      return;
-    this.DrawLevelButtons(this.currentHero.Level, this.currentHero.IsReadyForLevelUp());
-  }
+	public StatsWindowUI statsWindow;
 
-  private void DoPerksWindow()
-  {
-    if (this.currentHero == null)
-      this.Hide();
-    else
-      this.perksWindow.DoPerks(this.currentHero);
-  }
+	public PerksWindowUI perksWindow;
 
-  private void DoLevelWindow()
-  {
-    if (this.currentHero == null)
-    {
-      this.Hide();
-    }
-    else
-    {
-      int level = this.currentHero.Level;
-      bool levelUp = this.currentHero.IsReadyForLevelUp();
-      string str = Globals.Instance.ClassColor[this.currentHero.ClassName];
-      this.characterLevelSprite.sprite = this.currentHero.HeroData.HeroSubClass.SpriteBorder;
-      this.DrawLevelButtons(level, levelUp);
-    }
-  }
+	public Image imageBg;
 
-  private void DrawLevelButtons(int heroLevel, bool levelUp)
-  {
-    string _color = Globals.Instance.ClassColor[this.currentHero.ClassName];
-    StringBuilder stringBuilder1 = new StringBuilder();
-    stringBuilder1.Append("<size=+2>");
-    stringBuilder1.Append(Texts.Instance.GetText("levelNumber").Replace("<N>", heroLevel.ToString()));
-    stringBuilder1.Append("</size>");
-    stringBuilder1.Append("\n");
-    stringBuilder1.Append("<sprite name=experience> <color=#FC0>");
-    stringBuilder1.Append(this.currentHero.Experience);
-    stringBuilder1.Append("/");
-    stringBuilder1.Append(Globals.Instance.GetExperienceByLevel(heroLevel));
-    stringBuilder1.Append("</color>");
-    this.characterLevelText.text = stringBuilder1.ToString();
-    int characterTier = PlayerManager.Instance.GetCharacterTier("", "trait", this.currentHero.PerkRank);
-    TraitData traitData1 = this.GetTraitData(0, 2);
-    this.traitLevel[0].SetColor(_color);
-    this.traitLevel[0].SetPosition(0);
-    this.traitLevel[0].SetEnable(true);
-    this.traitLevel[0].SetTrait(traitData1, characterTier);
-    for (int level = 1; level < 5; ++level)
-    {
-      bool _state1 = false;
-      bool _state2 = false;
-      int index1 = level * 2;
-      int index2 = index1 + 1;
-      TraitData traitData2 = this.GetTraitData(level);
-      if (level < heroLevel)
-      {
-        if (this.currentHero.HaveTrait(traitData2.Id))
-          _state2 = true;
-      }
-      else if (level == heroLevel & levelUp && (this.currentHero.Owner == null || this.currentHero.Owner == "" || this.currentHero.Owner == NetworkManager.Instance.GetPlayerNick()))
-        _state1 = true;
-      this.traitLevel[index1].SetHeroIndex(this.heroIndex);
-      this.traitLevel[index1].SetColor(_color);
-      this.traitLevel[index1].SetPosition(1);
-      this.traitLevel[index1].SetEnable(_state2);
-      this.traitLevel[index1].SetActive(_state1);
-      this.traitLevel[index1].SetTrait(traitData2, characterTier);
-      TraitData traitData3 = this.GetTraitData(level, 1);
-      bool _state3 = false;
-      bool _state4 = false;
-      if (level < heroLevel)
-      {
-        if (this.currentHero.HaveTrait(traitData3.Id))
-          _state3 = true;
-      }
-      else if (level == heroLevel & levelUp && (this.currentHero.Owner == null || this.currentHero.Owner == "" || this.currentHero.Owner == NetworkManager.Instance.GetPlayerNick()))
-        _state4 = true;
-      this.traitLevel[index2].SetHeroIndex(this.heroIndex);
-      this.traitLevel[index2].SetColor(_color);
-      this.traitLevel[index2].SetPosition(2);
-      this.traitLevel[index2].SetEnable(_state3);
-      this.traitLevel[index2].SetActive(_state4);
-      this.traitLevel[index2].SetTrait(traitData3, characterTier);
-      StringBuilder stringBuilder2 = new StringBuilder();
-      bool flag = false;
-      if ((level < heroLevel || level == heroLevel & levelUp) && (this.currentHero.Owner == null || this.currentHero.Owner == "" || this.currentHero.Owner == NetworkManager.Instance.GetPlayerNick()))
-        flag = true;
-      stringBuilder2.Append("<size=+.4>");
-      if (flag)
-        stringBuilder2.Append("<color=#FC0>");
-      stringBuilder2.Append(Texts.Instance.GetText("levelNumber").Replace("<N>", (level + 1).ToString()));
-      if (flag)
-        stringBuilder2.Append("</color>");
-      stringBuilder2.Append("</size>");
-      stringBuilder2.Append("\n");
-      if (flag)
-        stringBuilder2.Append("<color=#EE5A3C>");
-      stringBuilder2.Append(Texts.Instance.GetText("incrementMaxHp").Replace("<N>", this.currentSCD.MaxHp[level].ToString()));
-      if (flag)
-        stringBuilder2.Append("</color>");
-      this.traitLevelText[level].text = stringBuilder2.ToString();
-    }
-  }
+	public Transform elements;
 
-  private TraitData GetTraitData(int level, int index = 0)
-  {
-    if (index == 2 && level > 0)
-      return Globals.Instance.GetTraitData(this.currentHero.Traits[level]);
-    switch (level)
-    {
-      case 0:
-        return this.currentSCD.Trait0;
-      case 1:
-        return index == 0 ? this.currentSCD.Trait1A : this.currentSCD.Trait1B;
-      case 2:
-        return index == 0 ? this.currentSCD.Trait2A : this.currentSCD.Trait2B;
-      case 3:
-        return index == 0 ? this.currentSCD.Trait3A : this.currentSCD.Trait3B;
-      case 4:
-        return index == 0 ? this.currentSCD.Trait4A : this.currentSCD.Trait4B;
-      default:
-        return (TraitData) null;
-    }
-  }
+	public Transform buttons;
 
-  private void SetCardbacks()
-  {
-    string cardbackUsed = this.currentHero.CardbackUsed;
-    if (!(cardbackUsed != ""))
-      return;
-    CardbackData cardbackData = Globals.Instance.GetCardbackData(cardbackUsed);
-    if ((Object) cardbackData == (Object) null)
-      cardbackData = Globals.Instance.GetCardbackData(Globals.Instance.GetCardbackBaseIdBySubclass(this.currentHero.HeroData.HeroSubClass.Id));
-    if ((Object) cardbackData == (Object) null)
-      return;
-    Sprite cardbackSprite = cardbackData.CardbackSprite;
-    if (!((Object) cardbackSprite != (Object) null))
-      return;
-    for (int index = 0; index < this.itemCardsBack.Length; ++index)
-    {
-      if ((Object) this.itemCardsBack[index] != (Object) null)
-        this.itemCardsBack[index].GetComponent<SpriteRenderer>().sprite = cardbackSprite;
-    }
-  }
+	public SpriteRenderer borderDecoBg;
 
-  private void DoItemsWindow()
-  {
-    this.SetCardbacks();
-    for (int index = 0; index < 5; ++index)
-    {
-      string id = "";
-      if (index == 0)
-        id = this.currentHero.Weapon;
-      else if (index == 1)
-        id = this.currentHero.Armor;
-      else if (index == 2)
-        id = this.currentHero.Jewelry;
-      else if (index == 3)
-        id = this.currentHero.Accesory;
-      else if (index == 4)
-        id = this.currentHero.Pet;
-      if (id != "")
-      {
-        CardItem cardItem = this.itemCardsCI[index];
-        cardItem.SetCard(id, _theHero: this.currentHero, GetFromGlobal: true);
-        cardItem.TopLayeringOrder("UI", 20000);
-        cardItem.transform.localScale = Vector3.zero;
-        cardItem.SetDestinationLocalScale(1.25f);
-        cardItem.cardmakebig = true;
-        cardItem.cardmakebigSize = 1.25f;
-        cardItem.cardmakebigSizeMax = 1.4f;
-        cardItem.active = true;
-        cardItem.lockPosition = true;
-        this.itemCardsBack[index].gameObject.SetActive(false);
-        this.itemCardsCI[index].transform.gameObject.SetActive(true);
-      }
-      else
-      {
-        this.itemCardsBack[index].gameObject.SetActive(true);
-        this.itemCardsCI[index].transform.gameObject.SetActive(false);
-      }
-    }
-  }
+	public SpriteRenderer characterLevelSprite;
 
-  public void Hide(bool goToDivination = false)
-  {
-    if (!this.IsActive())
-      return;
-    Functions.DebugLogGD("CHARACTERWINDOW Hide", "trace");
-    this.deckWindow.DestroyDeck();
-    this.HideAllWindows();
-    this.heroIndex = 0;
-    this.activeTab = "deck";
-    this.windowActive = false;
-    if (goToDivination)
-      return;
-    if ((Object) CardCraftManager.Instance != (Object) null)
-    {
-      CardCraftManager.Instance.gameObject.SetActive(true);
-      if ((Object) TownManager.Instance != (Object) null)
-      {
-        TownManager.Instance.sideCharacters.ResetCharacters();
-      }
-      else
-      {
-        if (!((Object) MapManager.Instance != (Object) null))
-          return;
-        MapManager.Instance.sideCharacters.ResetCharacters();
-      }
-    }
-    else if ((Object) MapManager.Instance != (Object) null)
-    {
-      MapManager.Instance.sideCharacters.ResetCharacters();
-      if (!(bool) (Object) EventManager.Instance)
-        MapManager.Instance.sideCharacters.InCharacterScreen(false);
-      MapManager.Instance.HideCharacterWindow();
-    }
-    else if ((Object) TownManager.Instance != (Object) null)
-    {
-      TownManager.Instance.sideCharacters.ResetCharacters();
-      TownManager.Instance.HideCharacterWindow();
-    }
-    else
-    {
-      if (!((Object) MatchManager.Instance != (Object) null))
-        return;
-      MatchManager.Instance.sideCharacters.ResetCharacters();
-      MatchManager.Instance.sideCharacters.InCharacterScreen(false);
-      MatchManager.Instance.HideCharacterWindow();
-      MatchManager.Instance.ResetController();
-    }
-  }
+	public TMP_Text characterLevelText;
 
-  private void HideButtons() => this.buttons.gameObject.SetActive(false);
+	public TMP_Text perkText;
 
-  public void HideAllWindows(string _element = "")
-  {
-    if ((bool) (Object) GameManager.Instance)
-      GameManager.Instance.CleanTempContainer();
-    if ((bool) (Object) PopupManager.Instance)
-      PopupManager.Instance.ClosePopup();
-    if (this.buttons.gameObject.activeSelf)
-    {
-      this.botDeck.Enable();
-      this.botDeck.SetTextColor(Color.white);
-      this.botDeck.transform.localPosition = new Vector3(7.6f, this.botDeck.transform.localPosition.y, this.botDeck.transform.localPosition.z);
-      this.botLevel.Enable();
-      this.botLevel.SetTextColor(Color.white);
-      this.botLevel.transform.localPosition = new Vector3(7.6f, this.botLevel.transform.localPosition.y, this.botLevel.transform.localPosition.z);
-      this.botItems.Enable();
-      this.botItems.SetTextColor(Color.white);
-      this.botItems.transform.localPosition = new Vector3(7.6f, this.botItems.transform.localPosition.y, this.botItems.transform.localPosition.z);
-      this.botStats.Enable();
-      this.botStats.SetTextColor(Color.white);
-      this.botStats.transform.localPosition = new Vector3(7.6f, this.botStats.transform.localPosition.y, this.botStats.transform.localPosition.z);
-      this.botPerks.Enable();
-      this.botPerks.SetTextColor(Color.white);
-      this.botPerks.transform.localPosition = new Vector3(7.6f, this.botPerks.transform.localPosition.y, this.botPerks.transform.localPosition.z);
-      this.botCombatDeck.Enable();
-      this.botCombatDeck.SetTextColor(Color.white);
-      this.botCombatDeck.transform.localPosition = new Vector3(7.6f, this.botCombatDeck.transform.localPosition.y, this.botCombatDeck.transform.localPosition.z);
-      this.botCombatDiscard.Enable();
-      this.botCombatDiscard.SetTextColor(Color.white);
-      this.botCombatDiscard.transform.localPosition = new Vector3(7.6f, this.botCombatDiscard.transform.localPosition.y, this.botCombatDiscard.transform.localPosition.z);
-      this.botCombatVanish.Enable();
-      this.botCombatVanish.SetTextColor(Color.white);
-      this.botCombatVanish.transform.localPosition = new Vector3(7.6f, this.botCombatVanish.transform.localPosition.y, this.botCombatVanish.transform.localPosition.z);
-      this.botNPCStats.Enable();
-      this.botNPCStats.SetTextColor(Color.white);
-      this.botNPCStats.transform.localPosition = new Vector3(7.6f, this.botNPCStats.transform.localPosition.y, this.botNPCStats.transform.localPosition.z);
-      this.botNPCCasted.Enable();
-      this.botNPCCasted.SetTextColor(Color.white);
-      this.botNPCCasted.transform.localPosition = new Vector3(7.6f, this.botNPCCasted.transform.localPosition.y, this.botNPCCasted.transform.localPosition.z);
-    }
-    if (_element != "deck" && _element != "combatdeck" && _element != "combatdiscard" && _element != "combatvanish")
-      this.deckWindow.gameObject.SetActive(false);
-    else
-      this.deckWindow.gameObject.SetActive(true);
-    if (_element != "level")
-      this.levelWindow.gameObject.SetActive(false);
-    else
-      this.levelWindow.gameObject.SetActive(true);
-    if (_element != "items")
-      this.itemsWindow.gameObject.SetActive(false);
-    else
-      this.itemsWindow.gameObject.SetActive(true);
-    if (_element != "stats")
-      this.statsWindow.gameObject.SetActive(false);
-    else
-      this.statsWindow.gameObject.SetActive(true);
-    if (_element != "perks")
-      this.perksWindow.gameObject.SetActive(false);
-    else
-      this.perksWindow.gameObject.SetActive(true);
-    if (_element == "unlockedCards")
-      this.deckWindow.gameObject.SetActive(true);
-    if (_element == "")
-      this.elements.gameObject.SetActive(false);
-    else
-      this.elements.gameObject.SetActive(true);
-  }
+	public TraitLevel[] traitLevel;
 
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    bool shoulderLeft = false,
-    bool shoulderRight = false)
-  {
-    this._controllerList.Clear();
-    for (int index = 0; index < this.allButtons.Count; ++index)
-    {
-      if (!((Object) this.allButtons[index] == (Object) null) && this.allButtons[index].IsEnabled() && Functions.TransformIsVisible(this.allButtons[index].transform))
-        this._controllerList.Add(this.allButtons[index].transform);
-    }
-    for (int index = 0; index < 4; ++index)
-    {
-      if ((bool) (Object) TownManager.Instance)
-      {
-        if (Functions.TransformIsVisible(TownManager.Instance.sideCharacters.charArray[index].transform))
-          this._controllerList.Add(TownManager.Instance.sideCharacters.charArray[index].transform.GetChild(0).transform);
-      }
-      else if ((bool) (Object) MapManager.Instance)
-      {
-        if (Functions.TransformIsVisible(MapManager.Instance.sideCharacters.charArray[index].transform))
-          this._controllerList.Add(MapManager.Instance.sideCharacters.charArray[index].transform.GetChild(0).transform);
-      }
-      else if ((bool) (Object) MatchManager.Instance && Functions.TransformIsVisible(MatchManager.Instance.sideCharacters.charArray[index].transform))
-        this._controllerList.Add(MatchManager.Instance.sideCharacters.charArray[index].transform.GetChild(0).transform);
-    }
-    if (this.deckWindow.gameObject.activeSelf)
-    {
-      for (int index = 0; index < this.deckWindow.injuryContent.transform.childCount; ++index)
-        this._controllerList.Add(this.deckWindow.injuryContent.transform.GetChild(index));
-      for (int index = 0; index < this.deckWindow.deckContent.transform.childCount; ++index)
-        this._controllerList.Add(this.deckWindow.deckContent.transform.GetChild(index));
-    }
-    else if (this.levelWindow.gameObject.activeSelf)
-    {
-      this._controllerList.Add(this.traitLevel[0].transform);
-      this._controllerList.Add(this.traitLevel[2].transform);
-      this._controllerList.Add(this.traitLevel[3].transform);
-      this._controllerList.Add(this.traitLevel[4].transform);
-      this._controllerList.Add(this.traitLevel[5].transform);
-      this._controllerList.Add(this.traitLevel[6].transform);
-      this._controllerList.Add(this.traitLevel[7].transform);
-      this._controllerList.Add(this.traitLevel[8].transform);
-      this._controllerList.Add(this.traitLevel[9].transform);
-    }
-    else if (this.itemsWindow.gameObject.activeSelf)
-    {
-      for (int index = 0; index < this.itemCardsCI.Length; ++index)
-      {
-        if (this.itemCardsCI[index].transform.gameObject.activeSelf)
-          this._controllerList.Add(this.itemCardsCI[index].transform);
-      }
-    }
-    this._controllerList.Add(this.exitButton);
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((Object) this._controllerList[this.controllerHorizontalIndex] != (Object) null))
-      return;
-    if ((bool) (Object) this._controllerList[this.controllerHorizontalIndex].GetComponent<CardItem>())
-    {
-      Canvas.ForceUpdateCanvases();
-      Vector3 zero = Vector3.zero with
-      {
-        y = -1.425f - this._controllerList[this.controllerHorizontalIndex].localPosition.y
-      };
-      this.deckWindow.scrollContent.transform.GetChild(0).GetComponent<RectTransform>().anchoredPosition = (Vector2) Vector3.zero;
-      this.deckWindow.scrollContent.GetComponent<RectTransform>().anchoredPosition = (Vector2) zero;
-    }
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
+	public TMP_Text[] traitLevelText;
 
-  private void ControllerNextCharacter()
-  {
-    if (this.npcIndex != -1)
-      return;
-    int index = this.heroIndex;
-    if ((bool) (Object) CardCraftManager.Instance)
-      index = CardCraftManager.Instance.heroIndex;
-    bool flag = false;
-    while (!flag)
-    {
-      ++index;
-      if (index > 3)
-        index = 0;
-      if (AtOManager.Instance.GetHero(index) != null && (Object) AtOManager.Instance.GetHero(index).HeroData != (Object) null)
-        flag = true;
-    }
-    GameObject gameObject = GameObject.Find("/SideCharacters/OverCharacter" + index.ToString());
-    if ((Object) gameObject != (Object) null)
-      gameObject.transform.GetComponent<OverCharacter>().Clicked();
-    if (!PerkTree.Instance.IsActive())
-      return;
-    this.ControllerNextOption();
-  }
+	public Transform[] itemCardsBack;
 
-  private void ControllerNextOption()
-  {
-    Debug.Log((object) (nameof (ControllerNextOption) + PerkTree.Instance.IsActive().ToString()));
-    bool flag = false;
-    if (PerkTree.Instance.IsActive())
-      flag = true;
-    int num = -1;
-    if (flag)
-    {
-      PerkTree.Instance.HideAction(false);
-      for (int index = 0; index < this.allButtons.Count; ++index)
-      {
-        if (!((Object) this.allButtons[index] == (Object) null) && this.allButtons[index].IsEnabled() && Functions.TransformIsVisible(this.allButtons[index].transform))
-        {
-          this.allButtons[index].Clicked();
-          break;
-        }
-      }
-    }
-    else
-    {
-      for (int index = 0; index < this.allButtons.Count; ++index)
-      {
-        if (!((Object) this.allButtons[index] == (Object) null) && !this.allButtons[index].IsEnabled() && Functions.TransformIsVisible(this.allButtons[index].transform))
-        {
-          num = index;
-          break;
-        }
-      }
-      if (num <= -1)
-        return;
-      for (int index = num; index < this.allButtons.Count; ++index)
-      {
-        if (!((Object) this.allButtons[index] == (Object) null) && this.allButtons[index].IsEnabled() && Functions.TransformIsVisible(this.allButtons[index].transform))
-        {
-          this.allButtons[index].Clicked();
-          return;
-        }
-      }
-      for (int index = 0; index < num; ++index)
-      {
-        if (!((Object) this.allButtons[index] == (Object) null) && this.allButtons[index].IsEnabled() && Functions.TransformIsVisible(this.allButtons[index].transform))
-        {
-          this.allButtons[index].Clicked();
-          break;
-        }
-      }
-    }
-  }
+	public CardItem[] itemCardsCI;
 
-  public void ControllerMoveShoulder(bool _isRight = false)
-  {
-    Debug.Log((object) ("ControllerMoveShoulder " + _isRight.ToString()));
-    if (!_isRight)
-      this.ControllerNextCharacter();
-    else
-      this.ControllerNextOption();
-    this.ControllerMovement(goingRight: true);
-  }
+	public BotonGeneric botDeck;
+
+	public BotonGeneric botLevel;
+
+	public BotonGeneric botItems;
+
+	public BotonGeneric botStats;
+
+	public BotonGeneric botPerks;
+
+	public Transform botPerksSeparator;
+
+	public BotonGeneric botCombatDeck;
+
+	public BotonGeneric botCombatDiscard;
+
+	public BotonGeneric botCombatVanish;
+
+	public BotonGeneric botNPCCasted;
+
+	public BotonGeneric botNPCStats;
+
+	[SerializeField]
+	private GameObject botLevelupCharacter;
+
+	private SubClassData currentSCD;
+
+	private Hero currentHero;
+
+	private NPC currentNPC;
+
+	public int heroIndex;
+
+	private int npcIndex = -1;
+
+	private string activeTab = "deck";
+
+	private Coroutine coroutineMask;
+
+	private bool windowActive;
+
+	public List<BotonGeneric> allButtons;
+
+	public int controllerHorizontalIndex = -1;
+
+	private Vector2 warpPosition = Vector2.zero;
+
+	private List<Transform> _controllerList = new List<Transform>();
+
+	private void Awake()
+	{
+		HideAllWindows();
+	}
+
+	private void Start()
+	{
+		Resize();
+		botLevelupCharacter.SetActive(value: false);
+		if (GameManager.Instance.GetDeveloperMode() || AtOManager.Instance.IsCombatTool)
+		{
+			botLevelupCharacter.SetActive(value: true);
+		}
+	}
+
+	public void Resize()
+	{
+		GetComponent<RectTransform>().sizeDelta = new Vector2(Globals.Instance.sizeW, Globals.Instance.sizeH);
+		exitButton.transform.localPosition = new Vector3((0f - Globals.Instance.sizeW) * 0.5f + 1f * Globals.Instance.multiplierX, (0f - Globals.Instance.sizeH) * 0.5f + 3.9f * Globals.Instance.multiplierY, exitButton.transform.localPosition.z);
+	}
+
+	public bool IsActive()
+	{
+		return elements.gameObject.activeSelf;
+	}
+
+	public void ShowUpgradedCards(List<string> upgradedCards)
+	{
+		if (upgradedCards.Count > 0)
+		{
+			HideButtons();
+			Show("unlockedCards", -2);
+			deckWindow.ShowUpgradedCards(upgradedCards);
+		}
+	}
+
+	public void ShowUnlockedCards(List<string> unlockedCards)
+	{
+		if (unlockedCards.Count > 0)
+		{
+			HideButtons();
+			Show("unlockedCards", -2);
+			deckWindow.ShowUnlockedCards(unlockedCards);
+		}
+	}
+
+	public void Show(string _element = "", int _heroIndex = -1, bool isHero = true)
+	{
+		if (!IsActive() && _element != "unlockedCards")
+		{
+			GameManager.Instance.PlayLibraryAudio("action_bag");
+		}
+		base.gameObject.SetActive(value: true);
+		PopupManager.Instance.ClosePopup();
+		portraitSR.gameObject.SetActive(value: false);
+		npcButtons.gameObject.SetActive(value: false);
+		globalButtons.gameObject.SetActive(value: true);
+		if ((bool)MatchManager.Instance)
+		{
+			globalButtons.transform.localPosition = new Vector3(globalButtons.transform.localPosition.x, -0.7f, globalButtons.transform.localPosition.z);
+		}
+		else
+		{
+			globalButtons.transform.localPosition = new Vector3(globalButtons.transform.localPosition.x, 0f, globalButtons.transform.localPosition.z);
+		}
+		if (GameManager.Instance.IsObeliskChallenge())
+		{
+			botPerks.gameObject.SetActive(value: false);
+			botPerksSeparator.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			botPerks.gameObject.SetActive(value: true);
+			botPerksSeparator.gameObject.SetActive(value: true);
+		}
+		if (isHero)
+		{
+			npcIndex = -1;
+		}
+		if (_element != "unlockedCards")
+		{
+			if (!MatchManager.Instance)
+			{
+				combatButtons.gameObject.SetActive(value: false);
+				nonCombatButtons.gameObject.SetActive(value: true);
+			}
+			else
+			{
+				combatButtons.gameObject.SetActive(value: true);
+				nonCombatButtons.gameObject.SetActive(value: false);
+			}
+			ShowMask(state: true);
+			if (isHero)
+			{
+				buttons.gameObject.SetActive(value: true);
+				if (_heroIndex == -1)
+				{
+					_heroIndex = heroIndex;
+				}
+				if (_heroIndex > -1)
+				{
+					heroIndex = _heroIndex;
+					currentHero = AtOManager.Instance.GetHero(heroIndex);
+					if (currentHero.HeroData == null)
+					{
+						return;
+					}
+					UpdateLevelUpButtonState();
+					currentSCD = currentHero.HeroData.HeroSubClass;
+					if (currentSCD.MainCharacter)
+					{
+						mainCharacterButtons.gameObject.SetActive(value: true);
+					}
+					else
+					{
+						mainCharacterButtons.gameObject.SetActive(value: false);
+					}
+				}
+			}
+			else if (MatchManager.Instance != null)
+			{
+				if (_heroIndex == -1)
+				{
+					npcIndex = heroIndex;
+				}
+				else
+				{
+					npcIndex = (heroIndex = _heroIndex);
+				}
+				currentNPC = MatchManager.Instance.GetNPCCharacter(npcIndex);
+				if (currentNPC == null)
+				{
+					return;
+				}
+			}
+			deckEnergy.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			ShowMask(state: true, instant: true);
+			deckEnergy.gameObject.SetActive(value: false);
+		}
+		if (_element == "")
+		{
+			_element = ((windowActive || !currentHero.IsReadyForLevelUp()) ? activeTab : "level");
+		}
+		if (_element != "perks")
+		{
+			activeTab = _element;
+			HideAllWindows(_element);
+		}
+		switch (_element)
+		{
+		case "deck":
+			deckWindow.Show(_heroIndex);
+			botDeck.Disable();
+			botDeck.SetTextColor(new Color(1f, 0.6f, 0.07f));
+			botDeck.transform.localPosition = new Vector3(7.4f, botDeck.transform.localPosition.y, botDeck.transform.localPosition.z);
+			if (!(RewardsManager.Instance != null))
+			{
+				_ = LootManager.Instance != null;
+			}
+			if (CardCraftManager.Instance != null)
+			{
+				CardCraftManager.Instance.gameObject.SetActive(value: false);
+			}
+			deckEnergy.WriteEnergy(_heroIndex, 0);
+			break;
+		case "combatdeck":
+			deckWindow.Show(_heroIndex);
+			botCombatDeck.Disable();
+			botCombatDeck.SetTextColor(new Color(1f, 0.6f, 0.07f));
+			botCombatDeck.transform.localPosition = new Vector3(7.4f, botCombatDeck.transform.localPosition.y, botCombatDeck.transform.localPosition.z);
+			deckEnergy.WriteEnergy(_heroIndex, 1);
+			break;
+		case "combatdiscard":
+		{
+			if (isHero)
+			{
+				deckWindow.Show(_heroIndex, null, discard: true);
+				botCombatDiscard.Disable();
+				botCombatDiscard.SetTextColor(new Color(1f, 0.6f, 0.07f));
+				botCombatDiscard.transform.localPosition = new Vector3(7.4f, botCombatDiscard.transform.localPosition.y, botCombatDiscard.transform.localPosition.z);
+				deckEnergy.WriteEnergy(_heroIndex, 2);
+				break;
+			}
+			deckEnergy.gameObject.SetActive(value: false);
+			portraitSR.gameObject.SetActive(value: true);
+			portraitSR.sprite = currentNPC.SpritePortrait;
+			List<string> list = new List<string>();
+			List<string> nPCCardsCastedList = MatchManager.Instance.GetNPCCardsCastedList(currentNPC.InternalId);
+			for (int num = nPCCardsCastedList.Count - 1; num >= 0; num--)
+			{
+				list.Add(nPCCardsCastedList[num]);
+			}
+			deckWindow.Show(npcIndex, list, discard: false, sort: false);
+			deckWindow.HideInjury();
+			deckWindow.SetTitle(Texts.Instance.GetText("heroCastedCards").Replace("<hero>", currentNPC.SourceName), list.Count);
+			buttons.gameObject.SetActive(value: true);
+			nonCombatButtons.gameObject.SetActive(value: false);
+			combatButtons.gameObject.SetActive(value: false);
+			globalButtons.gameObject.SetActive(value: false);
+			npcButtons.gameObject.SetActive(value: true);
+			botNPCCasted.Disable();
+			botNPCCasted.SetTextColor(new Color(1f, 0.6f, 0.07f));
+			botNPCCasted.transform.localPosition = new Vector3(7.4f, botNPCCasted.transform.localPosition.y, botNPCCasted.transform.localPosition.z);
+			break;
+		}
+		case "combatvanish":
+		{
+			deckEnergy.WriteEnergy(_heroIndex, 3);
+			List<string> heroVanish = MatchManager.Instance.GetHeroVanish(_heroIndex);
+			deckWindow.Show(0, heroVanish, discard: false, sort: false);
+			deckWindow.HideInjury();
+			deckWindow.SetTitle(Texts.Instance.GetText("heroVanishedCards").Replace("<hero>", currentHero.SourceName), heroVanish.Count);
+			botCombatVanish.Disable();
+			botCombatVanish.SetTextColor(new Color(1f, 0.6f, 0.07f));
+			botCombatVanish.transform.localPosition = new Vector3(7.4f, botCombatVanish.transform.localPosition.y, botCombatVanish.transform.localPosition.z);
+			break;
+		}
+		case "level":
+			levelWindow.Show(_heroIndex);
+			botLevel.Disable();
+			botLevel.SetTextColor(new Color(1f, 0.6f, 0.07f));
+			botLevel.transform.localPosition = new Vector3(7.4f, botLevel.transform.localPosition.y, botLevel.transform.localPosition.z);
+			DoLevelWindow();
+			break;
+		case "perks":
+			PerkTree.Instance.Show(currentHero.HeroData.HeroSubClass.Id, heroIndex);
+			break;
+		case "items":
+			botItems.Disable();
+			botItems.SetTextColor(new Color(1f, 0.6f, 0.07f));
+			botItems.transform.localPosition = new Vector3(7.4f, botItems.transform.localPosition.y, botItems.transform.localPosition.z);
+			DoItemsWindow();
+			break;
+		case "deckreward":
+			deckWindow.Show(_heroIndex);
+			botDeck.Disable();
+			botDeck.SetTextColor(new Color(1f, 0.6f, 0.07f));
+			botDeck.transform.localPosition = new Vector3(7.4f, botDeck.transform.localPosition.y, botDeck.transform.localPosition.z);
+			break;
+		case "stats":
+			if (isHero)
+			{
+				statsWindow.DoStats(currentHero);
+				botStats.Disable();
+				botStats.SetTextColor(new Color(1f, 0.6f, 0.07f));
+				botStats.transform.localPosition = new Vector3(7.4f, botStats.transform.localPosition.y, botStats.transform.localPosition.z);
+				break;
+			}
+			portraitSR.gameObject.SetActive(value: true);
+			portraitSR.sprite = currentNPC.SpritePortrait;
+			buttons.gameObject.SetActive(value: true);
+			nonCombatButtons.gameObject.SetActive(value: false);
+			combatButtons.gameObject.SetActive(value: false);
+			globalButtons.gameObject.SetActive(value: false);
+			npcButtons.gameObject.SetActive(value: true);
+			statsWindow.DoStats(currentNPC);
+			botNPCStats.Disable();
+			botNPCStats.SetTextColor(new Color(1f, 0.6f, 0.07f));
+			botNPCStats.transform.localPosition = new Vector3(7.4f, botNPCStats.transform.localPosition.y, botNPCStats.transform.localPosition.z);
+			break;
+		default:
+			_ = _element == "unlockedCards";
+			break;
+		}
+		windowActive = true;
+		if (isHero && _element != "unlockedCards")
+		{
+			if (MapManager.Instance != null)
+			{
+				MapManager.Instance.sideCharacters.InCharacterScreen(state: true);
+			}
+			else if (TownManager.Instance != null)
+			{
+				TownManager.Instance.sideCharacters.InCharacterScreen(state: true);
+			}
+			else if (MatchManager.Instance != null)
+			{
+				MatchManager.Instance.sideCharacters.InCharacterScreen(state: true);
+			}
+		}
+	}
+
+	public void GrantExperienceForLevelUp()
+	{
+		if (currentHero != null)
+		{
+			int experience = Globals.Instance.GetExperienceByLevel(currentHero.Level) - currentHero.Experience;
+			currentHero.GrantExperience(experience);
+			UpdateLevelUpButtonState();
+		}
+	}
+
+	private void UpdateLevelUpButtonState()
+	{
+		if ((GameManager.Instance.GetDeveloperMode() || AtOManager.Instance.IsCombatTool) && currentHero != null)
+		{
+			botLevelupCharacter.SetActive(currentHero.Level != 5);
+		}
+	}
+
+	public void ShowMask(bool state, bool instant = false)
+	{
+		if (coroutineMask != null)
+		{
+			StopCoroutine(coroutineMask);
+		}
+		coroutineMask = StartCoroutine(ShowMaskCo(state, instant: true));
+	}
+
+	private IEnumerator ShowMaskCo(bool state, bool instant)
+	{
+		float maxAlplha = 0.935f;
+		float step = 0.07f;
+		if (instant)
+		{
+			imageBg.color = new Color(0f, 0f, 0f, maxAlplha);
+			yield break;
+		}
+		float index = imageBg.color.a;
+		if (!state)
+		{
+			while (index > 0f)
+			{
+				imageBg.color = new Color(0f, 0f, 0f, index);
+				index -= step;
+				yield return null;
+			}
+			imageBg.color = new Color(0f, 0f, 0f, 0f);
+		}
+		else
+		{
+			while (index < maxAlplha)
+			{
+				imageBg.color = new Color(0f, 0f, 0f, index);
+				index += step;
+				yield return null;
+			}
+			imageBg.color = new Color(0f, 0f, 0f, maxAlplha);
+		}
+	}
+
+	public void ReDrawLevel()
+	{
+		if (currentHero != null)
+		{
+			DrawLevelButtons(currentHero.Level, currentHero.IsReadyForLevelUp());
+		}
+	}
+
+	private void DoPerksWindow()
+	{
+		if (currentHero == null)
+		{
+			Hide();
+		}
+		else
+		{
+			perksWindow.DoPerks(currentHero);
+		}
+	}
+
+	private void DoLevelWindow()
+	{
+		if (currentHero == null)
+		{
+			Hide();
+			return;
+		}
+		int level = currentHero.Level;
+		bool levelUp = currentHero.IsReadyForLevelUp();
+		_ = Globals.Instance.ClassColor[currentHero.ClassName];
+		characterLevelSprite.sprite = currentHero.HeroData.HeroSubClass.SpriteBorder;
+		DrawLevelButtons(level, levelUp);
+	}
+
+	private void DrawLevelButtons(int heroLevel, bool levelUp)
+	{
+		string color = Globals.Instance.ClassColor[currentHero.ClassName];
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("<size=+2>");
+		stringBuilder.Append(Texts.Instance.GetText("levelNumber").Replace("<N>", heroLevel.ToString()));
+		stringBuilder.Append("</size>");
+		stringBuilder.Append("\n");
+		stringBuilder.Append("<sprite name=experience> <color=#FC0>");
+		stringBuilder.Append(currentHero.Experience);
+		stringBuilder.Append("/");
+		stringBuilder.Append(Globals.Instance.GetExperienceByLevel(heroLevel));
+		stringBuilder.Append("</color>");
+		characterLevelText.text = stringBuilder.ToString();
+		int characterTier = PlayerManager.Instance.GetCharacterTier("", "trait", currentHero.PerkRank);
+		TraitData traitData = GetTraitData(0, 2);
+		traitLevel[0].SetColor(color);
+		traitLevel[0].SetPosition(0);
+		traitLevel[0].SetEnable(_state: true);
+		traitLevel[0].SetTrait(traitData, characterTier);
+		for (int i = 1; i < 5; i++)
+		{
+			bool active = false;
+			bool enable = false;
+			int num = i * 2;
+			int num2 = num + 1;
+			TraitData traitData2 = GetTraitData(i);
+			if (i < heroLevel)
+			{
+				if (currentHero.HaveTrait(traitData2.Id))
+				{
+					enable = true;
+				}
+			}
+			else if (i == heroLevel && levelUp && (currentHero.Owner == null || currentHero.Owner == "" || currentHero.Owner == NetworkManager.Instance.GetPlayerNick()))
+			{
+				active = true;
+			}
+			traitLevel[num].SetHeroIndex(heroIndex);
+			traitLevel[num].SetColor(color);
+			traitLevel[num].SetPosition(1);
+			traitLevel[num].SetEnable(enable);
+			traitLevel[num].SetActive(active);
+			traitLevel[num].SetTrait(traitData2, characterTier);
+			TraitData traitData3 = GetTraitData(i, 1);
+			enable = false;
+			active = false;
+			if (i < heroLevel)
+			{
+				if (currentHero.HaveTrait(traitData3.Id))
+				{
+					enable = true;
+				}
+			}
+			else if (i == heroLevel && levelUp && (currentHero.Owner == null || currentHero.Owner == "" || currentHero.Owner == NetworkManager.Instance.GetPlayerNick()))
+			{
+				active = true;
+			}
+			traitLevel[num2].SetHeroIndex(heroIndex);
+			traitLevel[num2].SetColor(color);
+			traitLevel[num2].SetPosition(2);
+			traitLevel[num2].SetEnable(enable);
+			traitLevel[num2].SetActive(active);
+			traitLevel[num2].SetTrait(traitData3, characterTier);
+			StringBuilder stringBuilder2 = new StringBuilder();
+			bool flag = false;
+			if ((i < heroLevel || (i == heroLevel && levelUp)) && (currentHero.Owner == null || currentHero.Owner == "" || currentHero.Owner == NetworkManager.Instance.GetPlayerNick()))
+			{
+				flag = true;
+			}
+			stringBuilder2.Append("<size=+.4>");
+			if (flag)
+			{
+				stringBuilder2.Append("<color=#FC0>");
+			}
+			stringBuilder2.Append(Texts.Instance.GetText("levelNumber").Replace("<N>", (i + 1).ToString()));
+			if (flag)
+			{
+				stringBuilder2.Append("</color>");
+			}
+			stringBuilder2.Append("</size>");
+			stringBuilder2.Append("\n");
+			if (flag)
+			{
+				stringBuilder2.Append("<color=#EE5A3C>");
+			}
+			stringBuilder2.Append(Texts.Instance.GetText("incrementMaxHp").Replace("<N>", currentSCD.MaxHp[i].ToString()));
+			if (flag)
+			{
+				stringBuilder2.Append("</color>");
+			}
+			traitLevelText[i].text = stringBuilder2.ToString();
+		}
+	}
+
+	private TraitData GetTraitData(int level, int index = 0)
+	{
+		if (index == 2 && level > 0)
+		{
+			return Globals.Instance.GetTraitData(currentHero.Traits[level]);
+		}
+		switch (level)
+		{
+		case 0:
+			return currentSCD.Trait0;
+		case 1:
+			if (index == 0)
+			{
+				return currentSCD.Trait1A;
+			}
+			return currentSCD.Trait1B;
+		case 2:
+			if (index == 0)
+			{
+				return currentSCD.Trait2A;
+			}
+			return currentSCD.Trait2B;
+		case 3:
+			if (index == 0)
+			{
+				return currentSCD.Trait3A;
+			}
+			return currentSCD.Trait3B;
+		case 4:
+			if (index == 0)
+			{
+				return currentSCD.Trait4A;
+			}
+			return currentSCD.Trait4B;
+		default:
+			return null;
+		}
+	}
+
+	private void SetCardbacks()
+	{
+		string cardbackUsed = currentHero.CardbackUsed;
+		if (!(cardbackUsed != ""))
+		{
+			return;
+		}
+		CardbackData cardbackData = Globals.Instance.GetCardbackData(cardbackUsed);
+		if (cardbackData == null)
+		{
+			cardbackData = Globals.Instance.GetCardbackData(Globals.Instance.GetCardbackBaseIdBySubclass(currentHero.HeroData.HeroSubClass.Id));
+		}
+		if (cardbackData == null)
+		{
+			return;
+		}
+		Sprite cardbackSprite = cardbackData.CardbackSprite;
+		if (!(cardbackSprite != null))
+		{
+			return;
+		}
+		for (int i = 0; i < itemCardsBack.Length; i++)
+		{
+			if (itemCardsBack[i] != null)
+			{
+				itemCardsBack[i].GetComponent<SpriteRenderer>().sprite = cardbackSprite;
+			}
+		}
+	}
+
+	private void DoItemsWindow()
+	{
+		SetCardbacks();
+		for (int i = 0; i < 5; i++)
+		{
+			string text = "";
+			switch (i)
+			{
+			case 0:
+				text = currentHero.Weapon;
+				break;
+			case 1:
+				text = currentHero.Armor;
+				break;
+			case 2:
+				text = currentHero.Jewelry;
+				break;
+			case 3:
+				text = currentHero.Accesory;
+				break;
+			case 4:
+				text = currentHero.Pet;
+				break;
+			}
+			if (text != "")
+			{
+				CardItem obj = itemCardsCI[i];
+				obj.SetCard(text, deckScale: true, currentHero, null, GetFromGlobal: true);
+				obj.TopLayeringOrder("UI", 20000);
+				obj.transform.localScale = Vector3.zero;
+				obj.SetDestinationLocalScale(1.25f);
+				obj.cardmakebig = true;
+				obj.cardmakebigSize = 1.25f;
+				obj.cardmakebigSizeMax = 1.4f;
+				obj.active = true;
+				obj.lockPosition = true;
+				itemCardsBack[i].gameObject.SetActive(value: false);
+				itemCardsCI[i].transform.gameObject.SetActive(value: true);
+			}
+			else
+			{
+				itemCardsBack[i].gameObject.SetActive(value: true);
+				itemCardsCI[i].transform.gameObject.SetActive(value: false);
+			}
+		}
+	}
+
+	public void Hide(bool goToDivination = false)
+	{
+		if (!IsActive())
+		{
+			return;
+		}
+		Functions.DebugLogGD("CHARACTERWINDOW Hide", "trace");
+		deckWindow.DestroyDeck();
+		HideAllWindows();
+		heroIndex = 0;
+		activeTab = "deck";
+		windowActive = false;
+		if (goToDivination)
+		{
+			return;
+		}
+		if (CardCraftManager.Instance != null)
+		{
+			CardCraftManager.Instance.gameObject.SetActive(value: true);
+			if (TownManager.Instance != null)
+			{
+				TownManager.Instance.sideCharacters.ResetCharacters();
+			}
+			else if (MapManager.Instance != null)
+			{
+				MapManager.Instance.sideCharacters.ResetCharacters();
+			}
+		}
+		else if (MapManager.Instance != null)
+		{
+			MapManager.Instance.sideCharacters.ResetCharacters();
+			if (!EventManager.Instance)
+			{
+				MapManager.Instance.sideCharacters.InCharacterScreen(state: false);
+			}
+			MapManager.Instance.HideCharacterWindow();
+		}
+		else if (TownManager.Instance != null)
+		{
+			TownManager.Instance.sideCharacters.ResetCharacters();
+			TownManager.Instance.HideCharacterWindow();
+		}
+		else if (MatchManager.Instance != null)
+		{
+			MatchManager.Instance.sideCharacters.ResetCharacters();
+			MatchManager.Instance.sideCharacters.InCharacterScreen(state: false);
+			MatchManager.Instance.HideCharacterWindow();
+			MatchManager.Instance.ResetController();
+		}
+	}
+
+	private void HideButtons()
+	{
+		buttons.gameObject.SetActive(value: false);
+	}
+
+	public void HideAllWindows(string _element = "")
+	{
+		if ((bool)GameManager.Instance)
+		{
+			GameManager.Instance.CleanTempContainer();
+		}
+		if ((bool)PopupManager.Instance)
+		{
+			PopupManager.Instance.ClosePopup();
+		}
+		if (buttons.gameObject.activeSelf)
+		{
+			botDeck.Enable();
+			botDeck.SetTextColor(Color.white);
+			botDeck.transform.localPosition = new Vector3(7.6f, botDeck.transform.localPosition.y, botDeck.transform.localPosition.z);
+			botLevel.Enable();
+			botLevel.SetTextColor(Color.white);
+			botLevel.transform.localPosition = new Vector3(7.6f, botLevel.transform.localPosition.y, botLevel.transform.localPosition.z);
+			botItems.Enable();
+			botItems.SetTextColor(Color.white);
+			botItems.transform.localPosition = new Vector3(7.6f, botItems.transform.localPosition.y, botItems.transform.localPosition.z);
+			botStats.Enable();
+			botStats.SetTextColor(Color.white);
+			botStats.transform.localPosition = new Vector3(7.6f, botStats.transform.localPosition.y, botStats.transform.localPosition.z);
+			botPerks.Enable();
+			botPerks.SetTextColor(Color.white);
+			botPerks.transform.localPosition = new Vector3(7.6f, botPerks.transform.localPosition.y, botPerks.transform.localPosition.z);
+			botCombatDeck.Enable();
+			botCombatDeck.SetTextColor(Color.white);
+			botCombatDeck.transform.localPosition = new Vector3(7.6f, botCombatDeck.transform.localPosition.y, botCombatDeck.transform.localPosition.z);
+			botCombatDiscard.Enable();
+			botCombatDiscard.SetTextColor(Color.white);
+			botCombatDiscard.transform.localPosition = new Vector3(7.6f, botCombatDiscard.transform.localPosition.y, botCombatDiscard.transform.localPosition.z);
+			botCombatVanish.Enable();
+			botCombatVanish.SetTextColor(Color.white);
+			botCombatVanish.transform.localPosition = new Vector3(7.6f, botCombatVanish.transform.localPosition.y, botCombatVanish.transform.localPosition.z);
+			botNPCStats.Enable();
+			botNPCStats.SetTextColor(Color.white);
+			botNPCStats.transform.localPosition = new Vector3(7.6f, botNPCStats.transform.localPosition.y, botNPCStats.transform.localPosition.z);
+			botNPCCasted.Enable();
+			botNPCCasted.SetTextColor(Color.white);
+			botNPCCasted.transform.localPosition = new Vector3(7.6f, botNPCCasted.transform.localPosition.y, botNPCCasted.transform.localPosition.z);
+		}
+		if (_element != "deck" && _element != "combatdeck" && _element != "combatdiscard" && _element != "combatvanish")
+		{
+			deckWindow.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			deckWindow.gameObject.SetActive(value: true);
+		}
+		if (_element != "level")
+		{
+			levelWindow.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			levelWindow.gameObject.SetActive(value: true);
+		}
+		if (_element != "items")
+		{
+			itemsWindow.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			itemsWindow.gameObject.SetActive(value: true);
+		}
+		if (_element != "stats")
+		{
+			statsWindow.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			statsWindow.gameObject.SetActive(value: true);
+		}
+		if (_element != "perks")
+		{
+			perksWindow.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			perksWindow.gameObject.SetActive(value: true);
+		}
+		if (_element == "unlockedCards")
+		{
+			deckWindow.gameObject.SetActive(value: true);
+		}
+		if (_element == "")
+		{
+			elements.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			elements.gameObject.SetActive(value: true);
+		}
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, bool shoulderLeft = false, bool shoulderRight = false)
+	{
+		_controllerList.Clear();
+		for (int i = 0; i < allButtons.Count; i++)
+		{
+			if (!(allButtons[i] == null) && allButtons[i].IsEnabled() && Functions.TransformIsVisible(allButtons[i].transform))
+			{
+				_controllerList.Add(allButtons[i].transform);
+			}
+		}
+		for (int j = 0; j < 4; j++)
+		{
+			if ((bool)TownManager.Instance)
+			{
+				if (Functions.TransformIsVisible(TownManager.Instance.sideCharacters.charArray[j].transform))
+				{
+					_controllerList.Add(TownManager.Instance.sideCharacters.charArray[j].transform.GetChild(0).transform);
+				}
+			}
+			else if ((bool)MapManager.Instance)
+			{
+				if (Functions.TransformIsVisible(MapManager.Instance.sideCharacters.charArray[j].transform))
+				{
+					_controllerList.Add(MapManager.Instance.sideCharacters.charArray[j].transform.GetChild(0).transform);
+				}
+			}
+			else if ((bool)MatchManager.Instance && Functions.TransformIsVisible(MatchManager.Instance.sideCharacters.charArray[j].transform))
+			{
+				_controllerList.Add(MatchManager.Instance.sideCharacters.charArray[j].transform.GetChild(0).transform);
+			}
+		}
+		if (deckWindow.gameObject.activeSelf)
+		{
+			for (int k = 0; k < deckWindow.injuryContent.transform.childCount; k++)
+			{
+				_controllerList.Add(deckWindow.injuryContent.transform.GetChild(k));
+			}
+			for (int l = 0; l < deckWindow.deckContent.transform.childCount; l++)
+			{
+				_controllerList.Add(deckWindow.deckContent.transform.GetChild(l));
+			}
+		}
+		else if (levelWindow.gameObject.activeSelf)
+		{
+			_controllerList.Add(traitLevel[0].transform);
+			_controllerList.Add(traitLevel[2].transform);
+			_controllerList.Add(traitLevel[3].transform);
+			_controllerList.Add(traitLevel[4].transform);
+			_controllerList.Add(traitLevel[5].transform);
+			_controllerList.Add(traitLevel[6].transform);
+			_controllerList.Add(traitLevel[7].transform);
+			_controllerList.Add(traitLevel[8].transform);
+			_controllerList.Add(traitLevel[9].transform);
+		}
+		else if (itemsWindow.gameObject.activeSelf)
+		{
+			for (int m = 0; m < itemCardsCI.Length; m++)
+			{
+				if (itemCardsCI[m].transform.gameObject.activeSelf)
+				{
+					_controllerList.Add(itemCardsCI[m].transform);
+				}
+			}
+		}
+		_controllerList.Add(exitButton);
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			if ((bool)_controllerList[controllerHorizontalIndex].GetComponent<CardItem>())
+			{
+				Canvas.ForceUpdateCanvases();
+				Vector3 zero = Vector3.zero;
+				zero.y = -1.425f - _controllerList[controllerHorizontalIndex].localPosition.y;
+				deckWindow.scrollContent.transform.GetChild(0).GetComponent<RectTransform>().anchoredPosition = Vector3.zero;
+				deckWindow.scrollContent.GetComponent<RectTransform>().anchoredPosition = zero;
+			}
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
+
+	private void ControllerNextCharacter()
+	{
+		if (npcIndex != -1)
+		{
+			return;
+		}
+		int num = heroIndex;
+		if ((bool)CardCraftManager.Instance)
+		{
+			num = CardCraftManager.Instance.heroIndex;
+		}
+		bool flag = false;
+		while (!flag)
+		{
+			num++;
+			if (num > 3)
+			{
+				num = 0;
+			}
+			if (AtOManager.Instance.GetHero(num) != null && AtOManager.Instance.GetHero(num).HeroData != null)
+			{
+				flag = true;
+			}
+		}
+		GameObject gameObject = GameObject.Find("/SideCharacters/OverCharacter" + num);
+		if (gameObject != null)
+		{
+			gameObject.transform.GetComponent<OverCharacter>().Clicked();
+		}
+		if (PerkTree.Instance.IsActive())
+		{
+			ControllerNextOption();
+		}
+	}
+
+	private void ControllerNextOption()
+	{
+		Debug.Log("ControllerNextOption" + PerkTree.Instance.IsActive());
+		bool flag = false;
+		if (PerkTree.Instance.IsActive())
+		{
+			flag = true;
+		}
+		int num = -1;
+		if (flag)
+		{
+			PerkTree.Instance.HideAction(checkSubclass: false);
+			for (int i = 0; i < allButtons.Count; i++)
+			{
+				if (!(allButtons[i] == null) && allButtons[i].IsEnabled() && Functions.TransformIsVisible(allButtons[i].transform))
+				{
+					allButtons[i].Clicked();
+					break;
+				}
+			}
+			return;
+		}
+		for (int j = 0; j < allButtons.Count; j++)
+		{
+			if (!(allButtons[j] == null) && !allButtons[j].IsEnabled() && Functions.TransformIsVisible(allButtons[j].transform))
+			{
+				num = j;
+				break;
+			}
+		}
+		if (num <= -1)
+		{
+			return;
+		}
+		for (int k = num; k < allButtons.Count; k++)
+		{
+			if (!(allButtons[k] == null) && allButtons[k].IsEnabled() && Functions.TransformIsVisible(allButtons[k].transform))
+			{
+				allButtons[k].Clicked();
+				return;
+			}
+		}
+		for (int l = 0; l < num; l++)
+		{
+			if (!(allButtons[l] == null) && allButtons[l].IsEnabled() && Functions.TransformIsVisible(allButtons[l].transform))
+			{
+				allButtons[l].Clicked();
+				break;
+			}
+		}
+	}
+
+	public void ControllerMoveShoulder(bool _isRight = false)
+	{
+		Debug.Log("ControllerMoveShoulder " + _isRight);
+		if (!_isRight)
+		{
+			ControllerNextCharacter();
+		}
+		else
+		{
+			ControllerNextOption();
+		}
+		ControllerMovement(goingUp: false, goingRight: true);
+	}
 }

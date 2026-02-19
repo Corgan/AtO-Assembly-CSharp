@@ -1,106 +1,179 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ZoneData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections.Generic;
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Zone", menuName = "Zone Data", order = 59)]
 public class ZoneData : ScriptableObject
 {
-  [SerializeField]
-  private string zoneId;
-  [SerializeField]
-  private string zoneName;
-  [SerializeField]
-  private bool obeliskLow;
-  [SerializeField]
-  private bool obeliskHigh;
-  [SerializeField]
-  private bool obeliskFinal;
-  [Header("DLC Requeriment")]
-  [SerializeField]
-  private string sku;
-  [Header("Team Management")]
-  [SerializeField]
-  private bool changeTeamOnEntrance;
-  [SerializeField]
-  private List<SubClassData> newTeam;
-  [SerializeField]
-  private bool restoreTeamOnExit;
-  [Header("Experience")]
-  [SerializeField]
-  private bool disableExperienceOnThisZone;
-  [Header("Madness")]
-  [SerializeField]
-  private bool disableMadnessOnThisZone;
+	[SerializeField]
+	private string zoneId;
 
-  public string ZoneId
-  {
-    get => this.zoneId;
-    set => this.zoneId = value;
-  }
+	[SerializeField]
+	private string zoneName;
 
-  public string ZoneName
-  {
-    get => this.zoneName;
-    set => this.zoneName = value;
-  }
+	[SerializeField]
+	private bool obeliskLow;
 
-  public bool ObeliskLow
-  {
-    get => this.obeliskLow;
-    set => this.obeliskLow = value;
-  }
+	[SerializeField]
+	private bool obeliskHigh;
 
-  public bool ObeliskHigh
-  {
-    get => this.obeliskHigh;
-    set => this.obeliskHigh = value;
-  }
+	[SerializeField]
+	private bool obeliskFinal;
 
-  public bool ObeliskFinal
-  {
-    get => this.obeliskFinal;
-    set => this.obeliskFinal = value;
-  }
+	[Header("DLC Requeriment")]
+	[SerializeField]
+	private string sku;
 
-  public bool ChangeTeamOnEntrance
-  {
-    get => this.changeTeamOnEntrance;
-    set => this.changeTeamOnEntrance = value;
-  }
+	[Header("Team Management")]
+	[SerializeField]
+	private bool changeTeamOnEntrance;
 
-  public List<SubClassData> NewTeam
-  {
-    get => this.newTeam;
-    set => this.newTeam = value;
-  }
+	[SerializeField]
+	private List<SubClassData> newTeam;
 
-  public bool RestoreTeamOnExit
-  {
-    get => this.restoreTeamOnExit;
-    set => this.restoreTeamOnExit = value;
-  }
+	[SerializeField]
+	private bool restoreTeamOnExit;
 
-  public bool DisableExperienceOnThisZone
-  {
-    get => this.disableExperienceOnThisZone;
-    set => this.disableExperienceOnThisZone = value;
-  }
+	[Header("Experience")]
+	[SerializeField]
+	private bool disableExperienceOnThisZone;
 
-  public bool DisableMadnessOnThisZone
-  {
-    get => this.disableMadnessOnThisZone;
-    set => this.disableMadnessOnThisZone = value;
-  }
+	[Header("Madness")]
+	[SerializeField]
+	private bool disableMadnessOnThisZone;
 
-  public string Sku
-  {
-    get => this.sku;
-    set => this.sku = value;
-  }
+	[Header("CombatTool")]
+	[SerializeField]
+	public Sprite CombatBackground;
+
+	public string ZoneId
+	{
+		get
+		{
+			return zoneId;
+		}
+		set
+		{
+			zoneId = value;
+		}
+	}
+
+	public string ZoneName
+	{
+		get
+		{
+			return zoneName;
+		}
+		set
+		{
+			zoneName = value;
+		}
+	}
+
+	public bool ObeliskLow
+	{
+		get
+		{
+			return obeliskLow;
+		}
+		set
+		{
+			obeliskLow = value;
+		}
+	}
+
+	public bool ObeliskHigh
+	{
+		get
+		{
+			return obeliskHigh;
+		}
+		set
+		{
+			obeliskHigh = value;
+		}
+	}
+
+	public bool ObeliskFinal
+	{
+		get
+		{
+			return obeliskFinal;
+		}
+		set
+		{
+			obeliskFinal = value;
+		}
+	}
+
+	public bool ChangeTeamOnEntrance
+	{
+		get
+		{
+			return changeTeamOnEntrance;
+		}
+		set
+		{
+			changeTeamOnEntrance = value;
+		}
+	}
+
+	public List<SubClassData> NewTeam
+	{
+		get
+		{
+			return newTeam;
+		}
+		set
+		{
+			newTeam = value;
+		}
+	}
+
+	public bool RestoreTeamOnExit
+	{
+		get
+		{
+			return restoreTeamOnExit;
+		}
+		set
+		{
+			restoreTeamOnExit = value;
+		}
+	}
+
+	public bool DisableExperienceOnThisZone
+	{
+		get
+		{
+			return disableExperienceOnThisZone;
+		}
+		set
+		{
+			disableExperienceOnThisZone = value;
+		}
+	}
+
+	public bool DisableMadnessOnThisZone
+	{
+		get
+		{
+			return disableMadnessOnThisZone;
+		}
+		set
+		{
+			disableMadnessOnThisZone = value;
+		}
+	}
+
+	public string Sku
+	{
+		get
+		{
+			return sku;
+		}
+		set
+		{
+			sku = value;
+		}
+	}
 }

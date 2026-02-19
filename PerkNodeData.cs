@@ -1,101 +1,170 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PerkNodeData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Perk Node", menuName = "Perk Node Data", order = 57)]
 public class PerkNodeData : ScriptableObject
 {
-  [SerializeField]
-  private string id = "";
-  [SerializeField]
-  private int type;
-  [SerializeField]
-  private Sprite sprite;
-  [SerializeField]
-  private int column;
-  [SerializeField]
-  private int row;
-  [SerializeField]
-  private bool lockedInTown;
-  [SerializeField]
-  private bool notStack;
-  [SerializeField]
-  private Enums.PerkCost cost;
-  [SerializeField]
-  private PerkData perk;
-  [SerializeField]
-  private PerkNodeData perkRequired;
-  [SerializeField]
-  private PerkNodeData[] perksConnected;
+	[SerializeField]
+	private string id = "";
 
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
+	[SerializeField]
+	private int type;
 
-  public int Type
-  {
-    get => this.type;
-    set => this.type = value;
-  }
+	[SerializeField]
+	private Sprite sprite;
 
-  public int Column
-  {
-    get => this.column;
-    set => this.column = value;
-  }
+	[SerializeField]
+	private int column;
 
-  public int Row
-  {
-    get => this.row;
-    set => this.row = value;
-  }
+	[SerializeField]
+	private int row;
 
-  public PerkNodeData PerkRequired
-  {
-    get => this.perkRequired;
-    set => this.perkRequired = value;
-  }
+	[SerializeField]
+	private bool lockedInTown;
 
-  public PerkData Perk
-  {
-    get => this.perk;
-    set => this.perk = value;
-  }
+	[SerializeField]
+	private bool notStack;
 
-  public Sprite Sprite
-  {
-    get => this.sprite;
-    set => this.sprite = value;
-  }
+	[SerializeField]
+	private Enums.PerkCost cost;
 
-  public Enums.PerkCost Cost
-  {
-    get => this.cost;
-    set => this.cost = value;
-  }
+	[SerializeField]
+	private PerkData perk;
 
-  public PerkNodeData[] PerksConnected
-  {
-    get => this.perksConnected;
-    set => this.perksConnected = value;
-  }
+	[SerializeField]
+	private PerkNodeData perkRequired;
 
-  public bool LockedInTown
-  {
-    get => this.lockedInTown;
-    set => this.lockedInTown = value;
-  }
+	[SerializeField]
+	private PerkNodeData[] perksConnected;
 
-  public bool NotStack
-  {
-    get => this.notStack;
-    set => this.notStack = value;
-  }
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
+
+	public int Type
+	{
+		get
+		{
+			return type;
+		}
+		set
+		{
+			type = value;
+		}
+	}
+
+	public int Column
+	{
+		get
+		{
+			return column;
+		}
+		set
+		{
+			column = value;
+		}
+	}
+
+	public int Row
+	{
+		get
+		{
+			return row;
+		}
+		set
+		{
+			row = value;
+		}
+	}
+
+	public PerkNodeData PerkRequired
+	{
+		get
+		{
+			return perkRequired;
+		}
+		set
+		{
+			perkRequired = value;
+		}
+	}
+
+	public PerkData Perk
+	{
+		get
+		{
+			return perk;
+		}
+		set
+		{
+			perk = value;
+		}
+	}
+
+	public Sprite Sprite
+	{
+		get
+		{
+			return sprite;
+		}
+		set
+		{
+			sprite = value;
+		}
+	}
+
+	public Enums.PerkCost Cost
+	{
+		get
+		{
+			return cost;
+		}
+		set
+		{
+			cost = value;
+		}
+	}
+
+	public PerkNodeData[] PerksConnected
+	{
+		get
+		{
+			return perksConnected;
+		}
+		set
+		{
+			perksConnected = value;
+		}
+	}
+
+	public bool LockedInTown
+	{
+		get
+		{
+			return lockedInTown;
+		}
+		set
+		{
+			lockedInTown = value;
+		}
+	}
+
+	public bool NotStack
+	{
+		get
+		{
+			return notStack;
+		}
+		set
+		{
+			notStack = value;
+		}
+	}
 }

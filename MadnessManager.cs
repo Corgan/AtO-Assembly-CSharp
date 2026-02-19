@@ -1,9 +1,3 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: MadnessManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -11,800 +5,1018 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class MadnessManager : MonoBehaviour
 {
-  public Transform madnessWindow;
-  public Transform madnessChallengeWindow;
-  public Transform madnessWeeklyWindow;
-  public Transform madnessSingularityWindow;
-  public Transform buttonSandbox;
-  public Transform buttonExit;
-  public Transform buttonChallengeExit;
-  public Transform buttonWeeklyExit;
-  public Transform buttonSingularityExit;
-  public Transform madnessConfirmButton;
-  public Transform madnessChallengeConfirmButton;
-  public Transform madnessSingularityConfirmButton;
-  public TMP_Text madnessChallengeDescription;
-  public TMP_Text madnessSingularityDescription;
-  public TMP_Text mContent;
-  public BotonGeneric[] mButton;
-  public TMP_Text[] mCorruptorText;
-  public BotonGeneric[] mCorruptor;
-  public TMP_Text mFinalLevel;
-  public TMP_Text mScoreMod;
-  public TMP_Text mChallengeFinalLevel;
-  public TMP_Text mChallengeScoreMod;
-  public TMP_Text mSingularityFinalLevel;
-  public TMP_Text mSingularityScoreMod;
-  public Transform corruptorLocks;
-  public TMP_Text[] mChallengeText;
-  public BotonGeneric[] mChallengeButton;
-  public TMP_Text[] mChallengeWeeklyText;
-  public TMP_Text weeklyModificators;
-  public TMP_Text[] mSingularityText;
-  public BotonGeneric[] mSingularityButton;
-  private string madnessColorOn = "FFC77E";
-  private string madnessColorOff = "956984";
-  private string madnessCorruptors = "";
-  private int madnessSelected;
-  private Coroutine showCo;
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
-  private List<Transform> _controllerVerticalList = new List<Transform>();
+	public Transform madnessWindow;
 
-  public static MadnessManager Instance { get; private set; }
+	public Transform madnessChallengeWindow;
 
-  private void Awake()
-  {
-    if ((Object) MadnessManager.Instance == (Object) null)
-      MadnessManager.Instance = this;
-    else if ((Object) MadnessManager.Instance != (Object) this)
-      Object.Destroy((Object) this.gameObject);
-    Object.DontDestroyOnLoad((Object) this.gameObject);
-  }
+	public Transform madnessWeeklyWindow;
 
-  public void InitMadness()
-  {
-    string[] strArray1 = new string[11];
-    string[] strArray2 = new string[11];
-    string[] strArray3 = new string[11];
-    string[] strArray4 = new string[11];
-    StringBuilder stringBuilder = new StringBuilder();
-    foreach (KeyValuePair<string, ChallengeTrait> keyValuePair in Globals.Instance.ChallengeTraitsSource)
-    {
-      if (keyValuePair.Value.IsMadnessTrait)
-      {
-        if ((Object) keyValuePair.Value.Icon != (Object) null)
-          this.mChallengeButton[keyValuePair.Value.Order].transform.parent.GetComponent<ChallengeMadness>().SetIcon(keyValuePair.Value.Icon);
-        stringBuilder.Clear();
-        stringBuilder.Append("<color=#FFF>");
-        stringBuilder.Append(Texts.Instance.GetText(keyValuePair.Value.Id));
-        stringBuilder.Append("</color>");
-        strArray1[keyValuePair.Value.Order] = stringBuilder.ToString();
-        strArray2[keyValuePair.Value.Order] = Texts.Instance.GetText(keyValuePair.Value.Id + "desc");
-      }
-      if (keyValuePair.Value.IsSingularityTrait)
-      {
-        if ((Object) keyValuePair.Value.Icon != (Object) null)
-          this.mSingularityButton[keyValuePair.Value.OrderSingularity].transform.parent.GetComponent<ChallengeMadness>().SetIcon(keyValuePair.Value.Icon);
-        stringBuilder.Clear();
-        stringBuilder.Append("<color=#FFF>");
-        stringBuilder.Append(Texts.Instance.GetText(keyValuePair.Value.Id));
-        stringBuilder.Append("</color>");
-        strArray3[keyValuePair.Value.OrderSingularity] = stringBuilder.ToString();
-        strArray4[keyValuePair.Value.OrderSingularity] = Texts.Instance.GetText(keyValuePair.Value.Id + "desc");
-      }
-    }
-    for (int index = 0; index < this.mChallengeText.Length; ++index)
-    {
-      this.mChallengeText[index].text = strArray1[index];
-      this.mChallengeText[index].GetComponent<PopupText>().text = strArray2[index];
-    }
-    for (int index = 0; index < this.mSingularityText.Length; ++index)
-    {
-      this.mSingularityText[index].text = strArray3[index];
-      this.mSingularityText[index].GetComponent<PopupText>().text = strArray4[index];
-    }
-    this.madnessWindow.gameObject.SetActive(false);
-    this.madnessChallengeWindow.gameObject.SetActive(false);
-    this.madnessWeeklyWindow.gameObject.SetActive(false);
-    this.madnessSingularityWindow.gameObject.SetActive(false);
-  }
+	public Transform madnessSingularityWindow;
 
-  public bool IsActive()
-  {
-    if (GameManager.Instance.IsGameAdventure())
-      return this.madnessWindow.gameObject.activeSelf;
-    if (GameManager.Instance.IsSingularity())
-      return this.madnessSingularityWindow.gameObject.activeSelf;
-    return GameManager.Instance.IsWeeklyChallenge() ? this.madnessWeeklyWindow.gameObject.activeSelf : this.madnessChallengeWindow.gameObject.activeSelf;
-  }
+	public Transform buttonSandbox;
 
-  public void RefreshValues(string masterCorruptors = "")
-  {
-    this.SetMadnessMaster();
-    this.madnessCorruptors = masterCorruptors;
-    if (this.madnessCorruptors.Length != this.mCorruptor.Length)
-      this.madnessCorruptors = "";
-    this.SetCorruptors(fromMaster: true);
-    if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-    {
-      if (GameManager.Instance.IsSingularity())
-        this.SetMadnessSingularityRows(HeroSelectionManager.Instance.SingularityMadnessValueMaster);
-      else if (GameManager.Instance.IsObeliskChallenge() && !GameManager.Instance.IsWeeklyChallenge())
-        this.SetMadnessChallengeRows(HeroSelectionManager.Instance.ObeliskMadnessValueMaster);
-    }
-    this.SetFinalLevel();
-  }
+	public Transform buttonExit;
 
-  public void CloseMadness()
-  {
-    if (this.IsActive())
-    {
-      if (this.madnessWindow.gameObject.activeSelf)
-        this.madnessWindow.gameObject.SetActive(false);
-      else if (this.madnessChallengeWindow.gameObject.activeSelf)
-        this.madnessChallengeWindow.gameObject.SetActive(false);
-      else if (this.madnessWeeklyWindow.gameObject.activeSelf)
-        this.madnessWeeklyWindow.gameObject.SetActive(false);
-      else if (this.madnessSingularityWindow.gameObject.activeSelf)
-        this.madnessSingularityWindow.gameObject.SetActive(false);
-    }
-    PopupManager.Instance.ClosePopup();
-  }
+	public Transform buttonChallengeExit;
 
-  public void ShowMadness()
-  {
-    if (this.showCo != null)
-      this.StopCoroutine(this.showCo);
-    this.showCo = this.StartCoroutine(this.ShowMadnessCo());
-  }
+	public Transform buttonWeeklyExit;
 
-  private IEnumerator ShowMadnessCo()
-  {
-    if (this.IsActive())
-    {
-      this.CloseMadness();
-      if ((bool) (Object) CardCraftManager.Instance)
-        CardCraftManager.Instance.ShowSearch(true);
-    }
-    else
-    {
-      this.mScoreMod.gameObject.SetActive(false);
-      if (GameManager.Instance.IsGameAdventure())
-      {
-        this.madnessWindow.gameObject.SetActive(true);
-        yield return (object) new WaitForSeconds(0.01f);
-        if ((bool) (Object) HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame() && (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()))
-          this.madnessConfirmButton.gameObject.SetActive(true);
-        else
-          this.madnessConfirmButton.gameObject.SetActive(false);
-        this.SetMadness();
-        this.SetCorruptors();
-        if (PlayerManager.Instance.NgLevel == 0)
-        {
-          this.corruptorLocks.gameObject.SetActive(true);
-          for (int index = 0; index < this.mCorruptor.Length; ++index)
-          {
-            this.mCorruptor[index].Disable();
-            this.TurnOffCorruptor(index);
-          }
-        }
-        else
-        {
-          this.corruptorLocks.gameObject.SetActive(false);
-          for (int index = 0; index < this.mCorruptor.Length; ++index)
-            this.mCorruptor[index].Enable();
-        }
-        if (!(bool) (Object) HeroSelectionManager.Instance || GameManager.Instance.IsLoadingGame())
-        {
-          for (int index = 0; index < this.mCorruptor.Length; ++index)
-            this.mCorruptor[index].Disable();
-          for (int index = 0; index < this.mButton.Length; ++index)
-            this.mButton[index].Disable();
-          if (this.madnessSelected > -1)
-            this.mButton[this.madnessSelected].ShowBackgroundDisable(false);
-        }
-      }
-      else if (GameManager.Instance.IsSingularity())
-      {
-        this.madnessSingularityWindow.gameObject.SetActive(true);
-        if ((bool) (Object) HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame() && (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()))
-        {
-          this.madnessSingularityConfirmButton.gameObject.SetActive(true);
-          StringBuilder stringBuilder = new StringBuilder();
-          stringBuilder.Append(Texts.Instance.GetText("madnessChallengeSelect"));
-          stringBuilder.Append(" ");
-          stringBuilder.Append(Texts.Instance.GetText("madnessSingularityBeat"));
-          this.madnessSingularityDescription.text = stringBuilder.ToString();
-        }
-        else
-        {
-          this.madnessSingularityConfirmButton.gameObject.SetActive(false);
-          this.madnessSingularityDescription.text = "";
-        }
-        this.SetMadness();
-        if (!(bool) (Object) HeroSelectionManager.Instance || GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-        {
-          for (int index = 0; index < this.mSingularityButton.Length; ++index)
-            this.mSingularityButton[index].Disable();
-          if (this.madnessSelected > -1)
-            this.mSingularityButton[this.madnessSelected].ShowBackgroundDisable(false);
-        }
-      }
-      else if (GameManager.Instance.IsWeeklyChallenge())
-      {
-        ChallengeData weeklyData = Globals.Instance.GetWeeklyData(AtOManager.Instance.GetWeekly());
-        if ((Object) weeklyData != (Object) null && weeklyData.Traits != null)
-        {
-          StringBuilder stringBuilder = new StringBuilder();
-          for (int index = 0; index < weeklyData.Traits.Count; ++index)
-          {
-            this.mChallengeWeeklyText[index].transform.parent.gameObject.SetActive(true);
-            ChallengeTrait trait = weeklyData.Traits[index];
-            if ((Object) trait.Icon != (Object) null)
-              this.mChallengeWeeklyText[index].transform.parent.GetComponent<ChallengeMadness>().SetIcon(trait.Icon);
-            stringBuilder.Append("<color=#FFF>");
-            stringBuilder.Append(Texts.Instance.GetText(trait.Id));
-            stringBuilder.Append("</color>");
-            this.mChallengeWeeklyText[index].text = stringBuilder.ToString();
-            this.mChallengeWeeklyText[index].GetComponent<PopupText>().text = Texts.Instance.GetText(trait.Id + "desc");
-            stringBuilder.Clear();
-          }
-          for (int count = weeklyData.Traits.Count; count < this.mChallengeWeeklyText.Length; ++count)
-            this.mChallengeWeeklyText[count].transform.parent.gameObject.SetActive(false);
-          stringBuilder.Clear();
-          stringBuilder.Append("<size=+2><color=#C19ED9>");
-          stringBuilder.Append(AtOManager.Instance.GetWeeklyName(AtOManager.Instance.GetWeekly()));
-          stringBuilder.Append("</color></size>\n");
-          stringBuilder.Append(Texts.Instance.GetText("weeklyModificatorsDescription"));
-          this.weeklyModificators.text = stringBuilder.ToString();
-        }
-        this.madnessWeeklyWindow.gameObject.SetActive(true);
-      }
-      else
-      {
-        this.madnessChallengeWindow.gameObject.SetActive(true);
-        if ((bool) (Object) HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame() && (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()))
-        {
-          this.madnessChallengeConfirmButton.gameObject.SetActive(true);
-          StringBuilder stringBuilder = new StringBuilder();
-          stringBuilder.Append(Texts.Instance.GetText("madnessChallengeSelect"));
-          stringBuilder.Append(" ");
-          stringBuilder.Append(Texts.Instance.GetText("madnessChallengeBeat"));
-          this.madnessChallengeDescription.text = stringBuilder.ToString();
-        }
-        else
-        {
-          this.madnessChallengeDescription.text = "";
-          this.madnessChallengeConfirmButton.gameObject.SetActive(false);
-        }
-        this.SetMadness();
-        if (!(bool) (Object) HeroSelectionManager.Instance || GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-        {
-          for (int index = 0; index < this.mChallengeButton.Length; ++index)
-            this.mChallengeButton[index].Disable();
-          if (this.madnessSelected > -1)
-            this.mChallengeButton[this.madnessSelected].ShowBackgroundDisable(false);
-        }
-      }
-      if ((bool) (Object) CardCraftManager.Instance)
-        CardCraftManager.Instance.ShowSearch(false);
-    }
-  }
+	public Transform buttonSingularityExit;
 
-  public void MadnessConfirm()
-  {
-    if (!(bool) (Object) HeroSelectionManager.Instance)
-      return;
-    string str = "";
-    if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-      str = "Coop";
-    if (GameManager.Instance.IsGameAdventure())
-    {
-      HeroSelectionManager.Instance.NgValue = this.madnessSelected;
-      HeroSelectionManager.Instance.NgValueMaster = this.madnessSelected;
-      HeroSelectionManager.Instance.NgCorruptors = this.madnessCorruptors;
-      SaveManager.SaveIntoPrefsInt("madnessLevel" + str, this.madnessSelected);
-      SaveManager.SaveIntoPrefsString("madnessCorruptors" + str, this.madnessCorruptors);
-      HeroSelectionManager.Instance.SetMadnessLevel();
-    }
-    else if (GameManager.Instance.IsSingularity())
-    {
-      HeroSelectionManager.Instance.SingularityMadnessValue = this.madnessSelected;
-      HeroSelectionManager.Instance.SingularityMadnessValueMaster = this.madnessSelected;
-      SaveManager.SaveIntoPrefsInt("singularityMadness" + str, this.madnessSelected);
-      HeroSelectionManager.Instance.SetSingularityMadnessLevel();
-    }
-    else if (!GameManager.Instance.IsWeeklyChallenge())
-    {
-      HeroSelectionManager.Instance.ObeliskMadnessValue = this.madnessSelected;
-      HeroSelectionManager.Instance.ObeliskMadnessValueMaster = this.madnessSelected;
-      SaveManager.SaveIntoPrefsInt("obeliskMadness" + str, this.madnessSelected);
-      HeroSelectionManager.Instance.SetObeliskMadnessLevel();
-    }
-    this.ShowMadness();
-  }
+	public Transform madnessConfirmButton;
 
-  public string InitCorruptors()
-  {
-    string str = "";
-    for (int index = 0; index < this.mCorruptor.Length; ++index)
-    {
-      str += "0";
-      this.mCorruptorText[index].text = Functions.PregReplaceIcon(Texts.Instance.GetText("madnessCorruptor" + index.ToString()));
-      if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-        this.mCorruptor[index].Disable();
-    }
-    return str;
-  }
+	public Transform madnessChallengeConfirmButton;
 
-  private void SetMadnessMaster()
-  {
-    if (!GameManager.Instance.IsMultiplayer() || !((Object) HeroSelectionManager.Instance != (Object) null))
-      return;
-    if (GameManager.Instance.IsGameAdventure())
-    {
-      for (int index = 0; index < this.mButton.Length; ++index)
-      {
-        if (HeroSelectionManager.Instance.NgValueMaster == index)
-          this.mButton[index].transform.Find("Master").gameObject.SetActive(true);
-        else
-          this.mButton[index].transform.Find("Master").gameObject.SetActive(false);
-      }
-    }
-    else if (GameManager.Instance.IsSingularity())
-    {
-      for (int index = 0; index < this.mSingularityButton.Length; ++index)
-      {
-        if (HeroSelectionManager.Instance.SingularityMadnessValueMaster == index)
-        {
-          this.mSingularityButton[index].transform.Find("Master").gameObject.SetActive(true);
-          if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-          {
-            this.mSingularityButton[index].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
-            this.mSingularityButton[index].SetBorderColor(new Color(1f, 0.78f, 0.49f));
-            this.mSingularityButton[index].transform.localPosition = new Vector3(-5.8f, this.mSingularityButton[index].transform.localPosition.y, this.mSingularityButton[index].transform.localPosition.z);
-          }
-        }
-        else
-        {
-          this.mSingularityButton[index].transform.Find("Master").gameObject.SetActive(false);
-          if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-          {
-            this.mSingularityButton[index].ShowBackgroundDisable(true);
-            this.mSingularityButton[index].SetColor();
-            this.mSingularityButton[index].transform.localPosition = new Vector3(-5.6f, this.mSingularityButton[index].transform.localPosition.y, this.mSingularityButton[index].transform.localPosition.z);
-          }
-        }
-      }
-    }
-    else
-    {
-      if (GameManager.Instance.IsWeeklyChallenge())
-        return;
-      for (int index = 0; index < this.mChallengeButton.Length; ++index)
-      {
-        if (HeroSelectionManager.Instance.ObeliskMadnessValueMaster == index)
-        {
-          this.mChallengeButton[index].transform.Find("Master").gameObject.SetActive(true);
-          if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-          {
-            this.mChallengeButton[index].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
-            this.mChallengeButton[index].SetBorderColor(new Color(1f, 0.78f, 0.49f));
-            this.mChallengeButton[index].transform.localPosition = new Vector3(-5.8f, this.mChallengeButton[index].transform.localPosition.y, this.mChallengeButton[index].transform.localPosition.z);
-          }
-        }
-        else
-        {
-          this.mChallengeButton[index].transform.Find("Master").gameObject.SetActive(false);
-          if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-          {
-            this.mChallengeButton[index].ShowBackgroundDisable(true);
-            this.mChallengeButton[index].SetColor();
-            this.mChallengeButton[index].transform.localPosition = new Vector3(-5.6f, this.mChallengeButton[index].transform.localPosition.y, this.mChallengeButton[index].transform.localPosition.z);
-          }
-        }
-      }
-    }
-  }
+	public Transform madnessSingularityConfirmButton;
 
-  private void SetMadness()
-  {
-    if (GameManager.Instance.IsGameAdventure())
-    {
-      if ((bool) (Object) HeroSelectionManager.Instance)
-        this.SelectMadness(HeroSelectionManager.Instance.NgValue);
-      else
-        this.SelectMadness(AtOManager.Instance.GetNgPlus());
-    }
-    else if (GameManager.Instance.IsSingularity())
-    {
-      if ((bool) (Object) HeroSelectionManager.Instance)
-        this.SelectMadness(HeroSelectionManager.Instance.SingularityMadnessValue);
-      else
-        this.SelectMadness(AtOManager.Instance.GetSingularityMadness());
-    }
-    else
-    {
-      if (GameManager.Instance.IsWeeklyChallenge())
-        return;
-      if ((bool) (Object) HeroSelectionManager.Instance)
-        this.SelectMadness(HeroSelectionManager.Instance.ObeliskMadnessValue);
-      else
-        this.SelectMadness(AtOManager.Instance.GetObeliskMadness());
-    }
-  }
+	public TMP_Text madnessChallengeDescription;
 
-  public void SetCorruptors(string strCorruptors = "", bool fromMaster = false)
-  {
-    if (!GameManager.Instance.IsGameAdventure())
-      return;
-    if (strCorruptors == "" && this.madnessCorruptors == "")
-      strCorruptors = this.InitCorruptors();
-    for (int index = 0; index < this.mCorruptor.Length; ++index)
-    {
-      if (this.IsMadnessCorruptorSelected(index))
-        this.TurnOnCorruptor(index, fromMaster);
-      else
-        this.TurnOffCorruptor(index, fromMaster);
-    }
-  }
+	public TMP_Text madnessSingularityDescription;
 
-  private void ResetMadnessButtons()
-  {
-    if (GameManager.Instance.IsGameAdventure())
-    {
-      for (int index = 0; index < this.mButton.Length; ++index)
-      {
-        this.mButton[index].Enable();
-        this.mButton[index].SetColor();
-        this.mButton[index].transform.localPosition = new Vector3(0.0f, this.mButton[index].transform.localPosition.y, this.mButton[index].transform.localPosition.z);
-        this.mButton[index].transform.Find("Lock").gameObject.SetActive(false);
-        this.mButton[index].transform.Find("Master").gameObject.SetActive(false);
-      }
-    }
-    else if (GameManager.Instance.IsSingularity())
-    {
-      for (int index = 0; index < this.mSingularityButton.Length; ++index)
-      {
-        this.mSingularityButton[index].Enable();
-        this.mSingularityButton[index].SetColor();
-        this.mSingularityButton[index].transform.localPosition = new Vector3(-5.6f, this.mSingularityButton[index].transform.localPosition.y, this.mSingularityButton[index].transform.localPosition.z);
-        this.mSingularityButton[index].transform.Find("Lock").gameObject.SetActive(false);
-        this.mSingularityButton[index].transform.Find("Master").gameObject.SetActive(false);
-      }
-    }
-    else if (!GameManager.Instance.IsWeeklyChallenge())
-    {
-      for (int index = 0; index < this.mChallengeButton.Length; ++index)
-      {
-        this.mChallengeButton[index].Enable();
-        this.mChallengeButton[index].SetColor();
-        this.mChallengeButton[index].transform.localPosition = new Vector3(-5.6f, this.mChallengeButton[index].transform.localPosition.y, this.mChallengeButton[index].transform.localPosition.z);
-        this.mChallengeButton[index].transform.Find("Lock").gameObject.SetActive(false);
-        this.mChallengeButton[index].transform.Find("Master").gameObject.SetActive(false);
-      }
-    }
-    this.SetMadnessMaster();
-  }
+	public TMP_Text mContent;
 
-  private void DisableMadnessButton(int value)
-  {
-    if (GameManager.Instance.IsGameAdventure())
-    {
-      this.mButton[value].ShowBorder(false);
-      this.mButton[value].SetBackgroundColor(new Color(0.3f, 0.3f, 0.3f));
-      this.mButton[value].SetBorderColor(new Color(0.3f, 0.3f, 0.3f));
-      this.mButton[value].transform.Find("Lock").gameObject.SetActive(true);
-    }
-    else if (GameManager.Instance.IsSingularity())
-    {
-      this.mSingularityButton[value].ShowBorder(false);
-      this.mSingularityButton[value].SetBackgroundColor(new Color(0.3f, 0.3f, 0.3f));
-      this.mSingularityButton[value].SetBorderColor(new Color(0.3f, 0.3f, 0.3f));
-      this.mSingularityButton[value].transform.Find("Lock").gameObject.SetActive(true);
-      this.mSingularityButton[value].transform.parent.GetComponent<ChallengeMadness>().SetDisable();
-    }
-    else
-    {
-      if (GameManager.Instance.IsWeeklyChallenge())
-        return;
-      this.mChallengeButton[value].ShowBorder(false);
-      this.mChallengeButton[value].SetBackgroundColor(new Color(0.3f, 0.3f, 0.3f));
-      this.mChallengeButton[value].SetBorderColor(new Color(0.3f, 0.3f, 0.3f));
-      this.mChallengeButton[value].transform.Find("Lock").gameObject.SetActive(true);
-      this.mChallengeButton[value].transform.parent.GetComponent<ChallengeMadness>().SetDisable();
-    }
-  }
+	public BotonGeneric[] mButton;
 
-  public void SelectMadness(int value)
-  {
-    this.ResetMadnessButtons();
-    int num = 0;
-    if (GameManager.Instance.IsGameAdventure())
-    {
-      this.mButton[value].transform.localPosition = new Vector3(-0.25f, this.mButton[value].transform.localPosition.y, this.mButton[value].transform.localPosition.z);
-      this.mButton[value].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
-      this.mButton[value].SetBorderColor(new Color(1f, 0.78f, 0.49f));
-      num = PlayerManager.Instance.NgLevel;
-      for (int index = 1; index < this.mButton.Length; ++index)
-      {
-        if (num < index)
-          this.DisableMadnessButton(index);
-      }
-    }
-    else if (GameManager.Instance.IsSingularity())
-    {
-      this.mSingularityButton[value].transform.localPosition = new Vector3(-5.8f, this.mSingularityButton[value].transform.localPosition.y, this.mSingularityButton[value].transform.localPosition.z);
-      this.mSingularityButton[value].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
-      this.mSingularityButton[value].SetBorderColor(new Color(1f, 0.78f, 0.49f));
-      num = PlayerManager.Instance.SingularityMadnessLevel;
-      this.SetMadnessSingularityRows(value);
-    }
-    else if (!GameManager.Instance.IsWeeklyChallenge())
-    {
-      this.mChallengeButton[value].transform.localPosition = new Vector3(-5.8f, this.mChallengeButton[value].transform.localPosition.y, this.mChallengeButton[value].transform.localPosition.z);
-      this.mChallengeButton[value].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
-      this.mChallengeButton[value].SetBorderColor(new Color(1f, 0.78f, 0.49f));
-      num = PlayerManager.Instance.ObeliskMadnessLevel;
-      this.SetMadnessChallengeRows(value);
-    }
-    this.mContent.text = Functions.GetMadnessBonusText(value);
-    if (value <= num)
-      this.madnessSelected = value;
-    this.SetFinalLevel();
-  }
+	public TMP_Text[] mCorruptorText;
 
-  private void SetFinalLevel()
-  {
-    int madnessSelected = this.madnessSelected;
-    string madnessCorruptors = this.madnessCorruptors;
-    int level = this.CalculateMadnessTotal(madnessSelected, madnessCorruptors);
-    if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-    {
-      if (GameManager.Instance.IsGameAdventure())
-        level = this.CalculateMadnessTotal(!((Object) HeroSelectionManager.Instance != (Object) null) ? AtOManager.Instance.GetNgPlus() : HeroSelectionManager.Instance.NgValueMaster, madnessCorruptors);
-      else if (GameManager.Instance.IsSingularity())
-        level = !((Object) HeroSelectionManager.Instance != (Object) null) ? AtOManager.Instance.GetSingularityMadness() : HeroSelectionManager.Instance.SingularityMadnessValueMaster;
-      else if (!GameManager.Instance.IsWeeklyChallenge())
-        level = !((Object) HeroSelectionManager.Instance != (Object) null) ? AtOManager.Instance.GetObeliskMadness() : HeroSelectionManager.Instance.ObeliskMadnessValueMaster;
-    }
-    this.mFinalLevel.text = this.mChallengeFinalLevel.text = this.mSingularityFinalLevel.text = level.ToString();
-    if (level > 0)
-    {
-      this.mScoreMod.gameObject.SetActive(true);
-      this.mChallengeScoreMod.gameObject.SetActive(true);
-      this.mSingularityScoreMod.gameObject.SetActive(true);
-      StringBuilder stringBuilder = new StringBuilder();
-      stringBuilder.Append(Texts.Instance.GetText("finalScore"));
-      stringBuilder.Append(" <color=#AAA>(+");
-      stringBuilder.Append(Functions.GetMadnessScoreMultiplier(level, GameManager.Instance.IsGameAdventure()));
-      if (Functions.SpaceBeforePercentSign())
-        stringBuilder.Append(" ");
-      stringBuilder.Append("%)");
-      this.mScoreMod.text = this.mChallengeScoreMod.text = this.mSingularityScoreMod.text = stringBuilder.ToString();
-    }
-    else
-    {
-      this.mScoreMod.gameObject.SetActive(false);
-      this.mChallengeScoreMod.gameObject.SetActive(false);
-      this.mSingularityScoreMod.gameObject.SetActive(false);
-    }
-  }
+	public BotonGeneric[] mCorruptor;
 
-  private void SetMadnessChallengeRows(int _value)
-  {
-    int obeliskMadnessLevel = PlayerManager.Instance.ObeliskMadnessLevel;
-    for (int index = 0; index < this.mChallengeButton.Length; ++index)
-    {
-      if (index < _value)
-        this.mChallengeButton[index].transform.parent.GetComponent<ChallengeMadness>().SetActive();
-      if (index == _value)
-        this.mChallengeButton[index].transform.parent.GetComponent<ChallengeMadness>().SetActive();
-      if (index > _value)
-        this.mChallengeButton[index].transform.parent.GetComponent<ChallengeMadness>().SetDefault();
-      if (obeliskMadnessLevel < index)
-      {
-        this.DisableMadnessButton(index);
-        this.mChallengeButton[index].Disable();
-      }
-      else
-        this.mChallengeButton[index].Enable();
-      if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-      {
-        this.mChallengeButton[index].Disable();
-        this.mChallengeButton[_value].ShowBackgroundDisable(false);
-      }
-    }
-  }
+	public TMP_Text mFinalLevel;
 
-  private void SetMadnessSingularityRows(int _value)
-  {
-    int singularityMadnessLevel = PlayerManager.Instance.SingularityMadnessLevel;
-    for (int index = 0; index < this.mSingularityButton.Length; ++index)
-    {
-      if (index < _value)
-        this.mSingularityButton[index].transform.parent.GetComponent<ChallengeMadness>().SetActive();
-      if (index == _value)
-        this.mSingularityButton[index].transform.parent.GetComponent<ChallengeMadness>().SetActive();
-      if (index > _value)
-        this.mSingularityButton[index].transform.parent.GetComponent<ChallengeMadness>().SetDefault();
-      if (singularityMadnessLevel < index)
-      {
-        this.DisableMadnessButton(index);
-        this.mSingularityButton[index].Disable();
-      }
-      else
-        this.mSingularityButton[index].Enable();
-      if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-      {
-        this.mSingularityButton[index].Disable();
-        this.mSingularityButton[_value].ShowBackgroundDisable(false);
-      }
-    }
-  }
+	public TMP_Text mScoreMod;
 
-  public int CalculateMadnessTotal(int lvl, string corr = "")
-  {
-    int num = 0;
-    if (corr != "")
-      num = this.GetMadnessCorruptorNumber(corr);
-    return lvl + num;
-  }
+	public TMP_Text mChallengeFinalLevel;
 
-  public int GetMadnessCorruptorNumber(string corr = "")
-  {
-    if (corr == "" || corr == null)
-      return 0;
-    int madnessCorruptorNumber = 0;
-    for (int index = 0; index < corr.Length; ++index)
-    {
-      if (corr[index] == '1')
-        ++madnessCorruptorNumber;
-    }
-    return madnessCorruptorNumber;
-  }
+	public TMP_Text mChallengeScoreMod;
 
-  public void SelectMadnessCorruptor(int index, bool fromButton = true)
-  {
-    if (!(bool) (Object) HeroSelectionManager.Instance & fromButton)
-      return;
-    if (this.IsMadnessCorruptorSelected(index))
-      this.TurnOffCorruptor(index);
-    else
-      this.TurnOnCorruptor(index);
-    this.CalculateMadnessTotal(this.madnessSelected, this.madnessCorruptors);
-  }
+	public TMP_Text mSingularityFinalLevel;
 
-  private void TurnOnCorruptor(int index, bool fromMaster = false)
-  {
-    if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster() && !fromMaster)
-      return;
-    this.SetMadnessCorruptor(index, true);
-    this.mCorruptor[index].SetText("X");
-    this.mCorruptor[index].SetBackgroundColor(Functions.HexToColor(this.madnessColorOn));
-    this.mCorruptorText[index].color = Functions.HexToColor(this.madnessColorOn);
-  }
+	public TMP_Text mSingularityScoreMod;
 
-  private void TurnOffCorruptor(int index, bool fromMaster = false)
-  {
-    if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster() && !fromMaster)
-      return;
-    this.SetMadnessCorruptor(index, false);
-    this.mCorruptor[index].SetText("");
-    this.mCorruptor[index].SetBackgroundColor(Functions.HexToColor(this.madnessColorOff));
-    this.mCorruptorText[index].color = Functions.HexToColor(this.madnessColorOff);
-  }
+	public Transform corruptorLocks;
 
-  public bool IsMadnessTraitActive(string corruptor)
-  {
-    if (!AtOManager.Instance.IsZoneAffectedByMadness())
-      return false;
-    int index = -1;
-    switch (corruptor)
-    {
-      case "decadence":
-        index = 1;
-        break;
-      case "despair":
-        index = 7;
-        break;
-      case "equalizer":
-        index = 8;
-        break;
-      case "impedingdoom":
-        index = 0;
-        break;
-      case "overchargedmonsters":
-        index = 5;
-        break;
-      case "poverty":
-        index = 4;
-        break;
-      case "randomcombats":
-        index = 6;
-        break;
-      case "resistantmonsters":
-        index = 3;
-        break;
-      case "restrictedpower":
-        index = 2;
-        break;
-    }
-    return index > -1 && this.IsMadnessCorruptorSelected(index);
-  }
+	public TMP_Text[] mChallengeText;
 
-  public bool IsMadnessCorruptorSelected(int index)
-  {
-    string str = !((Object) HeroSelectionManager.Instance != (Object) null) ? AtOManager.Instance.GetMadnessCorruptors() : this.madnessCorruptors;
-    if (str == "" || str == null || index >= str.Length)
-      return false;
-    int num = (int) str[index];
-    return str[index] == '1';
-  }
+	public BotonGeneric[] mChallengeButton;
 
-  private void SetMadnessCorruptor(int index, bool value)
-  {
-    if (this.madnessCorruptors == null)
-      this.madnessCorruptors = "";
-    if (this.madnessCorruptors.Trim() == "")
-    {
-      for (int index1 = 0; index1 < this.mCorruptor.Length; ++index1)
-        this.madnessCorruptors += "0";
-    }
-    if (this.madnessCorruptors == "")
-      return;
-    this.madnessCorruptors = new StringBuilder(this.madnessCorruptors)
-    {
-      [index] = (!value ? '0' : '1')
-    }.ToString();
-    this.SetFinalLevel();
-  }
+	public TMP_Text[] mChallengeWeeklyText;
 
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    int absolutePosition = -1)
-  {
-    this._controllerList.Clear();
-    for (int index = 0; index < this.mButton.Length; ++index)
-    {
-      if (Functions.TransformIsVisible(this.mButton[index].transform))
-        this._controllerList.Add(this.mButton[index].transform);
-    }
-    for (int index = 0; index < this.mCorruptor.Length; ++index)
-    {
-      if (Functions.TransformIsVisible(this.mCorruptor[index].transform))
-        this._controllerList.Add(this.mCorruptor[index].transform);
-    }
-    for (int index = 0; index < this.mChallengeButton.Length; ++index)
-    {
-      if (Functions.TransformIsVisible(this.mChallengeButton[index].transform))
-        this._controllerList.Add(this.mChallengeButton[index].transform);
-    }
-    if (Functions.TransformIsVisible(this.buttonSandbox))
-      this._controllerList.Add(this.buttonSandbox);
-    if (Functions.TransformIsVisible(this.madnessConfirmButton))
-      this._controllerList.Add(this.madnessConfirmButton);
-    if (Functions.TransformIsVisible(this.madnessChallengeConfirmButton))
-      this._controllerList.Add(this.madnessChallengeConfirmButton);
-    if (Functions.TransformIsVisible(this.buttonExit))
-      this._controllerList.Add(this.buttonExit);
-    if (Functions.TransformIsVisible(this.buttonChallengeExit))
-      this._controllerList.Add(this.buttonChallengeExit);
-    if (Functions.TransformIsVisible(this.buttonWeeklyExit))
-      this._controllerList.Add(this.buttonWeeklyExit);
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((Object) this._controllerList[this.controllerHorizontalIndex] != (Object) null))
-      return;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
+	public TMP_Text weeklyModificators;
+
+	public TMP_Text[] mSingularityText;
+
+	public BotonGeneric[] mSingularityButton;
+
+	private string madnessColorOn = "FFC77E";
+
+	private string madnessColorOff = "956984";
+
+	private string madnessCorruptors = "";
+
+	private int madnessSelected;
+
+	private Coroutine showCo;
+
+	public int controllerHorizontalIndex = -1;
+
+	private Vector2 warpPosition = Vector2.zero;
+
+	private List<Transform> _controllerList = new List<Transform>();
+
+	private List<Transform> _controllerVerticalList = new List<Transform>();
+
+	public static MadnessManager Instance { get; private set; }
+
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(base.gameObject);
+		}
+		Object.DontDestroyOnLoad(base.gameObject);
+	}
+
+	public void InitMadness()
+	{
+		string[] array = new string[11];
+		string[] array2 = new string[11];
+		string[] array3 = new string[11];
+		string[] array4 = new string[11];
+		StringBuilder stringBuilder = new StringBuilder();
+		foreach (KeyValuePair<string, ChallengeTrait> item in Globals.Instance.ChallengeTraitsSource)
+		{
+			if (item.Value.IsMadnessTrait)
+			{
+				if (item.Value.Icon != null)
+				{
+					mChallengeButton[item.Value.Order].transform.parent.GetComponent<ChallengeMadness>().SetIcon(item.Value.Icon);
+				}
+				stringBuilder.Clear();
+				stringBuilder.Append("<color=#FFF>");
+				stringBuilder.Append(Texts.Instance.GetText(item.Value.Id));
+				stringBuilder.Append("</color>");
+				array[item.Value.Order] = stringBuilder.ToString();
+				array2[item.Value.Order] = Texts.Instance.GetText(item.Value.Id + "desc");
+			}
+			if (item.Value.IsSingularityTrait)
+			{
+				if (item.Value.Icon != null)
+				{
+					mSingularityButton[item.Value.OrderSingularity].transform.parent.GetComponent<ChallengeMadness>().SetIcon(item.Value.Icon);
+				}
+				stringBuilder.Clear();
+				stringBuilder.Append("<color=#FFF>");
+				stringBuilder.Append(Texts.Instance.GetText(item.Value.Id));
+				stringBuilder.Append("</color>");
+				array3[item.Value.OrderSingularity] = stringBuilder.ToString();
+				array4[item.Value.OrderSingularity] = Texts.Instance.GetText(item.Value.Id + "desc");
+			}
+		}
+		for (int i = 0; i < mChallengeText.Length; i++)
+		{
+			mChallengeText[i].text = array[i];
+			mChallengeText[i].GetComponent<PopupText>().text = array2[i];
+		}
+		for (int j = 0; j < mSingularityText.Length; j++)
+		{
+			mSingularityText[j].text = array3[j];
+			mSingularityText[j].GetComponent<PopupText>().text = array4[j];
+		}
+		madnessWindow.gameObject.SetActive(value: false);
+		madnessChallengeWindow.gameObject.SetActive(value: false);
+		madnessWeeklyWindow.gameObject.SetActive(value: false);
+		madnessSingularityWindow.gameObject.SetActive(value: false);
+	}
+
+	public bool IsActive()
+	{
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			return madnessWindow.gameObject.activeSelf;
+		}
+		if (GameManager.Instance.IsSingularity())
+		{
+			return madnessSingularityWindow.gameObject.activeSelf;
+		}
+		if (GameManager.Instance.IsWeeklyChallenge())
+		{
+			return madnessWeeklyWindow.gameObject.activeSelf;
+		}
+		return madnessChallengeWindow.gameObject.activeSelf;
+	}
+
+	public void RefreshValues(string masterCorruptors = "")
+	{
+		SetMadnessMaster();
+		madnessCorruptors = masterCorruptors;
+		if (madnessCorruptors.Length != mCorruptor.Length)
+		{
+			madnessCorruptors = "";
+		}
+		SetCorruptors("", fromMaster: true);
+		if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+		{
+			if (GameManager.Instance.IsSingularity())
+			{
+				SetMadnessSingularityRows(HeroSelectionManager.Instance.SingularityMadnessValueMaster);
+			}
+			else if (GameManager.Instance.IsObeliskChallenge() && !GameManager.Instance.IsWeeklyChallenge())
+			{
+				SetMadnessChallengeRows(HeroSelectionManager.Instance.ObeliskMadnessValueMaster);
+			}
+		}
+		SetFinalLevel();
+	}
+
+	public void CloseMadness()
+	{
+		if (IsActive())
+		{
+			if (madnessWindow.gameObject.activeSelf)
+			{
+				madnessWindow.gameObject.SetActive(value: false);
+			}
+			else if (madnessChallengeWindow.gameObject.activeSelf)
+			{
+				madnessChallengeWindow.gameObject.SetActive(value: false);
+			}
+			else if (madnessWeeklyWindow.gameObject.activeSelf)
+			{
+				madnessWeeklyWindow.gameObject.SetActive(value: false);
+			}
+			else if (madnessSingularityWindow.gameObject.activeSelf)
+			{
+				madnessSingularityWindow.gameObject.SetActive(value: false);
+			}
+		}
+		PopupManager.Instance.ClosePopup();
+	}
+
+	public void ShowMadness()
+	{
+		if (showCo != null)
+		{
+			StopCoroutine(showCo);
+		}
+		showCo = StartCoroutine(ShowMadnessCo());
+	}
+
+	private IEnumerator ShowMadnessCo()
+	{
+		if (IsActive())
+		{
+			CloseMadness();
+			if ((bool)CardCraftManager.Instance)
+			{
+				CardCraftManager.Instance.ShowSearch(state: true);
+			}
+			yield break;
+		}
+		mScoreMod.gameObject.SetActive(value: false);
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			madnessWindow.gameObject.SetActive(value: true);
+			yield return new WaitForSeconds(0.01f);
+			if ((bool)HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame() && (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()))
+			{
+				madnessConfirmButton.gameObject.SetActive(value: true);
+			}
+			else
+			{
+				madnessConfirmButton.gameObject.SetActive(value: false);
+			}
+			SetMadness();
+			SetCorruptors();
+			if (PlayerManager.Instance.NgLevel == 0)
+			{
+				corruptorLocks.gameObject.SetActive(value: true);
+				for (int i = 0; i < mCorruptor.Length; i++)
+				{
+					mCorruptor[i].Disable();
+					TurnOffCorruptor(i);
+				}
+			}
+			else
+			{
+				corruptorLocks.gameObject.SetActive(value: false);
+				for (int j = 0; j < mCorruptor.Length; j++)
+				{
+					mCorruptor[j].Enable();
+				}
+			}
+			if (!HeroSelectionManager.Instance || GameManager.Instance.IsLoadingGame())
+			{
+				for (int k = 0; k < mCorruptor.Length; k++)
+				{
+					mCorruptor[k].Disable();
+				}
+				for (int l = 0; l < mButton.Length; l++)
+				{
+					mButton[l].Disable();
+				}
+				if (madnessSelected > -1)
+				{
+					mButton[madnessSelected].ShowBackgroundDisable(state: false);
+				}
+			}
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			madnessSingularityWindow.gameObject.SetActive(value: true);
+			if ((bool)HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame() && (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()))
+			{
+				madnessSingularityConfirmButton.gameObject.SetActive(value: true);
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.Append(Texts.Instance.GetText("madnessChallengeSelect"));
+				stringBuilder.Append(" ");
+				stringBuilder.Append(Texts.Instance.GetText("madnessSingularityBeat"));
+				madnessSingularityDescription.text = stringBuilder.ToString();
+			}
+			else
+			{
+				madnessSingularityConfirmButton.gameObject.SetActive(value: false);
+				madnessSingularityDescription.text = "";
+			}
+			SetMadness();
+			if (!HeroSelectionManager.Instance || GameManager.Instance.IsLoadingGame() || (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster()))
+			{
+				for (int m = 0; m < mSingularityButton.Length; m++)
+				{
+					mSingularityButton[m].Disable();
+				}
+				if (madnessSelected > -1)
+				{
+					mSingularityButton[madnessSelected].ShowBackgroundDisable(state: false);
+				}
+			}
+		}
+		else if (GameManager.Instance.IsWeeklyChallenge())
+		{
+			ChallengeData weeklyData = Globals.Instance.GetWeeklyData(AtOManager.Instance.GetWeekly());
+			if (weeklyData != null && weeklyData.Traits != null)
+			{
+				StringBuilder stringBuilder2 = new StringBuilder();
+				for (int n = 0; n < weeklyData.Traits.Count; n++)
+				{
+					mChallengeWeeklyText[n].transform.parent.gameObject.SetActive(value: true);
+					ChallengeTrait challengeTrait = weeklyData.Traits[n];
+					if (challengeTrait.Icon != null)
+					{
+						mChallengeWeeklyText[n].transform.parent.GetComponent<ChallengeMadness>().SetIcon(challengeTrait.Icon);
+					}
+					stringBuilder2.Append("<color=#FFF>");
+					stringBuilder2.Append(Texts.Instance.GetText(challengeTrait.Id));
+					stringBuilder2.Append("</color>");
+					mChallengeWeeklyText[n].text = stringBuilder2.ToString();
+					mChallengeWeeklyText[n].GetComponent<PopupText>().text = Texts.Instance.GetText(challengeTrait.Id + "desc");
+					stringBuilder2.Clear();
+				}
+				for (int num = weeklyData.Traits.Count; num < mChallengeWeeklyText.Length; num++)
+				{
+					mChallengeWeeklyText[num].transform.parent.gameObject.SetActive(value: false);
+				}
+				stringBuilder2.Clear();
+				stringBuilder2.Append("<size=+2><color=#C19ED9>");
+				stringBuilder2.Append(AtOManager.Instance.GetWeeklyName(AtOManager.Instance.GetWeekly()));
+				stringBuilder2.Append("</color></size>\n");
+				stringBuilder2.Append(Texts.Instance.GetText("weeklyModificatorsDescription"));
+				weeklyModificators.text = stringBuilder2.ToString();
+			}
+			madnessWeeklyWindow.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			madnessChallengeWindow.gameObject.SetActive(value: true);
+			if ((bool)HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame() && (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()))
+			{
+				madnessChallengeConfirmButton.gameObject.SetActive(value: true);
+				StringBuilder stringBuilder3 = new StringBuilder();
+				stringBuilder3.Append(Texts.Instance.GetText("madnessChallengeSelect"));
+				stringBuilder3.Append(" ");
+				stringBuilder3.Append(Texts.Instance.GetText("madnessChallengeBeat"));
+				madnessChallengeDescription.text = stringBuilder3.ToString();
+			}
+			else
+			{
+				madnessChallengeDescription.text = "";
+				madnessChallengeConfirmButton.gameObject.SetActive(value: false);
+			}
+			SetMadness();
+			if (!HeroSelectionManager.Instance || GameManager.Instance.IsLoadingGame() || (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster()))
+			{
+				for (int num2 = 0; num2 < mChallengeButton.Length; num2++)
+				{
+					mChallengeButton[num2].Disable();
+				}
+				if (madnessSelected > -1)
+				{
+					mChallengeButton[madnessSelected].ShowBackgroundDisable(state: false);
+				}
+			}
+		}
+		if ((bool)CardCraftManager.Instance)
+		{
+			CardCraftManager.Instance.ShowSearch(state: false);
+		}
+	}
+
+	public void MadnessConfirm()
+	{
+		if ((bool)HeroSelectionManager.Instance)
+		{
+			string text = "";
+			if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+			{
+				text = "Coop";
+			}
+			if (GameManager.Instance.IsGameAdventure())
+			{
+				HeroSelectionManager.Instance.NgValue = madnessSelected;
+				HeroSelectionManager.Instance.NgValueMaster = madnessSelected;
+				HeroSelectionManager.Instance.NgCorruptors = madnessCorruptors;
+				SaveManager.SaveIntoPrefsInt("madnessLevel" + text, madnessSelected);
+				SaveManager.SaveIntoPrefsString("madnessCorruptors" + text, madnessCorruptors);
+				HeroSelectionManager.Instance.SetMadnessLevel();
+			}
+			else if (GameManager.Instance.IsSingularity())
+			{
+				HeroSelectionManager.Instance.SingularityMadnessValue = madnessSelected;
+				HeroSelectionManager.Instance.SingularityMadnessValueMaster = madnessSelected;
+				SaveManager.SaveIntoPrefsInt("singularityMadness" + text, madnessSelected);
+				HeroSelectionManager.Instance.SetSingularityMadnessLevel();
+			}
+			else if (!GameManager.Instance.IsWeeklyChallenge())
+			{
+				HeroSelectionManager.Instance.ObeliskMadnessValue = madnessSelected;
+				HeroSelectionManager.Instance.ObeliskMadnessValueMaster = madnessSelected;
+				SaveManager.SaveIntoPrefsInt("obeliskMadness" + text, madnessSelected);
+				HeroSelectionManager.Instance.SetObeliskMadnessLevel();
+			}
+			ShowMadness();
+		}
+	}
+
+	public string InitCorruptors()
+	{
+		string text = "";
+		for (int i = 0; i < mCorruptor.Length; i++)
+		{
+			text += "0";
+			mCorruptorText[i].text = Functions.PregReplaceIcon(Texts.Instance.GetText("madnessCorruptor" + i));
+			if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+			{
+				mCorruptor[i].Disable();
+			}
+		}
+		return text;
+	}
+
+	private void SetMadnessMaster()
+	{
+		if (!GameManager.Instance.IsMultiplayer() || !(HeroSelectionManager.Instance != null))
+		{
+			return;
+		}
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			for (int i = 0; i < mButton.Length; i++)
+			{
+				if (HeroSelectionManager.Instance.NgValueMaster == i)
+				{
+					mButton[i].transform.Find("Master").gameObject.SetActive(value: true);
+				}
+				else
+				{
+					mButton[i].transform.Find("Master").gameObject.SetActive(value: false);
+				}
+			}
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			for (int j = 0; j < mSingularityButton.Length; j++)
+			{
+				if (HeroSelectionManager.Instance.SingularityMadnessValueMaster == j)
+				{
+					mSingularityButton[j].transform.Find("Master").gameObject.SetActive(value: true);
+					if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+					{
+						mSingularityButton[j].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
+						mSingularityButton[j].SetBorderColor(new Color(1f, 0.78f, 0.49f));
+						mSingularityButton[j].transform.localPosition = new Vector3(-5.8f, mSingularityButton[j].transform.localPosition.y, mSingularityButton[j].transform.localPosition.z);
+					}
+				}
+				else
+				{
+					mSingularityButton[j].transform.Find("Master").gameObject.SetActive(value: false);
+					if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+					{
+						mSingularityButton[j].ShowBackgroundDisable(state: true);
+						mSingularityButton[j].SetColor();
+						mSingularityButton[j].transform.localPosition = new Vector3(-5.6f, mSingularityButton[j].transform.localPosition.y, mSingularityButton[j].transform.localPosition.z);
+					}
+				}
+			}
+		}
+		else
+		{
+			if (GameManager.Instance.IsWeeklyChallenge())
+			{
+				return;
+			}
+			for (int k = 0; k < mChallengeButton.Length; k++)
+			{
+				if (HeroSelectionManager.Instance.ObeliskMadnessValueMaster == k)
+				{
+					mChallengeButton[k].transform.Find("Master").gameObject.SetActive(value: true);
+					if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+					{
+						mChallengeButton[k].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
+						mChallengeButton[k].SetBorderColor(new Color(1f, 0.78f, 0.49f));
+						mChallengeButton[k].transform.localPosition = new Vector3(-5.8f, mChallengeButton[k].transform.localPosition.y, mChallengeButton[k].transform.localPosition.z);
+					}
+				}
+				else
+				{
+					mChallengeButton[k].transform.Find("Master").gameObject.SetActive(value: false);
+					if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+					{
+						mChallengeButton[k].ShowBackgroundDisable(state: true);
+						mChallengeButton[k].SetColor();
+						mChallengeButton[k].transform.localPosition = new Vector3(-5.6f, mChallengeButton[k].transform.localPosition.y, mChallengeButton[k].transform.localPosition.z);
+					}
+				}
+			}
+		}
+	}
+
+	private void SetMadness()
+	{
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			if ((bool)HeroSelectionManager.Instance)
+			{
+				SelectMadness(HeroSelectionManager.Instance.NgValue);
+			}
+			else
+			{
+				SelectMadness(AtOManager.Instance.GetNgPlus());
+			}
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			if ((bool)HeroSelectionManager.Instance)
+			{
+				SelectMadness(HeroSelectionManager.Instance.SingularityMadnessValue);
+			}
+			else
+			{
+				SelectMadness(AtOManager.Instance.GetSingularityMadness());
+			}
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			if ((bool)HeroSelectionManager.Instance)
+			{
+				SelectMadness(HeroSelectionManager.Instance.ObeliskMadnessValue);
+			}
+			else
+			{
+				SelectMadness(AtOManager.Instance.GetObeliskMadness());
+			}
+		}
+	}
+
+	public void SetCorruptors(string strCorruptors = "", bool fromMaster = false)
+	{
+		if (!GameManager.Instance.IsGameAdventure())
+		{
+			return;
+		}
+		if (strCorruptors == "" && madnessCorruptors == "")
+		{
+			strCorruptors = InitCorruptors();
+		}
+		for (int i = 0; i < mCorruptor.Length; i++)
+		{
+			if (IsMadnessCorruptorSelected(i))
+			{
+				TurnOnCorruptor(i, fromMaster);
+			}
+			else
+			{
+				TurnOffCorruptor(i, fromMaster);
+			}
+		}
+	}
+
+	private void ResetMadnessButtons()
+	{
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			for (int i = 0; i < mButton.Length; i++)
+			{
+				mButton[i].Enable();
+				mButton[i].SetColor();
+				mButton[i].transform.localPosition = new Vector3(0f, mButton[i].transform.localPosition.y, mButton[i].transform.localPosition.z);
+				mButton[i].transform.Find("Lock").gameObject.SetActive(value: false);
+				mButton[i].transform.Find("Master").gameObject.SetActive(value: false);
+			}
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			for (int j = 0; j < mSingularityButton.Length; j++)
+			{
+				mSingularityButton[j].Enable();
+				mSingularityButton[j].SetColor();
+				mSingularityButton[j].transform.localPosition = new Vector3(-5.6f, mSingularityButton[j].transform.localPosition.y, mSingularityButton[j].transform.localPosition.z);
+				mSingularityButton[j].transform.Find("Lock").gameObject.SetActive(value: false);
+				mSingularityButton[j].transform.Find("Master").gameObject.SetActive(value: false);
+			}
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			for (int k = 0; k < mChallengeButton.Length; k++)
+			{
+				mChallengeButton[k].Enable();
+				mChallengeButton[k].SetColor();
+				mChallengeButton[k].transform.localPosition = new Vector3(-5.6f, mChallengeButton[k].transform.localPosition.y, mChallengeButton[k].transform.localPosition.z);
+				mChallengeButton[k].transform.Find("Lock").gameObject.SetActive(value: false);
+				mChallengeButton[k].transform.Find("Master").gameObject.SetActive(value: false);
+			}
+		}
+		SetMadnessMaster();
+	}
+
+	private void DisableMadnessButton(int value)
+	{
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			mButton[value].ShowBorder(state: false);
+			mButton[value].SetBackgroundColor(new Color(0.3f, 0.3f, 0.3f));
+			mButton[value].SetBorderColor(new Color(0.3f, 0.3f, 0.3f));
+			mButton[value].transform.Find("Lock").gameObject.SetActive(value: true);
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			mSingularityButton[value].ShowBorder(state: false);
+			mSingularityButton[value].SetBackgroundColor(new Color(0.3f, 0.3f, 0.3f));
+			mSingularityButton[value].SetBorderColor(new Color(0.3f, 0.3f, 0.3f));
+			mSingularityButton[value].transform.Find("Lock").gameObject.SetActive(value: true);
+			mSingularityButton[value].transform.parent.GetComponent<ChallengeMadness>().SetDisable();
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			mChallengeButton[value].ShowBorder(state: false);
+			mChallengeButton[value].SetBackgroundColor(new Color(0.3f, 0.3f, 0.3f));
+			mChallengeButton[value].SetBorderColor(new Color(0.3f, 0.3f, 0.3f));
+			mChallengeButton[value].transform.Find("Lock").gameObject.SetActive(value: true);
+			mChallengeButton[value].transform.parent.GetComponent<ChallengeMadness>().SetDisable();
+		}
+	}
+
+	public void SelectMadness(int value)
+	{
+		ResetMadnessButtons();
+		int num = 0;
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			mButton[value].transform.localPosition = new Vector3(-0.25f, mButton[value].transform.localPosition.y, mButton[value].transform.localPosition.z);
+			mButton[value].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
+			mButton[value].SetBorderColor(new Color(1f, 0.78f, 0.49f));
+			num = PlayerManager.Instance.NgLevel;
+			for (int i = 1; i < mButton.Length; i++)
+			{
+				if (num < i)
+				{
+					DisableMadnessButton(i);
+				}
+			}
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			mSingularityButton[value].transform.localPosition = new Vector3(-5.8f, mSingularityButton[value].transform.localPosition.y, mSingularityButton[value].transform.localPosition.z);
+			mSingularityButton[value].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
+			mSingularityButton[value].SetBorderColor(new Color(1f, 0.78f, 0.49f));
+			num = PlayerManager.Instance.SingularityMadnessLevel;
+			SetMadnessSingularityRows(value);
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			mChallengeButton[value].transform.localPosition = new Vector3(-5.8f, mChallengeButton[value].transform.localPosition.y, mChallengeButton[value].transform.localPosition.z);
+			mChallengeButton[value].SetBackgroundColor(new Color(1f, 0.78f, 0.49f));
+			mChallengeButton[value].SetBorderColor(new Color(1f, 0.78f, 0.49f));
+			num = PlayerManager.Instance.ObeliskMadnessLevel;
+			SetMadnessChallengeRows(value);
+		}
+		mContent.text = Functions.GetMadnessBonusText(value);
+		if (value <= num)
+		{
+			madnessSelected = value;
+		}
+		SetFinalLevel();
+	}
+
+	private void SetFinalLevel()
+	{
+		int lvl = madnessSelected;
+		string corr = madnessCorruptors;
+		int num = CalculateMadnessTotal(lvl, corr);
+		if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+		{
+			if (GameManager.Instance.IsGameAdventure())
+			{
+				lvl = ((!(HeroSelectionManager.Instance != null)) ? AtOManager.Instance.GetNgPlus() : HeroSelectionManager.Instance.NgValueMaster);
+				num = CalculateMadnessTotal(lvl, corr);
+			}
+			else if (GameManager.Instance.IsSingularity())
+			{
+				lvl = ((!(HeroSelectionManager.Instance != null)) ? AtOManager.Instance.GetSingularityMadness() : HeroSelectionManager.Instance.SingularityMadnessValueMaster);
+				num = lvl;
+			}
+			else if (!GameManager.Instance.IsWeeklyChallenge())
+			{
+				lvl = ((!(HeroSelectionManager.Instance != null)) ? AtOManager.Instance.GetObeliskMadness() : HeroSelectionManager.Instance.ObeliskMadnessValueMaster);
+				num = lvl;
+			}
+		}
+		TMP_Text tMP_Text = mFinalLevel;
+		TMP_Text tMP_Text2 = mChallengeFinalLevel;
+		string text = (mSingularityFinalLevel.text = num.ToString());
+		string text3 = (tMP_Text2.text = text);
+		tMP_Text.text = text3;
+		if (num > 0)
+		{
+			mScoreMod.gameObject.SetActive(value: true);
+			mChallengeScoreMod.gameObject.SetActive(value: true);
+			mSingularityScoreMod.gameObject.SetActive(value: true);
+			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.Append(Texts.Instance.GetText("finalScore"));
+			stringBuilder.Append(" <color=#AAA>(+");
+			stringBuilder.Append(Functions.GetMadnessScoreMultiplier(num, GameManager.Instance.IsGameAdventure()));
+			if (Functions.SpaceBeforePercentSign())
+			{
+				stringBuilder.Append(" ");
+			}
+			stringBuilder.Append("%)");
+			TMP_Text tMP_Text3 = mScoreMod;
+			TMP_Text tMP_Text4 = mChallengeScoreMod;
+			text = (mSingularityScoreMod.text = stringBuilder.ToString());
+			text3 = (tMP_Text4.text = text);
+			tMP_Text3.text = text3;
+		}
+		else
+		{
+			mScoreMod.gameObject.SetActive(value: false);
+			mChallengeScoreMod.gameObject.SetActive(value: false);
+			mSingularityScoreMod.gameObject.SetActive(value: false);
+		}
+	}
+
+	private void SetMadnessChallengeRows(int _value)
+	{
+		int obeliskMadnessLevel = PlayerManager.Instance.ObeliskMadnessLevel;
+		for (int i = 0; i < mChallengeButton.Length; i++)
+		{
+			if (i < _value)
+			{
+				mChallengeButton[i].transform.parent.GetComponent<ChallengeMadness>().SetActive();
+			}
+			if (i == _value)
+			{
+				mChallengeButton[i].transform.parent.GetComponent<ChallengeMadness>().SetActive();
+			}
+			if (i > _value)
+			{
+				mChallengeButton[i].transform.parent.GetComponent<ChallengeMadness>().SetDefault();
+			}
+			if (obeliskMadnessLevel < i)
+			{
+				DisableMadnessButton(i);
+				mChallengeButton[i].Disable();
+			}
+			else
+			{
+				mChallengeButton[i].Enable();
+			}
+			if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+			{
+				mChallengeButton[i].Disable();
+				mChallengeButton[_value].ShowBackgroundDisable(state: false);
+			}
+		}
+	}
+
+	private void SetMadnessSingularityRows(int _value)
+	{
+		int singularityMadnessLevel = PlayerManager.Instance.SingularityMadnessLevel;
+		for (int i = 0; i < mSingularityButton.Length; i++)
+		{
+			if (i < _value)
+			{
+				mSingularityButton[i].transform.parent.GetComponent<ChallengeMadness>().SetActive();
+			}
+			if (i == _value)
+			{
+				mSingularityButton[i].transform.parent.GetComponent<ChallengeMadness>().SetActive();
+			}
+			if (i > _value)
+			{
+				mSingularityButton[i].transform.parent.GetComponent<ChallengeMadness>().SetDefault();
+			}
+			if (singularityMadnessLevel < i)
+			{
+				DisableMadnessButton(i);
+				mSingularityButton[i].Disable();
+			}
+			else
+			{
+				mSingularityButton[i].Enable();
+			}
+			if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
+			{
+				mSingularityButton[i].Disable();
+				mSingularityButton[_value].ShowBackgroundDisable(state: false);
+			}
+		}
+	}
+
+	public int CalculateMadnessTotal(int lvl, string corr = "")
+	{
+		int num = 0;
+		if (corr != "")
+		{
+			num = GetMadnessCorruptorNumber(corr);
+		}
+		return lvl + num;
+	}
+
+	public int GetMadnessCorruptorNumber(string corr = "")
+	{
+		if (corr == "" || corr == null)
+		{
+			return 0;
+		}
+		int num = 0;
+		for (int i = 0; i < corr.Length; i++)
+		{
+			if (corr[i] == '1')
+			{
+				num++;
+			}
+		}
+		return num;
+	}
+
+	public void SelectMadnessCorruptor(int index, bool fromButton = true)
+	{
+		if (!(!HeroSelectionManager.Instance && fromButton))
+		{
+			if (IsMadnessCorruptorSelected(index))
+			{
+				TurnOffCorruptor(index);
+			}
+			else
+			{
+				TurnOnCorruptor(index);
+			}
+			CalculateMadnessTotal(madnessSelected, madnessCorruptors);
+		}
+	}
+
+	private void TurnOnCorruptor(int index, bool fromMaster = false)
+	{
+		if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster() || fromMaster)
+		{
+			SetMadnessCorruptor(index, value: true);
+			mCorruptor[index].SetText("X");
+			mCorruptor[index].SetBackgroundColor(Functions.HexToColor(madnessColorOn));
+			mCorruptorText[index].color = Functions.HexToColor(madnessColorOn);
+		}
+	}
+
+	private void TurnOffCorruptor(int index, bool fromMaster = false)
+	{
+		if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster() || fromMaster)
+		{
+			SetMadnessCorruptor(index, value: false);
+			mCorruptor[index].SetText("");
+			mCorruptor[index].SetBackgroundColor(Functions.HexToColor(madnessColorOff));
+			mCorruptorText[index].color = Functions.HexToColor(madnessColorOff);
+		}
+	}
+
+	public bool IsMadnessTraitActive(string corruptor)
+	{
+		if (!AtOManager.Instance.IsZoneAffectedByMadness())
+		{
+			return false;
+		}
+		int num = -1;
+		switch (corruptor)
+		{
+		case "impedingdoom":
+			num = 0;
+			break;
+		case "decadence":
+			num = 1;
+			break;
+		case "restrictedpower":
+			num = 2;
+			break;
+		case "resistantmonsters":
+			num = 3;
+			break;
+		case "poverty":
+			num = 4;
+			break;
+		case "overchargedmonsters":
+			num = 5;
+			break;
+		case "randomcombats":
+			num = 6;
+			break;
+		case "despair":
+			num = 7;
+			break;
+		case "equalizer":
+			num = 8;
+			break;
+		}
+		if (num > -1)
+		{
+			return IsMadnessCorruptorSelected(num);
+		}
+		return false;
+	}
+
+	public bool IsMadnessCorruptorSelected(int index)
+	{
+		string text = "";
+		text = ((!(HeroSelectionManager.Instance != null)) ? AtOManager.Instance.GetMadnessCorruptors() : madnessCorruptors);
+		if (text == "" || text == null)
+		{
+			return false;
+		}
+		if (index < text.Length)
+		{
+			_ = text[index];
+			if (text[index] == '1')
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void SetMadnessCorruptor(int index, bool value)
+	{
+		if (madnessCorruptors == null)
+		{
+			madnessCorruptors = "";
+		}
+		if (madnessCorruptors.Trim() == "")
+		{
+			for (int i = 0; i < mCorruptor.Length; i++)
+			{
+				madnessCorruptors += "0";
+			}
+		}
+		if (!(madnessCorruptors == ""))
+		{
+			StringBuilder stringBuilder = new StringBuilder(madnessCorruptors);
+			if (value)
+			{
+				stringBuilder[index] = '1';
+			}
+			else
+			{
+				stringBuilder[index] = '0';
+			}
+			madnessCorruptors = stringBuilder.ToString();
+			SetFinalLevel();
+		}
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, int absolutePosition = -1)
+	{
+		_controllerList.Clear();
+		for (int i = 0; i < mButton.Length; i++)
+		{
+			if (Functions.TransformIsVisible(mButton[i].transform))
+			{
+				_controllerList.Add(mButton[i].transform);
+			}
+		}
+		for (int j = 0; j < mCorruptor.Length; j++)
+		{
+			if (Functions.TransformIsVisible(mCorruptor[j].transform))
+			{
+				_controllerList.Add(mCorruptor[j].transform);
+			}
+		}
+		for (int k = 0; k < mChallengeButton.Length; k++)
+		{
+			if (Functions.TransformIsVisible(mChallengeButton[k].transform))
+			{
+				_controllerList.Add(mChallengeButton[k].transform);
+			}
+		}
+		if (Functions.TransformIsVisible(buttonSandbox))
+		{
+			_controllerList.Add(buttonSandbox);
+		}
+		if (Functions.TransformIsVisible(madnessConfirmButton))
+		{
+			_controllerList.Add(madnessConfirmButton);
+		}
+		if (Functions.TransformIsVisible(madnessChallengeConfirmButton))
+		{
+			_controllerList.Add(madnessChallengeConfirmButton);
+		}
+		if (Functions.TransformIsVisible(buttonExit))
+		{
+			_controllerList.Add(buttonExit);
+		}
+		if (Functions.TransformIsVisible(buttonChallengeExit))
+		{
+			_controllerList.Add(buttonChallengeExit);
+		}
+		if (Functions.TransformIsVisible(buttonWeeklyExit))
+		{
+			_controllerList.Add(buttonWeeklyExit);
+		}
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
 }

@@ -1,51 +1,55 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: StringComparerWithZeroPadding
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using System.Collections.Generic;
 
-#nullable disable
 public class StringComparerWithZeroPadding : IComparer<string>
 {
-  public int Compare(string x, string y)
-  {
-    string[] strArray1 = x.Split('_', StringSplitOptions.None);
-    string[] strArray2 = y.Split('_', StringSplitOptions.None);
-    for (int index = 0; index < Math.Min(strArray1.Length, strArray2.Length); ++index)
-    {
-      string s1 = strArray1[index];
-      string s2 = strArray2[index];
-      string str = this.FillWithZeros(s1, Math.Max(s1.Length, s2.Length));
-      string strB = this.FillWithZeros(s2, Math.Max(str.Length, s2.Length));
-      int num = str.CompareTo(strB);
-      if (num != 0)
-        return num;
-    }
-    return x.Length.CompareTo(y.Length);
-  }
+	public int Compare(string x, string y)
+	{
+		string[] array = x.Split('_');
+		string[] array2 = y.Split('_');
+		for (int i = 0; i < Math.Min(array.Length, array2.Length); i++)
+		{
+			string text = array[i];
+			string text2 = array2[i];
+			text = FillWithZeros(text, Math.Max(text.Length, text2.Length));
+			text2 = FillWithZeros(text2, Math.Max(text.Length, text2.Length));
+			int num = text.CompareTo(text2);
+			if (num != 0)
+			{
+				return num;
+			}
+		}
+		return x.Length.CompareTo(y.Length);
+	}
 
-  private string FillWithZeros(string s, int maxLength)
-  {
-    if (s.Length == maxLength)
-      return s;
-    int num = -1;
-    for (int index = 0; index < s.Length; ++index)
-    {
-      if (char.IsDigit(s[index]))
-      {
-        num = index;
-        break;
-      }
-    }
-    if (num == -1)
-      return s;
-    string str1 = s.Substring(0, num);
-    string str2 = s.Substring(num).PadLeft(maxLength - str1.Length, '0');
-    return str1 + str2;
-  }
+	private string FillWithZeros(string s, int maxLength)
+	{
+		if (s.Length == maxLength)
+		{
+			return s;
+		}
+		int num = -1;
+		for (int i = 0; i < s.Length; i++)
+		{
+			if (char.IsDigit(s[i]))
+			{
+				num = i;
+				break;
+			}
+		}
+		if (num == -1)
+		{
+			return s;
+		}
+		string text = s.Substring(0, num);
+		string text2 = s.Substring(num);
+		text2 = text2.PadLeft(maxLength - text.Length, '0');
+		return text + text2;
+	}
 
-  private bool IsNumeric(string value) => int.TryParse(value, out int _);
+	private bool IsNumeric(string value)
+	{
+		int result;
+		return int.TryParse(value, out result);
+	}
 }

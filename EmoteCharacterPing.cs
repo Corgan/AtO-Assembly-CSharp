@@ -1,55 +1,63 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EmoteCharacterPing
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class EmoteCharacterPing : MonoBehaviour
 {
-  public TMP_Text letter;
-  public SpriteRenderer icon;
-  public Transform background;
-  public Transform backgroundHover;
-  public int action;
-  private string characterId;
+	public TMP_Text letter;
 
-  private void Start() => this.Hide();
+	public SpriteRenderer icon;
 
-  public void Show(string _id, int _action)
-  {
-    if (!(bool) (Object) MatchManager.Instance)
-      return;
-    this.characterId = _id;
-    this.action = _action;
-    this.icon.sprite = MatchManager.Instance.emoteManager.emotesSprite[_action];
-    this.gameObject.SetActive(true);
-    this.backgroundHover.gameObject.SetActive(false);
-  }
+	public Transform background;
 
-  public void Hide() => this.gameObject.SetActive(false);
+	public Transform backgroundHover;
 
-  public void OnMouseEnter()
-  {
-    if (!(bool) (Object) MatchManager.Instance)
-      return;
-    this.backgroundHover.gameObject.SetActive(true);
-  }
+	public int action;
 
-  public void OnMouseExit()
-  {
-    if (!(bool) (Object) MatchManager.Instance)
-      return;
-    this.backgroundHover.gameObject.SetActive(false);
-  }
+	private string characterId;
 
-  public void OnMouseUp()
-  {
-    if (!(bool) (Object) MatchManager.Instance)
-      return;
-    MatchManager.Instance.EmoteTarget(this.characterId, this.action);
-  }
+	private void Start()
+	{
+		Hide();
+	}
+
+	public void Show(string _id, int _action)
+	{
+		if ((bool)MatchManager.Instance)
+		{
+			characterId = _id;
+			action = _action;
+			icon.sprite = MatchManager.Instance.emoteManager.emotesSprite[_action];
+			base.gameObject.SetActive(value: true);
+			backgroundHover.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void Hide()
+	{
+		base.gameObject.SetActive(value: false);
+	}
+
+	public void OnMouseEnter()
+	{
+		if ((bool)MatchManager.Instance)
+		{
+			backgroundHover.gameObject.SetActive(value: true);
+		}
+	}
+
+	public void OnMouseExit()
+	{
+		if ((bool)MatchManager.Instance)
+		{
+			backgroundHover.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void OnMouseUp()
+	{
+		if ((bool)MatchManager.Instance)
+		{
+			MatchManager.Instance.EmoteTarget(characterId, action);
+		}
+	}
 }

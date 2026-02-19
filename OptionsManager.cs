@@ -1,304 +1,387 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: OptionsManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
+using System;
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class OptionsManager : MonoBehaviour
 {
-  public Transform elements;
-  public Transform iconExit;
-  public Transform iconStats;
-  public Transform iconResign;
-  public Transform iconSettings;
-  public Transform iconRetry;
-  public Transform iconTome;
-  public Transform iconCombatLog;
-  public Transform madness;
-  public Transform madnessParticles;
-  public TMP_Text madnessText;
-  public Transform version;
-  public Transform score;
-  public TMP_Text scoreText;
-  public Transform position;
-  private float distanceBetweenButton = 0.65f;
-  private float positionRightButton = 0.95f;
-  private float adjustmentForBigButtons = 1.2f;
-  private List<GameObject> buttonOrder = new List<GameObject>();
-  private int _indexController = -1;
+	public Transform elements;
 
-  public static OptionsManager Instance { get; private set; }
+	public Transform iconExit;
 
-  private void Awake()
-  {
-    if ((Object) OptionsManager.Instance == (Object) null)
-      OptionsManager.Instance = this;
-    else if ((Object) OptionsManager.Instance != (Object) this)
-      Object.Destroy((Object) this.gameObject);
-    Object.DontDestroyOnLoad((Object) this.gameObject);
-    this.buttonOrder.Add(this.iconExit.gameObject);
-    this.buttonOrder.Add(this.iconResign.gameObject);
-    this.buttonOrder.Add(this.iconRetry.gameObject);
-    this.buttonOrder.Add(this.iconSettings.gameObject);
-    this.buttonOrder.Add(this.iconStats.gameObject);
-    this.buttonOrder.Add(this.iconCombatLog.gameObject);
-    this.buttonOrder.Add(this.iconTome.gameObject);
-    this.buttonOrder.Add(this.score.gameObject);
-    this.buttonOrder.Add(this.madness.gameObject);
-  }
+	public Transform iconStats;
 
-  public void Show()
-  {
-    if (!this.elements.gameObject.activeSelf)
-      this.elements.gameObject.SetActive(true);
-    this.iconRetry.gameObject.SetActive(false);
-    this.iconCombatLog.gameObject.SetActive(false);
-    this.iconResign.gameObject.SetActive(false);
-    this.iconTome.gameObject.SetActive(true);
-    this.iconExit.gameObject.SetActive(true);
-    if ((bool) (Object) MatchManager.Instance || (bool) (Object) MapManager.Instance || (bool) (Object) TownManager.Instance || (bool) (Object) FinishRunManager.Instance || (bool) (Object) RewardsManager.Instance)
-      this.iconStats.gameObject.SetActive(true);
-    else
-      this.iconStats.gameObject.SetActive(false);
-    if ((bool) (Object) FinishRunManager.Instance)
-    {
-      this.iconSettings.gameObject.SetActive(false);
-      this.iconExit.gameObject.SetActive(false);
-      this.iconTome.gameObject.SetActive(false);
-    }
-    else
-      this.iconSettings.gameObject.SetActive(true);
-    if ((bool) (Object) MatchManager.Instance)
-    {
-      this.version.gameObject.SetActive(true);
-      this.iconCombatLog.gameObject.SetActive(true);
-      if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
-      {
-        this.iconResign.gameObject.SetActive(true);
-        this.iconRetry.gameObject.SetActive(true);
-      }
-      else
-        this.iconExit.gameObject.SetActive(false);
-    }
-    else
-      this.version.gameObject.SetActive(false);
-    float positionRightButton = this.positionRightButton;
-    bool flag = false;
-    for (int index = 0; index < this.buttonOrder.Count; ++index)
-    {
-      if (this.buttonOrder[index].activeSelf)
-      {
-        if ((Object) this.buttonOrder[index] == (Object) this.score.gameObject || (Object) this.buttonOrder[index] == (Object) this.madness.gameObject)
-        {
-          if (!flag)
-            positionRightButton -= this.adjustmentForBigButtons * 0.5f;
-          else
-            positionRightButton -= this.adjustmentForBigButtons;
-          flag = true;
-        }
-        else
-          flag = false;
-        this.buttonOrder[index].transform.localPosition = new Vector3(positionRightButton, this.buttonOrder[index].transform.localPosition.y, this.buttonOrder[index].transform.localPosition.z);
-        positionRightButton -= this.distanceBetweenButton;
-      }
-    }
-  }
+	public Transform iconResign;
 
-  public void Hide()
-  {
-    if (!this.elements.gameObject.activeSelf)
-      return;
-    this.elements.gameObject.SetActive(false);
-    this.ResetIndexController();
-  }
+	public Transform iconSettings;
 
-  public bool IsActive() => this.elements.gameObject.activeSelf;
+	public Transform iconRetry;
 
-  public void SetMadness()
-  {
-    string str = string.Format(Texts.Instance.GetText("actNumber"), (object) AtOManager.Instance.GetActNumberForText());
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(str);
-    stringBuilder.Append("<br><size=-.8><color=#EFA0FF>");
-    int num = 0;
-    if (GameManager.Instance.IsGameAdventure())
-      num = AtOManager.Instance.GetMadnessDifficulty();
-    else if (GameManager.Instance.IsSingularity())
-      num = AtOManager.Instance.GetSingularityMadness();
-    else if (!GameManager.Instance.IsWeeklyChallenge())
-      num = AtOManager.Instance.GetObeliskMadness();
-    bool flag = false;
-    if (num > 0)
-    {
-      stringBuilder.Append(string.Format(Texts.Instance.GetText("madnessNumber"), (object) num.ToString()));
-      flag = true;
-    }
-    else if (GameManager.Instance.IsWeeklyChallenge())
-    {
-      stringBuilder.Append(AtOManager.Instance.GetWeeklyName(AtOManager.Instance.GetWeekly()));
-      flag = true;
-    }
-    this.madnessText.text = stringBuilder.ToString();
-    if ((bool) (Object) MatchManager.Instance || (bool) (Object) MapManager.Instance || (bool) (Object) TownManager.Instance || (bool) (Object) FinishRunManager.Instance)
-    {
-      this.madness.gameObject.SetActive(true);
-      if (flag)
-        this.madnessParticles.gameObject.SetActive(true);
-      else
-        this.madnessParticles.gameObject.SetActive(false);
-    }
-    else
-      this.madness.gameObject.SetActive(false);
-  }
+	public Transform iconTome;
 
-  public void ShowScore(bool state)
-  {
-    this.score.gameObject.SetActive(state);
-    if (!state)
-      return;
-    this.SetScore();
-  }
+	public Transform iconCombatLog;
 
-  public void Resize()
-  {
-    this.transform.localScale = Globals.Instance.scaleV;
-    this.transform.position = new Vector3((float) ((double) Globals.Instance.sizeW * 0.5 - 1.5 * (double) Globals.Instance.scale), (float) ((double) Globals.Instance.sizeH * 0.5 - 0.31999999284744263 * (double) Globals.Instance.scale), this.transform.position.z);
-    this.position.localPosition = new Vector3((float) (-(double) Globals.Instance.sizeW * 0.5 + 1.3999999761581421 * (double) Globals.Instance.scale), -0.045f * Globals.Instance.scale, this.position.localPosition.z);
-    this.version.transform.position = new Vector3((float) ((double) Globals.Instance.sizeW * 0.5 - 2.3499999046325684 * (double) Globals.Instance.scale), (float) (-(double) Globals.Instance.sizeH * 0.5 + 0.2199999988079071 * (double) Globals.Instance.scale), this.version.transform.position.z);
-  }
+	public Transform madness;
 
-  public void SetPositionText(string str = "")
-  {
-  }
+	public Transform madnessParticles;
 
-  public void CantExitBecauseRewards()
-  {
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.CantExitBecauseRewardsAction);
-    AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("exitGameRewards"));
-  }
+	public TMP_Text madnessText;
 
-  public void CantExitBecauseRewardsAction()
-  {
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.CantExitBecauseRewardsAction);
-  }
+	public Transform version;
 
-  public void CantExitBecauseEvent()
-  {
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.CantExitBecauseEventAction);
-    AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("exitGameEvent"));
-  }
+	public Transform score;
 
-  public void CantExitBecauseEventAction()
-  {
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.CantExitBecauseEventAction);
-  }
+	public TMP_Text scoreText;
 
-  public void SetScore()
-  {
-    int score = AtOManager.Instance.CalculateScore();
-    this.score.gameObject.SetActive(true);
-    this.scoreText.text = Functions.ScoreFormat(score);
-  }
+	public Transform position;
 
-  public void Exit()
-  {
-    if (GameManager.Instance.IsMaskActive() || AtOManager.Instance.saveLoadStatus)
-      return;
-    if ((Object) RewardsManager.Instance != (Object) null || (Object) LootManager.Instance != (Object) null)
-      this.CantExitBecauseRewards();
-    else if ((Object) EventManager.Instance != (Object) null)
-      this.CantExitBecauseEvent();
-    else if ((Object) CardPlayerManager.Instance != (Object) null && !CardPlayerManager.Instance.CanExit())
-      this.CantExitBecauseEvent();
-    else if ((Object) CardPlayerPairsManager.Instance != (Object) null && !CardPlayerPairsManager.Instance.CanExit())
-    {
-      this.CantExitBecauseEvent();
-    }
-    else
-    {
-      bool flag = false;
-      if ((Object) MapManager.Instance != (Object) null || (Object) HeroSelectionManager.Instance != (Object) null || (Object) TownManager.Instance != (Object) null || (Object) LobbyManager.Instance != (Object) null || (Object) ChallengeSelectionManager.Instance != (Object) null || (Object) MatchManager.Instance != (Object) null)
-        flag = true;
-      if (!flag)
-      {
-        SceneStatic.LoadByName("MainMenu");
-      }
-      else
-      {
-        AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.ExitGameAction);
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.Append(Texts.Instance.GetText("exitGameConfirm"));
-        stringBuilder.Append("<br><size=-2><color=#aaa>");
-        if (!((Object) LobbyManager.Instance != (Object) null))
-        {
-          if ((Object) HeroSelectionManager.Instance != (Object) null)
-            stringBuilder.Append(Texts.Instance.GetText("exitGameConfirmLoss"));
-          else
-            stringBuilder.Append(Texts.Instance.GetText("exitGameConfirmSave"));
-        }
-        stringBuilder.Append("</color></size>");
-        AlertManager.Instance.AlertConfirmDouble(stringBuilder.ToString(), Texts.Instance.GetText("accept").ToUpper(), Texts.Instance.GetText("cancel").ToUpper());
-        AlertManager.Instance.ShowDoorIcon();
-      }
-    }
-  }
+	private float distanceBetweenButton = 0.65f;
 
-  public void ExitGameAction()
-  {
-    bool confirmAnswer = AlertManager.Instance.GetConfirmAnswer();
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.ExitGameAction);
-    if (GameManager.Instance.IsMaskActive() || AtOManager.Instance.saveLoadStatus || !confirmAnswer)
-      return;
-    this.DoExit();
-  }
+	private float positionRightButton = 0.95f;
 
-  public void DoExit()
-  {
-    if (GameManager.Instance.IsMaskActive() || AtOManager.Instance.saveLoadStatus)
-      return;
-    if (!((Object) MatchManager.Instance != (Object) null))
-    {
-      if ((Object) TownManager.Instance != (Object) null)
-        AtOManager.Instance.SaveGame();
-      else if ((Object) TownManager.Instance != (Object) null)
-        AtOManager.Instance.SaveGame();
-    }
-    if (GameManager.Instance.IsMultiplayer())
-      NetworkManager.Instance.Disconnect();
-    if ((Object) ChatManager.Instance != (Object) null)
-      ChatManager.Instance.DisableChat();
-    SceneStatic.LoadByName("MainMenu");
-  }
+	private float adjustmentForBigButtons = 1.2f;
 
-  public void InputMoveController(bool goingRight)
-  {
-    bool flag = false;
-    while (!flag)
-    {
-      if (!goingRight)
-      {
-        ++this._indexController;
-        if (this._indexController > this.buttonOrder.Count - 1)
-          this._indexController = 0;
-      }
-      else
-      {
-        --this._indexController;
-        if (this._indexController < 0)
-          this._indexController = this.buttonOrder.Count - 1;
-      }
-      if (this.buttonOrder[this._indexController].activeSelf)
-        flag = true;
-    }
-    Mouse.current.WarpCursorPosition((Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.buttonOrder[this._indexController].transform.position));
-  }
+	private List<GameObject> buttonOrder = new List<GameObject>();
 
-  private void ResetIndexController() => this._indexController = -1;
+	private int _indexController = -1;
+
+	public static OptionsManager Instance { get; private set; }
+
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			UnityEngine.Object.Destroy(base.gameObject);
+		}
+		UnityEngine.Object.DontDestroyOnLoad(base.gameObject);
+		buttonOrder.Add(iconExit.gameObject);
+		buttonOrder.Add(iconResign.gameObject);
+		buttonOrder.Add(iconRetry.gameObject);
+		buttonOrder.Add(iconSettings.gameObject);
+		buttonOrder.Add(iconStats.gameObject);
+		buttonOrder.Add(iconCombatLog.gameObject);
+		buttonOrder.Add(iconTome.gameObject);
+		buttonOrder.Add(score.gameObject);
+		buttonOrder.Add(madness.gameObject);
+	}
+
+	public void Show()
+	{
+		if (!elements.gameObject.activeSelf)
+		{
+			elements.gameObject.SetActive(value: true);
+		}
+		iconRetry.gameObject.SetActive(value: false);
+		iconCombatLog.gameObject.SetActive(value: false);
+		iconResign.gameObject.SetActive(value: false);
+		iconTome.gameObject.SetActive(value: true);
+		iconExit.gameObject.SetActive(value: true);
+		if ((bool)MatchManager.Instance || (bool)MapManager.Instance || (bool)TownManager.Instance || (bool)FinishRunManager.Instance || (bool)RewardsManager.Instance)
+		{
+			iconStats.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			iconStats.gameObject.SetActive(value: false);
+		}
+		if ((bool)FinishRunManager.Instance)
+		{
+			iconSettings.gameObject.SetActive(value: false);
+			iconExit.gameObject.SetActive(value: false);
+			iconTome.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			iconSettings.gameObject.SetActive(value: true);
+		}
+		if ((bool)MatchManager.Instance)
+		{
+			version.gameObject.SetActive(value: true);
+			iconCombatLog.gameObject.SetActive(value: true);
+			if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
+			{
+				iconResign.gameObject.SetActive(value: true);
+				iconRetry.gameObject.SetActive(value: true);
+			}
+			else
+			{
+				iconExit.gameObject.SetActive(value: false);
+			}
+		}
+		else
+		{
+			version.gameObject.SetActive(value: false);
+		}
+		float num = positionRightButton;
+		bool flag = false;
+		for (int i = 0; i < buttonOrder.Count; i++)
+		{
+			if (buttonOrder[i].activeSelf)
+			{
+				if (buttonOrder[i] == score.gameObject || buttonOrder[i] == madness.gameObject)
+				{
+					num = (flag ? (num - adjustmentForBigButtons) : (num - adjustmentForBigButtons * 0.5f));
+					flag = true;
+				}
+				else
+				{
+					flag = false;
+				}
+				buttonOrder[i].transform.localPosition = new Vector3(num, buttonOrder[i].transform.localPosition.y, buttonOrder[i].transform.localPosition.z);
+				num -= distanceBetweenButton;
+			}
+		}
+	}
+
+	public void Hide()
+	{
+		if (elements.gameObject.activeSelf)
+		{
+			elements.gameObject.SetActive(value: false);
+			ResetIndexController();
+		}
+	}
+
+	public bool IsActive()
+	{
+		return elements.gameObject.activeSelf;
+	}
+
+	public void SetMadness()
+	{
+		string value = string.Format(Texts.Instance.GetText("actNumber"), AtOManager.Instance.GetActNumberForText());
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(value);
+		stringBuilder.Append("<br><size=-.8><color=#EFA0FF>");
+		int num = 0;
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			num = AtOManager.Instance.GetMadnessDifficulty();
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			num = AtOManager.Instance.GetSingularityMadness();
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			num = AtOManager.Instance.GetObeliskMadness();
+		}
+		bool flag = false;
+		if (num > 0)
+		{
+			stringBuilder.Append(string.Format(Texts.Instance.GetText("madnessNumber"), num.ToString()));
+			flag = true;
+		}
+		else if (GameManager.Instance.IsWeeklyChallenge())
+		{
+			stringBuilder.Append(AtOManager.Instance.GetWeeklyName(AtOManager.Instance.GetWeekly()));
+			flag = true;
+		}
+		madnessText.text = stringBuilder.ToString();
+		if ((bool)MatchManager.Instance || (bool)MapManager.Instance || (bool)TownManager.Instance || (bool)FinishRunManager.Instance)
+		{
+			madness.gameObject.SetActive(value: true);
+			if (flag)
+			{
+				madnessParticles.gameObject.SetActive(value: true);
+			}
+			else
+			{
+				madnessParticles.gameObject.SetActive(value: false);
+			}
+		}
+		else
+		{
+			madness.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void ShowScore(bool state)
+	{
+		score.gameObject.SetActive(state);
+		if (state)
+		{
+			SetScore();
+		}
+	}
+
+	public void Resize()
+	{
+		base.transform.localScale = Globals.Instance.scaleV;
+		base.transform.position = new Vector3(Globals.Instance.sizeW * 0.5f - 1.5f * Globals.Instance.scale, Globals.Instance.sizeH * 0.5f - 0.32f * Globals.Instance.scale, base.transform.position.z);
+		position.localPosition = new Vector3((0f - Globals.Instance.sizeW) * 0.5f + 1.4f * Globals.Instance.scale, -0.045f * Globals.Instance.scale, position.localPosition.z);
+		version.transform.position = new Vector3(Globals.Instance.sizeW * 0.5f - 2.35f * Globals.Instance.scale, (0f - Globals.Instance.sizeH) * 0.5f + 0.22f * Globals.Instance.scale, version.transform.position.z);
+	}
+
+	public void SetPositionText(string str = "")
+	{
+	}
+
+	public void CantExitBecauseRewards()
+	{
+		AlertManager.buttonClickDelegate = CantExitBecauseRewardsAction;
+		AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("exitGameRewards"));
+	}
+
+	public void CantExitBecauseRewardsAction()
+	{
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(CantExitBecauseRewardsAction));
+	}
+
+	public void CantExitBecauseEvent()
+	{
+		AlertManager.buttonClickDelegate = CantExitBecauseEventAction;
+		AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("exitGameEvent"));
+	}
+
+	public void CantExitBecauseEventAction()
+	{
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(CantExitBecauseEventAction));
+	}
+
+	public void SetScore()
+	{
+		int num = AtOManager.Instance.CalculateScore();
+		score.gameObject.SetActive(value: true);
+		scoreText.text = Functions.ScoreFormat(num);
+	}
+
+	public void Exit()
+	{
+		if (GameManager.Instance.IsMaskActive() || AtOManager.Instance.saveLoadStatus)
+		{
+			return;
+		}
+		if (RewardsManager.Instance != null || LootManager.Instance != null)
+		{
+			CantExitBecauseRewards();
+			return;
+		}
+		if (EventManager.Instance != null)
+		{
+			CantExitBecauseEvent();
+			return;
+		}
+		if (CardPlayerManager.Instance != null && !CardPlayerManager.Instance.CanExit())
+		{
+			CantExitBecauseEvent();
+			return;
+		}
+		if (CardPlayerPairsManager.Instance != null && !CardPlayerPairsManager.Instance.CanExit())
+		{
+			CantExitBecauseEvent();
+			return;
+		}
+		bool flag = false;
+		if (MapManager.Instance != null || HeroSelectionManager.Instance != null || TownManager.Instance != null || LobbyManager.Instance != null || ChallengeSelectionManager.Instance != null || MatchManager.Instance != null)
+		{
+			flag = true;
+		}
+		if (!flag)
+		{
+			SceneStatic.LoadByName("MainMenu");
+			return;
+		}
+		AlertManager.buttonClickDelegate = ExitGameAction;
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(Texts.Instance.GetText("exitGameConfirm"));
+		stringBuilder.Append("<br><size=-2><color=#aaa>");
+		if (!(LobbyManager.Instance != null))
+		{
+			if (HeroSelectionManager.Instance != null)
+			{
+				stringBuilder.Append(Texts.Instance.GetText("exitGameConfirmLoss"));
+			}
+			else if (AtOManager.Instance != null && AtOManager.Instance.IsCombatTool)
+			{
+				stringBuilder.Append(Texts.Instance.GetText("exitGameConfirmLoss"));
+			}
+			else
+			{
+				stringBuilder.Append(Texts.Instance.GetText("exitGameConfirmSave"));
+			}
+		}
+		stringBuilder.Append("</color></size>");
+		AlertManager.Instance.AlertConfirmDouble(stringBuilder.ToString(), Texts.Instance.GetText("accept").ToUpper(), Texts.Instance.GetText("cancel").ToUpper());
+		AlertManager.Instance.ShowDoorIcon();
+	}
+
+	public void ExitGameAction()
+	{
+		bool confirmAnswer = AlertManager.Instance.GetConfirmAnswer();
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(ExitGameAction));
+		if (!GameManager.Instance.IsMaskActive() && !AtOManager.Instance.saveLoadStatus && confirmAnswer)
+		{
+			DoExit();
+		}
+	}
+
+	public void DoExit()
+	{
+		if (GameManager.Instance.IsMaskActive() || AtOManager.Instance.saveLoadStatus)
+		{
+			return;
+		}
+		if (!(MatchManager.Instance != null))
+		{
+			if (TownManager.Instance != null)
+			{
+				AtOManager.Instance.SaveGame();
+			}
+			else if (TownManager.Instance != null)
+			{
+				AtOManager.Instance.SaveGame();
+			}
+		}
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			NetworkManager.Instance.Disconnect();
+		}
+		if (ChatManager.Instance != null)
+		{
+			ChatManager.Instance.DisableChat();
+		}
+		SceneStatic.LoadByName("MainMenu");
+	}
+
+	public void InputMoveController(bool goingRight)
+	{
+		bool flag = false;
+		while (!flag)
+		{
+			if (!goingRight)
+			{
+				_indexController++;
+				if (_indexController > buttonOrder.Count - 1)
+				{
+					_indexController = 0;
+				}
+			}
+			else
+			{
+				_indexController--;
+				if (_indexController < 0)
+				{
+					_indexController = buttonOrder.Count - 1;
+				}
+			}
+			if (buttonOrder[_indexController].activeSelf)
+			{
+				flag = true;
+			}
+		}
+		Vector2 vector = GameManager.Instance.cameraMain.WorldToScreenPoint(buttonOrder[_indexController].transform.position);
+		Mouse.current.WarpCursorPosition(vector);
+	}
+
+	private void ResetIndexController()
+	{
+		_indexController = -1;
+	}
 }

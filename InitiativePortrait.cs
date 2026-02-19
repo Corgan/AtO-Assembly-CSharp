@@ -1,193 +1,239 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: InitiativePortrait
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-#nullable disable
 public class InitiativePortrait : MonoBehaviour
 {
-  public Hero Hero;
-  public NPCData NpcData;
-  public string id;
-  public HeroItem heroItem;
-  public NPCItem npcItem;
-  public int portraitPosition;
-  public int portraitElements;
-  public Transform activeTransform;
-  public TMP_Text speedTM;
-  public SpriteRenderer charSprite;
-  public Transform playing;
-  private SpriteRenderer spriteRenderer;
-  private Renderer[] childRenderers;
-  private bool isHero;
-  private bool isNPC;
-  private int position = -1;
-  public Vector3 destinationLocalPosition = Vector3.zero;
-  private Coroutine movePortraitCoroutine;
+	public Hero Hero;
 
-  private void Awake()
-  {
-    this.spriteRenderer = this.GetComponent<SpriteRenderer>();
-    this.childRenderers = new Renderer[this.transform.childCount];
-    int index = 0;
-    foreach (Component component1 in this.transform)
-    {
-      Renderer component2 = component1.GetComponent<Renderer>();
-      this.childRenderers[index] = component2;
-      ++index;
-    }
-  }
+	public NPCData NpcData;
 
-  private void MovePortrait()
-  {
-    if (this.movePortraitCoroutine != null)
-      this.StopCoroutine(this.movePortraitCoroutine);
-    this.movePortraitCoroutine = this.StartCoroutine(this.MovePortraitCo());
-  }
+	public string id;
 
-  private IEnumerator MovePortraitCo()
-  {
-    InitiativePortrait initiativePortrait = this;
-    while (initiativePortrait.transform.localPosition != initiativePortrait.destinationLocalPosition)
-    {
-      initiativePortrait.transform.localPosition = Vector3.Lerp(initiativePortrait.transform.localPosition, initiativePortrait.destinationLocalPosition, Time.deltaTime * 8f);
-      if ((double) Mathf.Abs(initiativePortrait.transform.localPosition.x - initiativePortrait.destinationLocalPosition.x) < 0.0099999997764825821)
-        initiativePortrait.transform.localPosition = initiativePortrait.destinationLocalPosition;
-      yield return (object) null;
-    }
-    initiativePortrait.SortingOrder();
-  }
+	public HeroItem heroItem;
 
-  public void AdjustForRoundSeparator()
-  {
-    this.destinationLocalPosition += new Vector3(0.359999985f, 0.0f, this.transform.localPosition.z);
-    this.MovePortrait();
-  }
+	public NPCItem npcItem;
 
-  private void SortingOrder()
-  {
-    int num = 10;
-    for (int index = 0; index < this.childRenderers.Length; ++index)
-    {
-      this.childRenderers[index].sortingOrder = this.position * 10 + num;
-      --num;
-    }
-  }
+	public int portraitPosition;
 
-  public void Init(int _position)
-  {
-    if (this.Hero != null)
-      this.charSprite.sprite = this.Hero.SpriteSpeed;
-    else if ((Object) this.NpcData != (Object) null)
-      this.charSprite.sprite = this.npcItem.NPC.TransformedModel ? this.NpcData.SpriteSpeedAlternate : this.NpcData.SpriteSpeed;
-    this.position = _position;
-    Vector3 vector3 = this.CalcVectorPosition(this.position);
-    if (this.destinationLocalPosition == Vector3.zero)
-      this.transform.localPosition = this.destinationLocalPosition = vector3;
-    else
-      this.destinationLocalPosition = vector3;
-    this.SortingOrder();
-    this.activeTransform.gameObject.SetActive(false);
-  }
+	public int portraitElements;
 
-  public void SetPlaying(bool state) => this.playing.gameObject.SetActive(state);
+	public Transform activeTransform;
 
-  public void SetActive(bool state) => this.activeTransform.gameObject.SetActive(state);
+	public TMP_Text speedTM;
 
-  public int GetPos() => this.position;
+	public SpriteRenderer charSprite;
 
-  public void RedoPos(int _position, bool adjust)
-  {
-    this.destinationLocalPosition = this.CalcVectorPosition(_position);
-    if (adjust)
-      this.destinationLocalPosition += new Vector3(0.359999985f, 0.0f, this.transform.localPosition.z);
-    this.position = _position;
-    this.MovePortrait();
-    this.SortingOrder();
-  }
+	public Transform playing;
 
-  private Vector3 CalcVectorPosition(int _position)
-  {
-    return new Vector3((float) ((double) _position * 0.47999998927116394 + (double) _position * 0.23999999463558197), 0.0f, 0.0f);
-  }
+	private SpriteRenderer spriteRenderer;
 
-  public void SetSpeed(int[] speed)
-  {
-    string str = speed[0].ToString();
-    int num = speed[2];
-    Color color = new Color(1f, 1f, 1f, 1f);
-    if (num > 0)
-      ColorUtility.TryParseHtmlString(Globals.Instance.ClassColor["scout"], out color);
-    else if (num < 0)
-      ColorUtility.TryParseHtmlString(Globals.Instance.ClassColor["warrior"], out color);
-    this.speedTM.color = color;
-    this.speedTM.text = str;
-  }
+	private Renderer[] childRenderers;
 
-  public void SetHero(Hero _hero, HeroItem _heroItem)
-  {
-    this.Hero = _hero;
-    this.heroItem = _heroItem;
-    this.NpcData = (NPCData) null;
-    this.npcItem = (NPCItem) null;
-    this.isHero = true;
-  }
+	private bool isHero;
 
-  public void SetNPC(NPCData _npcData, NPCItem _npcItem)
-  {
-    this.Hero = (Hero) null;
-    this.heroItem = (HeroItem) null;
-    this.NpcData = _npcData;
-    this.npcItem = _npcItem;
-    this.isNPC = true;
-  }
+	private bool isNPC;
 
-  public void OnMouseUp()
-  {
-    if ((bool) (Object) MatchManager.Instance && MatchManager.Instance.console.IsActive() || EventSystem.current.IsPointerOverGameObject())
-      return;
-    GameManager.Instance.SetCursorPlain();
-    MatchManager.Instance.ShowCharacterWindow("stats", this.isHero, !this.isHero ? this.npcItem.NPC.NPCIndex : this.Hero.HeroIndex);
-    MatchManager.Instance.combatTarget.ClearTarget();
-  }
+	private int position = -1;
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || (bool) (Object) MatchManager.Instance && MatchManager.Instance.console.IsActive() || EventSystem.current.IsPointerOverGameObject())
-      return;
-    if (this.isHero)
-    {
-      this.heroItem.OutlineGray();
-      MatchManager.Instance.combatTarget.SetTargetTMP((Character) this.Hero);
-    }
-    else if (this.isNPC)
-    {
-      this.npcItem.OutlineGray();
-      MatchManager.Instance.combatTarget.SetTargetTMP((Character) this.npcItem.NPC);
-    }
-    GameManager.Instance.SetCursorHover();
-    this.SetActive(true);
-  }
+	public Vector3 destinationLocalPosition = Vector3.zero;
 
-  private void OnMouseExit()
-  {
-    if (!EventSystem.current.IsPointerOverGameObject())
-    {
-      if (MatchManager.Instance.CardDrag)
-        MatchManager.Instance.SetGlobalOutlines(true, MatchManager.Instance.CardActive);
-      else if (this.isHero)
-        this.heroItem.OutlineHide();
-      else if (this.isNPC)
-        this.npcItem.OutlineHide();
-      GameManager.Instance.SetCursorPlain();
-      MatchManager.Instance.combatTarget.ClearTarget();
-    }
-    this.SetActive(false);
-  }
+	private Coroutine movePortraitCoroutine;
+
+	private void Awake()
+	{
+		spriteRenderer = GetComponent<SpriteRenderer>();
+		childRenderers = new Renderer[base.transform.childCount];
+		int num = 0;
+		foreach (Transform item in base.transform)
+		{
+			Renderer component = item.GetComponent<Renderer>();
+			childRenderers[num] = component;
+			num++;
+		}
+	}
+
+	private void MovePortrait()
+	{
+		if (movePortraitCoroutine != null)
+		{
+			StopCoroutine(movePortraitCoroutine);
+		}
+		movePortraitCoroutine = StartCoroutine(MovePortraitCo());
+	}
+
+	private IEnumerator MovePortraitCo()
+	{
+		while (base.transform.localPosition != destinationLocalPosition)
+		{
+			base.transform.localPosition = Vector3.Lerp(base.transform.localPosition, destinationLocalPosition, Time.deltaTime * 8f);
+			if (Mathf.Abs(base.transform.localPosition.x - destinationLocalPosition.x) < 0.01f)
+			{
+				base.transform.localPosition = destinationLocalPosition;
+			}
+			yield return null;
+		}
+		SortingOrder();
+	}
+
+	public void AdjustForRoundSeparator()
+	{
+		destinationLocalPosition += new Vector3(0.35999998f, 0f, base.transform.localPosition.z);
+		MovePortrait();
+	}
+
+	private void SortingOrder()
+	{
+		int num = 10;
+		for (int i = 0; i < childRenderers.Length; i++)
+		{
+			childRenderers[i].sortingOrder = position * 10 + num;
+			num--;
+		}
+	}
+
+	public void Init(int _position)
+	{
+		if (Hero != null)
+		{
+			charSprite.sprite = Hero.SpriteSpeed;
+		}
+		else if (NpcData != null)
+		{
+			charSprite.sprite = (npcItem.NPC.TransformedModel ? NpcData.SpriteSpeedAlternate : NpcData.SpriteSpeed);
+		}
+		position = _position;
+		Vector3 vector = CalcVectorPosition(position);
+		if (destinationLocalPosition == Vector3.zero)
+		{
+			base.transform.localPosition = (destinationLocalPosition = vector);
+		}
+		else
+		{
+			destinationLocalPosition = vector;
+		}
+		SortingOrder();
+		activeTransform.gameObject.SetActive(value: false);
+	}
+
+	public void SetPlaying(bool state)
+	{
+		playing.gameObject.SetActive(state);
+	}
+
+	public void SetActive(bool state)
+	{
+		activeTransform.gameObject.SetActive(state);
+	}
+
+	public int GetPos()
+	{
+		return position;
+	}
+
+	public void RedoPos(int _position, bool adjust)
+	{
+		destinationLocalPosition = CalcVectorPosition(_position);
+		if (adjust)
+		{
+			destinationLocalPosition += new Vector3(0.35999998f, 0f, base.transform.localPosition.z);
+		}
+		position = _position;
+		MovePortrait();
+		SortingOrder();
+	}
+
+	private Vector3 CalcVectorPosition(int _position)
+	{
+		return new Vector3((float)_position * 0.48f + (float)_position * 0.24f, 0f, 0f);
+	}
+
+	public void SetSpeed(int[] speed)
+	{
+		string text = speed[0].ToString();
+		int num = speed[2];
+		Color color = new Color(1f, 1f, 1f, 1f);
+		if (num > 0)
+		{
+			ColorUtility.TryParseHtmlString(Globals.Instance.ClassColor["scout"], out color);
+		}
+		else if (num < 0)
+		{
+			ColorUtility.TryParseHtmlString(Globals.Instance.ClassColor["warrior"], out color);
+		}
+		speedTM.color = color;
+		speedTM.text = text;
+	}
+
+	public void SetHero(Hero _hero, HeroItem _heroItem)
+	{
+		Hero = _hero;
+		heroItem = _heroItem;
+		NpcData = null;
+		npcItem = null;
+		isHero = true;
+	}
+
+	public void SetNPC(NPCData _npcData, NPCItem _npcItem)
+	{
+		Hero = null;
+		heroItem = null;
+		NpcData = _npcData;
+		npcItem = _npcItem;
+		isNPC = true;
+	}
+
+	public void OnMouseUp()
+	{
+		if ((!MatchManager.Instance || !MatchManager.Instance.console.IsActive()) && !EventSystem.current.IsPointerOverGameObject())
+		{
+			GameManager.Instance.SetCursorPlain();
+			int num = 0;
+			num = ((!isHero) ? npcItem.NPC.NPCIndex : Hero.HeroIndex);
+			MatchManager.Instance.ShowCharacterWindow("stats", isHero, num);
+			MatchManager.Instance.combatTarget.ClearTarget();
+		}
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive() && (!MatchManager.Instance || !MatchManager.Instance.console.IsActive()) && !EventSystem.current.IsPointerOverGameObject())
+		{
+			if (isHero)
+			{
+				heroItem.OutlineGray();
+				MatchManager.Instance.combatTarget.SetTargetTMP(Hero);
+			}
+			else if (isNPC)
+			{
+				npcItem.OutlineGray();
+				MatchManager.Instance.combatTarget.SetTargetTMP(npcItem.NPC);
+			}
+			GameManager.Instance.SetCursorHover();
+			SetActive(state: true);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!EventSystem.current.IsPointerOverGameObject())
+		{
+			if (MatchManager.Instance.CardDrag)
+			{
+				MatchManager.Instance.SetGlobalOutlines(state: true, MatchManager.Instance.CardActive);
+			}
+			else if (isHero)
+			{
+				heroItem.OutlineHide();
+			}
+			else if (isNPC)
+			{
+				npcItem.OutlineHide();
+			}
+			GameManager.Instance.SetCursorPlain();
+			MatchManager.Instance.combatTarget.ClearTarget();
+		}
+		SetActive(state: false);
+	}
 }

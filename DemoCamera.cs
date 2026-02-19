@@ -1,61 +1,43 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: DemoCamera
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using UnityEngine;
 
-#nullable disable
 public class DemoCamera : MonoBehaviour
 {
-  [SerializeField]
-  private Transform targetedItem;
-  [SerializeField]
-  private All1ShaderDemoController demoController;
-  [SerializeField]
-  private float speed;
-  private Vector3 offset;
-  private Vector3 target;
-  private bool canUpdate;
+	[SerializeField]
+	private Transform targetedItem;
 
-  private void Awake()
-  {
-    this.offset = this.transform.position - this.targetedItem.position;
-    this.StartCoroutine(this.SetCamAfterStart());
-  }
+	[SerializeField]
+	private All1ShaderDemoController demoController;
 
-  private void Update()
-  {
-    if (!this.canUpdate)
-      return;
-    this.target.y = (float) this.demoController.GetCurrExpositor() * this.demoController.expositorDistance;
-    this.transform.position = Vector3.Lerp(this.transform.position, this.target, this.speed * Time.deltaTime);
-  }
+	[SerializeField]
+	private float speed;
 
-  private IEnumerator SetCamAfterStart()
-  {
-    // ISSUE: reference to a compiler-generated field
-    int num = this.\u003C\u003E1__state;
-    DemoCamera demoCamera = this;
-    if (num != 0)
-    {
-      if (num != 1)
-        return false;
-      // ISSUE: reference to a compiler-generated field
-      this.\u003C\u003E1__state = -1;
-      demoCamera.transform.position = demoCamera.targetedItem.position + demoCamera.offset;
-      demoCamera.target = demoCamera.transform.position;
-      demoCamera.canUpdate = true;
-      return false;
-    }
-    // ISSUE: reference to a compiler-generated field
-    this.\u003C\u003E1__state = -1;
-    // ISSUE: reference to a compiler-generated field
-    this.\u003C\u003E2__current = (object) null;
-    // ISSUE: reference to a compiler-generated field
-    this.\u003C\u003E1__state = 1;
-    return true;
-  }
+	private Vector3 offset;
+
+	private Vector3 target;
+
+	private bool canUpdate;
+
+	private void Awake()
+	{
+		offset = base.transform.position - targetedItem.position;
+		StartCoroutine(SetCamAfterStart());
+	}
+
+	private void Update()
+	{
+		if (canUpdate)
+		{
+			target.y = (float)demoController.GetCurrExpositor() * demoController.expositorDistance;
+			base.transform.position = Vector3.Lerp(base.transform.position, target, speed * Time.deltaTime);
+		}
+	}
+
+	private IEnumerator SetCamAfterStart()
+	{
+		yield return null;
+		base.transform.position = targetedItem.position + offset;
+		target = base.transform.position;
+		canUpdate = true;
+	}
 }

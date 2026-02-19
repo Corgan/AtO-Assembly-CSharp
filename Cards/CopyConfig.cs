@@ -1,33 +1,28 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Cards.CopyConfig
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using UnityEngine;
 
-#nullable disable
-namespace Cards
+namespace Cards;
+
+[Serializable]
+public class CopyConfig
 {
-  [Serializable]
-  public class CopyConfig
-  {
-    [SerializeField]
-    private bool copyNameFromOriginal;
-    [SerializeField]
-    private bool copyImageFromOriginal;
-    [SerializeField]
-    private bool copyCardUpgradedFromOriginal;
-    [SerializeField]
-    private bool copyCardTypeFromOriginal;
+	[SerializeField]
+	private bool copyNameFromOriginal;
 
-    public bool CopyNameFromOriginal => this.copyNameFromOriginal;
+	[SerializeField]
+	private bool copyImageFromOriginal;
 
-    public bool CopyImageFromOriginal => this.copyImageFromOriginal;
+	[SerializeField]
+	private bool copyCardUpgradedFromOriginal;
 
-    public bool CopyCardUpgradedFromOriginal => this.copyCardUpgradedFromOriginal;
+	[SerializeField]
+	private bool copyCardTypeFromOriginal;
 
-    public bool CopyCardTypeFromOriginal => this.copyCardTypeFromOriginal;
-  }
+	public bool CopyNameFromOriginal => copyNameFromOriginal;
+
+	public bool CopyImageFromOriginal => copyImageFromOriginal;
+
+	public bool CopyCardUpgradedFromOriginal => copyCardUpgradedFromOriginal;
+
+	public bool CopyCardTypeFromOriginal => copyCardTypeFromOriginal;
 }

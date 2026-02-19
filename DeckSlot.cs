@@ -1,66 +1,83 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: DeckSlot
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class DeckSlot : MonoBehaviour
 {
-  public Transform icon;
-  public TMP_Text title;
-  public TMP_Text cards;
-  public SpriteRenderer background;
-  public Transform numContainer;
-  public int slot;
-  public Transform saveButton;
-  public Transform deleteButton;
-  private string colorActive = "#AA580A";
-  private string colorHover = "#00EDFF";
-  private string colorEmpty = "#999999";
-  private BoxCollider2D collider;
+	public Transform icon;
 
-  private void Awake()
-  {
-    this.collider = this.GetComponent<BoxCollider2D>();
-    this.saveButton.GetComponent<BotonGeneric>().auxInt = this.slot;
-    this.deleteButton.GetComponent<BotonGeneric>().auxInt = this.slot;
-  }
+	public TMP_Text title;
 
-  public void SetEmpty(bool state)
-  {
-    this.title.text = Texts.Instance.GetText("emptySave");
-    this.background.color = Functions.HexToColor(this.colorEmpty);
-    this.icon.gameObject.SetActive(false);
-    this.numContainer.gameObject.SetActive(false);
-    this.saveButton.gameObject.SetActive(true);
-    this.deleteButton.gameObject.SetActive(false);
-    this.collider.enabled = false;
-    if (state)
-      this.saveButton.GetComponent<BotonGeneric>().Enable();
-    else
-      this.saveButton.GetComponent<BotonGeneric>().Disable();
-  }
+	public TMP_Text cards;
 
-  public void SetActive(string _title, string _num)
-  {
-    this.title.text = _title.ToUpper();
-    this.cards.text = _num;
-    this.background.color = Functions.HexToColor(this.colorActive);
-    this.icon.gameObject.SetActive(true);
-    this.numContainer.gameObject.SetActive(true);
-    this.saveButton.gameObject.SetActive(false);
-    this.deleteButton.gameObject.SetActive(true);
-    this.collider.enabled = true;
-    this.background.color = Functions.HexToColor(this.colorActive);
-  }
+	public SpriteRenderer background;
 
-  public void OnMouseEnter() => this.background.color = Functions.HexToColor(this.colorHover);
+	public Transform numContainer;
 
-  public void OnMouseExit() => this.background.color = Functions.HexToColor(this.colorActive);
+	public int slot;
 
-  public void OnMouseUp() => CardCraftManager.Instance.LoadDeck(this.slot);
+	public Transform saveButton;
+
+	public Transform deleteButton;
+
+	private string colorActive = "#AA580A";
+
+	private string colorHover = "#00EDFF";
+
+	private string colorEmpty = "#999999";
+
+	private BoxCollider2D collider;
+
+	private void Awake()
+	{
+		collider = GetComponent<BoxCollider2D>();
+		saveButton.GetComponent<BotonGeneric>().auxInt = slot;
+		deleteButton.GetComponent<BotonGeneric>().auxInt = slot;
+	}
+
+	public void SetEmpty(bool state)
+	{
+		title.text = Texts.Instance.GetText("emptySave");
+		background.color = Functions.HexToColor(colorEmpty);
+		icon.gameObject.SetActive(value: false);
+		numContainer.gameObject.SetActive(value: false);
+		saveButton.gameObject.SetActive(value: true);
+		deleteButton.gameObject.SetActive(value: false);
+		collider.enabled = false;
+		if (state)
+		{
+			saveButton.GetComponent<BotonGeneric>().Enable();
+		}
+		else
+		{
+			saveButton.GetComponent<BotonGeneric>().Disable();
+		}
+	}
+
+	public void SetActive(string _title, string _num)
+	{
+		title.text = _title.ToUpper();
+		cards.text = _num;
+		background.color = Functions.HexToColor(colorActive);
+		icon.gameObject.SetActive(value: true);
+		numContainer.gameObject.SetActive(value: true);
+		saveButton.gameObject.SetActive(value: false);
+		deleteButton.gameObject.SetActive(value: true);
+		collider.enabled = true;
+		background.color = Functions.HexToColor(colorActive);
+	}
+
+	public void OnMouseEnter()
+	{
+		background.color = Functions.HexToColor(colorHover);
+	}
+
+	public void OnMouseExit()
+	{
+		background.color = Functions.HexToColor(colorActive);
+	}
+
+	public void OnMouseUp()
+	{
+		CardCraftManager.Instance.LoadDeck(slot);
+	}
 }

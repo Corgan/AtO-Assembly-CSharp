@@ -1,49 +1,50 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ProgressionRow
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Text;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class ProgressionRow : MonoBehaviour
 {
-  public TMP_Text title;
-  public TMP_Text description;
+	public TMP_Text title;
 
-  private void Awake() => this.Enable(false);
+	public TMP_Text description;
 
-  public void Enable(bool _state)
-  {
-    if (_state)
-    {
-      this.title.color = Functions.HexToColor("#F1D2A9");
-      this.description.color = Functions.HexToColor("#F1D2A9");
-      this.title.fontStyle = this.description.fontStyle = FontStyles.Bold;
-    }
-    else
-    {
-      this.title.color = Functions.HexToColor("#A0A0A0");
-      this.description.color = Functions.HexToColor("#A0A0A0");
-      this.title.fontStyle = this.description.fontStyle = FontStyles.Normal;
-    }
-  }
+	private void Awake()
+	{
+		Enable(_state: false);
+	}
 
-  public void Init(int _rank)
-  {
-    this.InitRank(_rank);
-    this.Enable(false);
-  }
+	public void Enable(bool _state)
+	{
+		if (_state)
+		{
+			title.color = Functions.HexToColor("#F1D2A9");
+			description.color = Functions.HexToColor("#F1D2A9");
+			TMP_Text tMP_Text = title;
+			FontStyles fontStyle = (description.fontStyle = FontStyles.Bold);
+			tMP_Text.fontStyle = fontStyle;
+		}
+		else
+		{
+			title.color = Functions.HexToColor("#A0A0A0");
+			description.color = Functions.HexToColor("#A0A0A0");
+			TMP_Text tMP_Text2 = title;
+			FontStyles fontStyle = (description.fontStyle = FontStyles.Normal);
+			tMP_Text2.fontStyle = fontStyle;
+		}
+	}
 
-  public void InitRank(int _rank)
-  {
-    this.title.text = Globals.Instance.RankLevel[_rank].ToString();
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append("rankDescription");
-    stringBuilder.Append(_rank);
-    this.description.text = Texts.Instance.GetText(stringBuilder.ToString());
-  }
+	public void Init(int _rank)
+	{
+		InitRank(_rank);
+		Enable(_state: false);
+	}
+
+	public void InitRank(int _rank)
+	{
+		title.text = Globals.Instance.RankLevel[_rank].ToString();
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("rankDescription");
+		stringBuilder.Append(_rank);
+		description.text = Texts.Instance.GetText(stringBuilder.ToString());
+	}
 }

@@ -1,91 +1,110 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: All1ShaderDemoController
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 public class All1ShaderDemoController : MonoBehaviour
 {
-  [SerializeField]
-  private DemoCamera cam;
-  [SerializeField]
-  private DemoCircleExpositor[] expositors;
-  [SerializeField]
-  private Text expositorsTitle;
-  public float expositorDistance;
-  private int currExpositor;
-  [SerializeField]
-  private GameObject background;
-  private Material backgroundMat;
-  [SerializeField]
-  private float colorLerpSpeed;
-  private Color[] targetColors;
-  private Color[] currentColors;
+	[SerializeField]
+	private DemoCamera cam;
 
-  private void Start()
-  {
-    this.currExpositor = 0;
-    this.SetExpositorText();
-    for (int index = 0; index < this.expositors.Length; ++index)
-      this.expositors[index].transform.position = new Vector3(0.0f, this.expositorDistance * (float) index, 0.0f);
-    this.backgroundMat = this.background.GetComponent<Image>().material;
-    this.targetColors = new Color[4];
-    this.targetColors[0] = this.backgroundMat.GetColor("_GradTopLeftCol");
-    this.targetColors[1] = this.backgroundMat.GetColor("_GradTopRightCol");
-    this.targetColors[2] = this.backgroundMat.GetColor("_GradBotLeftCol");
-    this.targetColors[3] = this.backgroundMat.GetColor("_GradBotRightCol");
-    this.currentColors = this.targetColors.Clone() as Color[];
-  }
+	[SerializeField]
+	private DemoCircleExpositor[] expositors;
 
-  private void Update()
-  {
-    this.GetInput();
-    this.currentColors[0] = Color.Lerp(this.currentColors[0], this.targetColors[this.currExpositor % this.targetColors.Length], this.colorLerpSpeed * Time.deltaTime);
-    this.currentColors[1] = Color.Lerp(this.currentColors[1], this.targetColors[(1 + this.currExpositor) % this.targetColors.Length], this.colorLerpSpeed * Time.deltaTime);
-    this.currentColors[2] = Color.Lerp(this.currentColors[2], this.targetColors[(2 + this.currExpositor) % this.targetColors.Length], this.colorLerpSpeed * Time.deltaTime);
-    this.currentColors[3] = Color.Lerp(this.currentColors[3], this.targetColors[(3 + this.currExpositor) % this.targetColors.Length], this.colorLerpSpeed * Time.deltaTime);
-    this.backgroundMat.SetColor("_GradTopLeftCol", this.currentColors[0]);
-    this.backgroundMat.SetColor("_GradTopRightCol", this.currentColors[1]);
-    this.backgroundMat.SetColor("_GradBotLeftCol", this.currentColors[2]);
-    this.backgroundMat.SetColor("_GradBotRightCol", this.currentColors[3]);
-  }
+	[SerializeField]
+	private Text expositorsTitle;
 
-  private void GetInput()
-  {
-    if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
-      this.expositors[this.currExpositor].ChangeTarget(-1);
-    else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
-      this.expositors[this.currExpositor].ChangeTarget(1);
-    else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
-    {
-      this.ChangeExpositor(-1);
-    }
-    else
-    {
-      if (!Input.GetKeyDown(KeyCode.DownArrow) && !Input.GetKeyDown(KeyCode.S))
-        return;
-      this.ChangeExpositor(1);
-    }
-  }
+	public float expositorDistance;
 
-  private void ChangeExpositor(int offset)
-  {
-    this.currExpositor += offset;
-    if (this.currExpositor > this.expositors.Length - 1)
-      this.currExpositor = 0;
-    else if (this.currExpositor < 0)
-      this.currExpositor = this.expositors.Length - 1;
-    this.SetExpositorText();
-  }
+	private int currExpositor;
 
-  private void SetExpositorText()
-  {
-    this.expositorsTitle.text = this.expositors[this.currExpositor].name;
-  }
+	[SerializeField]
+	private GameObject background;
 
-  public int GetCurrExpositor() => this.currExpositor;
+	private Material backgroundMat;
+
+	[SerializeField]
+	private float colorLerpSpeed;
+
+	private Color[] targetColors;
+
+	private Color[] currentColors;
+
+	private void Start()
+	{
+		currExpositor = 0;
+		SetExpositorText();
+		for (int i = 0; i < expositors.Length; i++)
+		{
+			expositors[i].transform.position = new Vector3(0f, expositorDistance * (float)i, 0f);
+		}
+		backgroundMat = background.GetComponent<Image>().material;
+		targetColors = new Color[4];
+		targetColors[0] = backgroundMat.GetColor("_GradTopLeftCol");
+		targetColors[1] = backgroundMat.GetColor("_GradTopRightCol");
+		targetColors[2] = backgroundMat.GetColor("_GradBotLeftCol");
+		targetColors[3] = backgroundMat.GetColor("_GradBotRightCol");
+		currentColors = targetColors.Clone() as Color[];
+	}
+
+	private void Update()
+	{
+		GetInput();
+		if (currentColors != null || backgroundMat != null)
+		{
+			currentColors[0] = Color.Lerp(currentColors[0], targetColors[currExpositor % targetColors.Length], colorLerpSpeed * Time.deltaTime);
+			currentColors[1] = Color.Lerp(currentColors[1], targetColors[(1 + currExpositor) % targetColors.Length], colorLerpSpeed * Time.deltaTime);
+			currentColors[2] = Color.Lerp(currentColors[2], targetColors[(2 + currExpositor) % targetColors.Length], colorLerpSpeed * Time.deltaTime);
+			currentColors[3] = Color.Lerp(currentColors[3], targetColors[(3 + currExpositor) % targetColors.Length], colorLerpSpeed * Time.deltaTime);
+			backgroundMat.SetColor("_GradTopLeftCol", currentColors[0]);
+			backgroundMat.SetColor("_GradTopRightCol", currentColors[1]);
+			backgroundMat.SetColor("_GradBotLeftCol", currentColors[2]);
+			backgroundMat.SetColor("_GradBotRightCol", currentColors[3]);
+		}
+	}
+
+	private void GetInput()
+	{
+		if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+		{
+			expositors[currExpositor].ChangeTarget(-1);
+		}
+		else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+		{
+			expositors[currExpositor].ChangeTarget(1);
+		}
+		else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
+		{
+			ChangeExpositor(-1);
+		}
+		else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S))
+		{
+			ChangeExpositor(1);
+		}
+	}
+
+	private void ChangeExpositor(int offset)
+	{
+		currExpositor += offset;
+		if (currExpositor > expositors.Length - 1)
+		{
+			currExpositor = 0;
+		}
+		else if (currExpositor < 0)
+		{
+			currExpositor = expositors.Length - 1;
+		}
+		SetExpositorText();
+	}
+
+	private void SetExpositorText()
+	{
+		if (expositorsTitle != null)
+		{
+			expositorsTitle.text = expositors[currExpositor].name;
+		}
+	}
+
+	public int GetCurrExpositor()
+	{
+		return currExpositor;
+	}
 }

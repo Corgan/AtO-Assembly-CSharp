@@ -1,206 +1,252 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ChatManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class ChatManager : MonoBehaviour
 {
-  public Transform close;
-  public Transform open;
-  public Transform chatMessages;
-  public TMP_Text chatMessagesText;
-  public Transform playersButton;
-  public TMP_Text playersButtonText;
-  public Transform chatGO;
-  public TMP_Text chatText;
-  private StringBuilder chatSB;
-  public TMP_InputField chatInput;
-  private List<string> chatContent = new List<string>();
-  private string status = "closed";
-  private int messages;
+	public Transform close;
 
-  public static ChatManager Instance { get; private set; }
+	public Transform open;
 
-  private void Awake()
-  {
-    if ((Object) ChatManager.Instance == (Object) null)
-      ChatManager.Instance = this;
-    else if ((Object) ChatManager.Instance != (Object) this)
-      Object.Destroy((Object) this.gameObject);
-    Object.DontDestroyOnLoad((Object) this.gameObject);
-  }
+	public Transform chatMessages;
 
-  private void Start() => this.DisableChat();
+	public TMP_Text chatMessagesText;
 
-  public void ChatSend(string chatStr = "")
-  {
-    if (!GameManager.Instance.IsMultiplayer())
-      return;
-    string str1 = this.chatInput.text.Trim();
-    if (chatStr != "")
-      str1 = chatStr.Trim();
-    if (!(str1 != ""))
-      return;
-    int myPosition = NetworkManager.Instance.GetMyPosition();
-    string playerNick = NetworkManager.Instance.GetPlayerNick();
-    string str2 = NetworkManager.Instance.ColorFromPosition(myPosition);
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append("<b><color=");
-    stringBuilder.Append(str2);
-    stringBuilder.Append(">[");
-    stringBuilder.Append(NetworkManager.Instance.GetPlayerNickReal(playerNick));
-    stringBuilder.Append("]</color></b> ");
-    stringBuilder.Append(str1);
-    NetworkManager.Instance.ChatSend(stringBuilder.ToString(), true, NetworkManager.Instance.GetPlayerNickReal(playerNick));
-    this.ChatText(stringBuilder.ToString(), false);
-    this.chatInput.text = string.Empty;
-    this.chatInput.ActivateInputField();
-  }
+	public Transform playersButton;
 
-  public void WelcomeMsg(string roomName)
-  {
-    this.chatSB = new StringBuilder();
-    this.chatSB.Append("<size=-1><color=#EFEAC5>");
-    this.chatSB.Append(string.Format(Texts.Instance.GetText("chatWelcome"), (object) roomName));
-    this.chatSB.Append("</color></size>");
-    this.chatContent = new List<string>();
-    this.chatContent.Add(this.chatSB.ToString());
-    this.chatSB.Append("\n");
-    this.chatText.text = this.chatSB.ToString();
-  }
+	public TMP_Text playersButtonText;
 
-  public void ChatText(string text, bool showAlertIfClosed)
-  {
-    if (!GameManager.Instance.IsMultiplayer())
-      return;
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append("<size=-2><color=#777>[");
-    stringBuilder.Append(Functions.GetTimestampString());
-    stringBuilder.Append("]</color></size> ");
-    stringBuilder.Append(text);
-    this.chatContent.Add(stringBuilder.ToString());
-    if (this.chatContent.Count > 20)
-      this.chatContent.RemoveAt(0);
-    if (this.chatSB != null)
-      this.chatSB.Clear();
-    else
-      this.chatSB = new StringBuilder();
-    for (int index = 0; index < this.chatContent.Count; ++index)
-    {
-      this.chatSB.Append(this.chatContent[index]);
-      this.chatSB.Append("\n");
-    }
-    this.chatText.text = this.chatSB.ToString();
-    if ((bool) (Object) KeyboardManager.Instance)
-      KeyboardManager.Instance.ChatText(this.chatSB.ToString());
-    if (!showAlertIfClosed || !(this.status == "closed"))
-      return;
-    ++this.messages;
-    this.WriteChatMessagesWarning();
-  }
+	public Transform chatGO;
 
-  public void ClearMessages()
-  {
-    this.messages = 0;
-    this.WriteChatMessagesWarning();
-  }
+	public TMP_Text chatText;
 
-  private void WriteChatMessagesWarning()
-  {
-    if (this.messages > 0)
-    {
-      this.chatMessagesText.text = this.messages.ToString();
-      this.chatMessages.gameObject.SetActive(true);
-    }
-    else
-      this.chatMessages.gameObject.SetActive(false);
-  }
+	private StringBuilder chatSB;
 
-  public void ChatButton()
-  {
-    this.ClearMessages();
-    if (this.status == "opened")
-      this.HideChat();
-    else
-      this.ShowChat();
-  }
+	public TMP_InputField chatInput;
 
-  public void ShowChat()
-  {
-    this.ClearMessages();
-    this.chatInput.onSubmit.AddListener(new UnityAction<string>(this.ChatSend));
-    this.chatMessages.gameObject.SetActive(false);
-    this.chatGO.gameObject.SetActive(true);
-    this.close.gameObject.SetActive(true);
-    this.open.gameObject.SetActive(false);
-    this.status = "closed";
-    SaveManager.SaveIntoPrefsBool("collapsedChat", false);
-  }
+	private List<string> chatContent = new List<string>();
 
-  public void HideChat()
-  {
-    this.ClearMessages();
-    this.chatInput.onSubmit.RemoveListener(new UnityAction<string>(this.ChatSend));
-    this.chatGO.gameObject.SetActive(false);
-    this.close.gameObject.SetActive(false);
-    this.open.gameObject.SetActive(true);
-    SaveManager.SaveIntoPrefsBool("collapsedChat", true);
-  }
+	private string status = "closed";
 
-  public void DisableChat()
-  {
-    if (!((Object) this.gameObject != (Object) null))
-      return;
-    this.chatText.text = "";
-    this.gameObject.SetActive(false);
-    this.chatMessages.gameObject.SetActive(false);
-  }
+	private int messages;
 
-  public void EnableChat()
-  {
-    if (!((Object) this.gameObject != (Object) null))
-      return;
-    this.gameObject.SetActive(true);
-    bool flag = false;
-    if (Gamepad.current != null)
-      flag = true;
-    else if (SaveManager.PrefsHasKey("collapsedChat"))
-      flag = SaveManager.LoadPrefsBool("collapsedChat");
-    if (!flag)
-      this.ShowChat();
-    else
-      this.HideChat();
-  }
+	public static ChatManager Instance { get; private set; }
 
-  public void ShowPlayers() => AlertManager.Instance.ShowPlayers();
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(base.gameObject);
+		}
+		Object.DontDestroyOnLoad(base.gameObject);
+	}
 
-  public void UpdatePlayersButton()
-  {
-    int numPlayers = NetworkManager.Instance.GetNumPlayers();
-    if (numPlayers < 2)
-    {
-      if (!this.playersButton.gameObject.activeSelf)
-        return;
-      this.playersButton.gameObject.SetActive(false);
-    }
-    else
-    {
-      if (!this.playersButton.gameObject.activeSelf)
-        this.playersButton.gameObject.SetActive(true);
-      StringBuilder stringBuilder = new StringBuilder();
-      stringBuilder.Append(Texts.Instance.GetText("players"));
-      stringBuilder.Append(" (");
-      stringBuilder.Append(numPlayers);
-      stringBuilder.Append(")");
-    }
-  }
+	private void Start()
+	{
+		DisableChat();
+	}
+
+	public void ChatSend(string chatStr = "")
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			string text = chatInput.text.Trim();
+			if (chatStr != "")
+			{
+				text = chatStr.Trim();
+			}
+			if (text != "")
+			{
+				int myPosition = NetworkManager.Instance.GetMyPosition();
+				string playerNick = NetworkManager.Instance.GetPlayerNick();
+				string value = NetworkManager.Instance.ColorFromPosition(myPosition);
+				StringBuilder stringBuilder = new StringBuilder();
+				stringBuilder.Append("<b><color=");
+				stringBuilder.Append(value);
+				stringBuilder.Append(">[");
+				stringBuilder.Append(NetworkManager.Instance.GetPlayerNickReal(playerNick));
+				stringBuilder.Append("]</color></b> ");
+				stringBuilder.Append(text);
+				NetworkManager.Instance.ChatSend(stringBuilder.ToString(), showAlertIfClosed: true, NetworkManager.Instance.GetPlayerNickReal(playerNick));
+				ChatText(stringBuilder.ToString(), showAlertIfClosed: false);
+				stringBuilder = null;
+				chatInput.text = string.Empty;
+				chatInput.ActivateInputField();
+			}
+		}
+	}
+
+	public void WelcomeMsg(string roomName)
+	{
+		chatSB = new StringBuilder();
+		chatSB.Append("<size=-1><color=#EFEAC5>");
+		chatSB.Append(string.Format(Texts.Instance.GetText("chatWelcome"), roomName));
+		chatSB.Append("</color></size>");
+		chatContent = new List<string>();
+		chatContent.Add(chatSB.ToString());
+		chatSB.Append("\n");
+		chatText.text = chatSB.ToString();
+	}
+
+	public void ChatText(string text, bool showAlertIfClosed)
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.Append("<size=-2><color=#777>[");
+			stringBuilder.Append(Functions.GetTimestampString());
+			stringBuilder.Append("]</color></size> ");
+			stringBuilder.Append(text);
+			chatContent.Add(stringBuilder.ToString());
+			if (chatContent.Count > 20)
+			{
+				chatContent.RemoveAt(0);
+			}
+			if (chatSB != null)
+			{
+				chatSB.Clear();
+			}
+			else
+			{
+				chatSB = new StringBuilder();
+			}
+			for (int i = 0; i < chatContent.Count; i++)
+			{
+				chatSB.Append(chatContent[i]);
+				chatSB.Append("\n");
+			}
+			chatText.text = chatSB.ToString();
+			if ((bool)KeyboardManager.Instance)
+			{
+				KeyboardManager.Instance.ChatText(chatSB.ToString());
+			}
+			if (showAlertIfClosed && status == "closed")
+			{
+				messages++;
+				WriteChatMessagesWarning();
+			}
+		}
+	}
+
+	public void ClearMessages()
+	{
+		messages = 0;
+		WriteChatMessagesWarning();
+	}
+
+	private void WriteChatMessagesWarning()
+	{
+		if (messages > 0)
+		{
+			chatMessagesText.text = messages.ToString();
+			chatMessages.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			chatMessages.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void ChatButton()
+	{
+		ClearMessages();
+		if (status == "opened")
+		{
+			HideChat();
+		}
+		else
+		{
+			ShowChat();
+		}
+	}
+
+	public void ShowChat()
+	{
+		ClearMessages();
+		chatInput.onSubmit.AddListener(ChatSend);
+		chatMessages.gameObject.SetActive(value: false);
+		chatGO.gameObject.SetActive(value: true);
+		close.gameObject.SetActive(value: true);
+		open.gameObject.SetActive(value: false);
+		status = "closed";
+		SaveManager.SaveIntoPrefsBool("collapsedChat", value: false);
+	}
+
+	public void HideChat()
+	{
+		ClearMessages();
+		chatInput.onSubmit.RemoveListener(ChatSend);
+		chatGO.gameObject.SetActive(value: false);
+		close.gameObject.SetActive(value: false);
+		open.gameObject.SetActive(value: true);
+		SaveManager.SaveIntoPrefsBool("collapsedChat", value: true);
+	}
+
+	public void DisableChat()
+	{
+		if (base.gameObject != null)
+		{
+			chatText.text = "";
+			base.gameObject.SetActive(value: false);
+			chatMessages.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void EnableChat()
+	{
+		if (base.gameObject != null)
+		{
+			base.gameObject.SetActive(value: true);
+			bool flag = false;
+			if (Gamepad.current != null)
+			{
+				flag = true;
+			}
+			else if (SaveManager.PrefsHasKey("collapsedChat"))
+			{
+				flag = SaveManager.LoadPrefsBool("collapsedChat");
+			}
+			if (!flag)
+			{
+				ShowChat();
+			}
+			else
+			{
+				HideChat();
+			}
+		}
+	}
+
+	public void ShowPlayers()
+	{
+		AlertManager.Instance.ShowPlayers();
+	}
+
+	public void UpdatePlayersButton()
+	{
+		int numPlayers = NetworkManager.Instance.GetNumPlayers();
+		if (numPlayers < 2)
+		{
+			if (playersButton.gameObject.activeSelf)
+			{
+				playersButton.gameObject.SetActive(value: false);
+			}
+			return;
+		}
+		if (!playersButton.gameObject.activeSelf)
+		{
+			playersButton.gameObject.SetActive(value: true);
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(Texts.Instance.GetText("players"));
+		stringBuilder.Append(" (");
+		stringBuilder.Append(numPlayers);
+		stringBuilder.Append(")");
+	}
 }

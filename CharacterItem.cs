@@ -1,10 +1,3 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CharacterItem
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,2820 +7,3556 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using Utils;
 
-#nullable disable
 public class CharacterItem : MonoBehaviour
 {
-  public SpriteOutline spriteOutline;
-  [SerializeField]
-  private Transform charImageT;
-  [SerializeField]
-  private Transform charImageShadowT;
-  [SerializeField]
-  private TMP_Text hpText;
-  [SerializeField]
-  private Hero _hero;
-  [SerializeField]
-  private NPC _npc;
-  private Animator anim;
-  public Animator animPet;
-  private PopupSheet popupSheet;
-  private Coroutine KillCoroutine;
-  public Transform characterTransform;
-  public Transform keyTransform;
-  public Transform keyRed;
-  public Transform keyBackground;
-  public TMP_Text keyNumber;
-  public ItemCombatIcon iconEnchantment;
-  public ItemCombatIcon iconEnchantment2;
-  public ItemCombatIcon iconEnchantment3;
-  public Transform healthBar;
-  public Transform hpRed;
-  public Transform hpPoison;
-  public Transform hpBleed;
-  public Transform hpRegen;
-  public SpriteRenderer hpSR;
-  public Transform activeMarkTR;
-  public Transform hpT;
-  public Transform skull;
-  public ParticleSystem skullParticle;
-  public TMP_Text purgedispel;
-  public TMP_Text purgedispelTitle;
-  public TMP_Text purgedispelQuantity;
-  public TMP_Text overDebuff;
-  public TMP_Text hpBlockText;
-  public Transform hpBlockT;
-  public Transform hpBackground;
-  public Transform hpBackgroundHigh;
-  public Transform hpBlockIconT;
-  public Transform blockBorderT;
-  public TMP_Text hpShieldText;
-  public Transform hpShieldT;
-  public Transform hpDoomIconT;
-  public TMP_Text hpDoomText;
-  public TMP_Text dmgPreviewText;
-  public Transform thornsTransform;
-  public Transform tauntTextTransform;
-  private TMP_Text tauntTextT;
-  public GameObject GO_Buffs;
-  private List<Buff> GoBuffs = new List<Buff>();
-  public GameObject GO_Taunt;
-  public GameObject BuffPrefab;
-  public Shader energyDefaultShader;
-  public Shader energyShader;
-  public ParticleSystem trailParticle;
-  public ParticleSystem stealthParticle;
-  public Material defaultMaterial;
-  public Material stealthMaterial;
-  public Material paralyzeMaterial;
-  public Material tauntMaterial;
-  public GameObject combatTextPrefab;
-  private CombatText CT;
-  private SpriteRenderer charImageSR;
-  private bool isHero;
-  public bool IsDying;
-  private Color colorFade;
-  private Vector3 vectorFade;
-  private Vector3 originalLocalPosition;
-  private bool charIsMoving;
-  public Transform energyT;
-  public TMP_Text energyTxt;
-  private Transform[] energyArr;
-  private SpriteRenderer[] energySR;
-  private Animator[] energySRAnimator;
-  private EnergyPoint[] energyPoint;
-  internal List<SpriteRenderer> animatedSprites;
-  private Dictionary<string, Material> animatedSpritesDefaultMaterial;
-  private List<SetSpriteLayerFromBase> animatedSpritesOutOfCharacter;
-  private Transform shadowSprite;
-  public Transform heroDecks;
-  public TMP_Text heroDecksCounter;
-  public TMP_Text heroDecksDeckText;
-  public TMP_Text heroDecksDeckTextBg;
-  public TMP_Text heroDecksDiscardText;
-  public TMP_Text heroDecksDiscardTextBg;
-  private Coroutine moveCenterCo;
-  private Coroutine moveBackCo;
-  private Coroutine helpCo;
-  private Coroutine blockCo;
-  private Coroutine hitCo;
-  private bool characterBeingHitted;
-  private Dictionary<string, int> buffAnimationList = new Dictionary<string, int>();
-  private Coroutine buffAnimationCo;
-  public Transform transformForCombatText;
-  private bool isActive;
-  public float heightModel;
-  private int petMagnusCounter;
-  private Coroutine petMagnusCoroutine;
-  private int petMagnusAnswer;
-  private int petYoggerCounter;
-  private Coroutine petYoggerCoroutine;
-  private int petYoggerAnswer;
-  public NPCItem PetItem;
-  public bool PetItemFront = true;
-  public NPCItem PetItemEnchantment;
-  public bool PetItemEnchantmentFront = true;
-  private Coroutine drawBuffsCoroutine;
-  private int counterEffectItemOwner;
-  private int indexEffectItemOwner;
-  public EmoteCharacterPing emoteCharacterPing;
-  private bool animationBusy;
-  private Coroutine animationBusyCo;
-  private GameObject[] swordSprites;
-
-  public virtual void Awake()
-  {
-    this.animatedSprites = new List<SpriteRenderer>();
-    this.animatedSpritesDefaultMaterial = new Dictionary<string, Material>();
-    this.animatedSpritesOutOfCharacter = new List<SetSpriteLayerFromBase>();
-    this.colorFade = new Color(0.0f, 0.0f, 0.0f, 0.02f);
-    this.vectorFade = new Vector3(1f / 1000f, 0.0f, 0.0f);
-    if ((UnityEngine.Object) this.charImageT == (UnityEngine.Object) null)
-      return;
-    this.charImageSR = this.charImageT.GetComponent<SpriteRenderer>();
-    this.CT = UnityEngine.Object.Instantiate<GameObject>(this.combatTextPrefab, Vector3.zero, Quaternion.identity, this.charImageT).GetComponent<CombatText>();
-    if ((bool) (UnityEngine.Object) MatchManager.Instance)
-      this.popupSheet = MatchManager.Instance.popupSheet;
-    this.energyArr = new Transform[10];
-    this.energyArr[0] = this.energyT;
-    this.energyPoint = new EnergyPoint[10];
-    this.energyPoint[0] = this.energyT.GetComponent<EnergyPoint>();
-    this.energySR = new SpriteRenderer[10];
-    this.energySR[0] = this.energyT.GetComponent<SpriteRenderer>();
-    this.energySRAnimator = new Animator[10];
-    this.energySRAnimator[0] = this.energyT.GetComponent<Animator>();
-    this.tauntTextTransform.gameObject.SetActive(false);
-    this.tauntTextT = this.tauntTextTransform.GetComponent<TMP_Text>();
-    this.thornsTransform.gameObject.SetActive(false);
-    this.skull.gameObject.SetActive(false);
-    Vector3 localPosition = this.energyT.localPosition;
-    for (int index = 1; index < 10; ++index)
-    {
-      GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.energyT.gameObject, this.energyT.parent);
-      gameObject.transform.localPosition = new Vector3(localPosition.x + 0.11f * (float) index, localPosition.y, localPosition.z - 0.01f * (float) index);
-      this.energyArr[index] = gameObject.transform;
-      this.energyPoint[index] = gameObject.transform.GetComponent<EnergyPoint>();
-      this.energySR[index] = gameObject.transform.GetComponent<SpriteRenderer>();
-      this.energySRAnimator[index] = gameObject.transform.GetComponent<Animator>();
-    }
-    for (int index = 0; index < 20; ++index)
-    {
-      this.GoBuffs.Add(UnityEngine.Object.Instantiate<GameObject>(this.BuffPrefab, Vector3.zero, Quaternion.identity, this.GO_Buffs.transform).GetComponent<Buff>());
-      this.GoBuffs[index].CleanBuff();
-    }
-    if (!((UnityEngine.Object) this.keyTransform != (UnityEngine.Object) null) || !this.keyTransform.gameObject.activeSelf)
-      return;
-    this.keyTransform.gameObject.SetActive(false);
-  }
-
-  public virtual void Start()
-  {
-  }
-
-  public List<string> CalculateDamagePrePostForThisCharacter()
-  {
-    Character _characterCaster = this._hero == null ? (Character) this._npc : (Character) this._hero;
-    if (MatchManager.Instance.prePostDamageDictionary != null && _characterCaster != null && MatchManager.Instance.prePostDamageDictionary.ContainsKey(_characterCaster.Id))
-      return MatchManager.Instance.prePostDamageDictionary[_characterCaster.Id];
-    int num1 = 0;
-    int num2 = 0;
-    bool flag1 = false;
-    bool flag2 = false;
-    int hp = _characterCaster.GetHp();
-    int auraCharges1 = _characterCaster.GetAuraCharges("block");
-    int auraCharges2 = _characterCaster.GetAuraCharges("shield");
-    bool flag3 = false;
-    string str1 = Globals.Instance.ClassColor["warrior"];
-    string str2 = "#1B9604";
-    string str3 = "#00A49E";
-    StringBuilder stringBuilder1 = new StringBuilder();
-    stringBuilder1.Append("<size=+26><sprite name=skull></size><size=+5>");
-    stringBuilder1.Append(string.Format(Texts.Instance.GetText("characterDies"), (object) _characterCaster.SourceName));
-    stringBuilder1.Append("</size><size=0><br><br></size>");
-    string str4 = stringBuilder1.ToString();
-    if (_characterCaster.RoundMoved >= MatchManager.Instance.GetCurrentRound())
-      flag3 = true;
-    List<string> forThisCharacter = new List<string>();
-    forThisCharacter.Add("0");
-    int num3 = 0;
-    forThisCharacter.Add("0");
-    int num4 = 0;
-    forThisCharacter.Add("0");
-    bool flag4 = true;
-    for (int index = 0; index < _characterCaster.AuraList.Count; ++index)
-    {
-      if (index < _characterCaster.AuraList.Count && _characterCaster.AuraList[index] != null && (UnityEngine.Object) _characterCaster.AuraList[index].ACData != (UnityEngine.Object) null && _characterCaster.AuraList[index].ACData.NoRemoveBlockAtTurnEnd)
-        flag4 = false;
-    }
-    int num5;
-    if (!flag3)
-    {
-      num5 = auraCharges1;
-    }
-    else
-    {
-      num5 = auraCharges2;
-      if (!flag4)
-        num5 += auraCharges1;
-    }
-    StringBuilder stringBuilder2 = new StringBuilder();
-    int num6 = 0;
-    Character characterActive = MatchManager.Instance.GetCharacterActive();
-    for (int index1 = 0; index1 < 2; ++index1)
-    {
-      if (index1 == 0)
-        num6 = characterActive == null || characterActive.Id != _characterCaster.Id ? 0 : 1;
-      else if (index1 == 1)
-        num6 = characterActive == null || characterActive.Id != _characterCaster.Id ? 1 : 0;
-      for (int index2 = 0; index2 < _characterCaster.AuraList.Count; ++index2)
-      {
-        if (!((UnityEngine.Object) _characterCaster.AuraList[index2].ACData == (UnityEngine.Object) null))
-        {
-          AuraCurseData auraCurseData = AtOManager.Instance.GlobalAuraCurseModificationByTraitsAndItems("consume", _characterCaster.AuraList[index2].ACData.Id, _characterCaster, (Character) null);
-          if ((UnityEngine.Object) auraCurseData == (UnityEngine.Object) null)
-            auraCurseData = _characterCaster.AuraList[index2].ACData;
-          if (auraCurseData.ProduceHealWhenConsumed && (auraCurseData.ConsumedAtTurnBegin && num6 == 0 || auraCurseData.ConsumedAtTurn && num6 == 1))
-          {
-            int heal = 0 + auraCurseData.HealWhenConsumed + Functions.FuncRoundToInt((float) _characterCaster.AuraList[index2].AuraCharges * auraCurseData.HealWhenConsumedPerCharge);
-            if (heal > 0)
-            {
-              int num7 = _characterCaster.HealReceivedFinal(heal);
-              if (_characterCaster.GetHpLeftForMax() < num7)
-                num7 = _characterCaster.GetHpLeftForMax();
-              if (num7 > 0)
-              {
-                hp += num7;
-                if (num1 == 0 && num6 == 0)
-                {
-                  stringBuilder2.Append("<size=-1><color=#FFF>");
-                  stringBuilder2.Append(Texts.Instance.GetText("preturnEffects"));
-                  stringBuilder2.Append("</color></size>");
-                  stringBuilder2.Append("<br>");
-                  num1 = 1;
-                }
-                if (num2 == 0 && num6 == 1)
-                {
-                  stringBuilder2.Append("<size=-1><color=#FFF>");
-                  stringBuilder2.Append(Texts.Instance.GetText("postturnEffects"));
-                  stringBuilder2.Append("</color></size>");
-                  stringBuilder2.Append("<br>");
-                  num2 = 1;
-                }
-                stringBuilder2.Append("<color=");
-                stringBuilder2.Append(str3);
-                stringBuilder2.Append("> ");
-                stringBuilder2.Append("+");
-                stringBuilder2.Append(num7);
-                stringBuilder2.Append("  <sprite name=" + auraCurseData.Id);
-                stringBuilder2.Append(">");
-                stringBuilder2.Append("</color>");
-                stringBuilder2.Append("<size=-1.5><voffset=2> <color=#666>|</color>   <voffset=0>");
-                stringBuilder2.Append(hp);
-                stringBuilder2.Append("  <sprite name=heart>");
-                stringBuilder2.Append("</size>");
-                stringBuilder2.Append("<br>");
-                num3 += num7;
-              }
-            }
-          }
-          if (auraCurseData.ProduceDamageWhenConsumed && (auraCurseData.ConsumedAtTurnBegin && num6 == 0 || auraCurseData.ConsumedAtTurn && num6 == 1) && (auraCurseData.DamageWhenConsumed > 0 || (double) auraCurseData.DamageWhenConsumedPerCharge > 0.0))
-          {
-            int auraCharges3 = _characterCaster.AuraList[index2].AuraCharges;
-            int num8 = 0;
-            int num9 = 0;
-            int num10 = num8 + auraCurseData.DamageWhenConsumed;
-            int num11 = auraCharges3;
-            if ((UnityEngine.Object) auraCurseData.ConsumedDamageChargesBasedOnACCharges != (UnityEngine.Object) null)
-              num11 = _characterCaster.GetAuraCharges(auraCurseData.ConsumedDamageChargesBasedOnACCharges.Id);
-            if ((UnityEngine.Object) auraCurseData.ConsumeDamageChargesIfACApplied != (UnityEngine.Object) null && _characterCaster.GetAuraCharges(auraCurseData.ConsumeDamageChargesIfACApplied.Id) <= 0)
-              num11 = 0;
-            int num12 = num10 + Functions.FuncRoundToInt(auraCurseData.DamageWhenConsumedPerCharge * (float) num11);
-            if (auraCurseData.DoubleDamageIfCursesLessThan > 0 && _characterCaster.GetAuraCurseTotal(false, true) < auraCurseData.DoubleDamageIfCursesLessThan)
-              num12 *= 2;
-            int num13;
-            if (auraCurseData.DamageTypeWhenConsumed != Enums.DamageType.None)
-            {
-              num9 = num12 <= num5 ? num12 : num5;
-              num12 -= num9;
-              num5 -= num9;
-              float num14 = (float) (-1 * _characterCaster.BonusResists(auraCurseData.DamageTypeWhenConsumed, _characterCaster.AuraList[index2].ACData.Id, num6 == 0, num6 == 1));
-              num13 = Functions.FuncRoundToInt((float) num12 + (float) ((double) num12 * (double) num14 * 0.0099999997764825821));
-            }
-            else
-              num13 = num12;
-            hp -= num13;
-            if (num6 == 0)
-              num3 -= num13;
-            else
-              num4 -= num13;
-            if (num1 == 0 && num6 == 0)
-            {
-              stringBuilder2.Append("<size=-1><color=#FFF>");
-              stringBuilder2.Append(Texts.Instance.GetText("preturnEffects"));
-              stringBuilder2.Append("</color></size>");
-              stringBuilder2.Append("<br>");
-              num1 = 1;
-            }
-            if (num2 == 0 && num6 == 1)
-            {
-              stringBuilder2.Append("<size=-1><color=#FFF>");
-              stringBuilder2.Append(Texts.Instance.GetText("postturnEffects"));
-              stringBuilder2.Append("</color></size>");
-              stringBuilder2.Append("<br>");
-              num2 = 1;
-            }
-            if (num6 == 0)
-            {
-              stringBuilder2.Append("<color=");
-              stringBuilder2.Append(str1);
-              stringBuilder2.Append("> ");
-            }
-            else
-            {
-              stringBuilder2.Append("<color=");
-              stringBuilder2.Append(str2);
-              stringBuilder2.Append("> ");
-            }
-            if (num13 != 0)
-              stringBuilder2.Append("-");
-            stringBuilder2.Append(num13);
-            stringBuilder2.Append(" ");
-            stringBuilder2.Append(" <sprite name=" + auraCurseData.Id);
-            stringBuilder2.Append(">");
-            stringBuilder2.Append("</color>");
-            stringBuilder2.Append("<size=-1.5><voffset=2> <color=#666>|</color>   <voffset=0>");
-            if (num9 > 0)
-            {
-              stringBuilder2.Append(num9);
-              stringBuilder2.Append(" <sprite name=block> ");
-            }
-            int num15 = (num13 - num12) * -1;
-            if (num15 != 0)
-            {
-              stringBuilder2.Append(num15);
-              stringBuilder2.Append("  <sprite name=ui_resistance>  ");
-            }
-            stringBuilder2.Append(hp);
-            stringBuilder2.Append("  <sprite name=heart>");
-            stringBuilder2.Append("</size>");
-            stringBuilder2.Append("<br>");
-            if (hp <= 0 && !flag1)
-            {
-              stringBuilder2.Append(str4);
-              if (num6 == 0)
-                flag2 = true;
-              flag1 = true;
-            }
-          }
-        }
-      }
-    }
-    forThisCharacter[0] = num3.ToString();
-    forThisCharacter[1] = num4.ToString();
-    forThisCharacter[2] = !flag1 ? "0" : "1";
-    if ((UnityEngine.Object) this.skull != (UnityEngine.Object) null)
-    {
-      if (forThisCharacter[2] == "1")
-      {
-        if (!this.skull.gameObject.activeSelf)
-          this.skull.gameObject.SetActive(true);
-        this.skullParticle.main.startColor = !flag2 ? (ParticleSystem.MinMaxGradient) Functions.HexToColor(str2 + "50") : (ParticleSystem.MinMaxGradient) Functions.HexToColor(str1 + "50");
-      }
-      else if (this.skull.gameObject.activeSelf)
-        this.skull.gameObject.SetActive(false);
-    }
-    if (stringBuilder2.Length > 0)
-    {
-      stringBuilder2.Append("<line-height=160%><space=62><sprite name=sepwhite>");
-      stringBuilder2.Append("<line-height=16><br><line-height=100%><size=-1.5>");
-      stringBuilder2.Append("<sprite name=block>");
-      stringBuilder2.Append(Texts.Instance.GetText("blocked"));
-      stringBuilder2.Append("   <sprite name=ui_resistance> ");
-      stringBuilder2.Append(Texts.Instance.GetText("resisted"));
-      stringBuilder2.Append("   <sprite name=heart>");
-      stringBuilder2.Append(Texts.Instance.GetText("currentHp"));
-      stringBuilder2.Append("</size>");
-      stringBuilder2.Insert(0, "<size=+2>");
-      forThisCharacter.Add(stringBuilder2.ToString());
-    }
-    if (!MatchManager.Instance.prePostDamageDictionary.ContainsKey(_characterCaster.Id))
-      MatchManager.Instance.prePostDamageDictionary.Add(_characterCaster.Id, forThisCharacter);
-    else
-      MatchManager.Instance.prePostDamageDictionary[_characterCaster.Id] = forThisCharacter;
-    return forThisCharacter;
-  }
-
-  public void DeleteShadow(GameObject GO)
-  {
-    foreach (Transform transform in GO.transform)
-    {
-      if ((bool) (UnityEngine.Object) transform.GetComponent<SpriteRenderer>() && transform.gameObject.name.ToLower() == "shadow")
-      {
-        if (!transform.gameObject.activeSelf)
-          break;
-        transform.gameObject.SetActive(false);
-        break;
-      }
-    }
-  }
-
-  public void GetSwordSprites(GameObject GO)
-  {
-    AmeliaSwords component;
-    if (!GO.TryGetComponent<AmeliaSwords>(out component))
-      return;
-    this.swordSprites = new GameObject[5];
-    for (int index = 0; index < component.swordSprites.Length; ++index)
-      this.swordSprites[index] = component.swordSprites[index];
-  }
-
-  public void CleanSwordSprites()
-  {
-    if (!(this._hero.SubclassName == "queen") || this.swordSprites == null)
-      return;
-    for (int i = 0; i < this.swordSprites.Length; ++i)
-    {
-      if ((UnityEngine.Object) this.swordSprites[i] != (UnityEngine.Object) null && this.swordSprites[i].activeSelf)
-        this.ShowHideSwordSprite(i, false);
-    }
-  }
-
-  public void ShowHideSwordSprite(int i, bool state)
-  {
-    if (!(this._hero.SubclassName == "queen") || this.swordSprites == null || !((UnityEngine.Object) this.swordSprites[i] != (UnityEngine.Object) null) || this.swordSprites[i].activeSelf == state)
-      return;
-    this.swordSprites[i].SetActive(state);
-  }
-
-  public void GetSpritesFromAnimated(GameObject GO, bool recursive = false)
-  {
-    foreach (Transform transform in GO.transform)
-    {
-      if ((bool) (UnityEngine.Object) transform.GetComponent<SpriteRenderer>())
-      {
-        this.animatedSprites.Add(transform.GetComponent<SpriteRenderer>());
-        if (!this.animatedSpritesDefaultMaterial.ContainsKey(transform.name))
-          this.animatedSpritesDefaultMaterial.Add(transform.name, transform.GetComponent<SpriteRenderer>().sharedMaterial);
-        if (transform.gameObject.name.ToLower() == "shadow")
-          this.shadowSprite = transform;
-      }
-      if ((UnityEngine.Object) transform.GetComponent<SetSpriteLayerFromBase>() != (UnityEngine.Object) null)
-        this.animatedSpritesOutOfCharacter.Add(transform.GetComponent<SetSpriteLayerFromBase>());
-      if (transform.childCount > 0)
-        this.GetSpritesFromAnimated(transform.gameObject, true);
-    }
-    if (recursive)
-      return;
-    this.charImageT = GO.transform;
-  }
-
-  public void SetOverDebuff(string msg = "")
-  {
-    if ((UnityEngine.Object) this.overDebuff == (UnityEngine.Object) null)
-      return;
-    if (msg == "")
-    {
-      if (!this.overDebuff.gameObject.activeSelf)
-        return;
-      this.overDebuff.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.overDebuff.text = msg;
-      if (this.overDebuff.gameObject.activeSelf)
-        return;
-      this.overDebuff.gameObject.SetActive(true);
-    }
-  }
-
-  public void SetDoomIcon()
-  {
-    if (this._hero == null)
-      return;
-    int _charges = this._hero.EffectCharges("doom");
-    if (_charges > 0)
-    {
-      if (!this.hpDoomIconT.gameObject.activeSelf)
-        this.hpDoomIconT.gameObject.SetActive(true);
-      this.hpDoomText.text = _charges.ToString();
-      this.hpDoomIconT.GetComponent<PopupAuraCurse>().SetAuraCurse(Globals.Instance.GetAuraCurseData("doom"), _charges, true);
-    }
-    else
-    {
-      if (!this.hpDoomIconT.gameObject.activeSelf)
-        return;
-      this.hpDoomIconT.gameObject.SetActive(false);
-    }
-  }
-
-  public bool IsItemStealth()
-  {
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if (!(bool) (UnityEngine.Object) this.animatedSprites[index].transform.GetComponent("StealthHide"))
-          return this.animatedSprites[index].sharedMaterial.name.Split(' ', StringSplitOptions.None)[0] == "stealth";
-      }
-    }
-    return false;
-  }
-
-  public bool IsItemTaunt()
-  {
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if (!(bool) (UnityEngine.Object) this.animatedSprites[index].transform.GetComponent("StealthHide"))
-          return this.animatedSprites[index].sharedMaterial.name.Split(' ', StringSplitOptions.None)[0] == "taunt";
-      }
-    }
-    return false;
-  }
-
-  public bool IsItemParalyzed()
-  {
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if (!(bool) (UnityEngine.Object) this.animatedSprites[index].transform.GetComponent("StealthHide"))
-          return (UnityEngine.Object) this.animatedSprites[index].sharedMaterial == (UnityEngine.Object) this.paralyzeMaterial;
-      }
-    }
-    return false;
-  }
-
-  public void SetStealth(bool state)
-  {
-    if (state && this.IsItemStealth() || !state && !this.IsItemStealth() || this.animatedSprites == null || this.animatedSprites.Count <= 0)
-      return;
-    for (int index = 0; index < this.animatedSprites.Count; ++index)
-    {
-      if (state)
-      {
-        if ((bool) (UnityEngine.Object) this.animatedSprites[index].transform.GetComponent("StealthHide"))
-        {
-          if (this.animatedSprites[index].gameObject.activeSelf)
-            this.animatedSprites[index].transform.gameObject.SetActive(false);
-        }
-        else
-          this.animatedSprites[index].sharedMaterial = this.stealthMaterial;
-      }
-      else if ((bool) (UnityEngine.Object) this.animatedSprites[index].transform.GetComponent("StealthHide"))
-      {
-        if (!this.animatedSprites[index].gameObject.activeSelf)
-          this.animatedSprites[index].transform.gameObject.SetActive(true);
-      }
-      else
-        this.animatedSprites[index].sharedMaterial = this.animatedSpritesDefaultMaterial[this.animatedSprites[index].name];
-    }
-    if (state)
-    {
-      if ((UnityEngine.Object) this.shadowSprite != (UnityEngine.Object) null && this.shadowSprite.gameObject.activeSelf)
-        this.shadowSprite.gameObject.SetActive(false);
-      if (!((UnityEngine.Object) this.stealthParticle != (UnityEngine.Object) null) || this.stealthParticle.gameObject.activeSelf)
-        return;
-      this.stealthParticle.gameObject.SetActive(true);
-    }
-    else
-    {
-      if ((UnityEngine.Object) this.shadowSprite != (UnityEngine.Object) null && !this.shadowSprite.gameObject.activeSelf)
-        this.shadowSprite.gameObject.SetActive(true);
-      if (!((UnityEngine.Object) this.stealthParticle != (UnityEngine.Object) null) || !this.stealthParticle.gameObject.activeSelf)
-        return;
-      this.stealthParticle.gameObject.SetActive(false);
-    }
-  }
-
-  public void SetTaunt(bool state)
-  {
-    if (state && this.IsItemTaunt() || !state && !this.IsItemTaunt())
-      return;
-    if (this.animatedSprites != null && this.animatedSprites.Count > 0)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if (state)
-          this.animatedSprites[index].sharedMaterial = this.tauntMaterial;
-        else
-          this.animatedSprites[index].sharedMaterial = this.animatedSpritesDefaultMaterial[this.animatedSprites[index].name];
-      }
-    }
-    else if (state)
-      this.charImageSR.sharedMaterial = this.tauntMaterial;
-    else
-      this.charImageSR.sharedMaterial = this.animatedSpritesDefaultMaterial[this.charImageSR.name];
-  }
-
-  public void SetParalyze(bool state)
-  {
-    if (state && this.IsItemParalyzed())
-      return;
-    if (!state && !this.IsItemParalyzed())
-    {
-      if ((UnityEngine.Object) this.anim != (UnityEngine.Object) null)
-        this.anim.speed = 1f;
-      if (this.IsItemStealth() || this.IsItemTaunt())
-        return;
-    }
-    if (this.animatedSprites != null && this.animatedSprites.Count > 0)
-    {
-      int index1 = 0;
-      for (int index2 = 0; index2 < this.animatedSprites.Count && !this.animatedSprites[index2].gameObject.activeSelf; ++index2)
-        ++index1;
-      if (index1 == this.animatedSprites.Count || state && (UnityEngine.Object) this.animatedSprites[index1].sharedMaterial == (UnityEngine.Object) this.paralyzeMaterial || !state && (UnityEngine.Object) this.animatedSprites[index1].sharedMaterial == (UnityEngine.Object) this.animatedSpritesDefaultMaterial[this.animatedSprites[index1].name])
-        return;
-      if (state)
-      {
-        if ((double) this.anim.speed > 0.0)
-        {
-          this.anim.SetTrigger("hit");
-          this.StartCoroutine(this.StopAnim());
-        }
-      }
-      else
-        this.anim.speed = 1f;
-      for (int index3 = 0; index3 < this.animatedSprites.Count; ++index3)
-      {
-        if (state)
-        {
-          if ((bool) (UnityEngine.Object) this.animatedSprites[index3].transform.GetComponent("StealthHide"))
-          {
-            if (this.animatedSprites[index3].gameObject.activeSelf)
-              this.animatedSprites[index3].transform.gameObject.SetActive(false);
-          }
-          else
-            this.animatedSprites[index3].sharedMaterial = this.paralyzeMaterial;
-        }
-        else if ((bool) (UnityEngine.Object) this.animatedSprites[index3].transform.GetComponent("StealthHide"))
-        {
-          if (!this.animatedSprites[index3].gameObject.activeSelf)
-            this.animatedSprites[index3].transform.gameObject.SetActive(true);
-        }
-        else
-          this.animatedSprites[index3].sharedMaterial = this.animatedSpritesDefaultMaterial[this.animatedSprites[index3].name];
-      }
-    }
-    else if (state)
-      this.charImageSR.sharedMaterial = this.paralyzeMaterial;
-    else
-      this.charImageSR.sharedMaterial = this.animatedSpritesDefaultMaterial[this.charImageSR.name];
-    if (state || !((UnityEngine.Object) this.shadowSprite != (UnityEngine.Object) null) || this.shadowSprite.gameObject.activeSelf)
-      return;
-    this.shadowSprite.gameObject.SetActive(true);
-  }
-
-  private IEnumerator StopAnim()
-  {
-    if ((double) this.anim.speed != 0.0)
-    {
-      for (int i = 0; i < 100; ++i)
-      {
-        yield return (object) null;
-        this.anim.speed *= 0.92f;
-        if ((double) this.anim.speed < 0.0099999997764825821)
-        {
-          this.anim.speed = 0.0f;
-          break;
-        }
-      }
-    }
-  }
-
-  public void SetDamagePreview(
-    bool state,
-    int dmg = 0,
-    string dmgType = "",
-    int dmg2 = 0,
-    string dmgType2 = "",
-    int heal = 0,
-    int blocked = 0,
-    CardData _cardData = null)
-  {
-    if ((UnityEngine.Object) this.dmgPreviewText == (UnityEngine.Object) null)
-      return;
-    if (!state)
-    {
-      if (this.dmgPreviewText.transform.gameObject.activeSelf)
-        this.dmgPreviewText.transform.gameObject.SetActive(false);
-      if (this.purgedispel.transform.gameObject.activeSelf)
-        this.purgedispel.transform.gameObject.SetActive(false);
-      this.AmplifyBuffs((List<string>) null);
-      if (this._npc == null)
-        return;
-      this.ShowTauntText(false);
-    }
-    else
-    {
-      Character character = (Character) null;
-      if (this._npc != null)
-      {
-        character = (Character) this._npc;
-        if ((UnityEngine.Object) _cardData != (UnityEngine.Object) null && _cardData.TargetSide != Enums.CardTargetSide.Anyone && _cardData.TargetSide != Enums.CardTargetSide.Enemy)
-          return;
-      }
-      else if (this._hero != null)
-      {
-        character = (Character) this._hero;
-        if ((UnityEngine.Object) _cardData != (UnityEngine.Object) null && _cardData.TargetSide == Enums.CardTargetSide.Enemy)
-          return;
-      }
-      if (character == null)
-        return;
-      bool flag = false;
-      int num = heal;
-      if (this._hero != null)
-      {
-        Hero heroHeroActive = MatchManager.Instance.GetHeroHeroActive();
-        if (heroHeroActive != null && heroHeroActive.Id == character.Id)
-          flag = true;
-        else if ((UnityEngine.Object) _cardData != (UnityEngine.Object) null && _cardData.TargetSide == Enums.CardTargetSide.Self)
-          return;
-        int hpLeftForMax = this._hero.GetHpLeftForMax();
-        if (hpLeftForMax < heal)
-          heal = hpLeftForMax;
-      }
-      else
-      {
-        int hpLeftForMax = this._npc.GetHpLeftForMax();
-        if (hpLeftForMax < heal)
-          heal = hpLeftForMax;
-      }
-      if (this._npc != null)
-        this.ShowTauntText(false);
-      if (!state)
-        return;
-      StringBuilder stringBuilder1 = new StringBuilder();
-      if ((UnityEngine.Object) _cardData != (UnityEngine.Object) null && ((UnityEngine.Object) _cardData.Aura != (UnityEngine.Object) null || _cardData.HealCurses > 0 || _cardData.DispelAuras > 0 || _cardData.StealAuras > 0 || (UnityEngine.Object) _cardData.HealAuraCurseSelf != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.HealAuraCurseName != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.HealAuraCurseName2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.HealAuraCurseName3 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.HealAuraCurseName4 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Curse != (UnityEngine.Object) null))
-      {
-        int healCurses = _cardData.HealCurses;
-        int dispelAuras = _cardData.DispelAuras;
-        int stealAuras = _cardData.StealAuras;
-        List<string> stringList = new List<string>();
-        if (healCurses > 0)
-          stringList = character.GetAuraCurseByOrder(1, healCurses, true);
-        else if (dispelAuras > 0)
-          stringList = character.GetAuraCurseByOrder(0, dispelAuras, true);
-        else if (stealAuras > 0)
-          stringList = character.GetAuraCurseByOrder(0, stealAuras, true);
-        if ((UnityEngine.Object) _cardData.HealAuraCurseSelf != (UnityEngine.Object) null && flag && character.HasEffect(_cardData.HealAuraCurseSelf.Id) && character.EffectCharges(_cardData.HealAuraCurseSelf.Id) > 0)
-          stringList.Add(_cardData.HealAuraCurseSelf.Id);
-        if ((UnityEngine.Object) _cardData.HealAuraCurseName != (UnityEngine.Object) null && character.HasEffect(_cardData.HealAuraCurseName.Id) && character.EffectCharges(_cardData.HealAuraCurseName.Id) > 0)
-          stringList.Add(_cardData.HealAuraCurseName.Id);
-        if ((UnityEngine.Object) _cardData.HealAuraCurseName2 != (UnityEngine.Object) null && character.HasEffect(_cardData.HealAuraCurseName2.Id) && character.EffectCharges(_cardData.HealAuraCurseName2.Id) > 0)
-          stringList.Add(_cardData.HealAuraCurseName2.Id);
-        if ((UnityEngine.Object) _cardData.HealAuraCurseName3 != (UnityEngine.Object) null && character.HasEffect(_cardData.HealAuraCurseName3.Id) && character.EffectCharges(_cardData.HealAuraCurseName3.Id) > 0)
-          stringList.Add(_cardData.HealAuraCurseName3.Id);
-        if ((UnityEngine.Object) _cardData.HealAuraCurseName4 != (UnityEngine.Object) null && character.HasEffect(_cardData.HealAuraCurseName4.Id) && character.EffectCharges(_cardData.HealAuraCurseName4.Id) > 0)
-          stringList.Add(_cardData.HealAuraCurseName4.Id);
-        if (stringList.Count > 0)
-        {
-          StringBuilder stringBuilder2 = new StringBuilder();
-          StringBuilder stringBuilder3 = new StringBuilder();
-          for (int index = 0; index < stringList.Count; ++index)
-          {
-            stringBuilder2.Append("<sprite name=");
-            stringBuilder2.Append(stringList[index]);
-            stringBuilder2.Append(">");
-            if (stringBuilder3.Length > 0)
-              stringBuilder3.Append("<space=2.5>");
-            stringBuilder3.Append(character.GetAuraCharges(stringList[index]));
-          }
-          if (stringBuilder2.Length > 0)
-          {
-            this.purgedispel.text = stringBuilder2.ToString();
-            this.purgedispelQuantity.text = stringBuilder3.ToString();
-            if (!this.purgedispel.gameObject.activeSelf)
-              this.purgedispel.transform.gameObject.SetActive(true);
-            this.purgedispelTitle.text = stealAuras <= 0 ? Texts.Instance.GetText("remove") : Texts.Instance.GetText("steal");
-          }
-        }
-        if ((UnityEngine.Object) _cardData.Aura != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Aura2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Aura3 != (UnityEngine.Object) null || _cardData.Auras != null && _cardData.Auras.Length != 0 || (UnityEngine.Object) _cardData.Curse != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Curse2 != (UnityEngine.Object) null || (UnityEngine.Object) _cardData.Curse3 != (UnityEngine.Object) null || _cardData.Curses != null && _cardData.Curses.Length != 0)
-        {
-          List<string> _listAuraCurse = new List<string>();
-          if ((UnityEngine.Object) _cardData.Aura != (UnityEngine.Object) null)
-            _listAuraCurse.Add(_cardData.Aura.Id.ToLower());
-          if ((UnityEngine.Object) _cardData.Aura2 != (UnityEngine.Object) null)
-            _listAuraCurse.Add(_cardData.Aura2.Id.ToLower());
-          if ((UnityEngine.Object) _cardData.Aura3 != (UnityEngine.Object) null)
-            _listAuraCurse.Add(_cardData.Aura3.Id.ToLower());
-          if (_cardData.Auras != null && _cardData.Auras.Length != 0)
-            _listAuraCurse.AddRange(((IEnumerable<CardData.AuraBuffs>) _cardData.Auras).Where<CardData.AuraBuffs>((Func<CardData.AuraBuffs, bool>) (x => (UnityEngine.Object) x.aura != (UnityEngine.Object) null)).Select<CardData.AuraBuffs, string>((Func<CardData.AuraBuffs, string>) (x => x.aura.Id.ToLower())));
-          if ((UnityEngine.Object) _cardData.Curse != (UnityEngine.Object) null)
-            _listAuraCurse.Add(_cardData.Curse.Id.ToLower());
-          if ((UnityEngine.Object) _cardData.Curse2 != (UnityEngine.Object) null)
-            _listAuraCurse.Add(_cardData.Curse2.Id.ToLower());
-          if ((UnityEngine.Object) _cardData.Curse3 != (UnityEngine.Object) null)
-            _listAuraCurse.Add(_cardData.Curse3.Id.ToLower());
-          if (_cardData.Curses != null && _cardData.Curses.Length != 0)
-            _listAuraCurse.AddRange(((IEnumerable<CardData.CurseDebuffs>) _cardData.Curses).Where<CardData.CurseDebuffs>((Func<CardData.CurseDebuffs, bool>) (x => (UnityEngine.Object) x.curse != (UnityEngine.Object) null)).Select<CardData.CurseDebuffs, string>((Func<CardData.CurseDebuffs, string>) (x => x.curse.Id.ToLower())));
-          this.AmplifyBuffs(_listAuraCurse);
-        }
-      }
-      if ((UnityEngine.Object) _cardData != (UnityEngine.Object) null)
-      {
-        List<string> stringList = character.CharacterImmunitiesList();
-        StringBuilder stringBuilder4 = new StringBuilder();
-        if ((UnityEngine.Object) _cardData.Curse != (UnityEngine.Object) null && stringList.Contains(_cardData.Curse.Id))
-        {
-          stringBuilder4.Append("<size=4><sprite name=");
-          stringBuilder4.Append(_cardData.Curse.Id);
-          stringBuilder4.Append("></size><size=-1><color=#e88>");
-          stringBuilder4.Append(Texts.Instance.GetText("immune"));
-          stringBuilder4.Append("</color></size><br>");
-        }
-        if ((UnityEngine.Object) _cardData.Curse2 != (UnityEngine.Object) null && stringList.Contains(_cardData.Curse2.Id))
-        {
-          stringBuilder4.Append("<size=4><sprite name=");
-          stringBuilder4.Append(_cardData.Curse2.Id);
-          stringBuilder4.Append("></size><size=-1><color=#e88>");
-          stringBuilder4.Append(Texts.Instance.GetText("immune"));
-          stringBuilder4.Append("</color></size><br>");
-        }
-        if ((UnityEngine.Object) _cardData.Curse3 != (UnityEngine.Object) null && stringList.Contains(_cardData.Curse3.Id))
-        {
-          stringBuilder4.Append("<size=4><sprite name=");
-          stringBuilder4.Append(_cardData.Curse3.Id);
-          stringBuilder4.Append("></size><size=-1><color=#e88>");
-          stringBuilder4.Append(Texts.Instance.GetText("immune"));
-          stringBuilder4.Append("</color></size><br>");
-        }
-        if (_cardData.Curses != null && _cardData.Curses.Length != 0)
-        {
-          for (int index = 0; index < _cardData.Curses.Length; ++index)
-          {
-            CardData.CurseDebuffs curse = _cardData.Curses[index];
-            if (curse != null && (UnityEngine.Object) curse.curse != (UnityEngine.Object) null)
-            {
-              stringBuilder4.Append("<size=4><sprite name=");
-              stringBuilder4.Append(curse.curse.Id);
-              stringBuilder4.Append("></size><size=-1><color=#e88>");
-              stringBuilder4.Append(Texts.Instance.GetText("immune"));
-              stringBuilder4.Append("</color></size><br>");
-            }
-          }
-        }
-        if (stringBuilder4.Length > 0)
-          stringBuilder1.Append(stringBuilder4.ToString());
-      }
-      if (heal == 0 && this._npc != null && this._npc.HasEffect("evasion"))
-      {
-        stringBuilder1.Append("<sprite name=evasion><color=#559F2B>");
-        stringBuilder1.Append(Functions.Substring(Texts.Instance.GetText("evasion"), 5));
-      }
-      else if (heal == 0 && this._npc != null && this._npc.HasEffect("invulnerable"))
-      {
-        stringBuilder1.Append("<sprite name=invulnerable><color=#DECD02>");
-        stringBuilder1.Append(Functions.Substring(Texts.Instance.GetText("invulnerable"), 5));
-      }
-      else if (dmg >= 1 && dmgType != "" && dmgType != "heart" && character.HasEffect("evasion"))
-      {
-        stringBuilder1.Append("<sprite name=evasion><color=#559F2B>");
-        stringBuilder1.Append(Functions.Substring(Texts.Instance.GetText("evasion"), 5));
-      }
-      else
-      {
-        if ((dmg >= 1 || dmg2 >= 1) && blocked > 0)
-        {
-          stringBuilder1.Append(blocked);
-          stringBuilder1.Append(" <sprite name=block>");
-        }
-        if (dmg > 0)
-        {
-          stringBuilder1.Append(dmg);
-          if (dmgType != "")
-          {
-            stringBuilder1.Append(" <sprite name=");
-            stringBuilder1.Append(dmgType);
-            stringBuilder1.Append(">");
-          }
-        }
-        if (dmg2 > 0)
-        {
-          stringBuilder1.Append("\n");
-          stringBuilder1.Append(dmg2);
-          if (dmgType2 != "")
-          {
-            stringBuilder1.Append(" <sprite name=");
-            stringBuilder1.Append(dmgType2);
-            stringBuilder1.Append(">");
-          }
-        }
-        if (dmg < 1 && dmg2 < 1 && blocked > 0)
-        {
-          stringBuilder1.Append(blocked);
-          stringBuilder1.Append(" <sprite name=block>");
-        }
-        if ((UnityEngine.Object) _cardData != (UnityEngine.Object) null && _cardData.Damage > 0 && this._npc != null && this._npc.HasEffect("thorns"))
-        {
-          if (stringBuilder1.Length > 0)
-          {
-            stringBuilder1.Insert(0, "<sprite name=thorns><br>");
-            stringBuilder1.Insert(0, "</color> ");
-            stringBuilder1.Insert(0, this._npc.EffectCharges("thorns"));
-            stringBuilder1.Insert(0, "<color=#E59F40>");
-          }
-          else
-          {
-            stringBuilder1.Append("<color=#E59F40>");
-            stringBuilder1.Append(this._npc.EffectCharges("thorns"));
-            stringBuilder1.Append("</color> ");
-            stringBuilder1.Append("<sprite name=thorns><br>0");
-          }
-        }
-      }
-      if (heal > 0 || num > 0)
-      {
-        if (stringBuilder1.Length > 0)
-          stringBuilder1.Append("\n");
-        stringBuilder1.Append(heal);
-        stringBuilder1.Append(" <sprite name=heal>");
-      }
-      if (stringBuilder1.Length == 0 && dmg <= 0 && (UnityEngine.Object) _cardData != (UnityEngine.Object) null && (_cardData.Damage > 0 && !flag || _cardData.DamageSelf > 0 & flag))
-        stringBuilder1.Append(0);
-      if (!this.dmgPreviewText.transform.gameObject.activeSelf)
-        this.dmgPreviewText.transform.gameObject.SetActive(true);
-      if (stringBuilder1.Length > 0)
-        this.dmgPreviewText.text = stringBuilder1.ToString();
-      else
-        this.dmgPreviewText.transform.gameObject.SetActive(false);
-      if (this._npc == null || !this._npc.IsTaunted())
-        return;
-      this.ShowTauntText(true);
-    }
-  }
-
-  private void ShowThornsText(bool state)
-  {
-    if ((UnityEngine.Object) this.thornsTransform == (UnityEngine.Object) null || this.thornsTransform.gameObject.activeSelf == state)
-      return;
-    this.thornsTransform.gameObject.SetActive(state);
-  }
-
-  private void ShowTauntText(bool state)
-  {
-    if ((UnityEngine.Object) this.tauntTextTransform == (UnityEngine.Object) null)
-      return;
-    if (this.tauntTextTransform.gameObject.activeSelf != state)
-      this.tauntTextTransform.gameObject.SetActive(state);
-    if (!state)
-      return;
-    this.tauntTextT.text = "<size=+.5><sprite name=taunt></size>" + Texts.Instance.GetText("taunt");
-  }
-
-  public void DisableCollider() => this.GetComponent<BoxCollider2D>().enabled = false;
-
-  public void DrawOrderSprites(bool goToFront, int _order)
-  {
-    if (!this.isHero)
-    {
-      string str = this.gameObject.name.Trim();
-      if (str.StartsWith("flamethrower_"))
-      {
-        _order = 3;
-        goToFront = false;
-      }
-      else if (str.StartsWith("dwarfface_"))
-      {
-        _order = 0;
-        goToFront = false;
-      }
-      else if (str.StartsWith("dt800_"))
-      {
-        _order = 2;
-        goToFront = false;
-      }
-      else if (str.StartsWith("launcher_"))
-      {
-        _order = 1;
-        goToFront = false;
-      }
-      else if (str.StartsWith("rustking_"))
-      {
-        _order = 0;
-        goToFront = false;
-        this.transform.localPosition = new Vector3(this.transform.localPosition.x, this.transform.localPosition.y, -1f);
-      }
-      else if (str.StartsWith("pitt_"))
-      {
-        _order = 1;
-        goToFront = false;
-      }
-    }
-    else if (this.gameObject.name.Trim() == "tombstone")
-    {
-      _order = 0;
-      goToFront = false;
-    }
-    int num;
-    if (goToFront)
-    {
-      num = 1000 * _order;
-      if ((UnityEngine.Object) this.PetItem != (UnityEngine.Object) null)
-      {
-        if (this.PetItemFront)
-          this.PetItem.DrawOrderSprites(true, _order + 1);
-        else
-          this.PetItem.DrawOrderSprites(false, _order - 1);
-      }
-      if ((UnityEngine.Object) this.PetItemEnchantment != (UnityEngine.Object) null)
-      {
-        if (this.PetItemEnchantmentFront)
-          this.PetItemEnchantment.DrawOrderSprites(true, _order + 1000);
-        else
-          this.PetItemEnchantment.DrawOrderSprites(false, _order);
-      }
-    }
-    else
-    {
-      num = 1000 * (8 - _order) - 10000;
-      if ((UnityEngine.Object) this.PetItem != (UnityEngine.Object) null)
-      {
-        if (this.PetItemFront)
-          this.PetItem.DrawOrderSprites(true, _order - 1);
-        else
-          this.PetItem.DrawOrderSprites(false, _order + 1);
-      }
-      if ((UnityEngine.Object) this.PetItemEnchantment != (UnityEngine.Object) null)
-      {
-        if (this.PetItemEnchantmentFront)
-          this.PetItemEnchantment.DrawOrderSprites(true, _order - 1);
-        else
-          this.PetItemEnchantment.DrawOrderSprites(false, _order + 1);
-      }
-    }
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if ((UnityEngine.Object) this.animatedSprites[index] != (UnityEngine.Object) null)
-        {
-          this.animatedSprites[index].sortingOrder = num - index;
-          this.animatedSprites[index].sortingLayerName = "Characters";
-        }
-      }
-    }
-    else
-      this.charImageSR.sortingOrder = num;
-    if (this.animatedSpritesOutOfCharacter == null)
-      return;
-    for (int index = 0; index < this.animatedSpritesOutOfCharacter.Count; ++index)
-    {
-      if ((UnityEngine.Object) this.animatedSpritesOutOfCharacter[index] != (UnityEngine.Object) null)
-        this.animatedSpritesOutOfCharacter[index].ReOrderLayer();
-    }
-  }
-
-  public void DrawBlock(bool state)
-  {
-    if (this.blockCo != null)
-      this.StopCoroutine(this.blockCo);
-    if (state)
-      this.blockCo = this.StartCoroutine(this.ShowBlock(true));
-    else
-      this.blockCo = this.StartCoroutine(this.ShowBlock(false));
-  }
-
-  private IEnumerator ShowBlock(bool state)
-  {
-    CharacterItem characterItem = this;
-    float scaleMax = 1f;
-    if (characterItem._npc != null && (UnityEngine.Object) characterItem._npc.NpcData != (UnityEngine.Object) null && characterItem._npc.NpcData.BigModel)
-      scaleMax = 1.5f;
-    if (characterItem.hpBlockIconT.gameObject.activeSelf != state || characterItem.hpBlockT.gameObject.activeSelf != state)
-    {
-      characterItem.hpBlockT.gameObject.SetActive(false);
-      if (state)
-      {
-        characterItem.hpBlockIconT.gameObject.SetActive(true);
-        float scale = 0.0f;
-        while ((double) scale < (double) scaleMax + 0.25 && !((UnityEngine.Object) characterItem.hpBlockIconT == (UnityEngine.Object) null) && !((UnityEngine.Object) characterItem.hpBlockIconT.gameObject == (UnityEngine.Object) null))
-        {
-          characterItem.hpBlockIconT.localScale = new Vector3(scale, scale, 1f);
-          scale += 0.1f;
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        }
-        while ((double) scale > (double) scaleMax && !((UnityEngine.Object) characterItem.hpBlockIconT == (UnityEngine.Object) null) && !((UnityEngine.Object) characterItem.hpBlockIconT.gameObject == (UnityEngine.Object) null))
-        {
-          characterItem.hpBlockIconT.localScale = new Vector3(scale, scale, 1f);
-          scale -= 0.1f;
-          yield return (object) Globals.Instance.WaitForSeconds(0.005f);
-        }
-      }
-      else
-      {
-        characterItem.blockBorderT.gameObject.SetActive(false);
-        characterItem.hpBlockIconT.localScale = new Vector3(0.0f, 0.0f, 1f);
-        characterItem.hpBlockIconT.gameObject.SetActive(false);
-      }
-      characterItem.StartCoroutine(characterItem.ShowBlockHP(state));
-    }
-  }
-
-  private IEnumerator ShowBlockHP(bool state, bool animation = true)
-  {
-    if (state)
-    {
-      float percent = this.hpRed.localScale.x;
-      if ((double) percent > 1.0)
-        percent = 1f;
-      else if ((double) percent < 0.0)
-        percent = 0.0f;
-      if (animation)
-      {
-        float t = 0.0f;
-        float seconds = 0.5f;
-        this.hpBlockT.localScale = Vector3.zero;
-        if (!this.hpBlockT.gameObject.activeSelf)
-          this.hpBlockT.gameObject.SetActive(true);
-        this.blockBorderT.localScale = Vector3.zero;
-        if (!this.blockBorderT.gameObject.activeSelf)
-          this.blockBorderT.gameObject.SetActive(true);
-        while ((double) t <= 1.0)
-        {
-          t += Time.deltaTime / seconds;
-          this.hpBlockT.localScale = Vector3.Lerp(new Vector3(0.0f, 1f, 1f), new Vector3(percent, 1f, 1f), Mathf.SmoothStep(0.0f, 1f, t));
-          this.blockBorderT.localScale = Vector3.Lerp(new Vector3(0.0f, 1f, 1f), new Vector3(1f, 1f, 1f), Mathf.SmoothStep(0.0f, 1f, t));
-          yield return (object) null;
-        }
-      }
-      else
-      {
-        this.hpBlockT.localScale = new Vector3(percent, this.hpBlockT.localScale.y, this.hpBlockT.localScale.z);
-        if (!this.hpBlockT.gameObject.activeSelf)
-          this.hpBlockT.gameObject.SetActive(true);
-      }
-    }
-    else
-    {
-      if (this.hpBlockT.gameObject.activeSelf)
-        this.hpBlockT.gameObject.SetActive(false);
-      if (this.blockBorderT.gameObject.activeSelf)
-        this.blockBorderT.gameObject.SetActive(false);
-    }
-  }
-
-  private IEnumerator ShowShieldHP(int charges)
-  {
-    if (!((UnityEngine.Object) this.hpShieldT == (UnityEngine.Object) null))
-    {
-      this.hpShieldText.text = charges.ToString();
-      if (!this.hpShieldT.gameObject.activeSelf)
-      {
-        float scaleMax = 1.1f;
-        if (this._npc != null && (UnityEngine.Object) this._npc.NpcData != (UnityEngine.Object) null && this._npc.NpcData.BigModel)
-          scaleMax = 1.55f;
-        float t = 0.0f;
-        float seconds = 0.5f;
-        this.hpShieldT.localScale = Vector3.zero;
-        if (!this.hpShieldT.gameObject.activeSelf)
-          this.hpShieldT.gameObject.SetActive(true);
-        while ((double) t <= 1.0)
-        {
-          t += Time.deltaTime / seconds;
-          if ((UnityEngine.Object) this.hpShieldT != (UnityEngine.Object) null)
-            this.hpShieldT.localScale = Vector3.Lerp(new Vector3(0.0f, 0.0f, 1f), new Vector3(scaleMax + 0.1f, scaleMax + 0.1f, 1f), Mathf.SmoothStep(0.0f, 1f, t));
-          yield return (object) null;
-        }
-        this.hpShieldT.localScale = new Vector3(scaleMax, scaleMax, 1f);
-      }
-      yield return (object) null;
-    }
-  }
-
-  public void DrawEnergy()
-  {
-    if (!this.isHero)
-      return;
-    int energy;
-    int energyTurn;
-    if (this.isHero)
-    {
-      energy = this._hero.GetEnergy();
-      energyTurn = this._hero.GetEnergyTurn();
-    }
-    else
-    {
-      energy = this._npc.GetEnergy();
-      energyTurn = this._npc.GetEnergyTurn();
-    }
-    this.energyTxt.text = energy.ToString();
-    for (int index = 0; index < 10; ++index)
-    {
-      if (!((UnityEngine.Object) this.energySR[index] == (UnityEngine.Object) null))
-      {
-        if (index < energy)
-        {
-          this.energySR[index].color = Color.white;
-          this.energySRAnimator[index].enabled = false;
-        }
-        else if (index < energy + energyTurn)
-        {
-          this.energySR[index].gameObject.SetActive(false);
-          this.energySR[index].gameObject.SetActive(true);
-          this.energySRAnimator[index].enabled = true;
-          this.energySR[index].color = new Color(0.0f, 1f, 0.5f, 1f);
-        }
-        else
-        {
-          this.energySR[index].color = new Color(0.0f, 0.0f, 0.0f, 0.45f);
-          this.energySRAnimator[index].enabled = false;
-        }
-      }
-    }
-  }
-
-  public void ScrollCombatText(string text, Enums.CombatScrollEffectType type)
-  {
-    this.CT.SetText(text, type);
-  }
-
-  public void ScrollCombatTextDamageNew(CastResolutionForCombatText _cast)
-  {
-    this.CT.SetDamageNew(_cast);
-  }
-
-  public bool IsCombatScrollEffectActive() => this.CT.IsPlaying();
-
-  public void ActivateMark(bool state)
-  {
-    if (!((UnityEngine.Object) this.transform != (UnityEngine.Object) null))
-      return;
-    this.isActive = state;
-    if (!((UnityEngine.Object) this.activeMarkTR != (UnityEngine.Object) null) || this.activeMarkTR.gameObject.activeSelf == state)
-      return;
-    this.activeMarkTR.gameObject.SetActive(state);
-  }
-
-  public bool AnimNameIs(string name)
-  {
-    return !((UnityEngine.Object) this.anim == (UnityEngine.Object) null) && this.anim.GetCurrentAnimatorStateInfo(0).IsName(name);
-  }
-
-  public void CharacterAttackAnim()
-  {
-    if (!((UnityEngine.Object) this.anim != (UnityEngine.Object) null))
-      return;
-    if (this.animationBusyCo != null)
-      this.StopCoroutine(this.animationBusyCo);
-    this.animationBusyCo = this.StartCoroutine(this.SetAnimationBusy());
-    this.anim.ResetTrigger("attack");
-    this.anim.SetTrigger("attack");
-    this.PetCastAnim("cast");
-  }
-
-  public void CharacterCastAnim()
-  {
-    if (!((UnityEngine.Object) this.anim != (UnityEngine.Object) null))
-      return;
-    if (this.animationBusyCo != null)
-      this.StopCoroutine(this.animationBusyCo);
-    this.animationBusyCo = this.StartCoroutine(this.SetAnimationBusy());
-    this.anim.ResetTrigger("cast");
-    this.anim.SetTrigger("cast");
-    this.PetCastAnim("cast");
-  }
-
-  private IEnumerator SetAnimationBusy()
-  {
-    this.animationBusy = true;
-    yield return (object) Globals.Instance.WaitForSeconds(1f);
-    this.animationBusy = false;
-  }
-
-  private IEnumerator PetCastAnimTO(string animState)
-  {
-    CharacterItem characterItem = this;
-    List<Animator> petAnimators = new List<Animator>();
-    for (int index = 0; index < 3; ++index)
-    {
-      Transform transform = index != 0 ? (index != 1 ? (!characterItem.isHero ? characterItem.transform.Find("thePetEnchantment" + characterItem._npc.Enchantment3) : characterItem.transform.Find("thePetEnchantment" + characterItem._hero.Enchantment3)) : (!characterItem.isHero ? characterItem.transform.Find("thePetEnchantment" + characterItem._npc.Enchantment2) : characterItem.transform.Find("thePetEnchantment" + characterItem._hero.Enchantment2))) : (!characterItem.isHero ? characterItem.transform.Find("thePetEnchantment" + characterItem._npc.Enchantment) : characterItem.transform.Find("thePetEnchantment" + characterItem._hero.Enchantment));
-      if ((UnityEngine.Object) transform != (UnityEngine.Object) null && (UnityEngine.Object) transform.GetComponent<Animator>() != (UnityEngine.Object) null)
-        petAnimators.Add(transform.GetComponent<Animator>());
-    }
-    for (int i = 0; i < petAnimators.Count; ++i)
-    {
-      if (animState != "hit")
-        yield return (object) Globals.Instance.WaitForSeconds((float) UnityEngine.Random.Range(0, 30) * 0.01f);
-      if ((UnityEngine.Object) petAnimators[i] != (UnityEngine.Object) null)
-      {
-        petAnimators[i].ResetTrigger(animState);
-        petAnimators[i].SetTrigger(animState);
-      }
-    }
-    yield return (object) null;
-  }
-
-  public void PetCastAnim(string animState)
-  {
-    if (!((UnityEngine.Object) this.animPet != (UnityEngine.Object) null))
-      return;
-    if (!this.isHero)
-    {
-      this.StartCoroutine(this.PetCastAnimTO(animState));
-    }
-    else
-    {
-      this.animPet.ResetTrigger(animState);
-      this.animPet.SetTrigger(animState);
-      if (!(animState == "attack"))
-        return;
-      this.StartCoroutine(this.PetMoveToCenter());
-    }
-  }
-
-  private IEnumerator PetMoveToCenter()
-  {
-    if (!((UnityEngine.Object) this.PetItem == (UnityEngine.Object) null))
-    {
-      this.PetItem.MoveToCenter();
-      yield return (object) Globals.Instance.WaitForSeconds(0.8f);
-      this.PetItem.MoveToCenterBack();
-    }
-  }
-
-  public void CharacterEnableAnim(bool state)
-  {
-    if (!((UnityEngine.Object) this.anim != (UnityEngine.Object) null))
-      return;
-    if (state)
-      this.anim.enabled = true;
-    else
-      this.anim.enabled = false;
-  }
-
-  public void CharacterHitted(bool fromHit = false)
-  {
-    if (this.characterBeingHitted)
-      return;
-    if (this._hero != null)
-    {
-      if (this._hero.IsParalyzed())
-      {
-        GameManager.Instance.PlayLibraryAudio("hit_metal2");
-        return;
-      }
-    }
-    else if (this._npc != null)
-    {
-      if (this._npc.IsParalyzed())
-      {
-        GameManager.Instance.PlayLibraryAudio("hit_metal2");
-        return;
-      }
-      if (fromHit && (UnityEngine.Object) this._npc.NpcData != (UnityEngine.Object) null)
-      {
-        string str = this._npc.NpcData.Id.ToLower().Split('_', StringSplitOptions.None)[0];
-        if (str == "trunky" || str == "taintedtrunky" || str == "sapling" || str == "taintedsapling" || str == "ylmer")
-          GameManager.Instance.PlayLibraryAudio("impact_wood");
-        else if ((UnityEngine.Object) MatchManager.Instance.CardActive != (UnityEngine.Object) null)
-        {
-          if (MatchManager.Instance.CardActive.DamageType == Enums.DamageType.Slashing)
-            GameManager.Instance.PlayLibraryAudio("impact_slashing");
-          else if (MatchManager.Instance.CardActive.DamageType == Enums.DamageType.Blunt)
-            GameManager.Instance.PlayLibraryAudio("impact_crushing");
-          else if (MatchManager.Instance.CardActive.DamageType == Enums.DamageType.Piercing)
-            GameManager.Instance.PlayLibraryAudio("impact_piercing");
-        }
-      }
-    }
-    this.characterBeingHitted = true;
-    if ((UnityEngine.Object) this.anim != (UnityEngine.Object) null && !this.animationBusy)
-    {
-      this.anim.ResetTrigger("hit");
-      this.anim.SetTrigger("hit");
-      this.PetCastAnim("hit");
-    }
-    if (fromHit)
-    {
-      if (this._npc != null && (UnityEngine.Object) this._npc.NpcData != (UnityEngine.Object) null && (UnityEngine.Object) this._npc.NpcData.GetHitSound(MatchManager.Instance.HitSoundIndex) != (UnityEngine.Object) null)
-      {
-        GameManager.Instance.PlayAudio(this._npc.NpcData.GetHitSound(MatchManager.Instance.HitSoundIndex), 0.1f);
-        ++MatchManager.Instance.HitSoundIndex;
-      }
-      if (this._hero != null && (UnityEngine.Object) this._hero.HeroData != (UnityEngine.Object) null && (UnityEngine.Object) this._hero.HeroData.HeroSubClass.GetHitSound(MatchManager.Instance.HitSoundIndex) != (UnityEngine.Object) null)
-      {
-        GameManager.Instance.PlayAudio(this._hero.HeroData.HeroSubClass.GetHitSound(MatchManager.Instance.HitSoundIndex), 0.1f);
-        ++MatchManager.Instance.HitSoundIndex;
-      }
-    }
-    if (this.hitCo != null)
-      this.StopCoroutine(this.hitCo);
-    this.hitCo = this.StartCoroutine(this.CharacterBeingHittedCo());
-  }
-
-  private IEnumerator CharacterBeingHittedCo()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-    this.characterBeingHitted = false;
-  }
-
-  public void MoveToCenter()
-  {
-    if ((UnityEngine.Object) this.charImageT == (UnityEngine.Object) null)
-      return;
-    if (this.moveCenterCo != null)
-      this.StopCoroutine(this.moveCenterCo);
-    if (this.moveBackCo != null)
-      this.StopCoroutine(this.moveBackCo);
-    this.moveCenterCo = this.StartCoroutine(this.SetPositionCO(this.charImageT, new Vector3(-this.charImageT.parent.transform.localPosition.x + this.charImageT.localPosition.x, this.charImageT.localPosition.y, 0.0f), false));
-  }
-
-  public void MoveToPosition(
-    Transform targetTransform,
-    Vector3 targetPosition,
-    bool returnBack,
-    bool playSmokeEffect,
-    float movementTimeS,
-    MotionGenerator.EasingType easingType = MotionGenerator.EasingType.EaseOut)
-  {
-    if ((UnityEngine.Object) this.charImageT == (UnityEngine.Object) null)
-      return;
-    this.StartCoroutine(this.MovePositionCo(targetTransform, targetPosition, returnBack, playSmokeEffect, movementTimeS, easingType));
-  }
-
-  public void MoveToCenterBack()
-  {
-    if ((UnityEngine.Object) this.charImageT == (UnityEngine.Object) null || (double) Mathf.Abs(this.charImageT.localPosition.x - this.originalLocalPosition.x) <= 0.019999999552965164)
-      return;
-    if (this.moveCenterCo != null)
-      this.StopCoroutine(this.moveCenterCo);
-    if (this.moveBackCo != null)
-      this.StopCoroutine(this.moveBackCo);
-    this.moveBackCo = this.StartCoroutine(this.SetPositionCO(this.charImageT, new Vector3(this.originalLocalPosition.x, this.charImageT.localPosition.y, 0.0f), true));
-  }
-
-  public void SetOriginalLocalPosition(Vector3 pos) => this.originalLocalPosition = pos;
-
-  public void SetPosition(bool instant, int _position = -10)
-  {
-    if (!instant && this._npc != null && this._npc.NpcData.IsBoss)
-      return;
-    int position = this._hero == null || _position != -10 ? (this._npc == null || _position != -10 ? _position : this._npc.Position) : this._hero.Position;
-    if (this._npc != null && this._npc.NPCIsBoss() && this._npc.Id.Contains("faebor"))
-    {
-      float x = 2.4f;
-      this.healthBar.transform.localPosition = new Vector3(x, this.healthBar.transform.localPosition.y, this.healthBar.transform.localPosition.z);
-      Vector3 vector3 = new Vector3(x, 0.0f, 0.0f);
-      this.iconEnchantment.transform.position += vector3;
-      this.iconEnchantment2.transform.position += vector3;
-      this.iconEnchantment3.transform.position += vector3;
-    }
-    Vector3 localPosition = this.CalculateLocalPosition(position);
-    if (Mathf.Approximately(this.transform.localPosition.x, localPosition.x) || !instant)
-      return;
-    this.transform.localPosition = localPosition;
-  }
-
-  public Vector3 CalculateLocalPosition(int position)
-  {
-    float positionX = this.CalculatePositionX(position);
-    float z = (float) position * (1f / 1000f);
-    this.charImageT.transform.localPosition = new Vector3(this.charImageT.transform.localPosition.x, this.charImageT.transform.localPosition.y, z);
-    if (!this.isHero)
-    {
-      string str = this.gameObject.name.Trim();
-      if (str.StartsWith("flamethrower_"))
-        z = 0.03f;
-      else if (str.StartsWith("dwarfface_"))
-        z = 0.0f;
-      else if (str.StartsWith("dt800_"))
-        z = 0.02f;
-      else if (str.StartsWith("launcher_"))
-        z = 0.01f;
-    }
-    return new Vector3(positionX, 0.0f, z);
-  }
-
-  public float CalculatePositionX(int _position)
-  {
-    float positionX = 0.0f;
-    float num1 = 2.4f;
-    float num2 = 1.9f;
-    if (this._hero != null)
-    {
-      int num3 = _position != -10 ? _position : this._hero.Position;
-      positionX = (float) (-(double) num1 - (double) num3 * (double) num2);
-    }
-    else if (this._npc != null)
-    {
-      int num4 = _position != -10 ? _position : this._npc.Position;
-      positionX = num1 + (float) num4 * num2;
-      if (this._npc.IsBigModel())
-      {
-        if (num4 == 0 || num4 == 1)
-          positionX += 0.35f * num2;
-        else
-          positionX += 0.5f * num2;
-      }
-    }
-    return positionX;
-  }
-
-  public bool CharIsMoving() => this.charIsMoving;
-
-  private IEnumerator SetPositionCO(
-    Transform theTransform,
-    Vector3 vectorPosition,
-    bool returnPosition)
-  {
-    this.charIsMoving = true;
-    if (!this.IsMovementAllowed(theTransform, vectorPosition))
-    {
-      this.charIsMoving = false;
-    }
-    else
-    {
-      this.PrepareMovement(theTransform, vectorPosition, returnPosition, true);
-      this.charIsMoving = true;
-      if (!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
-      {
-        if ((UnityEngine.Object) theTransform != (UnityEngine.Object) null)
-          theTransform.localPosition = vectorPosition;
-      }
-      else
-      {
-        for (bool flag = false; !flag && (UnityEngine.Object) theTransform != (UnityEngine.Object) null; flag = true)
-        {
-          while ((UnityEngine.Object) theTransform != (UnityEngine.Object) null && (double) Mathf.Abs(theTransform.localPosition.x - vectorPosition.x) > 0.05000000074505806)
-          {
-            theTransform.localPosition = Vector3.Lerp(theTransform.localPosition, vectorPosition, 0.5f);
-            yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-          }
-          if ((UnityEngine.Object) theTransform != (UnityEngine.Object) null)
-            theTransform.localPosition = vectorPosition;
-        }
-      }
-      if (!this.isActive)
-        this.CharacterEnableAnim(true);
-      this.charIsMoving = false;
-    }
-  }
-
-  private IEnumerator MovePositionCo(
-    Transform theTransform,
-    Vector3 vectorPosition,
-    bool returnPosition,
-    bool playSmokeEffect,
-    float movementTimeS,
-    MotionGenerator.EasingType easingType)
-  {
-    CharacterItem characterItem = this;
-    characterItem.charIsMoving = true;
-    if (!characterItem.IsMovementAllowed(theTransform, vectorPosition))
-    {
-      characterItem.charIsMoving = false;
-    }
-    else
-    {
-      characterItem.PrepareMovement(theTransform, vectorPosition, returnPosition, playSmokeEffect);
-      yield return (object) characterItem.StartCoroutine(MotionGenerator.MoveWithEasing(theTransform, vectorPosition, movementTimeS, easingType, MotionGenerator.Axis.X));
-      if (!characterItem.isActive)
-        characterItem.CharacterEnableAnim(true);
-      characterItem.charIsMoving = false;
-    }
-  }
-
-  private bool IsMovementAllowed(Transform theTransform, Vector3 vectorPosition)
-  {
-    bool flag = false;
-    if ((double) Mathf.Abs(theTransform.localPosition.x - vectorPosition.x) < 0.019999999552965164)
-      flag = true;
-    else if (this._hero != null && !this._hero.Alive)
-      flag = true;
-    else if (this._npc != null && !this._npc.Alive)
-      flag = true;
-    return !flag;
-  }
-
-  private void PrepareMovement(
-    Transform theTransform,
-    Vector3 targetPosition,
-    bool returnPosition,
-    bool playSmokeEffect)
-  {
-    bool flip = (double) theTransform.localPosition.x >= (double) targetPosition.x;
-    if (!returnPosition)
-      MatchManager.Instance.DoStepSound();
-    if (playSmokeEffect)
-      EffectsManager.Instance.PlayEffectAC("smoke", this.isHero, theTransform, flip);
-    if (this.isActive)
-      return;
-    this.CharacterEnableAnim(false);
-  }
-
-  public void SetHP()
-  {
-    Character character;
-    float num1;
-    float maxHp;
-    int block;
-    int auraCharges;
-    if (this._hero != null)
-    {
-      character = (Character) this._hero;
-      num1 = (float) this._hero.HpCurrent;
-      maxHp = (float) this._hero.GetMaxHP();
-      if ((double) num1 > (double) maxHp)
-      {
-        this._hero.HpCurrent = (int) maxHp;
-        num1 = maxHp;
-      }
-      block = this._hero.GetBlock();
-      auraCharges = this._hero.GetAuraCharges("shield");
-    }
-    else
-    {
-      if (this._npc == null)
-        return;
-      character = (Character) this._npc;
-      num1 = (float) this._npc.HpCurrent;
-      maxHp = (float) this._npc.GetMaxHP();
-      if ((double) num1 > (double) maxHp)
-      {
-        this._npc.HpCurrent = (int) maxHp;
-        num1 = maxHp;
-      }
-      block = this._npc.GetBlock();
-      auraCharges = this._npc.GetAuraCharges("shield");
-    }
-    if (block > 0)
-    {
-      if ((UnityEngine.Object) this.hpBlockText != (UnityEngine.Object) null)
-        this.hpBlockText.text = block.ToString();
-      if (block > 49)
-        PlayerManager.Instance.AchievementUnlock("CHARGES_DEFENDER");
-      if (block > 199)
-        PlayerManager.Instance.AchievementUnlock("CHARGES_FORTRESS");
-      if ((UnityEngine.Object) this.hpBlockIconT != (UnityEngine.Object) null)
-        this.hpBlockIconT.GetComponent<PopupAuraCurse>().SetAuraCurse(Globals.Instance.GetAuraCurseData("block"), block, true);
-    }
-    if ((UnityEngine.Object) this.hpShieldT != (UnityEngine.Object) null && (UnityEngine.Object) this.hpShieldT.gameObject != (UnityEngine.Object) null)
-    {
-      if (auraCharges > 0)
-      {
-        this.hpShieldT.GetComponent<PopupAuraCurse>().SetAuraCurse(Globals.Instance.GetAuraCurseData("shield"), auraCharges, true);
-        this.StartCoroutine(this.ShowShieldHP(auraCharges));
-      }
-      else
-      {
-        this.hpShieldT.gameObject.SetActive(false);
-        this.hpShieldText.text = "";
-      }
-    }
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(num1);
-    stringBuilder.Append("<size=-.5><color=#bbb>/");
-    stringBuilder.Append(maxHp);
-    this.hpText.text = stringBuilder.ToString();
-    if (character.GetHp() < 1)
-    {
-      if ((UnityEngine.Object) this.hpRed != (UnityEngine.Object) null)
-        this.hpRed.localScale = new Vector3(0.0f, 1f, 1f);
-      if ((UnityEngine.Object) this.hpBleed != (UnityEngine.Object) null)
-        this.hpBleed.localScale = new Vector3(0.0f, 1f, 1f);
-      if ((UnityEngine.Object) this.hpPoison != (UnityEngine.Object) null)
-        this.hpPoison.localScale = new Vector3(0.0f, 1f, 1f);
-      if ((UnityEngine.Object) this.hpRegen != (UnityEngine.Object) null)
-        this.hpRegen.localScale = new Vector3(0.0f, 1f, 1f);
-      if (this.IsDying)
-        return;
-      this.KillCoroutine = this.StartCoroutine(this.KillCharacterCO());
-    }
-    else
-    {
-      MatchManager.Instance.CleanPrePostDamageDictionary(character.Id);
-      this.CalculateDamagePrePostForThisCharacter();
-      int num2 = int.Parse(MatchManager.Instance.prePostDamageDictionary[character.Id][0]);
-      int num3 = int.Parse(MatchManager.Instance.prePostDamageDictionary[character.Id][1]);
-      int num4 = 0;
-      int num5;
-      if (num2 < 0)
-      {
-        num5 = -1 * num2;
-      }
-      else
-      {
-        num4 = num2;
-        num5 = 0;
-      }
-      int num6 = num3 >= 0 ? 0 : -1 * num3;
-      float x1 = (num1 - (float) num5 - (float) num6) / maxHp;
-      if ((double) x1 < 0.0)
-        x1 = 0.0f;
-      else if ((double) x1 > 1.0)
-        x1 = 1f;
-      if ((UnityEngine.Object) this.hpRed != (UnityEngine.Object) null)
-        this.hpRed.localScale = new Vector3(x1, 1f, 1f);
-      if ((UnityEngine.Object) this.hpBlockT != (UnityEngine.Object) null)
-        this.hpBlockT.localScale = this.hpRed.localScale;
-      float x2 = 0.0f;
-      if (num5 > 0)
-        x2 = num1 / maxHp;
-      if ((UnityEngine.Object) this.hpBleed != (UnityEngine.Object) null)
-        this.hpBleed.localScale = new Vector3(x2, 1f, 1f);
-      if (num4 > 0 && (UnityEngine.Object) this.hpRegen != (UnityEngine.Object) null)
-      {
-        float x3 = (num1 + (float) num4) / maxHp;
-        if ((double) x3 > 1.0)
-          x3 = 1f;
-        this.hpRegen.localScale = new Vector3(x3, 1f, 1f);
-      }
-      else if ((UnityEngine.Object) this.hpRegen != (UnityEngine.Object) null)
-        this.hpRegen.localScale = Vector3.zero;
-      float x4 = 0.0f;
-      if (num6 > 0)
-        x4 = (num1 - (float) num5) / maxHp;
-      if ((double) x4 < 0.0)
-        x4 = 0.0f;
-      if (!((UnityEngine.Object) this.hpPoison != (UnityEngine.Object) null))
-        return;
-      this.hpPoison.localScale = new Vector3(x4, 1f, 1f);
-    }
-  }
-
-  private void AmplifyBuffs(List<string> _listAuraCurse)
-  {
-    if (_listAuraCurse != null)
-    {
-      for (int index = 0; index < this.GoBuffs.Count; ++index)
-      {
-        if (_listAuraCurse.Contains(this.GoBuffs[index].buffId))
-          this.GoBuffs[index].DisplayBecauseCard(true);
-        else
-          this.GoBuffs[index].DisplayBecauseCard(false);
-      }
-    }
-    else
-    {
-      for (int index = 0; index < this.GoBuffs.Count; ++index)
-        this.GoBuffs[index].RestoreBecauseCard();
-    }
-  }
-
-  public void DrawBuffs(AuraCurseData auraIncluded = null, int auraIncludedCharges = 0, int previousCharges = -1)
-  {
-    if ((UnityEngine.Object) this.GO_Buffs == (UnityEngine.Object) null)
-      return;
-    if (this.drawBuffsCoroutine != null)
-      this.StopCoroutine(this.drawBuffsCoroutine);
-    this.drawBuffsCoroutine = this.StartCoroutine(this.DrawBuffsCo(auraIncluded, auraIncludedCharges, previousCharges));
-  }
-
-  private IEnumerator DrawBuffsCo(
-    AuraCurseData auraIncluded = null,
-    int auraIncludedCharges = 0,
-    int previousCharges = -1)
-  {
-    // ISSUE: reference to a compiler-generated field
-    int num = this.\u003C\u003E1__state;
-    CharacterItem characterItem = this;
-    if (num != 0)
-      return false;
-    // ISSUE: reference to a compiler-generated field
-    this.\u003C\u003E1__state = -1;
-    if ((UnityEngine.Object) characterItem.GO_Buffs == (UnityEngine.Object) null)
-      return false;
-    int count;
-    string id;
-    if (characterItem.isHero)
-    {
-      count = characterItem._hero.AuraList.Count;
-      id = characterItem._hero.Id;
-    }
-    else
-    {
-      count = characterItem._npc.AuraList.Count;
-      id = characterItem._npc.Id;
-    }
-    int index1 = -1;
-    for (int index2 = 0; index2 < count; ++index2)
-    {
-      if ((UnityEngine.Object) characterItem.GO_Buffs == (UnityEngine.Object) null)
-        return false;
-      Aura aura = !characterItem.isHero ? characterItem._npc.AuraList[index2] : characterItem._hero.AuraList[index2];
-      if (aura != null && (UnityEngine.Object) aura.ACData != (UnityEngine.Object) null && aura.ACData.IconShow)
-      {
-        if ((UnityEngine.Object) characterItem.GO_Buffs == (UnityEngine.Object) null)
-          return false;
-        ++index1;
-        Buff goBuff = characterItem.GoBuffs[index1];
-        if ((UnityEngine.Object) goBuff != (UnityEngine.Object) null)
-          goBuff.SetBuff(aura.ACData, aura.GetCharges(), _charId: id);
-        if (!((UnityEngine.Object) goBuff == (UnityEngine.Object) null) && !((UnityEngine.Object) goBuff.gameObject == (UnityEngine.Object) null))
-        {
-          goBuff.gameObject.name = aura.ACData.Id;
-          if ((UnityEngine.Object) auraIncluded != (UnityEngine.Object) null && goBuff.gameObject.name == auraIncluded.Id)
-          {
-            if (characterItem.buffAnimationList.ContainsKey(goBuff.gameObject.name))
-              characterItem.buffAnimationList[goBuff.gameObject.name] += auraIncludedCharges;
-            else
-              characterItem.buffAnimationList.Add(goBuff.gameObject.name, auraIncludedCharges);
-          }
-          string lower = goBuff.name.ToLower();
-          int charges = aura.GetCharges();
-          switch (lower)
-          {
-            case "poison":
-              if (charges > 49)
-                PlayerManager.Instance.AchievementUnlock("CHARGES_POISONOUS");
-              if (charges > 199)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_TOXICDISASTER");
-                continue;
-              }
-              continue;
-            case "bleed":
-              if (charges > 49)
-                PlayerManager.Instance.AchievementUnlock("CHARGES_BLOODY");
-              if (charges > 199)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_BLOODBATH");
-                continue;
-              }
-              continue;
-            case "burn":
-              if (charges > 49)
-                PlayerManager.Instance.AchievementUnlock("CHARGES_INCENDIARY");
-              if (charges > 199)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_INFERNO");
-                continue;
-              }
-              continue;
-            case "crack":
-              if (charges > 49)
-                PlayerManager.Instance.AchievementUnlock("CHARGES_WRECKINGBALL");
-              if (charges > 199)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_SIEGEBREAKER");
-                continue;
-              }
-              continue;
-            case "fury":
-              if (charges > 49)
-                PlayerManager.Instance.AchievementUnlock("CHARGES_FURIOUS");
-              if (charges > 199)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_ENDLESSFURY");
-                continue;
-              }
-              continue;
-            case "sanctify":
-              if (charges > 39)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_HOLYGROUND");
-                continue;
-              }
-              continue;
-            case "bless":
-              if (charges > 39)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_DIVINE");
-                continue;
-              }
-              continue;
-            case "regeneration":
-              if (charges > 39)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_DRYAD");
-                continue;
-              }
-              continue;
-            case "thorns":
-              if (charges > 39)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_SPIKY");
-                continue;
-              }
-              continue;
-            case "chill":
-              if (charges > 49)
-                PlayerManager.Instance.AchievementUnlock("CHARGES_CHILLY");
-              if (charges > 199)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_GLACIER");
-                continue;
-              }
-              continue;
-            case "spark":
-              if (charges > 49)
-                PlayerManager.Instance.AchievementUnlock("CHARGES_SPARKLY");
-              if (charges > 199)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_ELECTROCUTER");
-                continue;
-              }
-              continue;
-            case "insane":
-              if (charges > 39)
-              {
-                PlayerManager.Instance.AchievementUnlock("CHARGES_INSANE");
-                continue;
-              }
-              continue;
-            default:
-              continue;
-          }
-        }
-      }
-    }
-    for (int index3 = index1 + 1; index3 < characterItem.GoBuffs.Count - 1; ++index3)
-    {
-      if ((UnityEngine.Object) characterItem.GoBuffs[index3] != (UnityEngine.Object) null && (UnityEngine.Object) characterItem.GoBuffs[index3].gameObject != (UnityEngine.Object) null)
-        characterItem.GoBuffs[index3].CleanBuff();
-    }
-    if (characterItem.buffAnimationCo != null)
-      characterItem.StopCoroutine(characterItem.buffAnimationCo);
-    if (characterItem.buffAnimationList.Count > 0)
-      characterItem.buffAnimationCo = characterItem.StartCoroutine(characterItem.BuffAnimationCoroutine());
-    return false;
-  }
-
-  private IEnumerator BuffAnimationCoroutine()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-    for (int index = 0; index < this.GoBuffs.Count; ++index)
-    {
-      if ((UnityEngine.Object) this.GoBuffs[index] != (UnityEngine.Object) null && (UnityEngine.Object) this.GoBuffs[index].gameObject != (UnityEngine.Object) null && this.GoBuffs[index].gameObject.name != "" && this.buffAnimationList != null && this.buffAnimationList.ContainsKey(this.GoBuffs[index].gameObject.name))
-      {
-        Buff component = this.GoBuffs[index].transform.GetComponent<Buff>();
-        if ((UnityEngine.Object) component != (UnityEngine.Object) null)
-          component.Amplify(this.buffAnimationList[this.GoBuffs[index].gameObject.name]);
-      }
-    }
-    this.buffAnimationList.Clear();
-  }
-
-  public void InstantFadeOutCharacter()
-  {
-    if (this.animatedSprites == null)
-      return;
-    for (int index = 0; index < this.animatedSprites.Count; ++index)
-    {
-      if ((UnityEngine.Object) this.animatedSprites[index] != (UnityEngine.Object) null)
-        this.animatedSprites[index].color = new Color(1f, 1f, 1f, 0.0f);
-    }
-  }
-
-  public IEnumerator FadeOutCharacter()
-  {
-    float index = 1f;
-    while ((double) index > 0.0)
-    {
-      yield return (object) Globals.Instance.WaitForSeconds(0.03f);
-      index -= 0.1f;
-      if (this.animatedSprites != null && this.animatedSprites.Count > 0)
-      {
-        for (int index1 = 0; index1 < this.animatedSprites.Count; ++index1)
-          this.animatedSprites[index1].color = new Color(1f, 1f, 1f, index);
-      }
-      else if ((UnityEngine.Object) this.charImageSR != (UnityEngine.Object) null)
-        this.charImageSR.color = new Color(1f, 1f, 1f, index);
-    }
-    yield return (object) null;
-  }
-
-  public IEnumerator FadeInCharacter(float delay = 0.0f)
-  {
-    Globals.Instance.WaitForSeconds(delay);
-    float index = 0.0f;
-    while ((double) index < 1.0)
-    {
-      yield return (object) Globals.Instance.WaitForSeconds(0.03f);
-      index += 0.1f;
-      if (this.animatedSprites != null && this.animatedSprites.Count > 0)
-      {
-        for (int index1 = 0; index1 < this.animatedSprites.Count; ++index1)
-          this.animatedSprites[index1].color = new Color(1f, 1f, 1f, index);
-      }
-      else if ((UnityEngine.Object) this.charImageSR != (UnityEngine.Object) null)
-        this.charImageSR.color = new Color(1f, 1f, 1f, index);
-    }
-    yield return (object) null;
-  }
-
-  public void KillCharacterFromOutside()
-  {
-    this.KillCoroutine = this.StartCoroutine(this.KillCharacterCO());
-  }
-
-  private IEnumerator KillCharacterCO()
-  {
-    CharacterItem characterItem = this;
-    if (Globals.Instance.ShowDebug)
-      Functions.DebugLogGD("[KILLCHARACTERCO] isDying -> " + characterItem.IsDying.ToString(), "trace");
-    if (!characterItem.IsDying)
-    {
-      if (characterItem.isHero && characterItem._hero == null || !characterItem.isHero && characterItem._npc == null)
-      {
-        Debug.LogError((object) "[KILLCHARACTERCO] STOP because NULL");
-      }
-      else
-      {
-        characterItem.IsDying = true;
-        MatchManager.Instance.SetWaitingKill(true);
-        StringBuilder stringBuilder = new StringBuilder();
-        if (characterItem.isHero && characterItem._hero != null)
-        {
-          stringBuilder.Append(characterItem._hero.HpCurrent);
-          stringBuilder.Append("<size=-.5><color=#bbb>/");
-          stringBuilder.Append(characterItem._hero.GetMaxHP());
-          characterItem.hpText.text = stringBuilder.ToString();
-          MatchManager.Instance.CreateLogEntry(true, "", "", characterItem._hero, (NPC) null, (Hero) null, (NPC) null, MatchManager.Instance.GameRound(), Enums.EventActivation.Killed);
-          for (int _order = 0; _order < 4; ++_order)
-          {
-            Hero hero = MatchManager.Instance.GetHero(_order);
-            if (hero != null && hero.Alive)
-              hero.SetEvent(Enums.EventActivation.CharacterKilled, (Character) characterItem._hero);
-          }
-          if (characterItem._hero.HaveResurrectItem())
-          {
-            characterItem._hero.ActivateItem(Enums.EventActivation.Killed, (Character) characterItem._hero, 0, "");
-            MatchManager.Instance.waitingDeathScreen = false;
-            MatchManager.Instance.SetWaitingKill(false);
-            characterItem.IsDying = false;
-            Debug.Log((object) "Item resurrect");
-            Debug.Log((object) characterItem._hero.Alive);
-            MatchManager.Instance.CreateLogEntry(true, "", "", characterItem._hero, (NPC) null, (Hero) null, (NPC) null, MatchManager.Instance.GameRound(), Enums.EventActivation.Resurrect);
-            yield break;
-          }
-          else
-          {
-            characterItem._hero.SetEvent(Enums.EventActivation.Killed);
-            yield return (object) Globals.Instance.WaitForSeconds(0.3f);
-            if (characterItem._hero.GetHp() > 0)
-            {
-              characterItem.IsDying = false;
-              MatchManager.Instance.SetWaitingKill(false);
-              MatchManager.Instance.waitingDeathScreen = false;
-              yield break;
-            }
-            else
-            {
-              characterItem._hero.Alive = false;
-              if (MatchManager.Instance.AnyHeroAlive())
-              {
-                if (!MatchManager.Instance.waitingDeathScreen)
-                {
-                  MatchManager.Instance.waitingDeathScreen = true;
-                  MatchManager.Instance.ShowDeathScreen(characterItem._hero);
-                }
-                while (MatchManager.Instance.waitingDeathScreen)
-                  yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-              }
-              else
-              {
-                MatchManager.Instance.waitingDeathScreen = false;
-                MatchManager.Instance.SetWaitingKill(false);
-              }
-            }
-          }
-        }
-        else if (characterItem._npc != null)
-        {
-          stringBuilder.Append(characterItem._npc.HpCurrent);
-          stringBuilder.Append("<size=-.5><color=#bbb>/");
-          stringBuilder.Append(characterItem._npc.GetMaxHP());
-          characterItem.hpText.text = stringBuilder.ToString();
-          MatchManager.Instance.CreateLogEntry(true, "", "", (Hero) null, characterItem._npc, (Hero) null, (NPC) null, MatchManager.Instance.GameRound(), Enums.EventActivation.Killed);
-          for (int _order = 0; _order < 4; ++_order)
-          {
-            Hero hero = MatchManager.Instance.GetHero(_order);
-            if (hero != null && hero.Alive)
-              hero.SetEvent(Enums.EventActivation.CharacterKilled, (Character) characterItem._npc);
-          }
-          if (characterItem._npc.HaveResurrectItem())
-          {
-            characterItem._npc.ActivateItem(Enums.EventActivation.Killed, (Character) characterItem._npc, 0, "");
-            yield return (object) Globals.Instance.WaitForSeconds(0.8f);
-            characterItem.IsDying = false;
-            MatchManager.Instance.SetWaitingKill(false);
-            yield break;
-          }
-          else
-          {
-            characterItem._npc.SetEvent(Enums.EventActivation.Killed);
-            int hp;
-            if (Globals.Instance.ShowDebug)
-            {
-              hp = characterItem._npc.GetHp();
-              Functions.DebugLogGD("[KILLCHARACTERCO] Kill NPC _ Life -> " + hp.ToString());
-            }
-            if (characterItem._npc.GetHp() > 0)
-            {
-              Debug.Log((object) "[KILLCHARACTERCO] npc resurrect");
-              characterItem.IsDying = false;
-              MatchManager.Instance.SetWaitingKill(false);
-              yield break;
-            }
-            else
-            {
-              characterItem._npc.Alive = false;
-              if (Globals.Instance.ShowDebug)
-              {
-                hp = characterItem._npc.GetHp();
-                Functions.DebugLogGD("[KILLCHARACTERCO] Kill 2 NPC _ Life -> " + hp.ToString(), "trace");
-              }
-            }
-          }
-        }
-        for (int index1 = characterItem.transform.childCount - 1; index1 >= 0; --index1)
-        {
-          Transform child = characterItem.transform.GetChild(index1);
-          if ((UnityEngine.Object) child != (UnityEngine.Object) null && child.name != "Character" && child.name != characterItem.transform.gameObject.name)
-            UnityEngine.Object.Destroy((UnityEngine.Object) child.gameObject);
-        }
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("[KILLCHARACTERCO] Kill 3", "trace");
-        if (characterItem._npc != null && characterItem._npc.Id.StartsWith("pitt"))
-        {
-          yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-          MatchManager.Instance.DoSahtiRustBackground(false, true);
-        }
-        float index = 1f;
-        Color hideColor = new Color(1f, 1f, 1f, 0.0f);
-        while ((double) index > 0.0)
-        {
-          yield return (object) Globals.Instance.WaitForSeconds(0.02f);
-          index -= 0.1f;
-          if ((UnityEngine.Object) characterItem.anim != (UnityEngine.Object) null)
-          {
-            for (int index2 = 0; index2 < characterItem.animatedSprites.Count; ++index2)
-            {
-              if ((UnityEngine.Object) characterItem.animatedSprites[index2] != (UnityEngine.Object) null)
-              {
-                hideColor.a = index;
-                characterItem.animatedSprites[index2].color = hideColor;
-              }
-            }
-          }
-          else if ((UnityEngine.Object) characterItem.charImageSR != (UnityEngine.Object) null)
-          {
-            hideColor.a = index;
-            characterItem.charImageSR.color = hideColor;
-          }
-        }
-        if (characterItem.isHero && (UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null)
-          MatchManager.Instance.RemoveFromTransformDict(characterItem._hero.Id);
-        if (!characterItem.isHero && (UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null)
-          MatchManager.Instance.RemoveFromTransformDict(characterItem._npc.Id);
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("[KILLCHARACTERCO] Kill 4 - Call KillHero or KillNPC", "trace");
-        if (characterItem.isHero)
-        {
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f * (float) characterItem._hero.Position);
-          MatchManager.Instance.SetWaitingKill(false);
-          MatchManager.Instance.KillHero(characterItem._hero);
-        }
-        else
-        {
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f * (float) characterItem._npc.Position);
-          MatchManager.Instance.SetWaitingKill(false);
-          MatchManager.Instance.KillNPC(characterItem._npc);
-        }
-        hideColor = new Color();
-      }
-    }
-  }
-
-  public void ShowOverCards()
-  {
-    if ((UnityEngine.Object) this.heroDecks == (UnityEngine.Object) null || this._hero == null)
-      return;
-    TMP_Text heroDecksDeckText = this.heroDecksDeckText;
-    TMP_Text heroDecksDeckTextBg = this.heroDecksDeckTextBg;
-    int num1 = MatchManager.Instance.CountHeroDeck(this._hero.HeroIndex);
-    string str1;
-    string str2 = str1 = num1.ToString();
-    heroDecksDeckTextBg.text = str1;
-    string str3 = str2;
-    heroDecksDeckText.text = str3;
-    TMP_Text decksDiscardText = this.heroDecksDiscardText;
-    TMP_Text decksDiscardTextBg = this.heroDecksDiscardTextBg;
-    int num2 = MatchManager.Instance.CountHeroDiscard(this._hero.HeroIndex);
-    string str4;
-    string str5 = str4 = num2.ToString();
-    decksDiscardTextBg.text = str4;
-    string str6 = str5;
-    decksDiscardText.text = str6;
-    if (0 > 0)
-      this.heroDecksDeckText.color = new Color(1f, 0.41f, 0.56f);
-    else
-      this.heroDecksDeckText.color = new Color(0.88f, 0.71f, 0.3f);
-    if (this.heroDecks.gameObject.activeSelf)
-      return;
-    this.heroDecks.gameObject.SetActive(true);
-  }
-
-  public void HideOverCards()
-  {
-    if ((UnityEngine.Object) this.heroDecks == (UnityEngine.Object) null || !this.heroDecks.gameObject.activeSelf)
-      return;
-    this.heroDecks.gameObject.SetActive(false);
-  }
-
-  private void OnMouseExit() => this.fOnMouseExit();
-
-  private void OnMouseEnter() => this.fOnMouseEnter();
-
-  private void OnMouseOver() => this.fOnMouseOver();
-
-  public void fOnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
-      return;
-    if (MatchManager.Instance.CardDrag)
-    {
-      if (GameManager.Instance.IsMultiplayer() && MatchManager.Instance.IsYourTurn() && !MatchManager.Instance.CanInstaCast(MatchManager.Instance.CardItemActive.CardData) && (UnityEngine.Object) MatchManager.Instance.CardItemActive != (UnityEngine.Object) null)
-      {
-        bool isHero = false;
-        byte characterIndex = 0;
-        if (this.Hero != null)
-        {
-          isHero = true;
-          characterIndex = (byte) this.Hero.HeroIndex;
-        }
-        if (this.NPC != null)
-          characterIndex = (byte) this.NPC.NPCIndex;
-        MatchManager.Instance.DrawArrowNet(MatchManager.Instance.CardItemActive.tablePosition, MatchManager.Instance.CardItemActive.transform.position, this.transform.position + new Vector3(0.0f, this.GetComponent<BoxCollider2D>().size.y * 0.7f, 0.0f), isHero, characterIndex);
-      }
-      if (!MatchManager.Instance.CanInstaCast(MatchManager.Instance.CardActive))
-      {
-        if (MatchManager.Instance.CheckTarget(this.transform))
-        {
-          if ((UnityEngine.Object) MatchManager.Instance.CardItemActive != (UnityEngine.Object) null)
-            MatchManager.Instance.CardItemActive.SetColorArrow("green");
-          this.OutlineWhite();
-          if (this._hero != null)
-            MatchManager.Instance.combatTarget.SetTargetTMP((Character) this._hero);
-          else
-            MatchManager.Instance.combatTarget.SetTargetTMP((Character) this._npc);
-        }
-        else if ((UnityEngine.Object) MatchManager.Instance.CardItemActive != (UnityEngine.Object) null)
-          MatchManager.Instance.CardItemActive.SetColorArrow("red");
-      }
-    }
-    else
-    {
-      if (this._hero != null)
-      {
-        MatchManager.Instance.combatTarget.SetTargetTMP((Character) this._hero);
-        if (this._hero.SourceName == "Magnus")
-          this.PetMagnus();
-        if (this._hero.SourceName == "Yogger")
-          this.PetYogger();
-      }
-      else
-        MatchManager.Instance.combatTarget.SetTargetTMP((Character) this._npc);
-      this.OutlineGray();
-      GameManager.Instance.SetCursorHover();
-      GameManager.Instance.PlayLibraryAudio("castnpccardfast");
-      this.ShowHelp(true);
-    }
-    MatchManager.Instance.PortraitHighlight(true, this);
-  }
-
-  private void PetMagnus()
-  {
-    if (!(bool) (UnityEngine.Object) MatchManager.Instance)
-      return;
-    ++this.petMagnusCounter;
-    if (this.petMagnusCounter > 5)
-    {
-      this.anim.ResetTrigger("pet");
-      this.anim.SetTrigger("pet");
-      this.petMagnusCounter = 0;
-      if (this.petMagnusAnswer == 0)
-      {
-        MatchManager.Instance.DoComic((Character) this._hero, Texts.Instance.GetText("magnusPet1"), 2f);
-        this.petMagnusAnswer = 1;
-      }
-      else if (this.petMagnusAnswer == 1)
-      {
-        MatchManager.Instance.DoComic((Character) this._hero, Texts.Instance.GetText("magnusPet2"), 2f);
-        this.petMagnusAnswer = 0;
-      }
-    }
-    if (this.petMagnusCoroutine != null)
-      this.StopCoroutine(this.petMagnusCoroutine);
-    this.petMagnusCoroutine = this.StartCoroutine(this.PetMagnusStop());
-  }
-
-  private IEnumerator PetMagnusStop()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(1.5f);
-    this.petMagnusCounter = 0;
-  }
-
-  private void PetYogger()
-  {
-    if (!(bool) (UnityEngine.Object) MatchManager.Instance)
-      return;
-    ++this.petYoggerCounter;
-    if (this.petYoggerCounter > 5)
-    {
-      this.anim.ResetTrigger("pet");
-      this.anim.SetTrigger("pet");
-      this.petYoggerCounter = 0;
-      if (this.petYoggerAnswer == 0)
-      {
-        MatchManager.Instance.DoComic((Character) this._hero, Texts.Instance.GetText("yoggerPet1"), 2f);
-        this.petYoggerAnswer = 1;
-      }
-      else if (this.petYoggerAnswer == 1)
-      {
-        MatchManager.Instance.DoComic((Character) this._hero, Texts.Instance.GetText("yoggerPet2"), 2f);
-        this.petYoggerAnswer = 0;
-      }
-    }
-    if (this.petYoggerCoroutine != null)
-      this.StopCoroutine(this.petYoggerCoroutine);
-    this.petYoggerCoroutine = this.StartCoroutine(this.PetYoggerStop());
-  }
-
-  private IEnumerator PetYoggerStop()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(1.5f);
-    this.petYoggerCounter = 0;
-  }
-
-  public void fOnMouseUp()
-  {
-    if (!Functions.ClickedThisTransform(this.transform) || !((UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null))
-      return;
-    if (!MatchManager.Instance.CardDrag)
-    {
-      if (MatchManager.Instance.justCasted)
-        return;
-      this.ShowHelp(false);
-      if (this._hero != null)
-        MatchManager.Instance.ShowCharacterWindow("stats", characterIndex: this._hero.HeroIndex);
-      else
-        MatchManager.Instance.ShowCharacterWindow("stats", false, this._npc.NPCIndex);
-    }
-    else
-    {
-      if (!MatchManager.Instance.controllerClickedCard)
-        return;
-      MatchManager.Instance.ControllerExecute();
-    }
-  }
-
-  public void fOnMouseOver()
-  {
-    if (SettingsManager.Instance.IsActive() || AlertManager.Instance.IsActive() || MadnessManager.Instance.IsActive() || SandboxManager.Instance.IsActive() || EventSystem.current.IsPointerOverGameObject() || !((UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null) || MatchManager.Instance.CardDrag || MatchManager.Instance.justCasted || !Input.GetMouseButtonUp(1))
-      return;
-    this.ShowHelp(false);
-    if (this._hero != null)
-      MatchManager.Instance.ShowCharacterWindow("combatdeck", characterIndex: this._hero.HeroIndex);
-    else
-      MatchManager.Instance.ShowCharacterWindow("combatdiscard", false, this._npc.NPCIndex);
-  }
-
-  public void fOnMouseExit()
-  {
-    if ((UnityEngine.Object) MatchManager.Instance != (UnityEngine.Object) null)
-    {
-      MatchManager.Instance.combatTarget.ClearTarget();
-      this.ShowHelp(false);
-    }
-    if (MatchManager.Instance.CardDrag)
-    {
-      if ((UnityEngine.Object) MatchManager.Instance.CardItemActive != (UnityEngine.Object) null)
-      {
-        if (GameManager.Instance.IsMultiplayer() && MatchManager.Instance.IsYourTurn())
-          MatchManager.Instance.StopArrowNet(MatchManager.Instance.CardItemActive.tablePosition);
-        if (!MatchManager.Instance.CanInstaCast(MatchManager.Instance.CardActive))
-        {
-          MatchManager.Instance.CardItemActive.SetColorArrow("gold");
-          MatchManager.Instance.SetGlobalOutlines(true, MatchManager.Instance.CardActive);
-        }
-      }
-    }
-    else
-    {
-      if ((UnityEngine.Object) this.popupSheet != (UnityEngine.Object) null)
-        this.popupSheet.ClosePopup();
-      this.OutlineHide();
-      GameManager.Instance.SetCursorPlain();
-    }
-    MatchManager.Instance.PortraitHighlight(false, this);
-  }
-
-  public void ShowHelp(bool state)
-  {
-    if (!state)
-    {
-      if (this.helpCo != null)
-        this.StopCoroutine(this.helpCo);
-      MatchManager.Instance.helpCharacterTransform.gameObject.SetActive(false);
-    }
-    else
-      this.helpCo = this.StartCoroutine(this.ShowHelpCo());
-  }
-
-  private IEnumerator ShowHelpCo()
-  {
-    CharacterItem characterItem = this;
-    if (characterItem.helpCo != null)
-      characterItem.StopCoroutine(characterItem.helpCo);
-    yield return (object) Globals.Instance.WaitForSeconds(0.5f);
-    MatchManager.Instance.helpRight.text = characterItem._hero == null ? Texts.Instance.GetText("helpCasted") : Texts.Instance.GetText("helpDeck");
-    MatchManager.Instance.helpCharacterTransform.gameObject.SetActive(true);
-  }
-
-  private void ResetMaterial()
-  {
-    if (this._hero != null)
-    {
-      this._hero.SetTaunt();
-      this._hero.SetStealth();
-      this._hero.SetParalyze();
-    }
-    else
-    {
-      if (this._npc == null)
-        return;
-      this._npc.SetTaunt();
-      this._npc.SetStealth();
-      this._npc.SetParalyze();
-    }
-  }
-
-  public void OutlineGreen()
-  {
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if (this.animatedSprites[index].gameObject.name.ToLower() != "shadow")
-          this.animatedSprites[index].color = new Color(1f, 1f, 1f, 1f);
-      }
-      this.ResetMaterial();
-    }
-    else
-    {
-      this.spriteOutline.EnableGreen();
-      this.charImageSR.color = new Color(1f, 1f, 1f, 1f);
-    }
-  }
-
-  public void OutlineRed()
-  {
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if (this.animatedSprites[index].gameObject.name.ToLower() != "shadow")
-          this.animatedSprites[index].color = new Color(0.3f, 0.3f, 0.3f, 1f);
-        this.animatedSprites[index].sharedMaterial = this.animatedSpritesDefaultMaterial[this.animatedSprites[index].name];
-      }
-    }
-    else
-    {
-      this.spriteOutline.EnableRed();
-      this.charImageSR.color = new Color(0.5f, 0.5f, 0.5f, 1f);
-    }
-  }
-
-  public void OutlineGray()
-  {
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if ((UnityEngine.Object) this.animatedSprites[index] != (UnityEngine.Object) null)
-        {
-          if (this.animatedSprites[index].gameObject.name.ToLower() != "shadow")
-            this.animatedSprites[index].color = new Color(0.6f, 0.6f, 0.6f, 1f);
-          this.animatedSprites[index].sharedMaterial = this.animatedSpritesDefaultMaterial[this.animatedSprites[index].name];
-        }
-      }
-    }
-    else
-    {
-      this.spriteOutline.EnableWhite();
-      this.charImageSR.color = new Color(0.6f, 0.6f, 0.6f, 1f);
-    }
-  }
-
-  public void OutlineWhite()
-  {
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if ((UnityEngine.Object) this.animatedSprites[index] != (UnityEngine.Object) null)
-        {
-          if (this.animatedSprites[index].gameObject.name.ToLower() != "shadow")
-            this.animatedSprites[index].color = new Color(0.55f, 1f, 0.56f, 1f);
-          this.animatedSprites[index].sharedMaterial = this.animatedSpritesDefaultMaterial[this.animatedSprites[index].name];
-        }
-      }
-    }
-    else
-    {
-      this.spriteOutline.EnableWhite();
-      this.charImageSR.color = new Color(1f, 1f, 1f, 1f);
-    }
-  }
-
-  public void OutlineHide()
-  {
-    if (this.animatedSprites != null)
-    {
-      for (int index = 0; index < this.animatedSprites.Count; ++index)
-      {
-        if ((UnityEngine.Object) this.animatedSprites[index] != (UnityEngine.Object) null)
-          this.animatedSprites[index].color = new Color(1f, 1f, 1f, 1f);
-      }
-      this.ResetMaterial();
-    }
-    else
-    {
-      this.spriteOutline.Hide();
-      this.charImageSR.color = new Color(1f, 1f, 1f, 1f);
-    }
-  }
-
-  public void ShowEnchantments()
-  {
-    if (this.isHero)
-    {
-      if ((UnityEngine.Object) this.iconEnchantment != (UnityEngine.Object) null)
-      {
-        if (this._hero == null || this._hero.Enchantment == "")
-        {
-          if (this.iconEnchantment.gameObject.activeSelf)
-          {
-            this.iconEnchantment.gameObject.SetActive(false);
-            this.iconEnchantment.StopCardAnimation();
-          }
-        }
-        else if (this._hero.Alive)
-        {
-          this.iconEnchantment.gameObject.SetActive(true);
-          this.iconEnchantment.ShowIconExternal("enchantment", (Character) this._hero);
-          this.iconEnchantment.TheHero = this._hero;
-        }
-      }
-      if ((UnityEngine.Object) this.iconEnchantment2 != (UnityEngine.Object) null)
-      {
-        if (this._hero == null || this._hero.Enchantment2 == "")
-        {
-          if (this.iconEnchantment2.gameObject.activeSelf)
-          {
-            this.iconEnchantment2.gameObject.SetActive(false);
-            this.iconEnchantment2.StopCardAnimation();
-          }
-        }
-        else if (this._hero.Alive)
-        {
-          this.iconEnchantment2.gameObject.SetActive(true);
-          this.iconEnchantment2.ShowIconExternal("enchantment2", (Character) this._hero);
-          this.iconEnchantment2.TheHero = this._hero;
-        }
-      }
-      if ((UnityEngine.Object) this.iconEnchantment3 != (UnityEngine.Object) null)
-      {
-        if (this._hero == null || this._hero.Enchantment3 == "")
-        {
-          if (this.iconEnchantment3.gameObject.activeSelf)
-          {
-            this.iconEnchantment3.gameObject.SetActive(false);
-            this.iconEnchantment3.StopCardAnimation();
-          }
-        }
-        else if (this._hero.Alive)
-        {
-          this.iconEnchantment3.gameObject.SetActive(true);
-          this.iconEnchantment3.ShowIconExternal("enchantment3", (Character) this._hero);
-          this.iconEnchantment3.TheHero = this._hero;
-        }
-      }
-      this._hero.ShowPetsFromEnchantments();
-    }
-    else
-    {
-      if ((UnityEngine.Object) this.iconEnchantment != (UnityEngine.Object) null)
-      {
-        if (this._npc == null || this._npc.Enchantment == "")
-        {
-          if (this.iconEnchantment.gameObject.activeSelf)
-          {
-            this.iconEnchantment.gameObject.SetActive(false);
-            this.iconEnchantment.StopCardAnimation();
-          }
-        }
-        else if (this._npc.Alive)
-        {
-          this.iconEnchantment.gameObject.SetActive(true);
-          this.iconEnchantment.ShowIconExternal("enchantment", (Character) this._npc);
-          this.iconEnchantment.TheNPC = this._npc;
-        }
-      }
-      if ((UnityEngine.Object) this.iconEnchantment2 != (UnityEngine.Object) null)
-      {
-        if (this._npc == null || this._npc.Enchantment2 == "")
-        {
-          if (this.iconEnchantment2.gameObject.activeSelf)
-          {
-            this.iconEnchantment2.gameObject.SetActive(false);
-            this.iconEnchantment2.StopCardAnimation();
-          }
-        }
-        else if (this._npc.Alive)
-        {
-          this.iconEnchantment2.gameObject.SetActive(true);
-          this.iconEnchantment2.ShowIconExternal("enchantment2", (Character) this._npc);
-          this.iconEnchantment2.TheNPC = this._npc;
-        }
-      }
-      if ((UnityEngine.Object) this.iconEnchantment3 != (UnityEngine.Object) null)
-      {
-        if (this._npc == null || this._npc.Enchantment3 == "")
-        {
-          if (this.iconEnchantment3.gameObject.activeSelf)
-          {
-            this.iconEnchantment3.gameObject.SetActive(false);
-            this.iconEnchantment3.StopCardAnimation();
-          }
-        }
-        else if (this._npc.Alive)
-        {
-          this.iconEnchantment3.gameObject.SetActive(true);
-          this.iconEnchantment3.ShowIconExternal("enchantment3", (Character) this._npc);
-          this.iconEnchantment3.TheNPC = this._npc;
-        }
-      }
-      this._npc.ShowPetsFromEnchantments();
-    }
-  }
-
-  public void HideEnchatmentIcons()
-  {
-    this.iconEnchantment?.gameObject.SetActive(false);
-    this.iconEnchantment2?.gameObject.SetActive(false);
-    this.iconEnchantment3?.gameObject.SetActive(false);
-  }
-
-  public IEnumerator EnchantEffectCo()
-  {
-    CharacterItem characterItem = this;
-    yield return (object) Globals.Instance.WaitForSeconds(0.3f);
-    ++characterItem.counterEffectItemOwner;
-    if (characterItem.counterEffectItemOwner >= 10)
-    {
-      ItemData itemData = (ItemData) null;
-      if (characterItem._hero != null)
-      {
-        if (characterItem.indexEffectItemOwner == 0 && characterItem._hero.Enchantment != "")
-          itemData = Globals.Instance.GetItemData(characterItem._hero.Enchantment);
-        else if (characterItem.indexEffectItemOwner == 1 && characterItem._hero.Enchantment2 != "")
-          itemData = Globals.Instance.GetItemData(characterItem._hero.Enchantment2);
-        else if (characterItem.indexEffectItemOwner == 2 && characterItem._hero.Enchantment3 != "")
-          itemData = Globals.Instance.GetItemData(characterItem._hero.Enchantment3);
-        if ((UnityEngine.Object) itemData != (UnityEngine.Object) null && itemData.EffectItemOwner != "")
-          EffectsManager.Instance.PlayEffectAC(itemData.EffectItemOwner, true, characterItem.CharImageT, false);
-        characterItem.counterEffectItemOwner = 0;
-        ++characterItem.indexEffectItemOwner;
-        if (characterItem.indexEffectItemOwner > 2)
-          characterItem.indexEffectItemOwner = 0;
-        if (characterItem.indexEffectItemOwner == 0 && characterItem._hero.Enchantment == "")
-          characterItem.indexEffectItemOwner = 1;
-        if (characterItem.indexEffectItemOwner == 1 && characterItem._hero.Enchantment2 == "")
-          characterItem.indexEffectItemOwner = 2;
-        if (characterItem.indexEffectItemOwner == 2 && characterItem._hero.Enchantment3 == "")
-          characterItem.indexEffectItemOwner = 0;
-      }
-      else if (characterItem._npc != null)
-      {
-        if (characterItem.indexEffectItemOwner == 0 && characterItem._npc.Enchantment != "")
-          itemData = Globals.Instance.GetItemData(characterItem._npc.Enchantment);
-        else if (characterItem.indexEffectItemOwner == 1 && characterItem._npc.Enchantment2 != "")
-          itemData = Globals.Instance.GetItemData(characterItem._npc.Enchantment2);
-        else if (characterItem.indexEffectItemOwner == 2 && characterItem._npc.Enchantment3 != "")
-          itemData = Globals.Instance.GetItemData(characterItem._npc.Enchantment3);
-        if ((UnityEngine.Object) itemData != (UnityEngine.Object) null && itemData.EffectItemOwner != "")
-          EffectsManager.Instance.PlayEffectAC(itemData.EffectItemOwner, true, characterItem.CharImageT, false);
-        characterItem.counterEffectItemOwner = 0;
-        ++characterItem.indexEffectItemOwner;
-        if (characterItem.indexEffectItemOwner > 2)
-          characterItem.indexEffectItemOwner = 0;
-        if (characterItem.indexEffectItemOwner == 0 && characterItem._npc.Enchantment == "")
-          characterItem.indexEffectItemOwner = 1;
-        if (characterItem.indexEffectItemOwner == 1 && characterItem._npc.Enchantment2 == "")
-          characterItem.indexEffectItemOwner = 2;
-        if (characterItem.indexEffectItemOwner == 2 && characterItem._npc.Enchantment3 == "")
-          characterItem.indexEffectItemOwner = 0;
-      }
-    }
-    characterItem.StartCoroutine(characterItem.EnchantEffectCo());
-  }
-
-  public void EnchantmentExecute(int index)
-  {
-    if (this._hero != null && !this._hero.Alive || this._npc != null && !this._npc.Alive)
-      return;
-    switch (index)
-    {
-      case 0:
-        this.iconEnchantment.SetTimesExecuted(1);
-        break;
-      case 1:
-        this.iconEnchantment2.SetTimesExecuted(1);
-        break;
-      case 2:
-        this.iconEnchantment3.SetTimesExecuted(1);
-        break;
-    }
-  }
-
-  public void ShowCharacterPing(int _action)
-  {
-    this.emoteCharacterPing.Show((this._hero == null ? (Character) this._npc : (Character) this._hero).Id, _action);
-  }
-
-  public void HideCharacterPing() => this.emoteCharacterPing.Hide();
-
-  public void ShowKeyNum(bool _state, string _num = "", bool _disabled = false)
-  {
-    if (this.keyTransform.gameObject.activeSelf != _state)
-      this.keyTransform.gameObject.SetActive(_state);
-    if (!_state)
-      return;
-    this.keyNumber.text = _num;
-    if (_disabled)
-    {
-      if (!this.keyRed.gameObject.activeSelf)
-        this.keyRed.gameObject.SetActive(true);
-      if (!this.keyBackground.gameObject.activeSelf)
-        return;
-      this.keyBackground.gameObject.SetActive(false);
-    }
-    else
-    {
-      if (this.keyRed.gameObject.activeSelf)
-        this.keyRed.gameObject.SetActive(false);
-      if (this.keyBackground.gameObject.activeSelf)
-        return;
-      this.keyBackground.gameObject.SetActive(true);
-    }
-  }
-
-  public SpriteRenderer CharImageSR
-  {
-    get => this.charImageSR;
-    set => this.charImageSR = value;
-  }
-
-  public Transform CharImageT
-  {
-    get => this.charImageT;
-    set => this.charImageT = value;
-  }
-
-  public Transform CharImageShadowT
-  {
-    get => this.charImageShadowT;
-    set => this.charImageShadowT = value;
-  }
-
-  public TMP_Text HpText
-  {
-    get => this.hpText;
-    set => this.hpText = value;
-  }
-
-  public bool IsHero
-  {
-    get => this.isHero;
-    set => this.isHero = value;
-  }
-
-  public Hero Hero
-  {
-    get => this._hero;
-    set => this._hero = value;
-  }
-
-  public NPC NPC
-  {
-    get => this._npc;
-    set => this._npc = value;
-  }
-
-  public Animator Anim
-  {
-    get => this.anim;
-    set => this.anim = value;
-  }
-
-  public GameObject[] SwordSprites
-  {
-    get => this.swordSprites;
-    set => this.swordSprites = value;
-  }
+	public SpriteOutline spriteOutline;
+
+	[SerializeField]
+	private Transform charImageT;
+
+	[SerializeField]
+	private Transform charImageShadowT;
+
+	[SerializeField]
+	private TMP_Text hpText;
+
+	[SerializeField]
+	private Hero _hero;
+
+	[SerializeField]
+	private NPC _npc;
+
+	[SerializeField]
+	private Animator anim;
+
+	public Animator animPet;
+
+	private PopupSheet popupSheet;
+
+	private Coroutine KillCoroutine;
+
+	public Transform characterTransform;
+
+	public Transform keyTransform;
+
+	public Transform keyRed;
+
+	public Transform keyBackground;
+
+	public TMP_Text keyNumber;
+
+	public ItemCombatIcon iconEnchantment;
+
+	public ItemCombatIcon iconEnchantment2;
+
+	public ItemCombatIcon iconEnchantment3;
+
+	public Transform healthBar;
+
+	public Transform hpRed;
+
+	public Transform hpPoison;
+
+	public Transform hpBleed;
+
+	public Transform hpRegen;
+
+	public SpriteRenderer hpSR;
+
+	public Transform activeMarkTR;
+
+	public Transform hpT;
+
+	public Transform skull;
+
+	public ParticleSystem skullParticle;
+
+	public TMP_Text purgedispel;
+
+	public TMP_Text purgedispelTitle;
+
+	public TMP_Text purgedispelQuantity;
+
+	public TMP_Text overDebuff;
+
+	public TMP_Text hpBlockText;
+
+	public Transform hpBlockT;
+
+	public Transform hpBackground;
+
+	public Transform hpBackgroundHigh;
+
+	public Transform hpBlockIconT;
+
+	public Transform blockBorderT;
+
+	public TMP_Text hpShieldText;
+
+	public Transform hpShieldT;
+
+	public Transform hpDoomIconT;
+
+	public TMP_Text hpDoomText;
+
+	public TMP_Text dmgPreviewText;
+
+	public Transform thornsTransform;
+
+	public Transform tauntTextTransform;
+
+	private TMP_Text tauntTextT;
+
+	public GameObject GO_Buffs;
+
+	private List<Buff> GoBuffs = new List<Buff>();
+
+	public GameObject GO_Taunt;
+
+	public GameObject BuffPrefab;
+
+	public Shader energyDefaultShader;
+
+	public Shader energyShader;
+
+	public ParticleSystem trailParticle;
+
+	public ParticleSystem stealthParticle;
+
+	public Material defaultMaterial;
+
+	public Material stealthMaterial;
+
+	public Material paralyzeMaterial;
+
+	public Material tauntMaterial;
+
+	public GameObject combatTextPrefab;
+
+	private CombatText CT;
+
+	private SpriteRenderer charImageSR;
+
+	private bool isHero;
+
+	public bool IsDying;
+
+	private Color colorFade;
+
+	private Vector3 vectorFade;
+
+	private Vector3 originalLocalPosition;
+
+	private bool charIsMoving;
+
+	public Transform energyT;
+
+	public TMP_Text energyTxt;
+
+	private Transform[] energyArr;
+
+	private SpriteRenderer[] energySR;
+
+	private Animator[] energySRAnimator;
+
+	private EnergyPoint[] energyPoint;
+
+	internal List<SpriteRenderer> animatedSprites;
+
+	private Dictionary<string, Material> animatedSpritesDefaultMaterial;
+
+	private List<SetSpriteLayerFromBase> animatedSpritesOutOfCharacter;
+
+	private Transform shadowSprite;
+
+	public Transform heroDecks;
+
+	public TMP_Text heroDecksCounter;
+
+	public TMP_Text heroDecksDeckText;
+
+	public TMP_Text heroDecksDeckTextBg;
+
+	public TMP_Text heroDecksDiscardText;
+
+	public TMP_Text heroDecksDiscardTextBg;
+
+	private Coroutine moveCenterCo;
+
+	private Coroutine moveBackCo;
+
+	private Coroutine helpCo;
+
+	private Coroutine blockCo;
+
+	private Coroutine hitCo;
+
+	private bool characterBeingHitted;
+
+	private Dictionary<string, int> buffAnimationList = new Dictionary<string, int>();
+
+	private Coroutine buffAnimationCo;
+
+	public Transform transformForCombatText;
+
+	private bool isActive;
+
+	public float heightModel;
+
+	private int petMagnusCounter;
+
+	private Coroutine petMagnusCoroutine;
+
+	private int petMagnusAnswer;
+
+	private int petYoggerCounter;
+
+	private Coroutine petYoggerCoroutine;
+
+	private int petYoggerAnswer;
+
+	public NPCItem PetItem;
+
+	public bool PetItemFront = true;
+
+	public NPCItem PetItemEnchantment;
+
+	public bool PetItemEnchantmentFront = true;
+
+	private Coroutine drawBuffsCoroutine;
+
+	private int counterEffectItemOwner;
+
+	private int indexEffectItemOwner;
+
+	public EmoteCharacterPing emoteCharacterPing;
+
+	private bool animationBusy;
+
+	private Coroutine animationBusyCo;
+
+	private GameObject[] swordSprites;
+
+	public SpriteRenderer CharImageSR
+	{
+		get
+		{
+			return charImageSR;
+		}
+		set
+		{
+			charImageSR = value;
+		}
+	}
+
+	public Transform CharImageT
+	{
+		get
+		{
+			return charImageT;
+		}
+		set
+		{
+			charImageT = value;
+		}
+	}
+
+	public Transform CharImageShadowT
+	{
+		get
+		{
+			return charImageShadowT;
+		}
+		set
+		{
+			charImageShadowT = value;
+		}
+	}
+
+	public TMP_Text HpText
+	{
+		get
+		{
+			return hpText;
+		}
+		set
+		{
+			hpText = value;
+		}
+	}
+
+	public bool IsHero
+	{
+		get
+		{
+			return isHero;
+		}
+		set
+		{
+			isHero = value;
+		}
+	}
+
+	public Hero Hero
+	{
+		get
+		{
+			return _hero;
+		}
+		set
+		{
+			_hero = value;
+		}
+	}
+
+	public NPC NPC
+	{
+		get
+		{
+			return _npc;
+		}
+		set
+		{
+			_npc = value;
+		}
+	}
+
+	public Animator Anim
+	{
+		get
+		{
+			return anim;
+		}
+		set
+		{
+			anim = value;
+		}
+	}
+
+	public GameObject[] SwordSprites
+	{
+		get
+		{
+			return swordSprites;
+		}
+		set
+		{
+			swordSprites = value;
+		}
+	}
+
+	public virtual void Awake()
+	{
+		animatedSprites = new List<SpriteRenderer>();
+		animatedSpritesDefaultMaterial = new Dictionary<string, Material>();
+		animatedSpritesOutOfCharacter = new List<SetSpriteLayerFromBase>();
+		colorFade = new Color(0f, 0f, 0f, 0.02f);
+		vectorFade = new Vector3(0.001f, 0f, 0f);
+		if (!(charImageT == null))
+		{
+			charImageSR = charImageT.GetComponent<SpriteRenderer>();
+			GameObject gameObject = Object.Instantiate(combatTextPrefab, Vector3.zero, Quaternion.identity, charImageT);
+			CT = gameObject.GetComponent<CombatText>();
+			if ((bool)MatchManager.Instance)
+			{
+				popupSheet = MatchManager.Instance.popupSheet;
+			}
+			energyArr = new Transform[10];
+			energyArr[0] = energyT;
+			energyPoint = new EnergyPoint[10];
+			energyPoint[0] = energyT.GetComponent<EnergyPoint>();
+			energySR = new SpriteRenderer[10];
+			energySR[0] = energyT.GetComponent<SpriteRenderer>();
+			energySRAnimator = new Animator[10];
+			energySRAnimator[0] = energyT.GetComponent<Animator>();
+			tauntTextTransform.gameObject.SetActive(value: false);
+			tauntTextT = tauntTextTransform.GetComponent<TMP_Text>();
+			thornsTransform.gameObject.SetActive(value: false);
+			skull.gameObject.SetActive(value: false);
+			Vector3 localPosition = energyT.localPosition;
+			for (int i = 1; i < 10; i++)
+			{
+				GameObject gameObject2 = Object.Instantiate(energyT.gameObject, energyT.parent);
+				gameObject2.transform.localPosition = new Vector3(localPosition.x + 0.11f * (float)i, localPosition.y, localPosition.z - 0.01f * (float)i);
+				energyArr[i] = gameObject2.transform;
+				energyPoint[i] = gameObject2.transform.GetComponent<EnergyPoint>();
+				energySR[i] = gameObject2.transform.GetComponent<SpriteRenderer>();
+				energySRAnimator[i] = gameObject2.transform.GetComponent<Animator>();
+			}
+			for (int j = 0; j < 20; j++)
+			{
+				GameObject gameObject3 = Object.Instantiate(BuffPrefab, Vector3.zero, Quaternion.identity, GO_Buffs.transform);
+				GoBuffs.Add(gameObject3.GetComponent<Buff>());
+				GoBuffs[j].CleanBuff();
+			}
+			if (keyTransform != null && keyTransform.gameObject.activeSelf)
+			{
+				keyTransform.gameObject.SetActive(value: false);
+			}
+		}
+	}
+
+	public virtual void Start()
+	{
+	}
+
+	public List<string> CalculateDamagePrePostForThisCharacter()
+	{
+		Character character = null;
+		character = ((_hero == null) ? ((Character)_npc) : ((Character)_hero));
+		if (MatchManager.Instance.prePostDamageDictionary != null && character != null && MatchManager.Instance.prePostDamageDictionary.ContainsKey(character.Id))
+		{
+			return MatchManager.Instance.prePostDamageDictionary[character.Id];
+		}
+		int num = 0;
+		int num2 = 0;
+		bool flag = false;
+		bool flag2 = false;
+		int num3 = character.GetHp();
+		int auraCharges = character.GetAuraCharges("block");
+		int auraCharges2 = character.GetAuraCharges("shield");
+		int num4 = 0;
+		bool flag3 = false;
+		string text = Globals.Instance.ClassColor["warrior"];
+		string text2 = "#1B9604";
+		string value = "#00A49E";
+		string text3 = "";
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("<size=+26><sprite name=skull></size><size=+5>");
+		stringBuilder.Append(string.Format(Texts.Instance.GetText("characterDies"), character.SourceName));
+		stringBuilder.Append("</size><size=0><br><br></size>");
+		text3 = stringBuilder.ToString();
+		if (character.RoundMoved >= MatchManager.Instance.GetCurrentRound())
+		{
+			flag3 = true;
+		}
+		List<string> list = new List<string>();
+		list.Add("0");
+		int num5 = 0;
+		list.Add("0");
+		int num6 = 0;
+		list.Add("0");
+		bool flag4 = true;
+		for (int i = 0; i < character.AuraList.Count; i++)
+		{
+			if (i < character.AuraList.Count && character.AuraList[i] != null && character.AuraList[i].ACData != null && character.AuraList[i].ACData.NoRemoveBlockAtTurnEnd)
+			{
+				flag4 = false;
+			}
+		}
+		if (!flag3)
+		{
+			num4 = auraCharges;
+		}
+		else
+		{
+			num4 = auraCharges2;
+			if (!flag4)
+			{
+				num4 += auraCharges;
+			}
+		}
+		StringBuilder stringBuilder2 = new StringBuilder();
+		int num7 = 0;
+		Character characterActive = MatchManager.Instance.GetCharacterActive();
+		for (int j = 0; j < 2; j++)
+		{
+			switch (j)
+			{
+			case 0:
+				num7 = ((characterActive != null && !(characterActive.Id != character.Id)) ? 1 : 0);
+				break;
+			case 1:
+				num7 = ((characterActive == null || characterActive.Id != character.Id) ? 1 : 0);
+				break;
+			}
+			for (int k = 0; k < character.AuraList.Count; k++)
+			{
+				if (character.AuraList[k].ACData == null)
+				{
+					continue;
+				}
+				AuraCurseData auraCurseData = AtOManager.Instance.GlobalAuraCurseModificationByTraitsAndItems("consume", character.AuraList[k].ACData.Id, character, null);
+				if (auraCurseData == null)
+				{
+					auraCurseData = character.AuraList[k].ACData;
+				}
+				if (auraCurseData.ProduceHealWhenConsumed && ((auraCurseData.ConsumedAtTurnBegin && num7 == 0) || (auraCurseData.ConsumedAtTurn && num7 == 1)))
+				{
+					int num8 = 0;
+					num8 += auraCurseData.HealWhenConsumed;
+					num8 += Functions.FuncRoundToInt((float)character.AuraList[k].AuraCharges * auraCurseData.HealWhenConsumedPerCharge);
+					if (num8 > 0)
+					{
+						num8 = character.HealReceivedFinal(num8);
+						if (character.GetHpLeftForMax() < num8)
+						{
+							num8 = character.GetHpLeftForMax();
+						}
+						if (num8 > 0)
+						{
+							num3 += num8;
+							if (num == 0 && num7 == 0)
+							{
+								stringBuilder2.Append("<size=-1><color=#FFF>");
+								stringBuilder2.Append(Texts.Instance.GetText("preturnEffects"));
+								stringBuilder2.Append("</color></size>");
+								stringBuilder2.Append("<br>");
+								num = 1;
+							}
+							if (num2 == 0 && num7 == 1)
+							{
+								stringBuilder2.Append("<size=-1><color=#FFF>");
+								stringBuilder2.Append(Texts.Instance.GetText("postturnEffects"));
+								stringBuilder2.Append("</color></size>");
+								stringBuilder2.Append("<br>");
+								num2 = 1;
+							}
+							stringBuilder2.Append("<color=");
+							stringBuilder2.Append(value);
+							stringBuilder2.Append("> ");
+							stringBuilder2.Append("+");
+							stringBuilder2.Append(num8);
+							stringBuilder2.Append("  <sprite name=" + auraCurseData.Id);
+							stringBuilder2.Append(">");
+							stringBuilder2.Append("</color>");
+							stringBuilder2.Append("<size=-1.5><voffset=2> <color=#666>|</color>   <voffset=0>");
+							stringBuilder2.Append(num3);
+							stringBuilder2.Append("  <sprite name=heart>");
+							stringBuilder2.Append("</size>");
+							stringBuilder2.Append("<br>");
+							num5 += num8;
+						}
+					}
+				}
+				if (!auraCurseData.ProduceDamageWhenConsumed || ((!auraCurseData.ConsumedAtTurnBegin || num7 != 0) && (!auraCurseData.ConsumedAtTurn || num7 != 1)) || (auraCurseData.DamageWhenConsumed <= 0 && !(auraCurseData.DamageWhenConsumedPerCharge > 0f)))
+				{
+					continue;
+				}
+				int auraCharges3 = character.AuraList[k].AuraCharges;
+				int num9 = 0;
+				int num10 = 0;
+				int num11 = 0;
+				float num12 = 0f;
+				num9 += auraCurseData.DamageWhenConsumed;
+				int num13 = auraCharges3;
+				if (auraCurseData.ConsumedDamageChargesBasedOnACCharges != null)
+				{
+					num13 = character.GetAuraCharges(auraCurseData.ConsumedDamageChargesBasedOnACCharges.Id);
+				}
+				if (auraCurseData.ConsumeDamageChargesIfACApplied != null && character.GetAuraCharges(auraCurseData.ConsumeDamageChargesIfACApplied.Id) <= 0)
+				{
+					num13 = 0;
+				}
+				num9 += Functions.FuncRoundToInt(auraCurseData.DamageWhenConsumedPerCharge * (float)num13);
+				if (!IsHero && auraCurseData.Id == "scourge")
+				{
+					if (AtOManager.Instance.TeamHavePerk("mainperkscourge0b"))
+					{
+						num9 += character.GetAuraCharges("burn");
+					}
+					if (AtOManager.Instance.TeamHavePerk("mainperkscourge0c"))
+					{
+						num9 += character.GetAuraCharges("insane");
+					}
+				}
+				if (auraCurseData.DoubleDamageIfCursesLessThan > 0 && character.GetAuraCurseTotal(_auras: false, _curses: true) < auraCurseData.DoubleDamageIfCursesLessThan)
+				{
+					num9 *= 2;
+				}
+				if (auraCurseData.DamageTypeWhenConsumed != Enums.DamageType.None)
+				{
+					num11 = ((num9 <= num4) ? num9 : num4);
+					num9 -= num11;
+					num4 -= num11;
+					num12 = -1 * character.BonusResists(auraCurseData.DamageTypeWhenConsumed, character.AuraList[k].ACData.Id, num7 == 0, num7 == 1);
+					num10 = Functions.FuncRoundToInt((float)num9 + (float)num9 * num12 * 0.01f);
+				}
+				else
+				{
+					num10 = num9;
+				}
+				num3 -= num10;
+				if (num7 == 0)
+				{
+					num5 -= num10;
+				}
+				else
+				{
+					num6 -= num10;
+				}
+				if (num == 0 && num7 == 0)
+				{
+					stringBuilder2.Append("<size=-1><color=#FFF>");
+					stringBuilder2.Append(Texts.Instance.GetText("preturnEffects"));
+					stringBuilder2.Append("</color></size>");
+					stringBuilder2.Append("<br>");
+					num = 1;
+				}
+				if (num2 == 0 && num7 == 1)
+				{
+					stringBuilder2.Append("<size=-1><color=#FFF>");
+					stringBuilder2.Append(Texts.Instance.GetText("postturnEffects"));
+					stringBuilder2.Append("</color></size>");
+					stringBuilder2.Append("<br>");
+					num2 = 1;
+				}
+				if (num7 == 0)
+				{
+					stringBuilder2.Append("<color=");
+					stringBuilder2.Append(text);
+					stringBuilder2.Append("> ");
+				}
+				else
+				{
+					stringBuilder2.Append("<color=");
+					stringBuilder2.Append(text2);
+					stringBuilder2.Append("> ");
+				}
+				if (num10 != 0)
+				{
+					stringBuilder2.Append("-");
+				}
+				stringBuilder2.Append(num10);
+				stringBuilder2.Append(" ");
+				stringBuilder2.Append(" <sprite name=" + auraCurseData.Id);
+				stringBuilder2.Append(">");
+				stringBuilder2.Append("</color>");
+				stringBuilder2.Append("<size=-1.5><voffset=2> <color=#666>|</color>   <voffset=0>");
+				if (num11 > 0)
+				{
+					stringBuilder2.Append(num11);
+					stringBuilder2.Append(" <sprite name=block> ");
+				}
+				int num14 = (num10 - num9) * -1;
+				if (num14 != 0)
+				{
+					stringBuilder2.Append(num14);
+					stringBuilder2.Append("  <sprite name=ui_resistance>  ");
+				}
+				stringBuilder2.Append(num3);
+				stringBuilder2.Append("  <sprite name=heart>");
+				stringBuilder2.Append("</size>");
+				stringBuilder2.Append("<br>");
+				if (num3 <= 0 && !flag)
+				{
+					stringBuilder2.Append(text3);
+					if (num7 == 0)
+					{
+						flag2 = true;
+					}
+					flag = true;
+				}
+			}
+		}
+		list[0] = num5.ToString();
+		list[1] = num6.ToString();
+		if (flag)
+		{
+			list[2] = "1";
+		}
+		else
+		{
+			list[2] = "0";
+		}
+		if (skull != null)
+		{
+			if (list[2] == "1")
+			{
+				if (!skull.gameObject.activeSelf)
+				{
+					skull.gameObject.SetActive(value: true);
+				}
+				ParticleSystem.MainModule main = skullParticle.main;
+				if (flag2)
+				{
+					main.startColor = Functions.HexToColor(text + "50");
+				}
+				else
+				{
+					main.startColor = Functions.HexToColor(text2 + "50");
+				}
+			}
+			else if (skull.gameObject.activeSelf)
+			{
+				skull.gameObject.SetActive(value: false);
+			}
+		}
+		if (stringBuilder2.Length > 0)
+		{
+			stringBuilder2.Append("<line-height=160%><space=62><sprite name=sepwhite>");
+			stringBuilder2.Append("<line-height=16><br><line-height=100%><size=-1.5>");
+			stringBuilder2.Append("<sprite name=block>");
+			stringBuilder2.Append(Texts.Instance.GetText("blocked"));
+			stringBuilder2.Append("   <sprite name=ui_resistance> ");
+			stringBuilder2.Append(Texts.Instance.GetText("resisted"));
+			stringBuilder2.Append("   <sprite name=heart>");
+			stringBuilder2.Append(Texts.Instance.GetText("currentHp"));
+			stringBuilder2.Append("</size>");
+			stringBuilder2.Insert(0, "<size=+2>");
+			list.Add(stringBuilder2.ToString());
+		}
+		if (!MatchManager.Instance.prePostDamageDictionary.ContainsKey(character.Id))
+		{
+			MatchManager.Instance.prePostDamageDictionary.Add(character.Id, list);
+		}
+		else
+		{
+			MatchManager.Instance.prePostDamageDictionary[character.Id] = list;
+		}
+		return list;
+	}
+
+	public void DeleteShadow(GameObject GO)
+	{
+		foreach (Transform item in GO.transform)
+		{
+			if ((bool)item.GetComponent<SpriteRenderer>() && item.gameObject.name.ToLower() == "shadow")
+			{
+				if (item.gameObject.activeSelf)
+				{
+					item.gameObject.SetActive(value: false);
+				}
+				break;
+			}
+		}
+	}
+
+	public void GetSwordSprites(GameObject GO)
+	{
+		if (GO.TryGetComponent<AmeliaSwords>(out var component))
+		{
+			swordSprites = new GameObject[5];
+			for (int i = 0; i < component.swordSprites.Length; i++)
+			{
+				swordSprites[i] = component.swordSprites[i];
+			}
+		}
+	}
+
+	public void CleanSwordSprites()
+	{
+		if (!(_hero.SubclassName == "queen") || swordSprites == null)
+		{
+			return;
+		}
+		for (int i = 0; i < swordSprites.Length; i++)
+		{
+			if (swordSprites[i] != null && swordSprites[i].activeSelf)
+			{
+				ShowHideSwordSprite(i, state: false);
+			}
+		}
+	}
+
+	public void ShowHideSwordSprite(int i, bool state)
+	{
+		if (_hero.SubclassName == "queen" && swordSprites != null && swordSprites[i] != null && swordSprites[i].activeSelf != state)
+		{
+			swordSprites[i].SetActive(state);
+		}
+	}
+
+	public void GetSpritesFromAnimated(GameObject GO, bool recursive = false)
+	{
+		foreach (Transform item in GO.transform)
+		{
+			if ((bool)item.GetComponent<SpriteRenderer>())
+			{
+				animatedSprites.Add(item.GetComponent<SpriteRenderer>());
+				if (!animatedSpritesDefaultMaterial.ContainsKey(item.name))
+				{
+					animatedSpritesDefaultMaterial.Add(item.name, item.GetComponent<SpriteRenderer>().sharedMaterial);
+				}
+				if (item.gameObject.name.ToLower() == "shadow")
+				{
+					shadowSprite = item;
+				}
+			}
+			if (item.GetComponent<SetSpriteLayerFromBase>() != null)
+			{
+				animatedSpritesOutOfCharacter.Add(item.GetComponent<SetSpriteLayerFromBase>());
+			}
+			if (item.childCount > 0)
+			{
+				GetSpritesFromAnimated(item.gameObject, recursive: true);
+			}
+		}
+		if (!recursive)
+		{
+			charImageT = GO.transform;
+		}
+	}
+
+	public void SetOverDebuff(string msg = "")
+	{
+		if (overDebuff == null)
+		{
+			return;
+		}
+		if (msg == "")
+		{
+			if (overDebuff.gameObject.activeSelf)
+			{
+				overDebuff.gameObject.SetActive(value: false);
+			}
+			return;
+		}
+		overDebuff.text = msg;
+		if (!overDebuff.gameObject.activeSelf)
+		{
+			overDebuff.gameObject.SetActive(value: true);
+		}
+	}
+
+	public void SetDoomIcon()
+	{
+		if (_hero != null)
+		{
+			int num = _hero.EffectCharges("doom");
+			if (num > 0)
+			{
+				if (!hpDoomIconT.gameObject.activeSelf)
+				{
+					hpDoomIconT.gameObject.SetActive(value: true);
+				}
+				hpDoomText.text = num.ToString();
+				hpDoomIconT.GetComponent<PopupAuraCurse>().SetAuraCurse(Globals.Instance.GetAuraCurseData("doom"), num, _fast: true);
+				return;
+			}
+			if (hpDoomIconT.gameObject.activeSelf)
+			{
+				hpDoomIconT.gameObject.SetActive(value: false);
+			}
+		}
+		if (_npc == null)
+		{
+			return;
+		}
+		int num2 = _npc.EffectCharges("doom");
+		if (num2 > 0)
+		{
+			if (!hpDoomIconT.gameObject.activeSelf)
+			{
+				hpDoomIconT.gameObject.SetActive(value: true);
+			}
+			hpDoomText.text = num2.ToString();
+			hpDoomIconT.GetComponent<PopupAuraCurse>().SetAuraCurse(Globals.Instance.GetAuraCurseData("doom"), num2, _fast: true);
+		}
+		else if (hpDoomIconT.gameObject.activeSelf)
+		{
+			hpDoomIconT.gameObject.SetActive(value: false);
+		}
+	}
+
+	public bool IsItemStealth()
+	{
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (!animatedSprites[i].transform.GetComponent("StealthHide"))
+				{
+					return animatedSprites[i].sharedMaterial.name.Split(' ')[0] == "stealth";
+				}
+			}
+		}
+		return false;
+	}
+
+	public bool IsItemTaunt()
+	{
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (!animatedSprites[i].transform.GetComponent("StealthHide"))
+				{
+					return animatedSprites[i].sharedMaterial.name.Split(' ')[0] == "taunt";
+				}
+			}
+		}
+		return false;
+	}
+
+	public bool IsItemParalyzed()
+	{
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (!animatedSprites[i].transform.GetComponent("StealthHide"))
+				{
+					return animatedSprites[i].sharedMaterial == paralyzeMaterial;
+				}
+			}
+		}
+		return false;
+	}
+
+	public void SetStealth(bool state)
+	{
+		if ((state && IsItemStealth()) || (!state && !IsItemStealth()) || animatedSprites == null || animatedSprites.Count <= 0)
+		{
+			return;
+		}
+		for (int i = 0; i < animatedSprites.Count; i++)
+		{
+			if (state)
+			{
+				if ((bool)animatedSprites[i].transform.GetComponent("StealthHide"))
+				{
+					if (animatedSprites[i].gameObject.activeSelf)
+					{
+						animatedSprites[i].transform.gameObject.SetActive(value: false);
+					}
+				}
+				else
+				{
+					animatedSprites[i].sharedMaterial = stealthMaterial;
+				}
+			}
+			else if ((bool)animatedSprites[i].transform.GetComponent("StealthHide"))
+			{
+				if (!animatedSprites[i].gameObject.activeSelf)
+				{
+					animatedSprites[i].transform.gameObject.SetActive(value: true);
+				}
+			}
+			else
+			{
+				animatedSprites[i].sharedMaterial = animatedSpritesDefaultMaterial[animatedSprites[i].name];
+			}
+		}
+		if (state)
+		{
+			if (shadowSprite != null && shadowSprite.gameObject.activeSelf)
+			{
+				shadowSprite.gameObject.SetActive(value: false);
+			}
+			if (stealthParticle != null && !stealthParticle.gameObject.activeSelf)
+			{
+				stealthParticle.gameObject.SetActive(value: true);
+			}
+		}
+		else
+		{
+			if (shadowSprite != null && !shadowSprite.gameObject.activeSelf)
+			{
+				shadowSprite.gameObject.SetActive(value: true);
+			}
+			if (stealthParticle != null && stealthParticle.gameObject.activeSelf)
+			{
+				stealthParticle.gameObject.SetActive(value: false);
+			}
+		}
+	}
+
+	public void SetTaunt(bool state)
+	{
+		if ((state && IsItemTaunt()) || (!state && !IsItemTaunt()))
+		{
+			return;
+		}
+		if (animatedSprites != null && animatedSprites.Count > 0)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (state)
+				{
+					animatedSprites[i].sharedMaterial = tauntMaterial;
+				}
+				else
+				{
+					animatedSprites[i].sharedMaterial = animatedSpritesDefaultMaterial[animatedSprites[i].name];
+				}
+			}
+		}
+		else if (state)
+		{
+			charImageSR.sharedMaterial = tauntMaterial;
+		}
+		else
+		{
+			charImageSR.sharedMaterial = animatedSpritesDefaultMaterial[charImageSR.name];
+		}
+	}
+
+	public void SetParalyze(bool state)
+	{
+		if (state && IsItemParalyzed())
+		{
+			return;
+		}
+		if (!state && !IsItemParalyzed())
+		{
+			if (anim != null)
+			{
+				anim.speed = 1f;
+			}
+			if (IsItemStealth() || IsItemTaunt())
+			{
+				return;
+			}
+		}
+		if (animatedSprites != null && animatedSprites.Count > 0)
+		{
+			int num = 0;
+			for (int i = 0; i < animatedSprites.Count && !animatedSprites[i].gameObject.activeSelf; i++)
+			{
+				num++;
+			}
+			if (num == animatedSprites.Count || (state && animatedSprites[num].sharedMaterial == paralyzeMaterial) || (!state && animatedSprites[num].sharedMaterial == animatedSpritesDefaultMaterial[animatedSprites[num].name]))
+			{
+				return;
+			}
+			if (state)
+			{
+				if (anim.speed > 0f)
+				{
+					anim.SetTrigger("hit");
+					StartCoroutine(StopAnim());
+				}
+			}
+			else
+			{
+				anim.speed = 1f;
+			}
+			for (int j = 0; j < animatedSprites.Count; j++)
+			{
+				if (state)
+				{
+					if ((bool)animatedSprites[j].transform.GetComponent("StealthHide"))
+					{
+						if (animatedSprites[j].gameObject.activeSelf)
+						{
+							animatedSprites[j].transform.gameObject.SetActive(value: false);
+						}
+					}
+					else
+					{
+						animatedSprites[j].sharedMaterial = paralyzeMaterial;
+					}
+				}
+				else if ((bool)animatedSprites[j].transform.GetComponent("StealthHide"))
+				{
+					if (!animatedSprites[j].gameObject.activeSelf)
+					{
+						animatedSprites[j].transform.gameObject.SetActive(value: true);
+					}
+				}
+				else
+				{
+					animatedSprites[j].sharedMaterial = animatedSpritesDefaultMaterial[animatedSprites[j].name];
+				}
+			}
+		}
+		else if (state)
+		{
+			charImageSR.sharedMaterial = paralyzeMaterial;
+		}
+		else
+		{
+			charImageSR.sharedMaterial = animatedSpritesDefaultMaterial[charImageSR.name];
+		}
+		if (!state && shadowSprite != null && !shadowSprite.gameObject.activeSelf)
+		{
+			shadowSprite.gameObject.SetActive(value: true);
+		}
+	}
+
+	private IEnumerator StopAnim()
+	{
+		if (anim.speed == 0f)
+		{
+			yield break;
+		}
+		for (int i = 0; i < 100; i++)
+		{
+			yield return null;
+			anim.speed *= 0.92f;
+			if (anim.speed < 0.01f)
+			{
+				anim.speed = 0f;
+				break;
+			}
+		}
+	}
+
+	public void SetDamagePreview(bool state, int dmg = 0, string dmgType = "", int dmg2 = 0, string dmgType2 = "", int heal = 0, int blocked = 0, CardData _cardData = null)
+	{
+		if (dmgPreviewText == null)
+		{
+			return;
+		}
+		if (!state)
+		{
+			if (dmgPreviewText.transform.gameObject.activeSelf)
+			{
+				dmgPreviewText.transform.gameObject.SetActive(value: false);
+			}
+			if (purgedispel.transform.gameObject.activeSelf)
+			{
+				purgedispel.transform.gameObject.SetActive(value: false);
+			}
+			AmplifyBuffs(null);
+			if (_npc != null)
+			{
+				ShowTauntText(state: false);
+			}
+			return;
+		}
+		Character character = null;
+		if (_npc != null)
+		{
+			character = _npc;
+			if (_cardData != null && _cardData.TargetSide != Enums.CardTargetSide.Anyone && _cardData.TargetSide != Enums.CardTargetSide.Enemy)
+			{
+				return;
+			}
+		}
+		else if (_hero != null)
+		{
+			character = _hero;
+			if (_cardData != null && _cardData.TargetSide == Enums.CardTargetSide.Enemy)
+			{
+				return;
+			}
+		}
+		if (character == null)
+		{
+			return;
+		}
+		bool flag = false;
+		int num = heal;
+		if (_hero != null)
+		{
+			Hero heroHeroActive = MatchManager.Instance.GetHeroHeroActive();
+			if (heroHeroActive != null && heroHeroActive.Id == character.Id)
+			{
+				flag = true;
+			}
+			else if (_cardData != null && _cardData.TargetSide == Enums.CardTargetSide.Self)
+			{
+				return;
+			}
+			int hpLeftForMax = _hero.GetHpLeftForMax();
+			if (hpLeftForMax < heal)
+			{
+				heal = hpLeftForMax;
+			}
+		}
+		else
+		{
+			int hpLeftForMax2 = _npc.GetHpLeftForMax();
+			if (hpLeftForMax2 < heal)
+			{
+				heal = hpLeftForMax2;
+			}
+		}
+		if (_npc != null)
+		{
+			ShowTauntText(state: false);
+		}
+		if (!state)
+		{
+			return;
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		int num2 = 0;
+		int num3 = 0;
+		int num4 = 0;
+		if (_cardData != null && (_cardData.Aura != null || _cardData.HealCurses > 0 || _cardData.DispelAuras > 0 || _cardData.StealAuras > 0 || _cardData.HealAuraCurseSelf != null || _cardData.HealAuraCurseName != null || _cardData.HealAuraCurseName2 != null || _cardData.HealAuraCurseName3 != null || _cardData.HealAuraCurseName4 != null || _cardData.Curse != null))
+		{
+			num2 = _cardData.HealCurses;
+			num3 = _cardData.DispelAuras;
+			num4 = _cardData.StealAuras;
+			List<string> list = new List<string>();
+			if (num2 > 0)
+			{
+				list = character.GetAuraCurseByOrder(1, num2, onlyDispeleable: true);
+			}
+			else if (num3 > 0)
+			{
+				list = character.GetAuraCurseByOrder(0, num3, onlyDispeleable: true);
+			}
+			else if (num4 > 0)
+			{
+				list = character.GetAuraCurseByOrder(0, num4, onlyDispeleable: true);
+			}
+			if (_cardData.HealAuraCurseSelf != null && flag && character.HasEffect(_cardData.HealAuraCurseSelf.Id) && character.EffectCharges(_cardData.HealAuraCurseSelf.Id) > 0)
+			{
+				list.Add(_cardData.HealAuraCurseSelf.Id);
+			}
+			if (_cardData.HealAuraCurseName != null && character.HasEffect(_cardData.HealAuraCurseName.Id) && character.EffectCharges(_cardData.HealAuraCurseName.Id) > 0)
+			{
+				list.Add(_cardData.HealAuraCurseName.Id);
+			}
+			if (_cardData.HealAuraCurseName2 != null && character.HasEffect(_cardData.HealAuraCurseName2.Id) && character.EffectCharges(_cardData.HealAuraCurseName2.Id) > 0)
+			{
+				list.Add(_cardData.HealAuraCurseName2.Id);
+			}
+			if (_cardData.HealAuraCurseName3 != null && character.HasEffect(_cardData.HealAuraCurseName3.Id) && character.EffectCharges(_cardData.HealAuraCurseName3.Id) > 0)
+			{
+				list.Add(_cardData.HealAuraCurseName3.Id);
+			}
+			if (_cardData.HealAuraCurseName4 != null && character.HasEffect(_cardData.HealAuraCurseName4.Id) && character.EffectCharges(_cardData.HealAuraCurseName4.Id) > 0)
+			{
+				list.Add(_cardData.HealAuraCurseName4.Id);
+			}
+			if (list.Count > 0)
+			{
+				StringBuilder stringBuilder2 = new StringBuilder();
+				StringBuilder stringBuilder3 = new StringBuilder();
+				for (int i = 0; i < list.Count; i++)
+				{
+					stringBuilder2.Append("<sprite name=");
+					stringBuilder2.Append(list[i]);
+					stringBuilder2.Append(">");
+					if (stringBuilder3.Length > 0)
+					{
+						stringBuilder3.Append("<space=2.5>");
+					}
+					stringBuilder3.Append(character.GetAuraCharges(list[i]));
+				}
+				if (stringBuilder2.Length > 0)
+				{
+					purgedispel.text = stringBuilder2.ToString();
+					purgedispelQuantity.text = stringBuilder3.ToString();
+					if (!purgedispel.gameObject.activeSelf)
+					{
+						purgedispel.transform.gameObject.SetActive(value: true);
+					}
+					if (num4 > 0)
+					{
+						purgedispelTitle.text = Texts.Instance.GetText("steal");
+					}
+					else
+					{
+						purgedispelTitle.text = Texts.Instance.GetText("remove");
+					}
+				}
+			}
+			if (_cardData.Aura != null || _cardData.Aura2 != null || _cardData.Aura3 != null || (_cardData.Auras != null && _cardData.Auras.Length != 0) || _cardData.Curse != null || _cardData.Curse2 != null || _cardData.Curse3 != null || (_cardData.Curses != null && _cardData.Curses.Length != 0))
+			{
+				List<string> list2 = new List<string>();
+				if (_cardData.Aura != null)
+				{
+					list2.Add(_cardData.Aura.Id.ToLower());
+				}
+				if (_cardData.Aura2 != null)
+				{
+					list2.Add(_cardData.Aura2.Id.ToLower());
+				}
+				if (_cardData.Aura3 != null)
+				{
+					list2.Add(_cardData.Aura3.Id.ToLower());
+				}
+				if (_cardData.Auras != null && _cardData.Auras.Length != 0)
+				{
+					list2.AddRange(from x in _cardData.Auras
+						where x.aura != null
+						select x.aura.Id.ToLower());
+				}
+				if (_cardData.Curse != null)
+				{
+					list2.Add(_cardData.Curse.Id.ToLower());
+				}
+				if (_cardData.Curse2 != null)
+				{
+					list2.Add(_cardData.Curse2.Id.ToLower());
+				}
+				if (_cardData.Curse3 != null)
+				{
+					list2.Add(_cardData.Curse3.Id.ToLower());
+				}
+				if (_cardData.Curses != null && _cardData.Curses.Length != 0)
+				{
+					list2.AddRange(from x in _cardData.Curses
+						where x.curse != null
+						select x.curse.Id.ToLower());
+				}
+				AmplifyBuffs(list2);
+			}
+		}
+		if (_cardData != null)
+		{
+			List<string> list3 = character.CharacterImmunitiesList();
+			StringBuilder stringBuilder4 = new StringBuilder();
+			if (_cardData.Curse != null && list3.Contains(_cardData.Curse.Id))
+			{
+				stringBuilder4.Append("<size=4><sprite name=");
+				stringBuilder4.Append(_cardData.Curse.Id);
+				stringBuilder4.Append("></size><size=-1><color=#e88>");
+				stringBuilder4.Append(Texts.Instance.GetText("immune"));
+				stringBuilder4.Append("</color></size><br>");
+			}
+			if (_cardData.Curse2 != null && list3.Contains(_cardData.Curse2.Id))
+			{
+				stringBuilder4.Append("<size=4><sprite name=");
+				stringBuilder4.Append(_cardData.Curse2.Id);
+				stringBuilder4.Append("></size><size=-1><color=#e88>");
+				stringBuilder4.Append(Texts.Instance.GetText("immune"));
+				stringBuilder4.Append("</color></size><br>");
+			}
+			if (_cardData.Curse3 != null && list3.Contains(_cardData.Curse3.Id))
+			{
+				stringBuilder4.Append("<size=4><sprite name=");
+				stringBuilder4.Append(_cardData.Curse3.Id);
+				stringBuilder4.Append("></size><size=-1><color=#e88>");
+				stringBuilder4.Append(Texts.Instance.GetText("immune"));
+				stringBuilder4.Append("</color></size><br>");
+			}
+			if (_cardData.Curses != null && _cardData.Curses.Length != 0)
+			{
+				for (int num5 = 0; num5 < _cardData.Curses.Length; num5++)
+				{
+					CardData.CurseDebuffs curseDebuffs = _cardData.Curses[num5];
+					if (curseDebuffs != null && curseDebuffs.curse != null)
+					{
+						stringBuilder4.Append("<size=4><sprite name=");
+						stringBuilder4.Append(curseDebuffs.curse.Id);
+						stringBuilder4.Append("></size><size=-1><color=#e88>");
+						stringBuilder4.Append(Texts.Instance.GetText("immune"));
+						stringBuilder4.Append("</color></size><br>");
+					}
+				}
+			}
+			if (stringBuilder4.Length > 0)
+			{
+				stringBuilder.Append(stringBuilder4.ToString());
+			}
+		}
+		if (heal == 0 && _npc != null && _npc.HasEffect("evasion"))
+		{
+			stringBuilder.Append("<sprite name=evasion><color=#559F2B>");
+			stringBuilder.Append(Functions.Substring(Texts.Instance.GetText("evasion"), 5));
+		}
+		else if (heal == 0 && _npc != null && _npc.HasEffect("invulnerable"))
+		{
+			stringBuilder.Append("<sprite name=invulnerable><color=#DECD02>");
+			stringBuilder.Append(Functions.Substring(Texts.Instance.GetText("invulnerable"), 5));
+		}
+		else if (dmg >= 1 && dmgType != "" && dmgType != "heart" && character.HasEffect("evasion"))
+		{
+			stringBuilder.Append("<sprite name=evasion><color=#559F2B>");
+			stringBuilder.Append(Functions.Substring(Texts.Instance.GetText("evasion"), 5));
+		}
+		else
+		{
+			if ((dmg >= 1 || dmg2 >= 1) && blocked > 0)
+			{
+				stringBuilder.Append(blocked);
+				stringBuilder.Append(" <sprite name=block>");
+			}
+			if (dmg > 0)
+			{
+				stringBuilder.Append(dmg);
+				if (dmgType != "")
+				{
+					stringBuilder.Append(" <sprite name=");
+					stringBuilder.Append(dmgType);
+					stringBuilder.Append(">");
+				}
+			}
+			if (dmg2 > 0)
+			{
+				stringBuilder.Append("\n");
+				stringBuilder.Append(dmg2);
+				if (dmgType2 != "")
+				{
+					stringBuilder.Append(" <sprite name=");
+					stringBuilder.Append(dmgType2);
+					stringBuilder.Append(">");
+				}
+			}
+			if (dmg < 1 && dmg2 < 1 && blocked > 0)
+			{
+				stringBuilder.Append(blocked);
+				stringBuilder.Append(" <sprite name=block>");
+			}
+			if (_cardData != null && _cardData.Damage > 0 && _npc != null && _npc.HasEffect("thorns"))
+			{
+				int value = _npc.EffectCharges("thorns");
+				if (stringBuilder.Length > 0)
+				{
+					stringBuilder.Insert(0, "<sprite name=thorns><br>");
+					stringBuilder.Insert(0, "</color> ");
+					stringBuilder.Insert(0, value);
+					stringBuilder.Insert(0, "<color=#E59F40>");
+				}
+				else
+				{
+					stringBuilder.Append("<color=#E59F40>");
+					stringBuilder.Append(value);
+					stringBuilder.Append("</color> ");
+					stringBuilder.Append("<sprite name=thorns><br>0");
+				}
+			}
+		}
+		if (heal > 0 || num > 0)
+		{
+			if (stringBuilder.Length > 0)
+			{
+				stringBuilder.Append("\n");
+			}
+			stringBuilder.Append(heal);
+			stringBuilder.Append(" <sprite name=heal>");
+		}
+		if (stringBuilder.Length == 0 && dmg <= 0 && _cardData != null && ((_cardData.Damage > 0 && !flag) || (_cardData.DamageSelf > 0 && flag)))
+		{
+			stringBuilder.Append(0);
+		}
+		if (!dmgPreviewText.transform.gameObject.activeSelf)
+		{
+			dmgPreviewText.transform.gameObject.SetActive(value: true);
+		}
+		if (stringBuilder.Length > 0)
+		{
+			dmgPreviewText.text = stringBuilder.ToString();
+		}
+		else
+		{
+			dmgPreviewText.transform.gameObject.SetActive(value: false);
+		}
+		if (_npc != null && _npc.IsTaunted())
+		{
+			ShowTauntText(state: true);
+		}
+	}
+
+	private void ShowThornsText(bool state)
+	{
+		if (!(thornsTransform == null) && thornsTransform.gameObject.activeSelf != state)
+		{
+			thornsTransform.gameObject.SetActive(state);
+		}
+	}
+
+	private void ShowTauntText(bool state)
+	{
+		if (!(tauntTextTransform == null))
+		{
+			if (tauntTextTransform.gameObject.activeSelf != state)
+			{
+				tauntTextTransform.gameObject.SetActive(state);
+			}
+			if (state)
+			{
+				tauntTextT.text = "<size=+.5><sprite name=taunt></size>" + Texts.Instance.GetText("taunt");
+			}
+		}
+	}
+
+	public void DisableCollider()
+	{
+		GetComponent<BoxCollider2D>().enabled = false;
+	}
+
+	public void DrawOrderSprites(bool goToFront, int _order)
+	{
+		if (!isHero)
+		{
+			string text = base.gameObject.name.Trim();
+			if (text.StartsWith("flamethrower_"))
+			{
+				_order = 3;
+				goToFront = false;
+			}
+			else if (text.StartsWith("dwarfface_"))
+			{
+				_order = 0;
+				goToFront = false;
+			}
+			else if (text.StartsWith("dt800_"))
+			{
+				_order = 2;
+				goToFront = false;
+			}
+			else if (text.StartsWith("launcher_"))
+			{
+				_order = 1;
+				goToFront = false;
+			}
+			else if (text.StartsWith("rustking_"))
+			{
+				_order = 0;
+				goToFront = false;
+				base.transform.localPosition = new Vector3(base.transform.localPosition.x, base.transform.localPosition.y, -1f);
+			}
+			else if (text.StartsWith("pitt_"))
+			{
+				_order = 1;
+				goToFront = false;
+			}
+		}
+		else if (base.gameObject.name.Trim() == "tombstone")
+		{
+			_order = 0;
+			goToFront = false;
+		}
+		int num = 0;
+		if (goToFront)
+		{
+			num = 1000 * _order;
+			if (PetItem != null)
+			{
+				if (PetItemFront)
+				{
+					PetItem.DrawOrderSprites(goToFront: true, _order + 1);
+				}
+				else
+				{
+					PetItem.DrawOrderSprites(goToFront: false, _order - 1);
+				}
+			}
+			if (PetItemEnchantment != null)
+			{
+				if (PetItemEnchantmentFront)
+				{
+					PetItemEnchantment.DrawOrderSprites(goToFront: true, _order + 1000);
+				}
+				else
+				{
+					PetItemEnchantment.DrawOrderSprites(goToFront: false, _order);
+				}
+			}
+		}
+		else
+		{
+			num = -10000 + 1000 * (8 - _order);
+			if (PetItem != null)
+			{
+				if (PetItemFront)
+				{
+					PetItem.DrawOrderSprites(goToFront: true, _order - 1);
+				}
+				else
+				{
+					PetItem.DrawOrderSprites(goToFront: false, _order + 1);
+				}
+			}
+			if (PetItemEnchantment != null)
+			{
+				if (PetItemEnchantmentFront)
+				{
+					PetItemEnchantment.DrawOrderSprites(goToFront: true, _order - 1);
+				}
+				else
+				{
+					PetItemEnchantment.DrawOrderSprites(goToFront: false, _order + 1);
+				}
+			}
+		}
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (animatedSprites[i] != null)
+				{
+					animatedSprites[i].sortingOrder = num - i;
+					animatedSprites[i].sortingLayerName = "Characters";
+				}
+			}
+		}
+		else
+		{
+			charImageSR.sortingOrder = num;
+		}
+		if (animatedSpritesOutOfCharacter == null)
+		{
+			return;
+		}
+		for (int j = 0; j < animatedSpritesOutOfCharacter.Count; j++)
+		{
+			if (animatedSpritesOutOfCharacter[j] != null)
+			{
+				animatedSpritesOutOfCharacter[j].ReOrderLayer();
+			}
+		}
+	}
+
+	public void DrawBlock(bool state)
+	{
+		if (blockCo != null)
+		{
+			StopCoroutine(blockCo);
+		}
+		if (state)
+		{
+			blockCo = StartCoroutine(ShowBlock(state: true));
+		}
+		else
+		{
+			blockCo = StartCoroutine(ShowBlock(state: false));
+		}
+	}
+
+	private IEnumerator ShowBlock(bool state)
+	{
+		float scaleMax = 1f;
+		if (_npc != null && _npc.NpcData != null && _npc.NpcData.BigModel)
+		{
+			scaleMax = 1.5f;
+		}
+		if (hpBlockIconT.gameObject.activeSelf == state && hpBlockT.gameObject.activeSelf == state)
+		{
+			yield break;
+		}
+		hpBlockT.gameObject.SetActive(value: false);
+		if (state)
+		{
+			hpBlockIconT.gameObject.SetActive(value: true);
+			float scale = 0f;
+			while (scale < scaleMax + 0.25f && !(hpBlockIconT == null) && !(hpBlockIconT.gameObject == null))
+			{
+				hpBlockIconT.localScale = new Vector3(scale, scale, 1f);
+				scale += 0.1f;
+				yield return Globals.Instance.WaitForSeconds(0.01f);
+			}
+			while (scale > scaleMax && !(hpBlockIconT == null) && !(hpBlockIconT.gameObject == null))
+			{
+				hpBlockIconT.localScale = new Vector3(scale, scale, 1f);
+				scale -= 0.1f;
+				yield return Globals.Instance.WaitForSeconds(0.005f);
+			}
+		}
+		else
+		{
+			blockBorderT.gameObject.SetActive(value: false);
+			hpBlockIconT.localScale = new Vector3(0f, 0f, 1f);
+			hpBlockIconT.gameObject.SetActive(value: false);
+		}
+		StartCoroutine(ShowBlockHP(state));
+	}
+
+	private IEnumerator ShowBlockHP(bool state, bool animation = true)
+	{
+		if (state)
+		{
+			float percent = hpRed.localScale.x;
+			if (percent > 1f)
+			{
+				percent = 1f;
+			}
+			else if (percent < 0f)
+			{
+				percent = 0f;
+			}
+			if (animation)
+			{
+				float t = 0f;
+				float seconds = 0.5f;
+				hpBlockT.localScale = Vector3.zero;
+				if (!hpBlockT.gameObject.activeSelf)
+				{
+					hpBlockT.gameObject.SetActive(value: true);
+				}
+				blockBorderT.localScale = Vector3.zero;
+				if (!blockBorderT.gameObject.activeSelf)
+				{
+					blockBorderT.gameObject.SetActive(value: true);
+				}
+				while (t <= 1f)
+				{
+					t += Time.deltaTime / seconds;
+					hpBlockT.localScale = Vector3.Lerp(new Vector3(0f, 1f, 1f), new Vector3(percent, 1f, 1f), Mathf.SmoothStep(0f, 1f, t));
+					blockBorderT.localScale = Vector3.Lerp(new Vector3(0f, 1f, 1f), new Vector3(1f, 1f, 1f), Mathf.SmoothStep(0f, 1f, t));
+					yield return null;
+				}
+			}
+			else
+			{
+				hpBlockT.localScale = new Vector3(percent, hpBlockT.localScale.y, hpBlockT.localScale.z);
+				if (!hpBlockT.gameObject.activeSelf)
+				{
+					hpBlockT.gameObject.SetActive(value: true);
+				}
+			}
+		}
+		else
+		{
+			if (hpBlockT.gameObject.activeSelf)
+			{
+				hpBlockT.gameObject.SetActive(value: false);
+			}
+			if (blockBorderT.gameObject.activeSelf)
+			{
+				blockBorderT.gameObject.SetActive(value: false);
+			}
+		}
+	}
+
+	private IEnumerator ShowShieldHP(int charges)
+	{
+		if (hpShieldT == null)
+		{
+			yield break;
+		}
+		hpShieldText.text = charges.ToString();
+		if (!hpShieldT.gameObject.activeSelf)
+		{
+			float scaleMax = 1.1f;
+			if (_npc != null && _npc.NpcData != null && _npc.NpcData.BigModel)
+			{
+				scaleMax = 1.55f;
+			}
+			float t = 0f;
+			float seconds = 0.5f;
+			hpShieldT.localScale = Vector3.zero;
+			if (!hpShieldT.gameObject.activeSelf)
+			{
+				hpShieldT.gameObject.SetActive(value: true);
+			}
+			while (t <= 1f)
+			{
+				t += Time.deltaTime / seconds;
+				if (hpShieldT != null)
+				{
+					hpShieldT.localScale = Vector3.Lerp(new Vector3(0f, 0f, 1f), new Vector3(scaleMax + 0.1f, scaleMax + 0.1f, 1f), Mathf.SmoothStep(0f, 1f, t));
+				}
+				yield return null;
+			}
+			hpShieldT.localScale = new Vector3(scaleMax, scaleMax, 1f);
+		}
+		yield return null;
+	}
+
+	public void DrawEnergy()
+	{
+		if (!isHero)
+		{
+			return;
+		}
+		int energy;
+		int energyTurn;
+		if (isHero)
+		{
+			energy = _hero.GetEnergy();
+			energyTurn = _hero.GetEnergyTurn();
+		}
+		else
+		{
+			energy = _npc.GetEnergy();
+			energyTurn = _npc.GetEnergyTurn();
+		}
+		energyTxt.text = energy.ToString();
+		for (int i = 0; i < 10; i++)
+		{
+			if (!(energySR[i] == null))
+			{
+				if (i < energy)
+				{
+					energySR[i].color = Color.white;
+					energySRAnimator[i].enabled = false;
+				}
+				else if (i < energy + energyTurn)
+				{
+					energySR[i].gameObject.SetActive(value: false);
+					energySR[i].gameObject.SetActive(value: true);
+					energySRAnimator[i].enabled = true;
+					energySR[i].color = new Color(0f, 1f, 0.5f, 1f);
+				}
+				else
+				{
+					energySR[i].color = new Color(0f, 0f, 0f, 0.45f);
+					energySRAnimator[i].enabled = false;
+				}
+			}
+		}
+	}
+
+	public void ScrollCombatText(string text, Enums.CombatScrollEffectType type)
+	{
+		CT.SetText(text, type);
+	}
+
+	public void ScrollCombatTextDamageNew(CastResolutionForCombatText _cast)
+	{
+		CT.SetDamageNew(_cast);
+	}
+
+	public bool IsCombatScrollEffectActive()
+	{
+		return CT.IsPlaying();
+	}
+
+	public void ActivateMark(bool state)
+	{
+		if (base.transform != null)
+		{
+			isActive = state;
+			if (activeMarkTR != null && activeMarkTR.gameObject.activeSelf != state)
+			{
+				activeMarkTR.gameObject.SetActive(state);
+			}
+		}
+	}
+
+	public bool AnimNameIs(string name)
+	{
+		if (anim == null)
+		{
+			return false;
+		}
+		return anim.GetCurrentAnimatorStateInfo(0).IsName(name);
+	}
+
+	public void CharacterAttackAnim()
+	{
+		if (anim != null)
+		{
+			if (animationBusyCo != null)
+			{
+				StopCoroutine(animationBusyCo);
+			}
+			animationBusyCo = StartCoroutine(SetAnimationBusy());
+			anim.ResetTrigger("attack");
+			anim.SetTrigger("attack");
+			PetCastAnim("cast");
+		}
+	}
+
+	public void CharacterCastAnim()
+	{
+		if (anim != null)
+		{
+			if (animationBusyCo != null)
+			{
+				StopCoroutine(animationBusyCo);
+			}
+			animationBusyCo = StartCoroutine(SetAnimationBusy());
+			anim.ResetTrigger("cast");
+			anim.SetTrigger("cast");
+			PetCastAnim("cast");
+		}
+	}
+
+	private IEnumerator SetAnimationBusy()
+	{
+		animationBusy = true;
+		yield return Globals.Instance.WaitForSeconds(1f);
+		animationBusy = false;
+	}
+
+	private IEnumerator PetCastAnimTO(string animState)
+	{
+		List<Animator> petAnimators = new List<Animator>();
+		for (int i = 0; i < 3; i++)
+		{
+			Transform transform = i switch
+			{
+				0 => (!isHero) ? base.transform.Find("thePetEnchantment" + _npc.Enchantment) : base.transform.Find("thePetEnchantment" + _hero.Enchantment), 
+				1 => (!isHero) ? base.transform.Find("thePetEnchantment" + _npc.Enchantment2) : base.transform.Find("thePetEnchantment" + _hero.Enchantment2), 
+				_ => (!isHero) ? base.transform.Find("thePetEnchantment" + _npc.Enchantment3) : base.transform.Find("thePetEnchantment" + _hero.Enchantment3), 
+			};
+			if (transform != null && transform.GetComponent<Animator>() != null)
+			{
+				petAnimators.Add(transform.GetComponent<Animator>());
+			}
+		}
+		for (int j = 0; j < petAnimators.Count; j++)
+		{
+			if (animState != "hit")
+			{
+				yield return Globals.Instance.WaitForSeconds((float)Random.Range(0, 30) * 0.01f);
+			}
+			if (petAnimators[j] != null)
+			{
+				petAnimators[j].ResetTrigger(animState);
+				petAnimators[j].SetTrigger(animState);
+			}
+		}
+		yield return null;
+	}
+
+	public void PetCastAnim(string animState)
+	{
+		if (!(animPet != null))
+		{
+			return;
+		}
+		if (!isHero)
+		{
+			StartCoroutine(PetCastAnimTO(animState));
+			return;
+		}
+		animPet.ResetTrigger(animState);
+		animPet.SetTrigger(animState);
+		if (animState == "attack")
+		{
+			StartCoroutine(PetMoveToCenter());
+		}
+	}
+
+	private IEnumerator PetMoveToCenter()
+	{
+		if (!(PetItem == null))
+		{
+			PetItem.MoveToCenter();
+			yield return Globals.Instance.WaitForSeconds(0.8f);
+			PetItem.MoveToCenterBack();
+		}
+	}
+
+	public void CharacterEnableAnim(bool state)
+	{
+		if (anim != null)
+		{
+			if (state)
+			{
+				anim.enabled = true;
+			}
+			else
+			{
+				anim.enabled = false;
+			}
+		}
+	}
+
+	public void CharacterHitted(bool fromHit = false)
+	{
+		if (characterBeingHitted)
+		{
+			return;
+		}
+		if (_hero != null)
+		{
+			if (_hero.IsParalyzed())
+			{
+				GameManager.Instance.PlayLibraryAudio("hit_metal2");
+				return;
+			}
+		}
+		else if (_npc != null)
+		{
+			if (_npc.IsParalyzed())
+			{
+				GameManager.Instance.PlayLibraryAudio("hit_metal2");
+				return;
+			}
+			if (fromHit && _npc.NpcData != null)
+			{
+				switch (_npc.NpcData.Id.ToLower().Split('_')[0])
+				{
+				case "trunky":
+				case "taintedtrunky":
+				case "sapling":
+				case "taintedsapling":
+				case "ylmer":
+					GameManager.Instance.PlayLibraryAudio("impact_wood");
+					break;
+				default:
+					if (MatchManager.Instance.CardActive != null)
+					{
+						if (MatchManager.Instance.CardActive.DamageType == Enums.DamageType.Slashing)
+						{
+							GameManager.Instance.PlayLibraryAudio("impact_slashing");
+						}
+						else if (MatchManager.Instance.CardActive.DamageType == Enums.DamageType.Blunt)
+						{
+							GameManager.Instance.PlayLibraryAudio("impact_crushing");
+						}
+						else if (MatchManager.Instance.CardActive.DamageType == Enums.DamageType.Piercing)
+						{
+							GameManager.Instance.PlayLibraryAudio("impact_piercing");
+						}
+					}
+					break;
+				}
+			}
+		}
+		characterBeingHitted = true;
+		if (anim != null && !animationBusy)
+		{
+			anim.ResetTrigger("hit");
+			anim.SetTrigger("hit");
+			PetCastAnim("hit");
+		}
+		if (fromHit)
+		{
+			if (_npc != null && _npc.NpcData != null && _npc.NpcData.GetHitSound(MatchManager.Instance.HitSoundIndex) != null)
+			{
+				GameManager.Instance.PlayAudio(_npc.NpcData.GetHitSound(MatchManager.Instance.HitSoundIndex), 0.1f);
+				MatchManager.Instance.HitSoundIndex++;
+			}
+			if (_hero != null && _hero.HeroData != null && _hero.HeroData.HeroSubClass.GetHitSound(MatchManager.Instance.HitSoundIndex) != null)
+			{
+				GameManager.Instance.PlayAudio(_hero.HeroData.HeroSubClass.GetHitSound(MatchManager.Instance.HitSoundIndex), 0.1f);
+				MatchManager.Instance.HitSoundIndex++;
+			}
+		}
+		if (hitCo != null)
+		{
+			StopCoroutine(hitCo);
+		}
+		hitCo = StartCoroutine(CharacterBeingHittedCo());
+	}
+
+	private IEnumerator CharacterBeingHittedCo()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.1f);
+		characterBeingHitted = false;
+	}
+
+	public void MoveToCenter()
+	{
+		if (!(charImageT == null))
+		{
+			if (moveCenterCo != null)
+			{
+				StopCoroutine(moveCenterCo);
+			}
+			if (moveBackCo != null)
+			{
+				StopCoroutine(moveBackCo);
+			}
+			moveCenterCo = StartCoroutine(SetPositionCO(charImageT, new Vector3(0f - charImageT.parent.transform.localPosition.x + charImageT.localPosition.x, charImageT.localPosition.y, 0f), returnPosition: false));
+		}
+	}
+
+	public void MoveToPosition(Transform targetTransform, Vector3 targetPosition, bool returnBack, bool playSmokeEffect, float movementTimeS, MotionGenerator.EasingType easingType = MotionGenerator.EasingType.EaseOut)
+	{
+		if (!(charImageT == null))
+		{
+			StartCoroutine(MovePositionCo(targetTransform, targetPosition, returnBack, playSmokeEffect, movementTimeS, easingType));
+		}
+	}
+
+	public void MoveToCenterBack()
+	{
+		if (!(charImageT == null) && Mathf.Abs(charImageT.localPosition.x - originalLocalPosition.x) > 0.02f)
+		{
+			if (moveCenterCo != null)
+			{
+				StopCoroutine(moveCenterCo);
+			}
+			if (moveBackCo != null)
+			{
+				StopCoroutine(moveBackCo);
+			}
+			moveBackCo = StartCoroutine(SetPositionCO(charImageT, new Vector3(originalLocalPosition.x, charImageT.localPosition.y, 0f), returnPosition: true));
+		}
+	}
+
+	public void SetOriginalLocalPosition(Vector3 pos)
+	{
+		originalLocalPosition = pos;
+	}
+
+	public void SetPosition(bool instant, int _position = -10)
+	{
+		if (instant || _npc == null || !_npc.NpcData.IsBoss)
+		{
+			int position = ((_hero != null && _position == -10) ? _hero.Position : ((_npc == null || _position != -10) ? _position : _npc.Position));
+			if (_npc != null && _npc.NPCIsBoss() && _npc.Id.Contains("faebor"))
+			{
+				float x = 2.4f;
+				healthBar.transform.localPosition = new Vector3(x, healthBar.transform.localPosition.y, healthBar.transform.localPosition.z);
+				Vector3 vector = new Vector3(x, 0f, 0f);
+				iconEnchantment.transform.position += vector;
+				iconEnchantment2.transform.position += vector;
+				iconEnchantment3.transform.position += vector;
+			}
+			Vector3 localPosition = CalculateLocalPosition(position);
+			if (!Mathf.Approximately(base.transform.localPosition.x, localPosition.x) && instant)
+			{
+				base.transform.localPosition = localPosition;
+			}
+		}
+	}
+
+	public Vector3 CalculateLocalPosition(int position)
+	{
+		float x = CalculatePositionX(position);
+		float z = (float)position * 0.001f;
+		charImageT.transform.localPosition = new Vector3(charImageT.transform.localPosition.x, charImageT.transform.localPosition.y, z);
+		if (!isHero)
+		{
+			string text = base.gameObject.name.Trim();
+			if (text.StartsWith("flamethrower_"))
+			{
+				z = 0.03f;
+			}
+			else if (text.StartsWith("dwarfface_"))
+			{
+				z = 0f;
+			}
+			else if (text.StartsWith("dt800_"))
+			{
+				z = 0.02f;
+			}
+			else if (text.StartsWith("launcher_"))
+			{
+				z = 0.01f;
+			}
+		}
+		return new Vector3(x, 0f, z);
+	}
+
+	public float CalculatePositionX(int _position)
+	{
+		float num = 0f;
+		float num2 = 2.4f;
+		float num3 = 1.9f;
+		int num4 = 0;
+		if (_hero != null)
+		{
+			num4 = ((_position != -10) ? _position : _hero.Position);
+			num = 0f - num2 - (float)num4 * num3;
+		}
+		else if (_npc != null)
+		{
+			num4 = ((_position != -10) ? _position : _npc.Position);
+			num = num2 + (float)num4 * num3;
+			if (_npc.IsBigModel())
+			{
+				num = ((num4 != 0 && num4 != 1) ? (num + 0.5f * num3) : (num + 0.35f * num3));
+			}
+		}
+		return num;
+	}
+
+	public bool CharIsMoving()
+	{
+		return charIsMoving;
+	}
+
+	private IEnumerator SetPositionCO(Transform theTransform, Vector3 vectorPosition, bool returnPosition)
+	{
+		charIsMoving = true;
+		if (!IsMovementAllowed(theTransform, vectorPosition))
+		{
+			charIsMoving = false;
+			yield break;
+		}
+		PrepareMovement(theTransform, vectorPosition, returnPosition, playSmokeEffect: true);
+		charIsMoving = true;
+		if (!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
+		{
+			if (theTransform != null)
+			{
+				theTransform.localPosition = vectorPosition;
+			}
+		}
+		else
+		{
+			bool flag = false;
+			while (!flag && theTransform != null)
+			{
+				while (theTransform != null && Mathf.Abs(theTransform.localPosition.x - vectorPosition.x) > 0.05f)
+				{
+					theTransform.localPosition = Vector3.Lerp(theTransform.localPosition, vectorPosition, 0.5f);
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				if (theTransform != null)
+				{
+					theTransform.localPosition = vectorPosition;
+				}
+				flag = true;
+			}
+		}
+		if (!isActive)
+		{
+			CharacterEnableAnim(state: true);
+		}
+		charIsMoving = false;
+	}
+
+	private IEnumerator MovePositionCo(Transform theTransform, Vector3 vectorPosition, bool returnPosition, bool playSmokeEffect, float movementTimeS, MotionGenerator.EasingType easingType)
+	{
+		charIsMoving = true;
+		if (!IsMovementAllowed(theTransform, vectorPosition))
+		{
+			charIsMoving = false;
+			yield break;
+		}
+		PrepareMovement(theTransform, vectorPosition, returnPosition, playSmokeEffect);
+		yield return StartCoroutine(MotionGenerator.MoveWithEasing(theTransform, vectorPosition, movementTimeS, easingType, MotionGenerator.Axis.X));
+		if (!isActive)
+		{
+			CharacterEnableAnim(state: true);
+		}
+		charIsMoving = false;
+	}
+
+	private bool IsMovementAllowed(Transform theTransform, Vector3 vectorPosition)
+	{
+		bool flag = false;
+		if (Mathf.Abs(theTransform.localPosition.x - vectorPosition.x) < 0.02f)
+		{
+			flag = true;
+		}
+		else if (_hero != null && !_hero.Alive)
+		{
+			flag = true;
+		}
+		else if (_npc != null && !_npc.Alive)
+		{
+			flag = true;
+		}
+		if (flag)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	private void PrepareMovement(Transform theTransform, Vector3 targetPosition, bool returnPosition, bool playSmokeEffect)
+	{
+		bool flip = !(theTransform.localPosition.x < targetPosition.x);
+		if (!returnPosition)
+		{
+			MatchManager.Instance.DoStepSound();
+		}
+		if (playSmokeEffect)
+		{
+			EffectsManager.Instance.PlayEffectAC("smoke", isHero, theTransform, flip);
+		}
+		if (!isActive)
+		{
+			CharacterEnableAnim(state: false);
+		}
+	}
+
+	public void SetHP()
+	{
+		Character character;
+		float num;
+		float num2;
+		int block;
+		int auraCharges;
+		if (_hero != null)
+		{
+			character = _hero;
+			num = _hero.HpCurrent;
+			num2 = _hero.GetMaxHP();
+			if (num > num2)
+			{
+				_hero.HpCurrent = (int)num2;
+				num = num2;
+			}
+			block = _hero.GetBlock();
+			auraCharges = _hero.GetAuraCharges("shield");
+		}
+		else
+		{
+			if (_npc == null)
+			{
+				return;
+			}
+			character = _npc;
+			num = _npc.HpCurrent;
+			num2 = _npc.GetMaxHP();
+			if (num > num2)
+			{
+				_npc.HpCurrent = (int)num2;
+				num = num2;
+			}
+			block = _npc.GetBlock();
+			auraCharges = _npc.GetAuraCharges("shield");
+		}
+		if (block > 0)
+		{
+			if (hpBlockText != null)
+			{
+				hpBlockText.text = block.ToString();
+			}
+			if (block > 49)
+			{
+				PlayerManager.Instance.AchievementUnlock("CHARGES_DEFENDER");
+			}
+			if (block > 199)
+			{
+				PlayerManager.Instance.AchievementUnlock("CHARGES_FORTRESS");
+			}
+			if (hpBlockIconT != null)
+			{
+				hpBlockIconT.GetComponent<PopupAuraCurse>().SetAuraCurse(Globals.Instance.GetAuraCurseData("block"), block, _fast: true);
+			}
+		}
+		if (hpShieldT != null && hpShieldT.gameObject != null)
+		{
+			if (auraCharges > 0)
+			{
+				hpShieldT.GetComponent<PopupAuraCurse>().SetAuraCurse(Globals.Instance.GetAuraCurseData("shield"), auraCharges, _fast: true);
+				StartCoroutine(ShowShieldHP(auraCharges));
+			}
+			else
+			{
+				hpShieldT.gameObject.SetActive(value: false);
+				hpShieldText.text = "";
+			}
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(num);
+		stringBuilder.Append("<size=-.5><color=#bbb>/");
+		stringBuilder.Append(num2);
+		hpText.text = stringBuilder.ToString();
+		stringBuilder = null;
+		if (character.GetHp() < 1)
+		{
+			if (hpRed != null)
+			{
+				hpRed.localScale = new Vector3(0f, 1f, 1f);
+			}
+			if (hpBleed != null)
+			{
+				hpBleed.localScale = new Vector3(0f, 1f, 1f);
+			}
+			if (hpPoison != null)
+			{
+				hpPoison.localScale = new Vector3(0f, 1f, 1f);
+			}
+			if (hpRegen != null)
+			{
+				hpRegen.localScale = new Vector3(0f, 1f, 1f);
+			}
+			if (!IsDying)
+			{
+				KillCoroutine = StartCoroutine(KillCharacterCO());
+			}
+			return;
+		}
+		MatchManager.Instance.CleanPrePostDamageDictionary(character.Id);
+		CalculateDamagePrePostForThisCharacter();
+		int num3 = int.Parse(MatchManager.Instance.prePostDamageDictionary[character.Id][0]);
+		int num4 = int.Parse(MatchManager.Instance.prePostDamageDictionary[character.Id][1]);
+		int num5 = 0;
+		if (num3 < 0)
+		{
+			num3 = -1 * num3;
+		}
+		else
+		{
+			num5 = num3;
+			num3 = 0;
+		}
+		num4 = ((num4 < 0) ? (-1 * num4) : 0);
+		float num6 = (num - (float)num3 - (float)num4) / num2;
+		if (num6 < 0f)
+		{
+			num6 = 0f;
+		}
+		else if (num6 > 1f)
+		{
+			num6 = 1f;
+		}
+		if (hpRed != null)
+		{
+			hpRed.localScale = new Vector3(num6, 1f, 1f);
+		}
+		if (hpBlockT != null)
+		{
+			hpBlockT.localScale = hpRed.localScale;
+		}
+		float x = 0f;
+		if (num3 > 0)
+		{
+			x = num / num2;
+		}
+		if (hpBleed != null)
+		{
+			hpBleed.localScale = new Vector3(x, 1f, 1f);
+		}
+		if (num5 > 0 && hpRegen != null)
+		{
+			float num7 = (num + (float)num5) / num2;
+			if (num7 > 1f)
+			{
+				num7 = 1f;
+			}
+			hpRegen.localScale = new Vector3(num7, 1f, 1f);
+		}
+		else if (hpRegen != null)
+		{
+			hpRegen.localScale = Vector3.zero;
+		}
+		float num8 = 0f;
+		if (num4 > 0)
+		{
+			num8 = (num - (float)num3) / num2;
+		}
+		if (num8 < 0f)
+		{
+			num8 = 0f;
+		}
+		if (hpPoison != null)
+		{
+			hpPoison.localScale = new Vector3(num8, 1f, 1f);
+		}
+	}
+
+	private void AmplifyBuffs(List<string> _listAuraCurse)
+	{
+		if (_listAuraCurse != null)
+		{
+			for (int i = 0; i < GoBuffs.Count; i++)
+			{
+				if (_listAuraCurse.Contains(GoBuffs[i].buffId))
+				{
+					GoBuffs[i].DisplayBecauseCard(_status: true);
+				}
+				else
+				{
+					GoBuffs[i].DisplayBecauseCard(_status: false);
+				}
+			}
+		}
+		else
+		{
+			for (int j = 0; j < GoBuffs.Count; j++)
+			{
+				GoBuffs[j].RestoreBecauseCard();
+			}
+		}
+	}
+
+	public void DrawBuffs(AuraCurseData auraIncluded = null, int auraIncludedCharges = 0, int previousCharges = -1)
+	{
+		if (!(GO_Buffs == null))
+		{
+			if (drawBuffsCoroutine != null)
+			{
+				StopCoroutine(drawBuffsCoroutine);
+			}
+			drawBuffsCoroutine = StartCoroutine(DrawBuffsCo(auraIncluded, auraIncludedCharges, previousCharges));
+		}
+	}
+
+	private IEnumerator DrawBuffsCo(AuraCurseData auraIncluded = null, int auraIncludedCharges = 0, int previousCharges = -1)
+	{
+		if (GO_Buffs == null)
+		{
+			yield break;
+		}
+		int count;
+		string id;
+		if (isHero)
+		{
+			count = _hero.AuraList.Count;
+			id = _hero.Id;
+		}
+		else
+		{
+			count = _npc.AuraList.Count;
+			id = _npc.Id;
+		}
+		int num = -1;
+		for (int i = 0; i < count; i++)
+		{
+			if (GO_Buffs == null)
+			{
+				yield break;
+			}
+			Aura aura = ((!isHero) ? _npc.AuraList[i] : _hero.AuraList[i]);
+			if (aura == null || !(aura.ACData != null) || !aura.ACData.IconShow)
+			{
+				continue;
+			}
+			if (GO_Buffs == null)
+			{
+				yield break;
+			}
+			num++;
+			Buff buff = GoBuffs[num];
+			if (buff != null)
+			{
+				buff.SetBuff(aura.ACData, aura.GetCharges(), "", id);
+			}
+			if (buff == null || buff.gameObject == null)
+			{
+				continue;
+			}
+			buff.gameObject.name = aura.ACData.Id;
+			if (auraIncluded != null && buff.gameObject.name == auraIncluded.Id)
+			{
+				if (buffAnimationList.ContainsKey(buff.gameObject.name))
+				{
+					buffAnimationList[buff.gameObject.name] += auraIncludedCharges;
+				}
+				else
+				{
+					buffAnimationList.Add(buff.gameObject.name, auraIncludedCharges);
+				}
+			}
+			string text = buff.name.ToLower();
+			int charges = aura.GetCharges();
+			switch (text)
+			{
+			case "poison":
+				if (charges > 49)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_POISONOUS");
+				}
+				if (charges > 199)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_TOXICDISASTER");
+				}
+				break;
+			case "bleed":
+				if (charges > 49)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_BLOODY");
+				}
+				if (charges > 199)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_BLOODBATH");
+				}
+				break;
+			case "burn":
+				if (charges > 49)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_INCENDIARY");
+				}
+				if (charges > 199)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_INFERNO");
+				}
+				break;
+			case "crack":
+				if (charges > 49)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_WRECKINGBALL");
+				}
+				if (charges > 199)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_SIEGEBREAKER");
+				}
+				break;
+			case "fury":
+				if (charges > 49)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_FURIOUS");
+				}
+				if (charges > 199)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_ENDLESSFURY");
+				}
+				break;
+			case "sanctify":
+				if (charges > 39)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_HOLYGROUND");
+				}
+				break;
+			case "bless":
+				if (charges > 39)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_DIVINE");
+				}
+				break;
+			case "regeneration":
+				if (charges > 39)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_DRYAD");
+				}
+				break;
+			case "thorns":
+				if (charges > 39)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_SPIKY");
+				}
+				break;
+			case "chill":
+				if (charges > 49)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_CHILLY");
+				}
+				if (charges > 199)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_GLACIER");
+				}
+				break;
+			case "spark":
+				if (charges > 49)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_SPARKLY");
+				}
+				if (charges > 199)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_ELECTROCUTER");
+				}
+				break;
+			case "insane":
+				if (charges > 39)
+				{
+					PlayerManager.Instance.AchievementUnlock("CHARGES_INSANE");
+				}
+				break;
+			}
+		}
+		for (int j = num + 1; j < GoBuffs.Count - 1; j++)
+		{
+			if (GoBuffs[j] != null && GoBuffs[j].gameObject != null)
+			{
+				GoBuffs[j].CleanBuff();
+			}
+		}
+		if (buffAnimationCo != null)
+		{
+			StopCoroutine(buffAnimationCo);
+		}
+		if (buffAnimationList.Count > 0)
+		{
+			buffAnimationCo = StartCoroutine(BuffAnimationCoroutine());
+		}
+	}
+
+	private IEnumerator BuffAnimationCoroutine()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.01f);
+		for (int i = 0; i < GoBuffs.Count; i++)
+		{
+			if (GoBuffs[i] != null && GoBuffs[i].gameObject != null && GoBuffs[i].gameObject.name != "" && buffAnimationList != null && buffAnimationList.ContainsKey(GoBuffs[i].gameObject.name))
+			{
+				Buff component = GoBuffs[i].transform.GetComponent<Buff>();
+				if (component != null)
+				{
+					component.Amplify(buffAnimationList[GoBuffs[i].gameObject.name]);
+				}
+			}
+		}
+		buffAnimationList.Clear();
+	}
+
+	public void InstantFadeOutCharacter()
+	{
+		if (animatedSprites == null)
+		{
+			return;
+		}
+		for (int i = 0; i < animatedSprites.Count; i++)
+		{
+			if (animatedSprites[i] != null)
+			{
+				animatedSprites[i].color = new Color(1f, 1f, 1f, 0f);
+			}
+		}
+	}
+
+	public IEnumerator FadeOutCharacter()
+	{
+		float index = 1f;
+		while (index > 0f)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.03f);
+			index -= 0.1f;
+			if (animatedSprites != null && animatedSprites.Count > 0)
+			{
+				for (int i = 0; i < animatedSprites.Count; i++)
+				{
+					animatedSprites[i].color = new Color(1f, 1f, 1f, index);
+				}
+			}
+			else if (charImageSR != null)
+			{
+				charImageSR.color = new Color(1f, 1f, 1f, index);
+			}
+		}
+		yield return null;
+	}
+
+	public IEnumerator FadeInCharacter(float delay = 0f)
+	{
+		Globals.Instance.WaitForSeconds(delay);
+		float index = 0f;
+		while (index < 1f)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.03f);
+			index += 0.1f;
+			if (animatedSprites != null && animatedSprites.Count > 0)
+			{
+				for (int i = 0; i < animatedSprites.Count; i++)
+				{
+					animatedSprites[i].color = new Color(1f, 1f, 1f, index);
+				}
+			}
+			else if (charImageSR != null)
+			{
+				charImageSR.color = new Color(1f, 1f, 1f, index);
+			}
+		}
+		yield return null;
+	}
+
+	public void KillCharacterFromOutside()
+	{
+		KillCoroutine = StartCoroutine(KillCharacterCO());
+	}
+
+	private IEnumerator KillCharacterCO()
+	{
+		if (Globals.Instance.ShowDebug)
+		{
+			Functions.DebugLogGD("[KILLCHARACTERCO] isDying -> " + IsDying, "trace");
+		}
+		if (IsDying)
+		{
+			yield break;
+		}
+		if ((isHero && _hero == null) || (!isHero && _npc == null))
+		{
+			Debug.LogError("[KILLCHARACTERCO] STOP because NULL");
+			yield break;
+		}
+		IsDying = true;
+		MatchManager.Instance.SetWaitingKill(_state: true);
+		StringBuilder stringBuilder = new StringBuilder();
+		if (isHero && _hero != null)
+		{
+			stringBuilder.Append(_hero.HpCurrent);
+			stringBuilder.Append("<size=-.5><color=#bbb>/");
+			stringBuilder.Append(_hero.GetMaxHP());
+			hpText.text = stringBuilder.ToString();
+			MatchManager.Instance.CreateLogEntry(_initial: true, "", "", _hero, null, null, null, MatchManager.Instance.GameRound(), Enums.EventActivation.Killed);
+			for (int i = 0; i < 4; i++)
+			{
+				Hero hero = MatchManager.Instance.GetHero(i);
+				if (hero != null && hero.Alive)
+				{
+					hero.SetEvent(Enums.EventActivation.CharacterKilled, _hero);
+				}
+			}
+			if (_hero.HaveResurrectItem())
+			{
+				_hero.ActivateItem(Enums.EventActivation.Killed, _hero, 0, "");
+				MatchManager.Instance.waitingDeathScreen = false;
+				MatchManager.Instance.SetWaitingKill(_state: false);
+				IsDying = false;
+				Debug.Log("Item resurrect");
+				Debug.Log(_hero.Alive);
+				MatchManager.Instance.CreateLogEntry(_initial: true, "", "", _hero, null, null, null, MatchManager.Instance.GameRound(), Enums.EventActivation.Resurrect);
+				yield break;
+			}
+			_hero.SetEvent(Enums.EventActivation.Killed);
+			yield return Globals.Instance.WaitForSeconds(0.3f);
+			if (_hero.GetHp() > 0)
+			{
+				IsDying = false;
+				MatchManager.Instance.SetWaitingKill(_state: false);
+				MatchManager.Instance.waitingDeathScreen = false;
+				yield break;
+			}
+			_hero.Alive = false;
+			if (MatchManager.Instance.AnyHeroAlive())
+			{
+				if (!MatchManager.Instance.waitingDeathScreen)
+				{
+					MatchManager.Instance.waitingDeathScreen = true;
+					MatchManager.Instance.ShowDeathScreen(_hero);
+				}
+				while (MatchManager.Instance.waitingDeathScreen)
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+			}
+			else
+			{
+				MatchManager.Instance.waitingDeathScreen = false;
+				MatchManager.Instance.SetWaitingKill(_state: false);
+			}
+		}
+		else if (_npc != null)
+		{
+			stringBuilder.Append(_npc.HpCurrent);
+			stringBuilder.Append("<size=-.5><color=#bbb>/");
+			stringBuilder.Append(_npc.GetMaxHP());
+			hpText.text = stringBuilder.ToString();
+			MatchManager.Instance.CreateLogEntry(_initial: true, "", "", null, _npc, null, null, MatchManager.Instance.GameRound(), Enums.EventActivation.Killed);
+			for (int j = 0; j < 4; j++)
+			{
+				Hero hero2 = MatchManager.Instance.GetHero(j);
+				if (hero2 != null && hero2.Alive)
+				{
+					hero2.SetEvent(Enums.EventActivation.CharacterKilled, _npc);
+				}
+			}
+			if (_npc.HaveResurrectItem())
+			{
+				_npc.ActivateItem(Enums.EventActivation.Killed, _npc, 0, "");
+				yield return Globals.Instance.WaitForSeconds(0.8f);
+				IsDying = false;
+				MatchManager.Instance.SetWaitingKill(_state: false);
+				yield break;
+			}
+			_npc.SetEvent(Enums.EventActivation.Killed);
+			if (Globals.Instance.ShowDebug)
+			{
+				Functions.DebugLogGD("[KILLCHARACTERCO] Kill NPC _ Life -> " + _npc.GetHp());
+			}
+			if (_npc.GetHp() > 0)
+			{
+				Debug.Log("[KILLCHARACTERCO] npc resurrect");
+				IsDying = false;
+				MatchManager.Instance.SetWaitingKill(_state: false);
+				yield break;
+			}
+			_npc.Alive = false;
+			if (Globals.Instance.ShowDebug)
+			{
+				Functions.DebugLogGD("[KILLCHARACTERCO] Kill 2 NPC _ Life -> " + _npc.GetHp(), "trace");
+			}
+		}
+		for (int num = base.transform.childCount - 1; num >= 0; num--)
+		{
+			Transform child = base.transform.GetChild(num);
+			if (child != null && child.name != "Character" && child.name != base.transform.gameObject.name)
+			{
+				Object.Destroy(child.gameObject);
+			}
+		}
+		if (Globals.Instance.ShowDebug)
+		{
+			Functions.DebugLogGD("[KILLCHARACTERCO] Kill 3", "trace");
+		}
+		if (_npc != null && _npc.Id.StartsWith("pitt"))
+		{
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+			MatchManager.Instance.DoSahtiRustBackground(showPittAlive: false, justKilled: true);
+		}
+		float index = 1f;
+		Color hideColor = new Color(1f, 1f, 1f, 0f);
+		while (index > 0f)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.02f);
+			index -= 0.1f;
+			if (anim != null)
+			{
+				for (int k = 0; k < animatedSprites.Count; k++)
+				{
+					if (animatedSprites[k] != null)
+					{
+						hideColor.a = index;
+						animatedSprites[k].color = hideColor;
+					}
+				}
+			}
+			else if (charImageSR != null)
+			{
+				hideColor.a = index;
+				charImageSR.color = hideColor;
+			}
+		}
+		if (isHero && MatchManager.Instance != null)
+		{
+			MatchManager.Instance.RemoveFromTransformDict(_hero.Id);
+		}
+		if (!isHero && MatchManager.Instance != null)
+		{
+			MatchManager.Instance.RemoveFromTransformDict(_npc.Id);
+		}
+		if (Globals.Instance.ShowDebug)
+		{
+			Functions.DebugLogGD("[KILLCHARACTERCO] Kill 4 - Call KillHero or KillNPC", "trace");
+		}
+		if (isHero)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.01f * (float)_hero.Position);
+			MatchManager.Instance.SetWaitingKill(_state: false);
+			MatchManager.Instance.KillHero(_hero);
+		}
+		else
+		{
+			yield return Globals.Instance.WaitForSeconds(0.01f * (float)_npc.Position);
+			MatchManager.Instance.SetWaitingKill(_state: false);
+			MatchManager.Instance.KillNPC(_npc);
+		}
+	}
+
+	public void ShowOverCards()
+	{
+		if (!(heroDecks == null) && _hero != null)
+		{
+			TMP_Text tMP_Text = heroDecksDeckText;
+			string text = (heroDecksDeckTextBg.text = MatchManager.Instance.CountHeroDeck(_hero.HeroIndex).ToString());
+			tMP_Text.text = text;
+			TMP_Text tMP_Text2 = heroDecksDiscardText;
+			text = (heroDecksDiscardTextBg.text = MatchManager.Instance.CountHeroDiscard(_hero.HeroIndex).ToString());
+			tMP_Text2.text = text;
+			if (0 > 0)
+			{
+				heroDecksDeckText.color = new Color(1f, 0.41f, 0.56f);
+			}
+			else
+			{
+				heroDecksDeckText.color = new Color(0.88f, 0.71f, 0.3f);
+			}
+			if (!heroDecks.gameObject.activeSelf)
+			{
+				heroDecks.gameObject.SetActive(value: true);
+			}
+		}
+	}
+
+	public void HideOverCards()
+	{
+		if (!(heroDecks == null) && heroDecks.gameObject.activeSelf)
+		{
+			heroDecks.gameObject.SetActive(value: false);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		fOnMouseExit();
+	}
+
+	private void OnMouseEnter()
+	{
+		fOnMouseEnter();
+	}
+
+	private void OnMouseOver()
+	{
+		fOnMouseOver();
+	}
+
+	public void fOnMouseEnter()
+	{
+		if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
+		{
+			return;
+		}
+		if (MatchManager.Instance.CardDrag)
+		{
+			if (GameManager.Instance.IsMultiplayer() && MatchManager.Instance.IsYourTurn() && !MatchManager.Instance.CanInstaCast(MatchManager.Instance.CardItemActive.CardData) && MatchManager.Instance.CardItemActive != null)
+			{
+				bool flag = false;
+				byte characterIndex = 0;
+				if (Hero != null)
+				{
+					flag = true;
+					characterIndex = (byte)Hero.HeroIndex;
+				}
+				if (NPC != null)
+				{
+					characterIndex = (byte)NPC.NPCIndex;
+				}
+				MatchManager.Instance.DrawArrowNet(MatchManager.Instance.CardItemActive.tablePosition, MatchManager.Instance.CardItemActive.transform.position, base.transform.position + new Vector3(0f, GetComponent<BoxCollider2D>().size.y * 0.7f, 0f), flag, characterIndex);
+			}
+			if (!MatchManager.Instance.CanInstaCast(MatchManager.Instance.CardActive))
+			{
+				if (MatchManager.Instance.CheckTarget(base.transform))
+				{
+					if (MatchManager.Instance.CardItemActive != null)
+					{
+						MatchManager.Instance.CardItemActive.SetColorArrow("green");
+					}
+					OutlineWhite();
+					if (_hero != null)
+					{
+						MatchManager.Instance.combatTarget.SetTargetTMP(_hero);
+					}
+					else
+					{
+						MatchManager.Instance.combatTarget.SetTargetTMP(_npc);
+					}
+				}
+				else if (MatchManager.Instance.CardItemActive != null)
+				{
+					MatchManager.Instance.CardItemActive.SetColorArrow("red");
+				}
+			}
+		}
+		else
+		{
+			if (_hero != null)
+			{
+				MatchManager.Instance.combatTarget.SetTargetTMP(_hero);
+				if (_hero.SourceName == "Magnus")
+				{
+					PetMagnus();
+				}
+				if (_hero.SourceName == "Yogger")
+				{
+					PetYogger();
+				}
+			}
+			else
+			{
+				MatchManager.Instance.combatTarget.SetTargetTMP(_npc);
+			}
+			OutlineGray();
+			GameManager.Instance.SetCursorHover();
+			GameManager.Instance.PlayLibraryAudio("castnpccardfast");
+			ShowHelp(state: true);
+		}
+		MatchManager.Instance.PortraitHighlight(state: true, this);
+	}
+
+	private void PetMagnus()
+	{
+		if (!MatchManager.Instance)
+		{
+			return;
+		}
+		petMagnusCounter++;
+		if (petMagnusCounter > 5)
+		{
+			anim.ResetTrigger("pet");
+			anim.SetTrigger("pet");
+			petMagnusCounter = 0;
+			if (petMagnusAnswer == 0)
+			{
+				MatchManager.Instance.DoComic(_hero, Texts.Instance.GetText("magnusPet1"), 2f);
+				petMagnusAnswer = 1;
+			}
+			else if (petMagnusAnswer == 1)
+			{
+				MatchManager.Instance.DoComic(_hero, Texts.Instance.GetText("magnusPet2"), 2f);
+				petMagnusAnswer = 0;
+			}
+		}
+		if (petMagnusCoroutine != null)
+		{
+			StopCoroutine(petMagnusCoroutine);
+		}
+		petMagnusCoroutine = StartCoroutine(PetMagnusStop());
+	}
+
+	private IEnumerator PetMagnusStop()
+	{
+		yield return Globals.Instance.WaitForSeconds(1.5f);
+		petMagnusCounter = 0;
+	}
+
+	private void PetYogger()
+	{
+		if (!MatchManager.Instance)
+		{
+			return;
+		}
+		petYoggerCounter++;
+		if (petYoggerCounter > 5)
+		{
+			anim.ResetTrigger("pet");
+			anim.SetTrigger("pet");
+			petYoggerCounter = 0;
+			if (petYoggerAnswer == 0)
+			{
+				MatchManager.Instance.DoComic(_hero, Texts.Instance.GetText("yoggerPet1"), 2f);
+				petYoggerAnswer = 1;
+			}
+			else if (petYoggerAnswer == 1)
+			{
+				MatchManager.Instance.DoComic(_hero, Texts.Instance.GetText("yoggerPet2"), 2f);
+				petYoggerAnswer = 0;
+			}
+		}
+		if (petYoggerCoroutine != null)
+		{
+			StopCoroutine(petYoggerCoroutine);
+		}
+		petYoggerCoroutine = StartCoroutine(PetYoggerStop());
+	}
+
+	private IEnumerator PetYoggerStop()
+	{
+		yield return Globals.Instance.WaitForSeconds(1.5f);
+		petYoggerCounter = 0;
+	}
+
+	public void fOnMouseUp()
+	{
+		if (!Functions.ClickedThisTransform(base.transform) || !(MatchManager.Instance != null))
+		{
+			return;
+		}
+		if (!MatchManager.Instance.CardDrag)
+		{
+			if (!MatchManager.Instance.justCasted)
+			{
+				ShowHelp(state: false);
+				if (_hero != null)
+				{
+					MatchManager.Instance.ShowCharacterWindow("stats", isHero: true, _hero.HeroIndex);
+				}
+				else
+				{
+					MatchManager.Instance.ShowCharacterWindow("stats", isHero: false, _npc.NPCIndex);
+				}
+			}
+		}
+		else if (MatchManager.Instance.controllerClickedCard)
+		{
+			MatchManager.Instance.ControllerExecute();
+		}
+	}
+
+	public void fOnMouseOver()
+	{
+		if (!SettingsManager.Instance.IsActive() && !AlertManager.Instance.IsActive() && !MadnessManager.Instance.IsActive() && !SandboxManager.Instance.IsActive() && !EventSystem.current.IsPointerOverGameObject() && MatchManager.Instance != null && !MatchManager.Instance.CardDrag && !MatchManager.Instance.justCasted && Input.GetMouseButtonUp(1))
+		{
+			ShowHelp(state: false);
+			if (_hero != null)
+			{
+				MatchManager.Instance.ShowCharacterWindow("combatdeck", isHero: true, _hero.HeroIndex);
+			}
+			else
+			{
+				MatchManager.Instance.ShowCharacterWindow("combatdiscard", isHero: false, _npc.NPCIndex);
+			}
+		}
+	}
+
+	public void fOnMouseExit()
+	{
+		if (MatchManager.Instance != null)
+		{
+			MatchManager.Instance.combatTarget.ClearTarget();
+			ShowHelp(state: false);
+		}
+		if (MatchManager.Instance.CardDrag)
+		{
+			if (MatchManager.Instance.CardItemActive != null)
+			{
+				if (GameManager.Instance.IsMultiplayer() && MatchManager.Instance.IsYourTurn())
+				{
+					MatchManager.Instance.StopArrowNet(MatchManager.Instance.CardItemActive.tablePosition);
+				}
+				if (!MatchManager.Instance.CanInstaCast(MatchManager.Instance.CardActive))
+				{
+					MatchManager.Instance.CardItemActive.SetColorArrow("gold");
+					MatchManager.Instance.SetGlobalOutlines(state: true, MatchManager.Instance.CardActive);
+				}
+			}
+		}
+		else
+		{
+			if (popupSheet != null)
+			{
+				popupSheet.ClosePopup();
+			}
+			OutlineHide();
+			GameManager.Instance.SetCursorPlain();
+		}
+		MatchManager.Instance.PortraitHighlight(state: false, this);
+	}
+
+	public void ShowHelp(bool state)
+	{
+		if (!state)
+		{
+			if (helpCo != null)
+			{
+				StopCoroutine(helpCo);
+			}
+			MatchManager.Instance.helpCharacterTransform.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			helpCo = StartCoroutine(ShowHelpCo());
+		}
+	}
+
+	private IEnumerator ShowHelpCo()
+	{
+		if (helpCo != null)
+		{
+			StopCoroutine(helpCo);
+		}
+		yield return Globals.Instance.WaitForSeconds(0.5f);
+		if (_hero != null)
+		{
+			MatchManager.Instance.helpRight.text = Texts.Instance.GetText("helpDeck");
+		}
+		else
+		{
+			MatchManager.Instance.helpRight.text = Texts.Instance.GetText("helpCasted");
+		}
+		MatchManager.Instance.helpCharacterTransform.gameObject.SetActive(value: true);
+	}
+
+	private void ResetMaterial()
+	{
+		if (_hero != null)
+		{
+			_hero.SetTaunt();
+			_hero.SetStealth();
+			_hero.SetParalyze();
+		}
+		else if (_npc != null)
+		{
+			_npc.SetTaunt();
+			_npc.SetStealth();
+			_npc.SetParalyze();
+		}
+	}
+
+	public void OutlineGreen()
+	{
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (animatedSprites[i].gameObject.name.ToLower() != "shadow")
+				{
+					animatedSprites[i].color = new Color(1f, 1f, 1f, 1f);
+				}
+			}
+			ResetMaterial();
+		}
+		else
+		{
+			spriteOutline.EnableGreen();
+			charImageSR.color = new Color(1f, 1f, 1f, 1f);
+		}
+	}
+
+	public void OutlineRed()
+	{
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (animatedSprites[i].gameObject.name.ToLower() != "shadow")
+				{
+					animatedSprites[i].color = new Color(0.3f, 0.3f, 0.3f, 1f);
+				}
+				animatedSprites[i].sharedMaterial = animatedSpritesDefaultMaterial[animatedSprites[i].name];
+			}
+		}
+		else
+		{
+			spriteOutline.EnableRed();
+			charImageSR.color = new Color(0.5f, 0.5f, 0.5f, 1f);
+		}
+	}
+
+	public void OutlineGray()
+	{
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (animatedSprites[i] != null)
+				{
+					if (animatedSprites[i].gameObject.name.ToLower() != "shadow")
+					{
+						animatedSprites[i].color = new Color(0.6f, 0.6f, 0.6f, 1f);
+					}
+					animatedSprites[i].sharedMaterial = animatedSpritesDefaultMaterial[animatedSprites[i].name];
+				}
+			}
+		}
+		else
+		{
+			spriteOutline.EnableWhite();
+			charImageSR.color = new Color(0.6f, 0.6f, 0.6f, 1f);
+		}
+	}
+
+	public void OutlineWhite()
+	{
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (animatedSprites[i] != null)
+				{
+					if (animatedSprites[i].gameObject.name.ToLower() != "shadow")
+					{
+						animatedSprites[i].color = new Color(0.55f, 1f, 0.56f, 1f);
+					}
+					animatedSprites[i].sharedMaterial = animatedSpritesDefaultMaterial[animatedSprites[i].name];
+				}
+			}
+		}
+		else
+		{
+			spriteOutline.EnableWhite();
+			charImageSR.color = new Color(1f, 1f, 1f, 1f);
+		}
+	}
+
+	public void OutlineHide()
+	{
+		if (animatedSprites != null)
+		{
+			for (int i = 0; i < animatedSprites.Count; i++)
+			{
+				if (animatedSprites[i] != null)
+				{
+					animatedSprites[i].color = new Color(1f, 1f, 1f, 1f);
+				}
+			}
+			ResetMaterial();
+		}
+		else
+		{
+			spriteOutline.Hide();
+			charImageSR.color = new Color(1f, 1f, 1f, 1f);
+		}
+	}
+
+	public void ShowEnchantments()
+	{
+		if (isHero)
+		{
+			if (iconEnchantment != null)
+			{
+				if (_hero == null || _hero.Enchantment == "")
+				{
+					if (iconEnchantment.gameObject.activeSelf)
+					{
+						iconEnchantment.gameObject.SetActive(value: false);
+						iconEnchantment.StopCardAnimation();
+					}
+				}
+				else if (_hero.Alive)
+				{
+					iconEnchantment.gameObject.SetActive(value: true);
+					iconEnchantment.ShowIconExternal("enchantment", _hero);
+					iconEnchantment.TheHero = _hero;
+				}
+			}
+			if (iconEnchantment2 != null)
+			{
+				if (_hero == null || _hero.Enchantment2 == "")
+				{
+					if (iconEnchantment2.gameObject.activeSelf)
+					{
+						iconEnchantment2.gameObject.SetActive(value: false);
+						iconEnchantment2.StopCardAnimation();
+					}
+				}
+				else if (_hero.Alive)
+				{
+					iconEnchantment2.gameObject.SetActive(value: true);
+					iconEnchantment2.ShowIconExternal("enchantment2", _hero);
+					iconEnchantment2.TheHero = _hero;
+				}
+			}
+			if (iconEnchantment3 != null)
+			{
+				if (_hero == null || _hero.Enchantment3 == "")
+				{
+					if (iconEnchantment3.gameObject.activeSelf)
+					{
+						iconEnchantment3.gameObject.SetActive(value: false);
+						iconEnchantment3.StopCardAnimation();
+					}
+				}
+				else if (_hero.Alive)
+				{
+					iconEnchantment3.gameObject.SetActive(value: true);
+					iconEnchantment3.ShowIconExternal("enchantment3", _hero);
+					iconEnchantment3.TheHero = _hero;
+				}
+			}
+			_hero.ShowPetsFromEnchantments();
+			return;
+		}
+		if (iconEnchantment != null)
+		{
+			if (_npc == null || _npc.Enchantment == "")
+			{
+				if (iconEnchantment.gameObject.activeSelf)
+				{
+					iconEnchantment.gameObject.SetActive(value: false);
+					iconEnchantment.StopCardAnimation();
+				}
+			}
+			else if (_npc.Alive)
+			{
+				iconEnchantment.gameObject.SetActive(value: true);
+				iconEnchantment.ShowIconExternal("enchantment", _npc);
+				iconEnchantment.TheNPC = _npc;
+			}
+		}
+		if (iconEnchantment2 != null)
+		{
+			if (_npc == null || _npc.Enchantment2 == "")
+			{
+				if (iconEnchantment2.gameObject.activeSelf)
+				{
+					iconEnchantment2.gameObject.SetActive(value: false);
+					iconEnchantment2.StopCardAnimation();
+				}
+			}
+			else if (_npc.Alive)
+			{
+				iconEnchantment2.gameObject.SetActive(value: true);
+				iconEnchantment2.ShowIconExternal("enchantment2", _npc);
+				iconEnchantment2.TheNPC = _npc;
+			}
+		}
+		if (iconEnchantment3 != null)
+		{
+			if (_npc == null || _npc.Enchantment3 == "")
+			{
+				if (iconEnchantment3.gameObject.activeSelf)
+				{
+					iconEnchantment3.gameObject.SetActive(value: false);
+					iconEnchantment3.StopCardAnimation();
+				}
+			}
+			else if (_npc.Alive)
+			{
+				iconEnchantment3.gameObject.SetActive(value: true);
+				iconEnchantment3.ShowIconExternal("enchantment3", _npc);
+				iconEnchantment3.TheNPC = _npc;
+			}
+		}
+		_npc.ShowPetsFromEnchantments();
+	}
+
+	public void HideEnchatmentIcons()
+	{
+		iconEnchantment?.gameObject.SetActive(value: false);
+		iconEnchantment2?.gameObject.SetActive(value: false);
+		iconEnchantment3?.gameObject.SetActive(value: false);
+	}
+
+	public IEnumerator EnchantEffectCo()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.3f);
+		counterEffectItemOwner++;
+		if (counterEffectItemOwner >= 10)
+		{
+			ItemData itemData = null;
+			if (_hero != null)
+			{
+				if (indexEffectItemOwner == 0 && _hero.Enchantment != "")
+				{
+					itemData = Globals.Instance.GetItemData(_hero.Enchantment);
+				}
+				else if (indexEffectItemOwner == 1 && _hero.Enchantment2 != "")
+				{
+					itemData = Globals.Instance.GetItemData(_hero.Enchantment2);
+				}
+				else if (indexEffectItemOwner == 2 && _hero.Enchantment3 != "")
+				{
+					itemData = Globals.Instance.GetItemData(_hero.Enchantment3);
+				}
+				if (itemData != null && itemData.EffectItemOwner != "")
+				{
+					EffectsManager.Instance.PlayEffectAC(itemData.EffectItemOwner, isHero: true, CharImageT, flip: false);
+				}
+				counterEffectItemOwner = 0;
+				indexEffectItemOwner++;
+				if (indexEffectItemOwner > 2)
+				{
+					indexEffectItemOwner = 0;
+				}
+				if (indexEffectItemOwner == 0 && _hero.Enchantment == "")
+				{
+					indexEffectItemOwner = 1;
+				}
+				if (indexEffectItemOwner == 1 && _hero.Enchantment2 == "")
+				{
+					indexEffectItemOwner = 2;
+				}
+				if (indexEffectItemOwner == 2 && _hero.Enchantment3 == "")
+				{
+					indexEffectItemOwner = 0;
+				}
+			}
+			else if (_npc != null)
+			{
+				if (indexEffectItemOwner == 0 && _npc.Enchantment != "")
+				{
+					itemData = Globals.Instance.GetItemData(_npc.Enchantment);
+				}
+				else if (indexEffectItemOwner == 1 && _npc.Enchantment2 != "")
+				{
+					itemData = Globals.Instance.GetItemData(_npc.Enchantment2);
+				}
+				else if (indexEffectItemOwner == 2 && _npc.Enchantment3 != "")
+				{
+					itemData = Globals.Instance.GetItemData(_npc.Enchantment3);
+				}
+				if (itemData != null && itemData.EffectItemOwner != "")
+				{
+					EffectsManager.Instance.PlayEffectAC(itemData.EffectItemOwner, isHero: true, CharImageT, flip: false);
+				}
+				counterEffectItemOwner = 0;
+				indexEffectItemOwner++;
+				if (indexEffectItemOwner > 2)
+				{
+					indexEffectItemOwner = 0;
+				}
+				if (indexEffectItemOwner == 0 && _npc.Enchantment == "")
+				{
+					indexEffectItemOwner = 1;
+				}
+				if (indexEffectItemOwner == 1 && _npc.Enchantment2 == "")
+				{
+					indexEffectItemOwner = 2;
+				}
+				if (indexEffectItemOwner == 2 && _npc.Enchantment3 == "")
+				{
+					indexEffectItemOwner = 0;
+				}
+			}
+		}
+		StartCoroutine(EnchantEffectCo());
+	}
+
+	public void EnchantmentExecute(int index)
+	{
+		if ((_hero == null || _hero.Alive) && (_npc == null || _npc.Alive))
+		{
+			switch (index)
+			{
+			case 0:
+				iconEnchantment.SetTimesExecuted(1);
+				break;
+			case 1:
+				iconEnchantment2.SetTimesExecuted(1);
+				break;
+			case 2:
+				iconEnchantment3.SetTimesExecuted(1);
+				break;
+			}
+		}
+	}
+
+	public void ShowCharacterPing(int _action)
+	{
+		Character character = null;
+		character = ((_hero == null) ? ((Character)_npc) : ((Character)_hero));
+		emoteCharacterPing.Show(character.Id, _action);
+	}
+
+	public void HideCharacterPing()
+	{
+		emoteCharacterPing.Hide();
+	}
+
+	public void ShowKeyNum(bool _state, string _num = "", bool _disabled = false)
+	{
+		if (keyTransform.gameObject.activeSelf != _state)
+		{
+			keyTransform.gameObject.SetActive(_state);
+		}
+		if (!_state)
+		{
+			return;
+		}
+		keyNumber.text = _num;
+		if (_disabled)
+		{
+			if (!keyRed.gameObject.activeSelf)
+			{
+				keyRed.gameObject.SetActive(value: true);
+			}
+			if (keyBackground.gameObject.activeSelf)
+			{
+				keyBackground.gameObject.SetActive(value: false);
+			}
+		}
+		else
+		{
+			if (keyRed.gameObject.activeSelf)
+			{
+				keyRed.gameObject.SetActive(value: false);
+			}
+			if (!keyBackground.gameObject.activeSelf)
+			{
+				keyBackground.gameObject.SetActive(value: true);
+			}
+		}
+	}
 }

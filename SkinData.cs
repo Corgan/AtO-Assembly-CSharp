@@ -1,142 +1,254 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: SkinData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Skin Data", menuName = "Skin Data", order = 64)]
 public class SkinData : ScriptableObject
 {
-  [SerializeField]
-  private string skinId;
-  [SerializeField]
-  private string skinName;
-  [SerializeField]
-  private SubClassData skinSubclass;
-  [Header("Base skins for characters")]
-  [SerializeField]
-  private bool baseSkin;
-  [Header("Order in charpopup")]
-  [SerializeField]
-  private int skinOrder;
-  [Header("Skin Requeriments")]
-  [SerializeField]
-  private int perkLevel;
-  [Header("DLC Requeriment")]
-  [SerializeField]
-  private string sku;
-  [Header("SteamStat Requeriment")]
-  [SerializeField]
-  private string steamStat;
-  [Header("Prefab")]
-  [SerializeField]
-  private GameObject skinGo;
-  [Header("Sprites")]
-  [SerializeField]
-  private Sprite spriteSilueta;
-  [SerializeField]
-  private Sprite spriteSiluetaGrande;
-  [SerializeField]
-  private Sprite spritePortrait;
-  [SerializeField]
-  private Sprite spritePortraitGrande;
-  [Header("Text Id")]
-  [SerializeField]
-  private string skinTextId;
-  [Header("Size Changes For Different Screen")]
-  [SerializeField]
-  private float heroSelectionScreenScale = 1f;
+	[SerializeField]
+	private string skinId;
 
-  public string SkinId
-  {
-    get => this.skinId;
-    set => this.skinId = value;
-  }
+	[SerializeField]
+	private string skinName;
 
-  public string SkinName
-  {
-    get => this.skinName;
-    set => this.skinName = value;
-  }
+	[SerializeField]
+	private SubClassData skinSubclass;
 
-  public SubClassData SkinSubclass
-  {
-    get => this.skinSubclass;
-    set => this.skinSubclass = value;
-  }
+	[Header("Base skins for characters")]
+	[SerializeField]
+	private bool baseSkin;
 
-  public bool BaseSkin
-  {
-    get => this.baseSkin;
-    set => this.baseSkin = value;
-  }
+	[Header("Order in charpopup")]
+	[SerializeField]
+	private int skinOrder;
 
-  public int PerkLevel
-  {
-    get => this.perkLevel;
-    set => this.perkLevel = value;
-  }
+	[Header("Skin Requeriments")]
+	[SerializeField]
+	private int perkLevel;
 
-  public GameObject SkinGo
-  {
-    get => this.skinGo;
-    set => this.skinGo = value;
-  }
+	[Header("DLC Requeriment")]
+	[SerializeField]
+	private string sku;
 
-  public Sprite SpriteSilueta
-  {
-    get => this.spriteSilueta;
-    set => this.spriteSilueta = value;
-  }
+	[Header("SteamStat Requeriment")]
+	[SerializeField]
+	private string steamStat;
 
-  public Sprite SpriteSiluetaGrande
-  {
-    get => this.spriteSiluetaGrande;
-    set => this.spriteSiluetaGrande = value;
-  }
+	[Header("Prefab")]
+	[SerializeField]
+	private GameObject skinGo;
 
-  public Sprite SpritePortrait
-  {
-    get => this.spritePortrait;
-    set => this.spritePortrait = value;
-  }
+	[Header("Sprites")]
+	[SerializeField]
+	private Sprite spriteSilueta;
 
-  public Sprite SpritePortraitGrande
-  {
-    get => this.spritePortraitGrande;
-    set => this.spritePortraitGrande = value;
-  }
+	[SerializeField]
+	private Sprite spriteSiluetaGrande;
 
-  public int SkinOrder
-  {
-    get => this.skinOrder;
-    set => this.skinOrder = value;
-  }
+	[SerializeField]
+	private Sprite spritePortrait;
 
-  public string Sku
-  {
-    get => this.sku;
-    set => this.sku = value;
-  }
+	[SerializeField]
+	private Sprite spritePortraitGrande;
 
-  public string SteamStat
-  {
-    get => this.steamStat;
-    set => this.steamStat = value;
-  }
+	[Header("Text Id")]
+	[SerializeField]
+	private string skinTextId;
 
-  public string SkinTextId
-  {
-    get => this.skinTextId;
-    set => this.skinTextId = value;
-  }
+	[Header("Size Changes For Different Screen")]
+	[SerializeField]
+	private float heroSelectionScreenScale = 1f;
 
-  public float HeroSelectionScreenScale
-  {
-    get => this.heroSelectionScreenScale;
-    set => this.heroSelectionScreenScale = value;
-  }
+	[SerializeField]
+	private float heroSelectionScreenOffset_X;
+
+	public string SkinId
+	{
+		get
+		{
+			return skinId;
+		}
+		set
+		{
+			skinId = value;
+		}
+	}
+
+	public string SkinName
+	{
+		get
+		{
+			return skinName;
+		}
+		set
+		{
+			skinName = value;
+		}
+	}
+
+	public SubClassData SkinSubclass
+	{
+		get
+		{
+			return skinSubclass;
+		}
+		set
+		{
+			skinSubclass = value;
+		}
+	}
+
+	public bool BaseSkin
+	{
+		get
+		{
+			return baseSkin;
+		}
+		set
+		{
+			baseSkin = value;
+		}
+	}
+
+	public int PerkLevel
+	{
+		get
+		{
+			return perkLevel;
+		}
+		set
+		{
+			perkLevel = value;
+		}
+	}
+
+	public GameObject SkinGo
+	{
+		get
+		{
+			return skinGo;
+		}
+		set
+		{
+			skinGo = value;
+		}
+	}
+
+	public Sprite SpriteSilueta
+	{
+		get
+		{
+			return spriteSilueta;
+		}
+		set
+		{
+			spriteSilueta = value;
+		}
+	}
+
+	public Sprite SpriteSiluetaGrande
+	{
+		get
+		{
+			return spriteSiluetaGrande;
+		}
+		set
+		{
+			spriteSiluetaGrande = value;
+		}
+	}
+
+	public Sprite SpritePortrait
+	{
+		get
+		{
+			return spritePortrait;
+		}
+		set
+		{
+			spritePortrait = value;
+		}
+	}
+
+	public Sprite SpritePortraitGrande
+	{
+		get
+		{
+			return spritePortraitGrande;
+		}
+		set
+		{
+			spritePortraitGrande = value;
+		}
+	}
+
+	public int SkinOrder
+	{
+		get
+		{
+			return skinOrder;
+		}
+		set
+		{
+			skinOrder = value;
+		}
+	}
+
+	public string Sku
+	{
+		get
+		{
+			return sku;
+		}
+		set
+		{
+			sku = value;
+		}
+	}
+
+	public string SteamStat
+	{
+		get
+		{
+			return steamStat;
+		}
+		set
+		{
+			steamStat = value;
+		}
+	}
+
+	public string SkinTextId
+	{
+		get
+		{
+			return skinTextId;
+		}
+		set
+		{
+			skinTextId = value;
+		}
+	}
+
+	public float HeroSelectionScreenScale
+	{
+		get
+		{
+			return heroSelectionScreenScale;
+		}
+		set
+		{
+			heroSelectionScreenScale = value;
+		}
+	}
+
+	public float HeroSelectionScreenOffset_X
+	{
+		get
+		{
+			return heroSelectionScreenOffset_X;
+		}
+		set
+		{
+			heroSelectionScreenOffset_X = value;
+		}
+	}
 }

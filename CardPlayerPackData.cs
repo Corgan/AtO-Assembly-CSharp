@@ -1,135 +1,232 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CardPlayerPackData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New CardPlayerPack", menuName = "New CardPlayerPack", order = 64)]
 public class CardPlayerPackData : ScriptableObject
 {
-  [SerializeField]
-  private string packId;
-  [Header("Pack Cards")]
-  [SerializeField]
-  private CardData card0;
-  [SerializeField]
-  private bool card0RandomBoon;
-  [SerializeField]
-  private bool card0RandomInjury;
-  [SerializeField]
-  private CardData card1;
-  [SerializeField]
-  private bool card1RandomBoon;
-  [SerializeField]
-  private bool card1RandomInjury;
-  [SerializeField]
-  private CardData card2;
-  [SerializeField]
-  private bool card2RandomBoon;
-  [SerializeField]
-  private bool card2RandomInjury;
-  [SerializeField]
-  private CardData card3;
-  [SerializeField]
-  private bool card3RandomBoon;
-  [SerializeField]
-  private bool card3RandomInjury;
-  [Header("Difficulty +- X (Base = 10)")]
-  [SerializeField]
-  private int modSpeed;
-  [SerializeField]
-  private int modIterations;
+	[SerializeField]
+	private string packId;
 
-  public string PackId
-  {
-    get => this.packId;
-    set => this.packId = value;
-  }
+	[Header("Pack Cards")]
+	[SerializeField]
+	private CardData card0;
 
-  public CardData Card0
-  {
-    get => this.card0;
-    set => this.card0 = value;
-  }
+	[SerializeField]
+	private bool card0RandomBoon;
 
-  public bool Card0RandomBoon
-  {
-    get => this.card0RandomBoon;
-    set => this.card0RandomBoon = value;
-  }
+	[SerializeField]
+	private bool card0RandomInjury;
 
-  public bool Card0RandomInjury
-  {
-    get => this.card0RandomInjury;
-    set => this.card0RandomInjury = value;
-  }
+	[SerializeField]
+	private CardData card1;
 
-  public CardData Card1
-  {
-    get => this.card1;
-    set => this.card1 = value;
-  }
+	[SerializeField]
+	private bool card1RandomBoon;
 
-  public bool Card1RandomBoon
-  {
-    get => this.card1RandomBoon;
-    set => this.card1RandomBoon = value;
-  }
+	[SerializeField]
+	private bool card1RandomInjury;
 
-  public bool Card1RandomInjury
-  {
-    get => this.card1RandomInjury;
-    set => this.card1RandomInjury = value;
-  }
+	[SerializeField]
+	private CardData card2;
 
-  public CardData Card2
-  {
-    get => this.card2;
-    set => this.card2 = value;
-  }
+	[SerializeField]
+	private bool card2RandomBoon;
 
-  public bool Card2RandomBoon
-  {
-    get => this.card2RandomBoon;
-    set => this.card2RandomBoon = value;
-  }
+	[SerializeField]
+	private bool card2RandomInjury;
 
-  public bool Card2RandomInjury
-  {
-    get => this.card2RandomInjury;
-    set => this.card2RandomInjury = value;
-  }
+	[SerializeField]
+	private CardData card3;
 
-  public CardData Card3
-  {
-    get => this.card3;
-    set => this.card3 = value;
-  }
+	[SerializeField]
+	private bool card3RandomBoon;
 
-  public bool Card3RandomBoon
-  {
-    get => this.card3RandomBoon;
-    set => this.card3RandomBoon = value;
-  }
+	[SerializeField]
+	private bool card3RandomInjury;
 
-  public bool Card3RandomInjury
-  {
-    get => this.card3RandomInjury;
-    set => this.card3RandomInjury = value;
-  }
+	[Header("Difficulty +- X (Base = 10)")]
+	[SerializeField]
+	private int modSpeed;
 
-  public int ModSpeed
-  {
-    get => this.modSpeed;
-    set => this.modSpeed = value;
-  }
+	[SerializeField]
+	private int modIterations;
 
-  public int ModIterations
-  {
-    get => this.modIterations;
-    set => this.modIterations = value;
-  }
+	public string PackId
+	{
+		get
+		{
+			return packId;
+		}
+		set
+		{
+			packId = value;
+		}
+	}
+
+	public CardData Card0
+	{
+		get
+		{
+			return card0;
+		}
+		set
+		{
+			card0 = value;
+		}
+	}
+
+	public bool Card0RandomBoon
+	{
+		get
+		{
+			return card0RandomBoon;
+		}
+		set
+		{
+			card0RandomBoon = value;
+		}
+	}
+
+	public bool Card0RandomInjury
+	{
+		get
+		{
+			return card0RandomInjury;
+		}
+		set
+		{
+			card0RandomInjury = value;
+		}
+	}
+
+	public CardData Card1
+	{
+		get
+		{
+			return card1;
+		}
+		set
+		{
+			card1 = value;
+		}
+	}
+
+	public bool Card1RandomBoon
+	{
+		get
+		{
+			return card1RandomBoon;
+		}
+		set
+		{
+			card1RandomBoon = value;
+		}
+	}
+
+	public bool Card1RandomInjury
+	{
+		get
+		{
+			return card1RandomInjury;
+		}
+		set
+		{
+			card1RandomInjury = value;
+		}
+	}
+
+	public CardData Card2
+	{
+		get
+		{
+			return card2;
+		}
+		set
+		{
+			card2 = value;
+		}
+	}
+
+	public bool Card2RandomBoon
+	{
+		get
+		{
+			return card2RandomBoon;
+		}
+		set
+		{
+			card2RandomBoon = value;
+		}
+	}
+
+	public bool Card2RandomInjury
+	{
+		get
+		{
+			return card2RandomInjury;
+		}
+		set
+		{
+			card2RandomInjury = value;
+		}
+	}
+
+	public CardData Card3
+	{
+		get
+		{
+			return card3;
+		}
+		set
+		{
+			card3 = value;
+		}
+	}
+
+	public bool Card3RandomBoon
+	{
+		get
+		{
+			return card3RandomBoon;
+		}
+		set
+		{
+			card3RandomBoon = value;
+		}
+	}
+
+	public bool Card3RandomInjury
+	{
+		get
+		{
+			return card3RandomInjury;
+		}
+		set
+		{
+			card3RandomInjury = value;
+		}
+	}
+
+	public int ModSpeed
+	{
+		get
+		{
+			return modSpeed;
+		}
+		set
+		{
+			modSpeed = value;
+		}
+	}
+
+	public int ModIterations
+	{
+		get
+		{
+			return modIterations;
+		}
+		set
+		{
+			modIterations = value;
+		}
+	}
 }

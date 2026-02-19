@@ -1,210 +1,248 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TomeButton
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class TomeButton : MonoBehaviour
 {
-  public int tomeClass;
-  private TMP_Text buttonTxt;
-  private Transform border;
-  private SpriteRenderer borderSpr;
-  private Transform background;
-  private SpriteRenderer backgroundSpr;
-  private Color colorActive;
-  private Color colorDefault = new Color(0.8f, 0.8f, 0.8f, 0.8f);
-  private bool active;
-  private Vector3 oriPosition;
-  private float textSizeOri;
+	public int tomeClass;
 
-  private void Awake()
-  {
-    this.background = this.transform.GetChild(0).transform;
-    this.backgroundSpr = this.background.GetComponent<SpriteRenderer>();
-    this.border = this.background.GetChild(0).transform;
-    this.borderSpr = this.border.GetComponent<SpriteRenderer>();
-    this.colorActive = Functions.HexToColor("#DD5F07");
-    this.buttonTxt = this.transform.GetChild(1).GetComponent<TMP_Text>();
-    this.textSizeOri = this.buttonTxt.fontSize;
-  }
+	private TMP_Text buttonTxt;
 
-  public void Init()
-  {
-  }
+	private Transform border;
 
-  private void Start()
-  {
-    if (this.tomeClass == -1)
-    {
-      this.buttonTxt.text = Texts.Instance.GetText("allcards");
-      this.backgroundSpr.color = Functions.HexToColor("#FFCC00");
-    }
-    else if (this.tomeClass == 0)
-    {
-      this.buttonTxt.text = "<sprite name=slashing>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
-    }
-    else if (this.tomeClass == 1)
-    {
-      this.buttonTxt.text = "<sprite name=fire>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["mage"]);
-    }
-    else if (this.tomeClass == 2)
-    {
-      this.buttonTxt.text = "<sprite name=heal>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["healer"]);
-    }
-    else if (this.tomeClass == 3)
-    {
-      this.buttonTxt.text = "<sprite name=piercing>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
-    }
-    else if (this.tomeClass == 4)
-    {
-      this.buttonTxt.text = "<sprite name=slash>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["magicknight"]);
-    }
-    else if (this.tomeClass == 5)
-    {
-      this.buttonTxt.text = "<sprite name=bless>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["boon"]);
-    }
-    else if (this.tomeClass == 6)
-    {
-      this.buttonTxt.text = "<sprite name=bleed>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["injury"]);
-    }
-    else if (this.tomeClass == 7)
-    {
-      this.buttonTxt.text = "<sprite name=weapon>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["item"]);
-    }
-    else if (this.tomeClass == 8)
-    {
-      this.buttonTxt.text = "<sprite name=armor>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["item"]);
-    }
-    else if (this.tomeClass == 9)
-    {
-      this.buttonTxt.text = "<sprite name=jewelry>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["item"]);
-    }
-    else if (this.tomeClass == 10)
-    {
-      this.buttonTxt.text = "<sprite name=accesory>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["item"]);
-    }
-    else if (this.tomeClass == 11)
-    {
-      this.buttonTxt.text = "<sprite name=pet>";
-      this.backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["pet"]);
-    }
-    else if (this.tomeClass == 14)
-      this.buttonTxt.text = Texts.Instance.GetText("global");
-    else if (this.tomeClass == 15)
-      this.buttonTxt.text = Texts.Instance.GetText("friends");
-    else if (this.tomeClass == 16)
-    {
-      this.buttonTxt.text = "<sprite name=pathMap>";
-      this.backgroundSpr.color = Functions.HexToColor("#FF9800");
-    }
-    else
-    {
-      if (this.tomeClass == 17 || this.tomeClass == 18 || this.tomeClass == 19 || this.tomeClass == 20)
-        return;
-      if (this.tomeClass == 21)
-        this.buttonTxt.text = Texts.Instance.GetText("combatStats");
-      else if (this.tomeClass == 22)
-      {
-        this.buttonTxt.text = "<sprite name=experience>";
-        this.backgroundSpr.color = Functions.HexToColor("#FF9B00");
-      }
-      else
-      {
-        if (this.tomeClass != 23)
-          return;
-        this.buttonTxt.text = Texts.Instance.GetText("index");
-        this.backgroundSpr.color = Functions.HexToColor("#76736F");
-      }
-    }
-  }
+	private SpriteRenderer borderSpr;
 
-  public void SetText(string _text) => this.buttonTxt.text = _text;
+	private Transform background;
 
-  public void SetColor(string _colorHex)
-  {
-    this.backgroundSpr.color = Functions.HexToColor(_colorHex);
-  }
+	private SpriteRenderer backgroundSpr;
 
-  public void Activate()
-  {
-    Vector3 oriPosition = this.oriPosition;
-    if (this.oriPosition == Vector3.zero)
-      this.oriPosition = this.transform.localPosition;
-    this.transform.localPosition = this.oriPosition + new Vector3(0.0f, 0.1f, 0.0f);
-    this.active = true;
-    if ((Object) this.borderSpr != (Object) null)
-      this.borderSpr.color = this.colorActive;
-    if ((Object) this.border != (Object) null)
-      this.border.gameObject.SetActive(true);
-    if (!(bool) (Object) this.buttonTxt)
-      return;
-    this.buttonTxt.transform.localPosition = new Vector3(this.buttonTxt.transform.localPosition.x, 0.04f, this.buttonTxt.transform.localPosition.z);
-    this.buttonTxt.fontSize = this.textSizeOri + 0.5f;
-  }
+	private Color colorActive;
 
-  public void Deactivate()
-  {
-    Vector3 oriPosition = this.oriPosition;
-    if (this.oriPosition == Vector3.zero)
-      this.oriPosition = this.transform.localPosition;
-    this.transform.localPosition = this.oriPosition;
-    this.active = false;
-    if ((Object) this.borderSpr != (Object) null)
-      this.borderSpr.color = this.colorDefault;
-    if ((Object) this.border != (Object) null)
-      this.border.gameObject.SetActive(false);
-    if (!(bool) (Object) this.buttonTxt)
-      return;
-    this.buttonTxt.transform.localPosition = new Vector3(this.buttonTxt.transform.localPosition.x, 0.08f, this.buttonTxt.transform.localPosition.z);
-    this.buttonTxt.fontSize = this.textSizeOri;
-  }
+	private Color colorDefault = new Color(0.8f, 0.8f, 0.8f, 0.8f);
 
-  public void OnMouseUp()
-  {
-    if (!Functions.ClickedThisTransform(this.transform))
-      return;
-    if (this.tomeClass == 14 || this.tomeClass == 15)
-      TomeManager.Instance.SelectTomeScores(this.tomeClass);
-    else if (this.tomeClass >= 16 && this.tomeClass <= 20)
-      TomeManager.Instance.RunDetailButton(this.tomeClass - 16);
-    else if (this.tomeClass == 21)
-      TomeManager.Instance.RunCombatStats();
-    else if (this.tomeClass == 23)
-      TomeManager.Instance.SetPage(0);
-    else
-      TomeManager.Instance.SelectTomeCards(this.tomeClass);
-  }
+	private bool active;
 
-  private void OnMouseExit()
-  {
-    if (!this.active && this.border.gameObject.activeSelf)
-      this.border.gameObject.SetActive(false);
-    GameManager.Instance.SetCursorPlain();
-  }
+	private Vector3 oriPosition;
 
-  private void OnMouseEnter()
-  {
-    if (this.active)
-      return;
-    this.borderSpr.color = this.colorDefault;
-    if (!this.border.gameObject.activeSelf)
-      this.border.gameObject.SetActive(true);
-    GameManager.Instance.SetCursorHover();
-  }
+	private float textSizeOri;
+
+	private void Awake()
+	{
+		background = base.transform.GetChild(0).transform;
+		backgroundSpr = background.GetComponent<SpriteRenderer>();
+		border = background.GetChild(0).transform;
+		borderSpr = border.GetComponent<SpriteRenderer>();
+		colorActive = Functions.HexToColor("#DD5F07");
+		buttonTxt = base.transform.GetChild(1).GetComponent<TMP_Text>();
+		textSizeOri = buttonTxt.fontSize;
+	}
+
+	public void Init()
+	{
+	}
+
+	private void Start()
+	{
+		if (tomeClass == -1)
+		{
+			buttonTxt.text = Texts.Instance.GetText("allcards");
+			backgroundSpr.color = Functions.HexToColor("#FFCC00");
+		}
+		else if (tomeClass == 0)
+		{
+			buttonTxt.text = "<sprite name=slashing>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
+		}
+		else if (tomeClass == 1)
+		{
+			buttonTxt.text = "<sprite name=fire>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["mage"]);
+		}
+		else if (tomeClass == 2)
+		{
+			buttonTxt.text = "<sprite name=heal>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["healer"]);
+		}
+		else if (tomeClass == 3)
+		{
+			buttonTxt.text = "<sprite name=piercing>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
+		}
+		else if (tomeClass == 4)
+		{
+			buttonTxt.text = "<sprite name=slash>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["magicknight"]);
+		}
+		else if (tomeClass == 5)
+		{
+			buttonTxt.text = "<sprite name=bless>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["boon"]);
+		}
+		else if (tomeClass == 6)
+		{
+			buttonTxt.text = "<sprite name=bleed>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["injury"]);
+		}
+		else if (tomeClass == 7)
+		{
+			buttonTxt.text = "<sprite name=weapon>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["item"]);
+		}
+		else if (tomeClass == 8)
+		{
+			buttonTxt.text = "<sprite name=armor>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["item"]);
+		}
+		else if (tomeClass == 9)
+		{
+			buttonTxt.text = "<sprite name=jewelry>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["item"]);
+		}
+		else if (tomeClass == 10)
+		{
+			buttonTxt.text = "<sprite name=accesory>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["item"]);
+		}
+		else if (tomeClass == 11)
+		{
+			buttonTxt.text = "<sprite name=pet>";
+			backgroundSpr.color = Functions.HexToColor(Globals.Instance.ClassColor["pet"]);
+		}
+		else if (tomeClass == 14)
+		{
+			buttonTxt.text = Texts.Instance.GetText("global");
+		}
+		else if (tomeClass == 15)
+		{
+			buttonTxt.text = Texts.Instance.GetText("friends");
+		}
+		else if (tomeClass == 16)
+		{
+			buttonTxt.text = "<sprite name=pathMap>";
+			backgroundSpr.color = Functions.HexToColor("#FF9800");
+		}
+		else if (tomeClass != 17 && tomeClass != 18 && tomeClass != 19 && tomeClass != 20)
+		{
+			if (tomeClass == 21)
+			{
+				buttonTxt.text = Texts.Instance.GetText("combatStats");
+			}
+			else if (tomeClass == 22)
+			{
+				buttonTxt.text = "<sprite name=experience>";
+				backgroundSpr.color = Functions.HexToColor("#FF9B00");
+			}
+			else if (tomeClass == 23)
+			{
+				buttonTxt.text = Texts.Instance.GetText("index");
+				backgroundSpr.color = Functions.HexToColor("#76736F");
+			}
+		}
+	}
+
+	public void SetText(string _text)
+	{
+		buttonTxt.text = _text;
+	}
+
+	public void SetColor(string _colorHex)
+	{
+		backgroundSpr.color = Functions.HexToColor(_colorHex);
+	}
+
+	public void Activate()
+	{
+		_ = oriPosition;
+		if (oriPosition == Vector3.zero)
+		{
+			oriPosition = base.transform.localPosition;
+		}
+		base.transform.localPosition = oriPosition + new Vector3(0f, 0.1f, 0f);
+		active = true;
+		if (borderSpr != null)
+		{
+			borderSpr.color = colorActive;
+		}
+		if (border != null)
+		{
+			border.gameObject.SetActive(value: true);
+		}
+		if ((bool)buttonTxt)
+		{
+			buttonTxt.transform.localPosition = new Vector3(buttonTxt.transform.localPosition.x, 0.04f, buttonTxt.transform.localPosition.z);
+			buttonTxt.fontSize = textSizeOri + 0.5f;
+		}
+	}
+
+	public void Deactivate()
+	{
+		_ = oriPosition;
+		if (oriPosition == Vector3.zero)
+		{
+			oriPosition = base.transform.localPosition;
+		}
+		base.transform.localPosition = oriPosition;
+		active = false;
+		if (borderSpr != null)
+		{
+			borderSpr.color = colorDefault;
+		}
+		if (border != null)
+		{
+			border.gameObject.SetActive(value: false);
+		}
+		if ((bool)buttonTxt)
+		{
+			buttonTxt.transform.localPosition = new Vector3(buttonTxt.transform.localPosition.x, 0.08f, buttonTxt.transform.localPosition.z);
+			buttonTxt.fontSize = textSizeOri;
+		}
+	}
+
+	public void OnMouseUp()
+	{
+		if (Functions.ClickedThisTransform(base.transform))
+		{
+			if (tomeClass == 14 || tomeClass == 15)
+			{
+				TomeManager.Instance.SelectTomeScores(tomeClass);
+			}
+			else if (tomeClass >= 16 && tomeClass <= 20)
+			{
+				TomeManager.Instance.RunDetailButton(tomeClass - 16);
+			}
+			else if (tomeClass == 21)
+			{
+				TomeManager.Instance.RunCombatStats();
+			}
+			else if (tomeClass == 23)
+			{
+				TomeManager.Instance.SetPage(0);
+			}
+			else
+			{
+				TomeManager.Instance.SelectTomeCards(tomeClass);
+			}
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!active && border.gameObject.activeSelf)
+		{
+			border.gameObject.SetActive(value: false);
+		}
+		GameManager.Instance.SetCursorPlain();
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!active)
+		{
+			borderSpr.color = colorDefault;
+			if (!border.gameObject.activeSelf)
+			{
+				border.gameObject.SetActive(value: true);
+			}
+			GameManager.Instance.SetCursorHover();
+		}
+	}
 }

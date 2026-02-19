@@ -1,59 +1,70 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: HeroSelectionScreenLayoutManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using UnityEngine;
 
-#nullable disable
 public class HeroSelectionScreenLayoutManager : MonoBehaviour
 {
-  [SerializeField]
-  private HeroSelectionScreenLayoutManager.LayoutElement[] layoutElements;
+	[Serializable]
+	public struct LayoutElement
+	{
+		public Transform transform;
 
-  private void Start()
-  {
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      foreach (HeroSelectionScreenLayoutManager.LayoutElement layoutElement in this.layoutElements)
-        layoutElement.SetMultiplayerLayout();
-    }
-    else
-    {
-      foreach (HeroSelectionScreenLayoutManager.LayoutElement layoutElement in this.layoutElements)
-        layoutElement.SetSingleplayerLayout();
-    }
-  }
+		public bool useCustomPosition;
 
-  [Serializable]
-  public struct LayoutElement
-  {
-    public Transform transform;
-    public bool useCustomPosition;
-    public Vector3 singlePlayerPosition;
-    public Vector3 multiPlayerPosition;
-    public bool useCustomScale;
-    public Vector3 singlePlayerScale;
-    public Vector3 multiPlayerScale;
+		public Vector3 singlePlayerPosition;
 
-    public void SetMultiplayerLayout()
-    {
-      if (this.useCustomPosition)
-        this.transform.localPosition = this.multiPlayerPosition;
-      if (!this.useCustomScale)
-        return;
-      this.transform.localScale = this.multiPlayerScale;
-    }
+		public Vector3 multiPlayerPosition;
 
-    public void SetSingleplayerLayout()
-    {
-      if (this.useCustomPosition)
-        this.transform.localPosition = this.singlePlayerPosition;
-      if (!this.useCustomScale)
-        return;
-      this.transform.localScale = this.singlePlayerScale;
-    }
-  }
+		public bool useCustomScale;
+
+		public Vector3 singlePlayerScale;
+
+		public Vector3 multiPlayerScale;
+
+		public void SetMultiplayerLayout()
+		{
+			if (useCustomPosition)
+			{
+				transform.localPosition = multiPlayerPosition;
+			}
+			if (useCustomScale)
+			{
+				transform.localScale = multiPlayerScale;
+			}
+		}
+
+		public void SetSingleplayerLayout()
+		{
+			if (useCustomPosition)
+			{
+				transform.localPosition = singlePlayerPosition;
+			}
+			if (useCustomScale)
+			{
+				transform.localScale = singlePlayerScale;
+			}
+		}
+	}
+
+	[SerializeField]
+	private LayoutElement[] layoutElements;
+
+	private void Start()
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			LayoutElement[] array = layoutElements;
+			foreach (LayoutElement layoutElement in array)
+			{
+				layoutElement.SetMultiplayerLayout();
+			}
+		}
+		else
+		{
+			LayoutElement[] array = layoutElements;
+			foreach (LayoutElement layoutElement2 in array)
+			{
+				layoutElement2.SetSingleplayerLayout();
+			}
+		}
+	}
 }

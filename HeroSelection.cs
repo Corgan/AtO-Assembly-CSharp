@@ -1,626 +1,765 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: HeroSelection
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class HeroSelection : MonoBehaviour
 {
-  public bool blocked;
-  private Vector3 destination = Vector3.zero;
-  private GameObject oldBox;
-  internal SubClassData subClassData;
-  public Transform sprite;
-  public float selectedPortraitScale = 1.3f;
-  public float selectedPortraitScaleMultiplayer = 0.95f;
-  public Transform spriteBackground;
-  public TMP_Text nameTM;
-  public TMP_Text rankTM;
-  public int rankTMHidden;
-  public TMP_Text nameShadow;
-  public TMP_Text nameOver;
-  public TMP_Text rankOver;
-  private string id;
-  public ParticleSystem particleFlash;
-  public Transform borderTransform;
-  public Transform botPopup;
-  public Transform botPopupPerks;
-  public TMP_Text perkPoints;
-  public Transform perkPointsT;
-  public Transform botPerks;
-  public Transform lockIcon;
-  public Transform DefaultParent;
-  private Transform nameT;
-  internal SpriteRenderer spriteSR;
-  private SpriteRenderer spriteBackgroundSR;
-  private Vector3 startMousePos;
-  private Vector3 startPos;
-  private Vector3 namePos;
-  private bool controllerClicked;
-  private bool moveThis;
-  private bool isInOriPosition = true;
-  private bool multiplayerBlocked;
-  public bool selected;
-  public bool HeroPicked;
-  private bool dlcBlocked;
-  public Transform whiteSquare;
+	public bool blocked;
 
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
+	private Vector3 destination = Vector3.zero;
 
-  public bool DlcBlocked
-  {
-    get => this.dlcBlocked;
-    set => this.dlcBlocked = value;
-  }
+	private GameObject oldBox;
 
-  private void Awake()
-  {
-    this.spriteSR = this.sprite.GetComponent<SpriteRenderer>();
-    this.spriteBackgroundSR = this.spriteBackground.GetComponent<SpriteRenderer>();
-    this.nameT = this.nameTM.transform;
-    this.namePos = this.nameT.position;
-  }
+	internal SubClassData subClassData;
 
-  private void Start()
-  {
-    this.destination = this.sprite.position;
-    this.nameOver.gameObject.SetActive(false);
-    this.rankOver.gameObject.SetActive(false);
-    this.spriteSR.enabled = false;
-    if (GameManager.Instance.IsObeliskChallenge())
-      this.botPerks.gameObject.SetActive(false);
-    if (this.blocked || this.multiplayerBlocked || this.dlcBlocked)
-      this.rankTM.gameObject.SetActive(false);
-    this.showWhiteSquare(false);
-  }
+	public Transform sprite;
 
-  private void Update()
-  {
-    if (this.moveThis)
-      this.sprite.position = this.destination;
-    if (!((Object) HeroSelectionManager.Instance.controllerCurrentHS == (Object) this))
-      return;
-    this.Dragging();
-  }
+	public float selectedPortraitScale = 1.3f;
 
-  public void SetMultiplayerBlocked(bool state)
-  {
-    if (state)
-    {
-      this.multiplayerBlocked = true;
-      this.nameTM.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
-    }
-    else
-    {
-      this.multiplayerBlocked = false;
-      this.nameTM.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
-    }
-  }
+	public float selectedPortraitScaleMultiplayer = 0.95f;
 
-  public void SetSubclass(SubClassData _subclassdata)
-  {
-    this.subClassData = _subclassdata;
-    this.id = _subclassdata.Id;
-    this.SetDlcBlock();
-  }
+	public Transform spriteBackground;
 
-  public void SetDlcBlock()
-  {
-    if (this.subClassData.Sku != "" && !SteamManager.Instance.PlayerHaveDLC(this.subClassData.Sku))
-      this.dlcBlocked = true;
-    else
-      this.dlcBlocked = false;
-  }
+	public TMP_Text nameTM;
 
-  public string GetSubclassName()
-  {
-    return (Object) this.subClassData != (Object) null ? this.subClassData.SubClassName : "";
-  }
+	public TMP_Text rankTM;
 
-  public string GetHeroClass()
-  {
-    return (Object) this.subClassData != (Object) null ? this.subClassData.HeroClass.ToString() : "";
-  }
+	public int rankTMHidden;
 
-  public string GetHeroClassSecondary()
-  {
-    return (Object) this.subClassData != (Object) null ? this.subClassData.HeroClassSecondary.ToString() : "";
-  }
+	public TMP_Text nameShadow;
 
-  public void SetSprite(Sprite _sprite = null, Sprite _spriteBorder = null, Sprite _spriteLocked = null)
-  {
-    if ((Object) _sprite != (Object) null)
-      this.spriteSR.sprite = _sprite;
-    if (!this.blocked && !this.dlcBlocked || GameManager.Instance.IsWeeklyChallenge())
-    {
-      if (!((Object) _spriteBorder != (Object) null))
-        return;
-      this.spriteBackgroundSR.sprite = _spriteBorder;
-      this.spriteBackground.GetComponent<SpriteMask>().sprite = _spriteBorder;
-    }
-    else
-    {
-      this.spriteBackgroundSR.sprite = _spriteBorder;
-      this.spriteBackgroundSR.color = new Color(0.2f, 0.2f, 0.2f, 1f);
-      this.spriteBackground.GetComponent<SpriteMask>().sprite = _spriteBorder;
-    }
-  }
+	public TMP_Text nameOver;
 
-  public void SetSpriteSilueta(Sprite _spriteBorder = null)
-  {
-    if (!((Object) _spriteBorder != (Object) null))
-      return;
-    this.spriteBackgroundSR.sprite = _spriteBorder;
-    this.spriteBackground.GetComponent<SpriteMask>().sprite = _spriteBorder;
-  }
+	public TMP_Text rankOver;
 
-  public void SetName(string _name)
-  {
-    this.nameTM.text = this.nameShadow.text = this.nameOver.text = _name;
-    this.SetRank();
-  }
+	private string id;
 
-  public void SetRank()
-  {
-    this.rankTM.text = this.rankOver.text = string.Format(Texts.Instance.GetText("rankProgress"), (object) PlayerManager.Instance.GetPerkRank(this.subClassData.Id));
-    this.rankTMHidden = PlayerManager.Instance.GetPerkRank(this.subClassData.Id);
-    if (!GameManager.Instance.IsObeliskChallenge())
-      return;
-    this.rankTM.gameObject.SetActive(false);
-    this.rankOver.gameObject.SetActive(false);
-  }
+	public ParticleSystem particleFlash;
 
-  public void SetRankBox(int _rank)
-  {
-    this.rankOver.text = string.Format(Texts.Instance.GetText("rankProgress"), (object) _rank);
-    this.rankTMHidden = _rank;
-    if (!GameManager.Instance.IsObeliskChallenge())
-      return;
-    this.rankTM.gameObject.SetActive(false);
-    this.rankOver.gameObject.SetActive(false);
-  }
+	public Transform borderTransform;
 
-  private void ResetSkin()
-  {
-    this.SetSkin(PlayerManager.Instance.GetActiveSkin(this.subClassData.Id));
-  }
+	public Transform botPopup;
 
-  public void SetSkin(string _skinId)
-  {
-    if (_skinId == "")
-      _skinId = Globals.Instance.GetSkinBaseIdBySubclass(this.subClassData.Id);
-    SkinData skinData = Globals.Instance.GetSkinData(_skinId);
-    if (!((Object) skinData != (Object) null))
-      return;
-    this.spriteSR.sprite = skinData.SpritePortrait;
-  }
+	public Transform botPopupPerks;
 
-  public void Init()
-  {
-    this.perkPointsT.gameObject.SetActive(false);
-    this.botPopup.gameObject.SetActive(true);
-    this.botPopup.GetComponent<BotHeroChar>().SetSubClassData(this.subClassData);
-    if (!this.blocked && !this.dlcBlocked)
-    {
-      this.botPopupPerks.gameObject.SetActive(true);
-      this.botPopupPerks.GetComponent<BotHeroChar>().SetSubClassData(this.subClassData);
-      this.lockIcon.gameObject.SetActive(false);
-      this.SetPerkPoints();
-    }
-    else
-    {
-      this.botPopup.transform.localPosition = new Vector3(this.botPopup.transform.localPosition.x, -0.35f, this.botPopup.transform.localPosition.z);
-      this.botPopupPerks.gameObject.SetActive(false);
-      this.lockIcon.gameObject.SetActive(true);
-      if (this.dlcBlocked)
-      {
-        this.lockIcon.GetComponent<PopupText>().id = "";
-        if (this.subClassData.Id == Globals.Instance.GetSubClassData("queen").Id || this.subClassData.Id == Globals.Instance.GetSubClassData("engineer").Id)
-          this.lockIcon.GetComponent<PopupText>().text = string.Format(Texts.Instance.GetText("requiredDLC"), (object) SteamManager.Instance.GetDLCName(this.subClassData.Sku));
-        else
-          this.lockIcon.GetComponent<PopupText>().text = string.Format(Texts.Instance.GetText("requiredDLCandQuest"), (object) SteamManager.Instance.GetDLCName(this.subClassData.Sku));
-      }
-      this.nameDisabled();
-    }
-  }
+	public TMP_Text perkPoints;
 
-  public void ShowComingSoon()
-  {
-    this.nameTM.text = this.nameShadow.text = Texts.Instance.GetText("comingSoon");
-    this.nameTM.color = Functions.HexToColor("#572424");
-    this.lockIcon.gameObject.SetActive(false);
-  }
+	public Transform perkPointsT;
 
-  public void SetPerkPoints()
-  {
-    if (GameManager.Instance.IsLoadingGame())
-    {
-      this.perkPointsT.gameObject.SetActive(false);
-      this.botPerks.gameObject.SetActive(false);
-    }
-    else
-    {
-      int perkPointsAvailable = PlayerManager.Instance.GetPerkPointsAvailable(this.Id);
-      if (perkPointsAvailable > 0)
-      {
-        this.perkPoints.text = perkPointsAvailable.ToString();
-        this.perkPointsT.gameObject.SetActive(true);
-      }
-      else
-        this.perkPointsT.gameObject.SetActive(false);
-      if (!GameManager.Instance.IsObeliskChallenge())
-        return;
-      this.perkPointsT.gameObject.SetActive(false);
-    }
-  }
+	public Transform botPerks;
 
-  public async void AssignHeroToBox(GameObject _box) => await this.AssignCo(_box);
+	public Transform lockIcon;
 
-  private async Task AssignCo(GameObject _box)
-  {
-    HeroSelection _heroSelection = this;
-    _heroSelection.HeroPicked = true;
-    await Task.Delay(100);
-    _heroSelection.isInOriPosition = false;
-    _heroSelection.transform.parent = HeroSelectionManager.Instance.boxCharacters;
-    _heroSelection.sprite.position = _box.transform.position;
-    _heroSelection.sprite.transform.localScale = Vector3.one * (GameManager.Instance.IsMultiplayer() ? _heroSelection.selectedPortraitScaleMultiplayer : _heroSelection.selectedPortraitScale);
-    _heroSelection.spriteBackgroundSR.color = new Color(0.3f, 0.3f, 0.3f, 1f);
-    _heroSelection.spriteSR.sortingLayerName = "Characters";
-    _heroSelection.spriteSR.sortingOrder = 0;
-    _heroSelection.spriteSR.enabled = true;
-    _heroSelection.spriteSR.color = new Color(1f, 1f, 1f, 1f);
-    _heroSelection.nameOver.gameObject.SetActive(true);
-    _heroSelection.nameOver.GetComponent<Renderer>().sortingOrder = 1;
-    _heroSelection.rankOver.gameObject.SetActive(true);
-    _heroSelection.rankOver.GetComponent<Renderer>().sortingOrder = 1;
-    _heroSelection.nameDisabled();
-    HeroSelectionManager.Instance.FillBox(_box, _heroSelection, true);
-    if (!GameManager.Instance.IsObeliskChallenge())
-      return;
-    _heroSelection.rankTM.gameObject.SetActive(false);
-    _heroSelection.rankOver.gameObject.SetActive(false);
-  }
+	public Transform DefaultParent;
 
-  public void MoveToBox(GameObject _box, GameObject _oldBox, bool animation = true)
-  {
-    this.HeroPicked = true;
-    HeroSelectionManager.Instance.ShowHeroesByFilterAsync(HeroSelectionManager.Instance.CurrentFilter);
-    this.selected = false;
-    this.oldBox = _oldBox;
-    this.spriteSR.enabled = true;
-    this.isInOriPosition = false;
-    this.destination = _box.transform.position;
-    this.sprite.position = this.destination;
-    this.nameOver.gameObject.SetActive(true);
-    this.rankOver.gameObject.SetActive(true);
-    HeroSelectionManager.Instance.FillBox(_box, this, true);
-    if (!GameManager.Instance.IsObeliskChallenge())
-      return;
-    this.rankTM.gameObject.SetActive(false);
-    this.rankOver.gameObject.SetActive(false);
-  }
+	private Transform nameT;
 
-  public void GoBackToOri()
-  {
-    this.selected = false;
-    this.HeroPicked = false;
-    HeroSelectionManager.Instance.ShowHeroesByFilterAsync(HeroSelectionManager.Instance.CurrentFilter);
-    this.oldBox = (GameObject) null;
-    this.spriteSR.enabled = false;
-    this.spriteBackgroundSR.color = new Color(1f, 1f, 1f, 1f);
-    this.nameRegular();
-    this.nameOver.gameObject.SetActive(false);
-    this.rankOver.gameObject.SetActive(false);
-    this.transform.parent = this.DefaultParent;
-    this.sprite.position = this.spriteBackground.position;
-    this.isInOriPosition = true;
-    this.transform.localPosition = Vector3.zero;
-    if (!this.controllerClicked)
-      return;
-    this.ResetClickedController();
-  }
+	internal SpriteRenderer spriteSR;
 
-  private void nameMouseEnter()
-  {
-    this.nameTM.color = new Color(1f, 0.7f, 0.0f, 1f);
-    this.spriteBackgroundSR.transform.localScale = new Vector3(1.1f, 1.1f, 1f);
-  }
+	private SpriteRenderer spriteBackgroundSR;
 
-  private void nameDisabled()
-  {
-    this.nameTM.color = new Color(0.3f, 0.3f, 0.3f, 1f);
-    this.spriteBackgroundSR.transform.localScale = new Vector3(0.95f, 0.95f, 1f);
-  }
+	private Vector3 startMousePos;
 
-  private void nameRegular()
-  {
-    this.nameTM.color = new Color(1f, 1f, 1f, 1f);
-    this.spriteBackgroundSR.transform.localScale = new Vector3(0.95f, 0.95f, 1f);
-    if (!GameManager.Instance.IsObeliskChallenge() && !this.blocked && !this.multiplayerBlocked && !this.dlcBlocked)
-      return;
-    this.rankTM.gameObject.SetActive(false);
-    this.rankOver.gameObject.SetActive(false);
-  }
+	private Vector3 startPos;
 
-  public void OnMouseOver()
-  {
-    if (GameManager.Instance.GetDeveloperMode() && (this.blocked || this.dlcBlocked) && Input.GetMouseButtonUp(1))
-      PlayerManager.Instance.HeroUnlock(this.id, achievement: false);
-    if (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode() || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame() || (Object) HeroSelectionManager.Instance.charPopup != (Object) null && HeroSelectionManager.Instance.charPopup.MoveThis || this.blocked || this.multiplayerBlocked || this.dlcBlocked || HeroSelectionManager.Instance.dragging || !Input.GetMouseButtonUp(1))
-      return;
-    this.RightClick();
-  }
+	private Vector3 namePos;
 
-  public void RightClick()
-  {
-    if ((Object) HeroSelectionManager.Instance.controllerCurrentHS != (Object) null)
-    {
-      HeroSelectionManager.Instance.controllerCurrentHS.ResetClickedController();
-      HeroSelectionManager.Instance.ResetController();
-    }
-    HeroSelectionManager.Instance.charPopup.Init(this.subClassData);
-    HeroSelectionManager.Instance.charPopup.Show();
-    HeroSelectionManager.Instance.MouseOverBox((GameObject) null);
-  }
+	private bool controllerClicked;
 
-  public void OnMouseDown()
-  {
-    HeroSelectionManager.Instance?.charPopupMini.SetSubClassData(this.subClassData);
-    this.showWhiteSquare(false);
-    if (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode() || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame() || HeroSelectionManager.Instance.charPopup.MoveThis)
-      return;
-    if (!this.blocked && !this.dlcBlocked)
-    {
-      GameObject overBox = HeroSelectionManager.Instance.GetOverBox();
-      if ((Object) overBox != (Object) null && !HeroSelectionManager.Instance.IsYourBox(overBox.name))
-      {
-        this.multiplayerBlocked = true;
-        return;
-      }
-      this.multiplayerBlocked = false;
-      this.PickHero();
-    }
-    if (this.blocked || this.multiplayerBlocked || this.dlcBlocked)
-      return;
-    this.Dragging();
-  }
+	private bool moveThis;
 
-  public void OnMouseDrag()
-  {
-    if (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode() || !this.selected || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame() || this.blocked || this.multiplayerBlocked || this.dlcBlocked)
-      return;
-    this.Dragging();
-  }
+	private bool isInOriPosition = true;
 
-  public void OnMouseUp()
-  {
-    if (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode() || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame())
-      return;
-    if (HeroSelectionManager.Instance.charPopup.MoveThis)
-    {
-      this.DraggingStop();
-    }
-    else
-    {
-      if (this.blocked || this.dlcBlocked)
-        return;
-      this.DraggingStop();
-    }
-  }
+	private bool multiplayerBlocked;
 
-  public void OnMouseExit()
-  {
-    if (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode() || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame())
-      return;
-    this.showWhiteSquare(false);
-    if (!this.blocked && !this.dlcBlocked && this.isInOriPosition && !HeroSelectionManager.Instance.dragging)
-    {
-      this.particleFlash.gameObject.SetActive(false);
-      this.nameRegular();
-    }
-    if ((Object) HeroSelectionManager.Instance.charPopupGO != (Object) null)
-    {
-      int num = HeroSelectionManager.Instance.charPopupGO.activeSelf ? 1 : 0;
-    }
-    if (this.blocked || this.dlcBlocked)
-      return;
-    HeroSelectionManager.Instance.ShowDrag(false, Vector3.zero);
-  }
+	public bool selected;
 
-  public void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode() || GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame() || this.blocked || this.dlcBlocked || HeroSelectionManager.Instance.dragging)
-      return;
-    if (this.isInOriPosition)
-    {
-      this.particleFlash.gameObject.SetActive(true);
-      GameManager.Instance.PlayLibraryAudio("castnpccardfast", 0.25f);
-      this.nameMouseEnter();
-      this.showWhiteSquare(true);
-    }
-    else
-    {
-      if (this.multiplayerBlocked)
-        return;
-      GameObject overBox = HeroSelectionManager.Instance.GetOverBox();
-      if (!((Object) overBox != (Object) null) || !HeroSelectionManager.Instance.IsYourBox(overBox.name))
-        return;
-      HeroSelectionManager.Instance.ShowDrag(true, this.transform.position);
-    }
-  }
+	public bool HeroPicked;
 
-  private void showWhiteSquare(bool _state)
-  {
-    if (this.whiteSquare.gameObject.activeSelf == _state)
-      return;
-    this.whiteSquare.gameObject.SetActive(_state);
-  }
+	private bool dlcBlocked;
 
-  public void OnClickedController()
-  {
-    HeroSelectionManager.Instance.dragging = false;
-    if (this.blocked || this.multiplayerBlocked || this.dlcBlocked || GameManager.Instance.IsLoadingGame())
-      return;
-    GameObject overBox = HeroSelectionManager.Instance.GetOverBox();
-    if ((Object) overBox == (Object) null || (Object) HeroSelectionManager.Instance.controllerCurrentHS == (Object) null)
-    {
-      HeroSelectionManager.Instance.controllerCurrentHS = this;
-      this.controllerClicked = true;
-      this.OnMouseDown();
-      if (!((Object) overBox == (Object) null))
-        return;
-      HeroSelectionManager.Instance.MoveAbsoluteToCharactersAfterClick();
-    }
-    else
-    {
-      if (!((Object) overBox != (Object) null))
-        return;
-      if ((Object) HeroSelectionManager.Instance.controllerCurrentHS != (Object) null)
-        this.PickStop();
-      else
-        this.PickHero();
-    }
-  }
+	public Transform whiteSquare;
 
-  public void ResetClickedController()
-  {
-    HeroSelectionManager.Instance.controllerCurrentHS = (HeroSelection) null;
-    this.controllerClicked = false;
-    HeroSelectionManager.Instance.dragging = false;
-    this.PickStop(_removeHeroAbsolute: true);
-  }
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
 
-  private void Dragging()
-  {
-    if (this.blocked || this.multiplayerBlocked || this.dlcBlocked)
-      return;
-    if (HeroSelectionManager.Instance.IsHeroSelected(this.Id))
-    {
-      this.Reset();
-    }
-    else
-    {
-      Vector3 worldPoint = GameManager.Instance.cameraMain.ScreenToWorldPoint(Input.mousePosition) with
-      {
-        z = -5f
-      };
-      if (this.controllerClicked)
-        worldPoint += new Vector3(-0.3f, 0.3f, 0.0f);
-      this.sprite.position = worldPoint;
-      if ((Object) HeroSelectionManager.Instance.GetOverBox() != (Object) null)
-        this.spriteSR.color = new Color(1f, 1f, 1f, 0.8f);
-      else if ((double) this.spriteSR.color.a < 1.0)
-        this.spriteSR.color = new Color(1f, 1f, 1f, 1f);
-      this.nameDisabled();
-    }
-  }
+	public bool DlcBlocked
+	{
+		get
+		{
+			return dlcBlocked;
+		}
+		set
+		{
+			dlcBlocked = value;
+		}
+	}
 
-  private void DraggingStop()
-  {
-    if (!HeroSelectionManager.Instance.dragging)
-      return;
-    this.PickStop();
-  }
+	private void Awake()
+	{
+		spriteSR = sprite.GetComponent<SpriteRenderer>();
+		spriteBackgroundSR = spriteBackground.GetComponent<SpriteRenderer>();
+		nameT = nameTM.transform;
+		namePos = nameT.position;
+	}
 
-  public void Reset() => this.GoBackToOri();
+	private void Start()
+	{
+		destination = sprite.position;
+		nameOver.gameObject.SetActive(HeroPicked);
+		rankOver.gameObject.SetActive(HeroPicked);
+		spriteSR.enabled = HeroPicked;
+		if (GameManager.Instance.IsObeliskChallenge())
+		{
+			botPerks.gameObject.SetActive(value: false);
+		}
+		if (blocked || multiplayerBlocked || dlcBlocked)
+		{
+			rankTM.gameObject.SetActive(value: false);
+		}
+		showWhiteSquare(_state: false);
+	}
 
-  public void PickHero(bool _comingFromRandom = false)
-  {
-    this.selected = true;
-    HeroSelectionManager.Instance.charPopup.Close();
-    this.moveThis = false;
-    this.spriteSR.enabled = true;
-    this.nameOver.gameObject.SetActive(false);
-    this.rankOver.gameObject.SetActive(false);
-    this.startPos = this.sprite.position;
-    this.startMousePos = Input.mousePosition;
-    this.transform.parent = HeroSelectionManager.Instance.boxCharacters;
-    this.sprite.transform.localScale = Vector3.one * (GameManager.Instance.IsMultiplayer() ? this.selectedPortraitScaleMultiplayer : this.selectedPortraitScale);
-    this.spriteSR.sortingLayerName = "UI";
-    this.spriteSR.sortingOrder = 100;
-    this.spriteBackgroundSR.color = new Color(0.3f, 0.3f, 0.3f, 1f);
-    this.nameOver.GetComponent<Renderer>().sortingOrder = 101;
-    this.rankOver.GetComponent<Renderer>().sortingOrder = 101;
-    HeroSelectionManager.Instance.dragging = true;
-    GameObject _box = HeroSelectionManager.Instance.GetOverBox();
-    if (_comingFromRandom)
-      _box = (GameObject) null;
-    if ((Object) _box != (Object) null)
-    {
-      this.oldBox = _box;
-      HeroSelectionManager.Instance.FillBox(_box, (HeroSelection) null, false);
-    }
-    else
-    {
-      this.oldBox = (GameObject) null;
-      if (GameManager.Instance.IsMultiplayer())
-        this.ResetSkin();
-    }
-    HeroSelectionManager.Instance.ShowDrag(false, Vector3.zero);
-    this.borderTransform.gameObject.SetActive(false);
-  }
+	private void Update()
+	{
+		if (moveThis)
+		{
+			sprite.position = destination;
+		}
+		if (HeroSelectionManager.Instance.controllerCurrentHS == this)
+		{
+			Dragging();
+		}
+	}
 
-  public void PickStop(int _box = -1, bool _removeHeroAbsolute = false)
-  {
-    GameObject gameObject = (GameObject) null;
-    if (!_removeHeroAbsolute)
-      gameObject = _box == -1 ? HeroSelectionManager.Instance.GetOverBox() : HeroSelectionManager.Instance.boxGO[_box];
-    HeroSelectionManager.Instance.dragging = false;
-    if ((Object) HeroSelectionManager.Instance.controllerCurrentHS != (Object) null)
-    {
-      HeroSelectionManager.Instance.controllerCurrentHS = (HeroSelection) null;
-      this.controllerClicked = false;
-    }
-    if (GameManager.Instance.IsMultiplayer() && HeroSelectionManager.Instance.IsHeroSelected(this.Id))
-      return;
-    this.spriteSR.sortingLayerName = "Characters";
-    this.spriteSR.sortingOrder = 0;
-    this.nameOver.GetComponent<Renderer>().sortingOrder = 1;
-    this.rankOver.GetComponent<Renderer>().sortingOrder = 1;
-    this.spriteSR.color = new Color(1f, 1f, 1f, 1f);
-    if ((Object) gameObject == (Object) null || !HeroSelectionManager.Instance.IsYourBox(gameObject.name))
-    {
-      if (GameManager.Instance.IsWeeklyChallenge())
-      {
-        this.MoveToBox(this.oldBox, this.oldBox);
-      }
-      else
-      {
-        this.GoBackToOri();
-        if (!GameManager.Instance.IsMultiplayer())
-          return;
-        HeroSelectionManager.Instance.ResetHero(this.Id);
-      }
-    }
-    else
-    {
-      if (HeroSelectionManager.Instance.IsBoxFilled(gameObject))
-      {
-        if ((Object) this.oldBox != (Object) null)
-        {
-          HeroSelection boxHero = HeroSelectionManager.Instance.GetBoxHero(gameObject);
-          if ((Object) boxHero != (Object) null)
-            boxHero.MoveToBox(this.oldBox, gameObject);
-        }
-        else
-          HeroSelectionManager.Instance.GetBoxHero(gameObject).GoBackToOri();
-      }
-      this.MoveToBox(gameObject, this.oldBox);
-    }
-  }
+	public void SetMultiplayerBlocked(bool state)
+	{
+		if (state)
+		{
+			multiplayerBlocked = true;
+			nameTM.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
+		}
+		else
+		{
+			multiplayerBlocked = false;
+			nameTM.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
+		}
+	}
 
-  public bool RandomAvailable()
-  {
-    return !this.selected && !this.blocked && !this.multiplayerBlocked && !this.dlcBlocked;
-  }
+	public void SetSubclass(SubClassData _subclassdata)
+	{
+		subClassData = _subclassdata;
+		id = _subclassdata.Id;
+		SetDlcBlock();
+	}
+
+	public void SetDlcBlock()
+	{
+		if (subClassData.Sku != "" && !SteamManager.Instance.PlayerHaveDLC(subClassData.Sku))
+		{
+			dlcBlocked = true;
+		}
+		else
+		{
+			dlcBlocked = false;
+		}
+	}
+
+	public string GetSubclassName()
+	{
+		if (subClassData != null)
+		{
+			return subClassData.SubClassName;
+		}
+		return "";
+	}
+
+	public string GetHeroClass()
+	{
+		if (subClassData != null)
+		{
+			return subClassData.HeroClass.ToString();
+		}
+		return "";
+	}
+
+	public string GetHeroClassSecondary()
+	{
+		if (subClassData != null)
+		{
+			return subClassData.HeroClassSecondary.ToString();
+		}
+		return "";
+	}
+
+	public void SetSprite(Sprite _sprite = null, Sprite _spriteBorder = null, Sprite _spriteLocked = null)
+	{
+		if (_sprite != null)
+		{
+			spriteSR.sprite = _sprite;
+		}
+		if ((!blocked && !dlcBlocked) || GameManager.Instance.IsWeeklyChallenge())
+		{
+			if (_spriteBorder != null)
+			{
+				spriteBackgroundSR.sprite = _spriteBorder;
+				spriteBackground.GetComponent<SpriteMask>().sprite = _spriteBorder;
+			}
+		}
+		else
+		{
+			spriteBackgroundSR.sprite = _spriteBorder;
+			spriteBackgroundSR.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+			spriteBackground.GetComponent<SpriteMask>().sprite = _spriteBorder;
+		}
+	}
+
+	public void SetSpriteSilueta(Sprite _spriteBorder = null)
+	{
+		if (_spriteBorder != null)
+		{
+			spriteBackgroundSR.sprite = _spriteBorder;
+			spriteBackground.GetComponent<SpriteMask>().sprite = _spriteBorder;
+		}
+	}
+
+	public void SetName(string _name)
+	{
+		TMP_Text tMP_Text = nameTM;
+		TMP_Text tMP_Text2 = nameShadow;
+		string text = (nameOver.text = _name);
+		string text3 = (tMP_Text2.text = text);
+		tMP_Text.text = text3;
+		SetRank();
+	}
+
+	public void SetRank()
+	{
+		TMP_Text tMP_Text = rankTM;
+		string text = (rankOver.text = string.Format(Texts.Instance.GetText("rankProgress"), PlayerManager.Instance.GetPerkRank(subClassData.Id)));
+		tMP_Text.text = text;
+		rankTMHidden = PlayerManager.Instance.GetPerkRank(subClassData.Id);
+		if (GameManager.Instance.IsObeliskChallenge())
+		{
+			rankTM.gameObject.SetActive(value: false);
+			rankOver.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void SetRankBox(int _rank)
+	{
+		rankOver.text = string.Format(Texts.Instance.GetText("rankProgress"), _rank);
+		rankTMHidden = _rank;
+		if (GameManager.Instance.IsObeliskChallenge())
+		{
+			rankTM.gameObject.SetActive(value: false);
+			rankOver.gameObject.SetActive(value: false);
+		}
+	}
+
+	private void ResetSkin()
+	{
+		SetSkin(PlayerManager.Instance.GetActiveSkin(subClassData.Id));
+	}
+
+	public void SetSkin(string _skinId)
+	{
+		if (_skinId == "")
+		{
+			_skinId = Globals.Instance.GetSkinBaseIdBySubclass(subClassData.Id);
+		}
+		SkinData skinData = Globals.Instance.GetSkinData(_skinId);
+		if (skinData != null)
+		{
+			spriteSR.sprite = skinData.SpritePortrait;
+		}
+	}
+
+	public void Init()
+	{
+		perkPointsT.gameObject.SetActive(value: false);
+		botPopup.gameObject.SetActive(value: true);
+		botPopup.GetComponent<BotHeroChar>().SetSubClassData(subClassData);
+		if (!blocked && !dlcBlocked)
+		{
+			botPopupPerks.gameObject.SetActive(value: true);
+			botPopupPerks.GetComponent<BotHeroChar>().SetSubClassData(subClassData);
+			lockIcon.gameObject.SetActive(value: false);
+			SetPerkPoints();
+			return;
+		}
+		botPopup.transform.localPosition = new Vector3(botPopup.transform.localPosition.x, -0.35f, botPopup.transform.localPosition.z);
+		botPopupPerks.gameObject.SetActive(value: false);
+		lockIcon.gameObject.SetActive(value: true);
+		if (dlcBlocked)
+		{
+			lockIcon.GetComponent<PopupText>().id = "";
+			if (subClassData.Id == Globals.Instance.GetSubClassData("queen").Id || subClassData.Id == Globals.Instance.GetSubClassData("engineer").Id || subClassData.Id == Globals.Instance.GetSubClassData("deathknight").Id || subClassData.Id == Globals.Instance.GetSubClassData("bloodmage").Id)
+			{
+				lockIcon.GetComponent<PopupText>().text = string.Format(Texts.Instance.GetText("requiredDLC"), SteamManager.Instance.GetDLCName(subClassData.Sku));
+			}
+			else
+			{
+				lockIcon.GetComponent<PopupText>().text = string.Format(Texts.Instance.GetText("requiredDLCandQuest"), SteamManager.Instance.GetDLCName(subClassData.Sku));
+			}
+		}
+		nameDisabled();
+	}
+
+	public void ShowComingSoon()
+	{
+		TMP_Text tMP_Text = nameTM;
+		string text = (nameShadow.text = Texts.Instance.GetText("comingSoon"));
+		tMP_Text.text = text;
+		nameTM.color = Functions.HexToColor("#572424");
+		lockIcon.gameObject.SetActive(value: false);
+	}
+
+	public void SetPerkPoints()
+	{
+		if (GameManager.Instance.IsLoadingGame())
+		{
+			perkPointsT.gameObject.SetActive(value: false);
+			botPerks.gameObject.SetActive(value: false);
+			return;
+		}
+		int perkPointsAvailable = PlayerManager.Instance.GetPerkPointsAvailable(Id);
+		if (perkPointsAvailable > 0)
+		{
+			perkPoints.text = perkPointsAvailable.ToString();
+			perkPointsT.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			perkPointsT.gameObject.SetActive(value: false);
+		}
+		if (GameManager.Instance.IsObeliskChallenge())
+		{
+			perkPointsT.gameObject.SetActive(value: false);
+		}
+	}
+
+	public async void AssignHeroToBox(GameObject _box)
+	{
+		await AssignCo(_box);
+	}
+
+	private async Task AssignCo(GameObject _box)
+	{
+		HeroPicked = true;
+		await Task.Delay(100);
+		isInOriPosition = false;
+		base.transform.parent = HeroSelectionManager.Instance.boxCharacters;
+		sprite.position = _box.transform.position;
+		sprite.transform.localScale = Vector3.one * (GameManager.Instance.IsMultiplayer() ? selectedPortraitScaleMultiplayer : selectedPortraitScale);
+		spriteBackgroundSR.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+		spriteSR.sortingLayerName = "Characters";
+		spriteSR.sortingOrder = 0;
+		spriteSR.enabled = true;
+		spriteSR.color = new Color(1f, 1f, 1f, 1f);
+		nameOver.gameObject.SetActive(value: true);
+		nameOver.GetComponent<Renderer>().sortingOrder = 1;
+		rankOver.gameObject.SetActive(value: true);
+		rankOver.GetComponent<Renderer>().sortingOrder = 1;
+		nameDisabled();
+		HeroSelectionManager.Instance.FillBox(_box, this, _state: true);
+		if (GameManager.Instance.IsObeliskChallenge())
+		{
+			rankTM.gameObject.SetActive(value: false);
+			rankOver.gameObject.SetActive(value: false);
+		}
+		if (!GameManager.Instance.IsMultiplayer() || (GameManager.Instance.IsMultiplayer() && HeroSelectionManager.Instance.IsYourBox(_box.name)))
+		{
+			HeroSelectionManager.Instance.SetDefaultMiniPopupHero();
+		}
+	}
+
+	public void MoveToBox(GameObject _box, GameObject _oldBox, bool animation = true)
+	{
+		HeroPicked = true;
+		HeroSelectionManager.Instance.ShowHeroesByFilterAsync(HeroSelectionManager.Instance.CurrentFilter);
+		selected = false;
+		oldBox = _oldBox;
+		spriteSR.enabled = true;
+		isInOriPosition = false;
+		destination = _box.transform.position;
+		sprite.position = destination;
+		nameOver.gameObject.SetActive(value: true);
+		rankOver.gameObject.SetActive(value: true);
+		HeroSelectionManager.Instance.FillBox(_box, this, _state: true);
+		if (GameManager.Instance.IsObeliskChallenge())
+		{
+			rankTM.gameObject.SetActive(value: false);
+			rankOver.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void GoBackToOri()
+	{
+		selected = false;
+		HeroPicked = false;
+		HeroSelectionManager.Instance.ShowHeroesByFilterAsync(HeroSelectionManager.Instance.CurrentFilter);
+		oldBox = null;
+		spriteSR.enabled = false;
+		spriteBackgroundSR.color = new Color(1f, 1f, 1f, 1f);
+		nameRegular();
+		nameOver.gameObject.SetActive(value: false);
+		rankOver.gameObject.SetActive(value: false);
+		base.transform.parent = DefaultParent;
+		sprite.position = spriteBackground.position;
+		isInOriPosition = true;
+		base.transform.localPosition = Vector3.zero;
+		if (controllerClicked)
+		{
+			ResetClickedController();
+		}
+	}
+
+	private void nameMouseEnter()
+	{
+		nameTM.color = new Color(1f, 0.7f, 0f, 1f);
+		spriteBackgroundSR.transform.localScale = new Vector3(1.1f, 1.1f, 1f);
+	}
+
+	private void nameDisabled()
+	{
+		nameTM.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+		spriteBackgroundSR.transform.localScale = new Vector3(0.95f, 0.95f, 1f);
+	}
+
+	private void nameRegular()
+	{
+		nameTM.color = new Color(1f, 1f, 1f, 1f);
+		spriteBackgroundSR.transform.localScale = new Vector3(0.95f, 0.95f, 1f);
+		if (GameManager.Instance.IsObeliskChallenge() || blocked || multiplayerBlocked || dlcBlocked)
+		{
+			rankTM.gameObject.SetActive(value: false);
+			rankOver.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void OnMouseOver()
+	{
+		if (GameManager.Instance.GetDeveloperMode() && (blocked || dlcBlocked) && Input.GetMouseButtonUp(1))
+		{
+			PlayerManager.Instance.HeroUnlock(id, save: true, achievement: false);
+		}
+		if ((!GameManager.Instance.IsWeeklyChallenge() || GameManager.Instance.GetDeveloperMode()) && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!GameManager.Instance.IsMultiplayer() || !GameManager.Instance.IsLoadingGame()) && (!(HeroSelectionManager.Instance.charPopup != null) || !HeroSelectionManager.Instance.charPopup.MoveThis) && !blocked && !multiplayerBlocked && !dlcBlocked && !HeroSelectionManager.Instance.dragging && Input.GetMouseButtonUp(1))
+		{
+			RightClick();
+		}
+	}
+
+	public void RightClick()
+	{
+		if (HeroSelectionManager.Instance.controllerCurrentHS != null)
+		{
+			HeroSelectionManager.Instance.controllerCurrentHS.ResetClickedController();
+			HeroSelectionManager.Instance.ResetController();
+		}
+		HeroSelectionManager.Instance.charPopup.Init(subClassData);
+		HeroSelectionManager.Instance.charPopup.Show();
+		HeroSelectionManager.Instance.MouseOverBox(null);
+	}
+
+	public void OnMouseDown()
+	{
+		HeroSelectionManager.Instance?.charPopupMini.SetSubClassData(subClassData);
+		showWhiteSquare(_state: false);
+		if ((GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode()) || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame()) || HeroSelectionManager.Instance.charPopup.MoveThis)
+		{
+			return;
+		}
+		if (!blocked && !dlcBlocked)
+		{
+			GameObject overBox = HeroSelectionManager.Instance.GetOverBox();
+			if (overBox != null && !HeroSelectionManager.Instance.IsYourBox(overBox.name))
+			{
+				multiplayerBlocked = true;
+				return;
+			}
+			multiplayerBlocked = false;
+			PickHero();
+		}
+		if (!blocked && !multiplayerBlocked && !dlcBlocked)
+		{
+			Dragging();
+		}
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			HeroSelectionManager.Instance.charPopup.Close();
+		}
+	}
+
+	public void OnMouseDrag()
+	{
+		if ((!GameManager.Instance.IsWeeklyChallenge() || GameManager.Instance.GetDeveloperMode()) && selected && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!GameManager.Instance.IsMultiplayer() || !GameManager.Instance.IsLoadingGame()) && !blocked && !multiplayerBlocked && !dlcBlocked)
+		{
+			Dragging();
+		}
+	}
+
+	public void OnMouseUp()
+	{
+		if ((!GameManager.Instance.IsWeeklyChallenge() || GameManager.Instance.GetDeveloperMode()) && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!GameManager.Instance.IsMultiplayer() || !GameManager.Instance.IsLoadingGame()))
+		{
+			if (HeroSelectionManager.Instance.charPopup.MoveThis)
+			{
+				DraggingStop();
+			}
+			else if (!blocked && !dlcBlocked)
+			{
+				DraggingStop();
+			}
+		}
+	}
+
+	public void OnMouseExit()
+	{
+		if ((!GameManager.Instance.IsWeeklyChallenge() || GameManager.Instance.GetDeveloperMode()) && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!GameManager.Instance.IsMultiplayer() || !GameManager.Instance.IsLoadingGame()))
+		{
+			showWhiteSquare(_state: false);
+			if (!blocked && !dlcBlocked && isInOriPosition && !HeroSelectionManager.Instance.dragging)
+			{
+				particleFlash.gameObject.SetActive(value: false);
+				nameRegular();
+			}
+			if (HeroSelectionManager.Instance.charPopupGO != null)
+			{
+				_ = HeroSelectionManager.Instance.charPopupGO.activeSelf;
+			}
+			if (!blocked && !dlcBlocked)
+			{
+				HeroSelectionManager.Instance.ShowDrag(state: false, Vector3.zero);
+			}
+		}
+	}
+
+	public void OnMouseEnter()
+	{
+		if (AlertManager.Instance.IsActive() || (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.GetDeveloperMode()) || (GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame()) || blocked || dlcBlocked || HeroSelectionManager.Instance.dragging)
+		{
+			return;
+		}
+		if (isInOriPosition)
+		{
+			particleFlash.gameObject.SetActive(value: true);
+			GameManager.Instance.PlayLibraryAudio("castnpccardfast", 0.25f);
+			nameMouseEnter();
+			showWhiteSquare(_state: true);
+		}
+		else if (!multiplayerBlocked)
+		{
+			GameObject overBox = HeroSelectionManager.Instance.GetOverBox();
+			if (overBox != null && HeroSelectionManager.Instance.IsYourBox(overBox.name))
+			{
+				HeroSelectionManager.Instance.ShowDrag(state: true, base.transform.position);
+			}
+		}
+	}
+
+	private void showWhiteSquare(bool _state)
+	{
+		if (whiteSquare.gameObject.activeSelf != _state)
+		{
+			whiteSquare.gameObject.SetActive(_state);
+		}
+	}
+
+	public void OnClickedController()
+	{
+		HeroSelectionManager.Instance.dragging = false;
+		if (blocked || multiplayerBlocked || dlcBlocked || GameManager.Instance.IsLoadingGame())
+		{
+			return;
+		}
+		GameObject overBox = HeroSelectionManager.Instance.GetOverBox();
+		if (overBox == null || HeroSelectionManager.Instance.controllerCurrentHS == null)
+		{
+			HeroSelectionManager.Instance.controllerCurrentHS = this;
+			controllerClicked = true;
+			OnMouseDown();
+			if (overBox == null)
+			{
+				HeroSelectionManager.Instance.MoveAbsoluteToCharactersAfterClick();
+			}
+		}
+		else if (overBox != null)
+		{
+			if (HeroSelectionManager.Instance.controllerCurrentHS != null)
+			{
+				PickStop();
+			}
+			else
+			{
+				PickHero();
+			}
+		}
+	}
+
+	public void ResetClickedController()
+	{
+		HeroSelectionManager.Instance.controllerCurrentHS = null;
+		controllerClicked = false;
+		HeroSelectionManager.Instance.dragging = false;
+		PickStop(-1, _removeHeroAbsolute: true);
+	}
+
+	private void Dragging()
+	{
+		if (blocked || multiplayerBlocked || dlcBlocked)
+		{
+			return;
+		}
+		if (HeroSelectionManager.Instance.IsHeroSelected(Id))
+		{
+			Reset();
+			return;
+		}
+		Vector3 position = GameManager.Instance.cameraMain.ScreenToWorldPoint(Input.mousePosition);
+		position.z = -5f;
+		if (controllerClicked)
+		{
+			position += new Vector3(-0.3f, 0.3f, 0f);
+		}
+		sprite.position = position;
+		if (HeroSelectionManager.Instance.GetOverBox() != null)
+		{
+			spriteSR.color = new Color(1f, 1f, 1f, 0.8f);
+		}
+		else if (spriteSR.color.a < 1f)
+		{
+			spriteSR.color = new Color(1f, 1f, 1f, 1f);
+		}
+		nameDisabled();
+	}
+
+	private void DraggingStop()
+	{
+		if (HeroSelectionManager.Instance.dragging)
+		{
+			PickStop();
+		}
+	}
+
+	public void Reset()
+	{
+		GoBackToOri();
+	}
+
+	public void PickHero(bool _comingFromRandom = false)
+	{
+		selected = true;
+		if (!GameManager.Instance.IsMultiplayer())
+		{
+			HeroSelectionManager.Instance.charPopup.Close();
+		}
+		moveThis = false;
+		spriteSR.enabled = true;
+		nameOver.gameObject.SetActive(value: false);
+		rankOver.gameObject.SetActive(value: false);
+		startPos = sprite.position;
+		startMousePos = Input.mousePosition;
+		base.transform.parent = HeroSelectionManager.Instance.boxCharacters;
+		sprite.transform.localScale = Vector3.one * (GameManager.Instance.IsMultiplayer() ? selectedPortraitScaleMultiplayer : selectedPortraitScale);
+		spriteSR.sortingLayerName = "UI";
+		spriteSR.sortingOrder = 100;
+		spriteBackgroundSR.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+		nameOver.GetComponent<Renderer>().sortingOrder = 101;
+		rankOver.GetComponent<Renderer>().sortingOrder = 101;
+		HeroSelectionManager.Instance.dragging = true;
+		GameObject gameObject = HeroSelectionManager.Instance.GetOverBox();
+		if (_comingFromRandom)
+		{
+			gameObject = null;
+		}
+		if (gameObject != null)
+		{
+			oldBox = gameObject;
+			HeroSelectionManager.Instance.FillBox(gameObject, null, _state: false);
+		}
+		else
+		{
+			oldBox = null;
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				ResetSkin();
+			}
+		}
+		HeroSelectionManager.Instance.ShowDrag(state: false, Vector3.zero);
+		borderTransform.gameObject.SetActive(value: false);
+		spriteSR.enabled = true;
+	}
+
+	public void PickStop(int _box = -1, bool _removeHeroAbsolute = false)
+	{
+		GameObject gameObject = null;
+		if (!_removeHeroAbsolute)
+		{
+			gameObject = ((_box == -1) ? HeroSelectionManager.Instance.GetOverBox() : HeroSelectionManager.Instance.boxGO[_box]);
+		}
+		HeroSelectionManager.Instance.dragging = false;
+		if (HeroSelectionManager.Instance.controllerCurrentHS != null)
+		{
+			HeroSelectionManager.Instance.controllerCurrentHS = null;
+			controllerClicked = false;
+		}
+		if (GameManager.Instance.IsMultiplayer() && HeroSelectionManager.Instance.IsHeroSelected(Id))
+		{
+			return;
+		}
+		spriteSR.sortingLayerName = "Characters";
+		spriteSR.sortingOrder = 0;
+		nameOver.GetComponent<Renderer>().sortingOrder = 1;
+		rankOver.GetComponent<Renderer>().sortingOrder = 1;
+		spriteSR.color = new Color(1f, 1f, 1f, 1f);
+		if (gameObject == null || !HeroSelectionManager.Instance.IsYourBox(gameObject.name))
+		{
+			if (GameManager.Instance.IsWeeklyChallenge())
+			{
+				MoveToBox(oldBox, oldBox);
+				return;
+			}
+			GoBackToOri();
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				HeroSelectionManager.Instance.ResetHero(Id);
+			}
+			return;
+		}
+		if (HeroSelectionManager.Instance.IsBoxFilled(gameObject))
+		{
+			if (oldBox != null)
+			{
+				HeroSelection boxHero = HeroSelectionManager.Instance.GetBoxHero(gameObject);
+				if (boxHero != null)
+				{
+					boxHero.MoveToBox(oldBox, gameObject);
+				}
+			}
+			else
+			{
+				HeroSelectionManager.Instance.GetBoxHero(gameObject).GoBackToOri();
+			}
+		}
+		MoveToBox(gameObject, oldBox);
+	}
+
+	public bool RandomAvailable()
+	{
+		if (!selected && !blocked && !multiplayerBlocked && !dlcBlocked && !HeroPicked)
+		{
+			return true;
+		}
+		return false;
+	}
 }

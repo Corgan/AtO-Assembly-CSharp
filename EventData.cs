@@ -1,195 +1,305 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EventData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections.Generic;
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Event", menuName = "Event Data", order = 62)]
 public class EventData : ScriptableObject
 {
-  [SerializeField]
-  private string eventId;
-  [SerializeField]
-  private string eventUniqueId;
-  [SerializeField]
-  private string eventName;
-  [SerializeField]
-  private EventRequirementData requirement;
-  [SerializeField]
-  private SubClassData requiredClass;
-  [TextArea]
-  [SerializeField]
-  private string description;
-  [TextArea]
-  [SerializeField]
-  private string descriptionAction;
-  [SerializeField]
-  private Sprite eventSpriteMap;
-  [SerializeField]
-  private Sprite eventSpriteDecor;
-  [SerializeField]
-  private Enums.MapIconShader eventIconShader;
-  [SerializeField]
-  private Sprite eventSpriteBook;
-  [SerializeField]
-  private bool historyMode;
-  [Header("Event Tier")]
-  [SerializeField]
-  private Enums.CombatTier eventTier;
-  [Header("Reply List")]
-  [SerializeField]
-  private int replyRandom;
-  [SerializeField]
-  private EventReplyData[] replys;
+	[SerializeField]
+	private string eventId;
 
-  public void Init()
-  {
-    List<EventReplyData> eventReplyDataList = new List<EventReplyData>();
-    List<string> stringList = new List<string>();
-    for (int index = 0; index < this.replys.Length; ++index)
-    {
-      EventReplyData reply = this.replys[index];
-      if (reply != null && (Object) reply.RequiredClass != (Object) null)
-        stringList.Add(reply.RequiredClass.Id);
-    }
-    for (int index = 0; index < this.replys.Length; ++index)
-    {
-      EventReplyData reply = this.replys[index];
-      if (reply != null)
-      {
-        if (reply.RepeatForAllCharacters || reply.RepeatForAllWarriors || reply.RepeatForAllScouts || reply.RepeatForAllMages || reply.RepeatForAllHealers)
-        {
-          foreach (KeyValuePair<string, SubClassData> keyValuePair in Globals.Instance.SubClass)
-          {
-            if ((Object) keyValuePair.Value != (Object) null && keyValuePair.Value.MainCharacter && (stringList.Count <= 0 || !stringList.Contains(keyValuePair.Value.Id)))
-            {
-              bool flag = false;
-              if (reply.RepeatForAllCharacters)
-              {
-                flag = true;
-              }
-              else
-              {
-                if (reply.RepeatForAllWarriors && (keyValuePair.Value.HeroClass == Enums.HeroClass.Warrior || keyValuePair.Value.HeroClassSecondary == Enums.HeroClass.Warrior))
-                  flag = true;
-                if (reply.RepeatForAllScouts && (keyValuePair.Value.HeroClass == Enums.HeroClass.Scout || keyValuePair.Value.HeroClassSecondary == Enums.HeroClass.Scout))
-                  flag = true;
-                if (reply.RepeatForAllMages && (keyValuePair.Value.HeroClass == Enums.HeroClass.Mage || keyValuePair.Value.HeroClassSecondary == Enums.HeroClass.Mage))
-                  flag = true;
-                if (reply.RepeatForAllHealers && (keyValuePair.Value.HeroClass == Enums.HeroClass.Healer || keyValuePair.Value.HeroClassSecondary == Enums.HeroClass.Healer))
-                  flag = true;
-              }
-              if (flag)
-              {
-                EventReplyData eventReplyData = reply.ShallowCopy();
-                eventReplyData.RequiredClass = keyValuePair.Value;
-                eventReplyData.IndexForAnswerTranslation = index;
-                eventReplyDataList.Add(eventReplyData);
-              }
-            }
-          }
-        }
-        else
-        {
-          reply.IndexForAnswerTranslation = index;
-          eventReplyDataList.Add(reply);
-        }
-      }
-    }
-    this.replys = eventReplyDataList.ToArray();
-  }
+	[SerializeField]
+	private string eventUniqueId;
 
-  public string EventId
-  {
-    get => this.eventId;
-    set => this.eventId = value;
-  }
+	[SerializeField]
+	private string eventName;
 
-  public string EventName
-  {
-    get => this.eventName;
-    set => this.eventName = value;
-  }
+	[SerializeField]
+	private EventRequirementData requirement;
 
-  public string Description
-  {
-    get => this.description;
-    set => this.description = value;
-  }
+	[SerializeField]
+	private SubClassData requiredClass;
 
-  public string DescriptionAction
-  {
-    get => this.descriptionAction;
-    set => this.descriptionAction = value;
-  }
+	[TextArea]
+	[SerializeField]
+	private string description;
 
-  public Sprite EventSpriteMap
-  {
-    get => this.eventSpriteMap;
-    set => this.eventSpriteMap = value;
-  }
+	[TextArea]
+	[SerializeField]
+	private string descriptionAction;
 
-  public Sprite EventSpriteBook
-  {
-    get => this.eventSpriteBook;
-    set => this.eventSpriteBook = value;
-  }
+	[SerializeField]
+	private Sprite eventSpriteMap;
 
-  public bool HistoryMode
-  {
-    get => this.historyMode;
-    set => this.historyMode = value;
-  }
+	[SerializeField]
+	private Sprite eventSpriteDecor;
 
-  public EventReplyData[] Replys
-  {
-    get => this.replys;
-    set => this.replys = value;
-  }
+	[SerializeField]
+	private Enums.MapIconShader eventIconShader;
 
-  public EventRequirementData Requirement
-  {
-    get => this.requirement;
-    set => this.requirement = value;
-  }
+	[SerializeField]
+	private Sprite eventSpriteBook;
 
-  public SubClassData RequiredClass
-  {
-    get => this.requiredClass;
-    set => this.requiredClass = value;
-  }
+	[SerializeField]
+	private bool historyMode;
 
-  public Enums.MapIconShader EventIconShader
-  {
-    get => this.eventIconShader;
-    set => this.eventIconShader = value;
-  }
+	[Header("Event Tier")]
+	[SerializeField]
+	private Enums.CombatTier eventTier;
 
-  public Enums.CombatTier EventTier
-  {
-    get => this.eventTier;
-    set => this.eventTier = value;
-  }
+	[Header("Reply List")]
+	[SerializeField]
+	private int replyRandom;
 
-  public Sprite EventSpriteDecor
-  {
-    get => this.eventSpriteDecor;
-    set => this.eventSpriteDecor = value;
-  }
+	[SerializeField]
+	private EventReplyData[] replys;
 
-  public string EventUniqueId
-  {
-    get => this.eventUniqueId;
-    set => this.eventUniqueId = value;
-  }
+	public string EventId
+	{
+		get
+		{
+			return eventId;
+		}
+		set
+		{
+			eventId = value;
+		}
+	}
 
-  public int ReplyRandom
-  {
-    get => this.replyRandom;
-    set => this.replyRandom = value;
-  }
+	public string EventName
+	{
+		get
+		{
+			return eventName;
+		}
+		set
+		{
+			eventName = value;
+		}
+	}
+
+	public string Description
+	{
+		get
+		{
+			return description;
+		}
+		set
+		{
+			description = value;
+		}
+	}
+
+	public string DescriptionAction
+	{
+		get
+		{
+			return descriptionAction;
+		}
+		set
+		{
+			descriptionAction = value;
+		}
+	}
+
+	public Sprite EventSpriteMap
+	{
+		get
+		{
+			return eventSpriteMap;
+		}
+		set
+		{
+			eventSpriteMap = value;
+		}
+	}
+
+	public Sprite EventSpriteBook
+	{
+		get
+		{
+			return eventSpriteBook;
+		}
+		set
+		{
+			eventSpriteBook = value;
+		}
+	}
+
+	public bool HistoryMode
+	{
+		get
+		{
+			return historyMode;
+		}
+		set
+		{
+			historyMode = value;
+		}
+	}
+
+	public EventReplyData[] Replys
+	{
+		get
+		{
+			return replys;
+		}
+		set
+		{
+			replys = value;
+		}
+	}
+
+	public EventRequirementData Requirement
+	{
+		get
+		{
+			return requirement;
+		}
+		set
+		{
+			requirement = value;
+		}
+	}
+
+	public SubClassData RequiredClass
+	{
+		get
+		{
+			return requiredClass;
+		}
+		set
+		{
+			requiredClass = value;
+		}
+	}
+
+	public Enums.MapIconShader EventIconShader
+	{
+		get
+		{
+			return eventIconShader;
+		}
+		set
+		{
+			eventIconShader = value;
+		}
+	}
+
+	public Enums.CombatTier EventTier
+	{
+		get
+		{
+			return eventTier;
+		}
+		set
+		{
+			eventTier = value;
+		}
+	}
+
+	public Sprite EventSpriteDecor
+	{
+		get
+		{
+			return eventSpriteDecor;
+		}
+		set
+		{
+			eventSpriteDecor = value;
+		}
+	}
+
+	public string EventUniqueId
+	{
+		get
+		{
+			return eventUniqueId;
+		}
+		set
+		{
+			eventUniqueId = value;
+		}
+	}
+
+	public int ReplyRandom
+	{
+		get
+		{
+			return replyRandom;
+		}
+		set
+		{
+			replyRandom = value;
+		}
+	}
+
+	public void Init()
+	{
+		List<EventReplyData> list = new List<EventReplyData>();
+		List<string> list2 = new List<string>();
+		for (int i = 0; i < replys.Length; i++)
+		{
+			EventReplyData eventReplyData = replys[i];
+			if (eventReplyData != null && eventReplyData.RequiredClass != null)
+			{
+				list2.Add(eventReplyData.RequiredClass.Id);
+			}
+		}
+		bool flag = false;
+		for (int j = 0; j < replys.Length; j++)
+		{
+			EventReplyData eventReplyData2 = replys[j];
+			if (eventReplyData2 == null)
+			{
+				continue;
+			}
+			if (eventReplyData2.RepeatForAllCharacters || eventReplyData2.RepeatForAllWarriors || eventReplyData2.RepeatForAllScouts || eventReplyData2.RepeatForAllMages || eventReplyData2.RepeatForAllHealers)
+			{
+				foreach (KeyValuePair<string, SubClassData> item in Globals.Instance.SubClass)
+				{
+					if (!(item.Value != null) || !item.Value.MainCharacter || (list2.Count > 0 && list2.Contains(item.Value.Id)))
+					{
+						continue;
+					}
+					flag = false;
+					if (eventReplyData2.RepeatForAllCharacters)
+					{
+						flag = true;
+					}
+					else
+					{
+						if (eventReplyData2.RepeatForAllWarriors && (item.Value.HeroClass == Enums.HeroClass.Warrior || item.Value.HeroClassSecondary == Enums.HeroClass.Warrior))
+						{
+							flag = true;
+						}
+						if (eventReplyData2.RepeatForAllScouts && (item.Value.HeroClass == Enums.HeroClass.Scout || item.Value.HeroClassSecondary == Enums.HeroClass.Scout))
+						{
+							flag = true;
+						}
+						if (eventReplyData2.RepeatForAllMages && (item.Value.HeroClass == Enums.HeroClass.Mage || item.Value.HeroClassSecondary == Enums.HeroClass.Mage))
+						{
+							flag = true;
+						}
+						if (eventReplyData2.RepeatForAllHealers && (item.Value.HeroClass == Enums.HeroClass.Healer || item.Value.HeroClassSecondary == Enums.HeroClass.Healer))
+						{
+							flag = true;
+						}
+					}
+					if (flag)
+					{
+						EventReplyData eventReplyData3 = eventReplyData2.ShallowCopy();
+						eventReplyData3.RequiredClass = item.Value;
+						eventReplyData3.IndexForAnswerTranslation = j;
+						list.Add(eventReplyData3);
+					}
+				}
+			}
+			else
+			{
+				eventReplyData2.IndexForAnswerTranslation = j;
+				list.Add(eventReplyData2);
+			}
+		}
+		replys = list.ToArray();
+	}
 }

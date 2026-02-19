@@ -1,50 +1,73 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: HeroData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-#nullable disable
-[CreateAssetMenu(fileName = "New Hero", menuName = "Hero Data", order = 52)]
 [Serializable]
+[CreateAssetMenu(fileName = "New Hero", menuName = "Hero Data", order = 52)]
 public class HeroData : ScriptableObject
 {
-  [SerializeField]
-  private string heroName;
-  [SerializeField]
-  private string id;
-  [SerializeField]
-  private Enums.HeroClass heroClass;
-  [SerializeField]
-  private SubClassData heroSubClass;
+	[SerializeField]
+	private string heroName;
 
-  public string HeroName
-  {
-    get => this.heroName;
-    set => this.heroName = value;
-  }
+	[SerializeField]
+	private string id;
 
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
+	[SerializeField]
+	private Enums.HeroClass heroClass;
 
-  public Enums.HeroClass HeroClass
-  {
-    get => this.heroClass;
-    set => this.heroClass = value;
-  }
+	[SerializeField]
+	private SubClassData heroSubClass;
 
-  public SubClassData HeroSubClass
-  {
-    get => this.heroSubClass;
-    set => this.heroSubClass = value;
-  }
+	public string HeroName
+	{
+		get
+		{
+			return heroName;
+		}
+		set
+		{
+			heroName = value;
+		}
+	}
 
-  private void Awake() => this.id = Regex.Replace(this.heroName, "\\s+", "").ToLower();
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
+
+	public Enums.HeroClass HeroClass
+	{
+		get
+		{
+			return heroClass;
+		}
+		set
+		{
+			heroClass = value;
+		}
+	}
+
+	public SubClassData HeroSubClass
+	{
+		get
+		{
+			return heroSubClass;
+		}
+		set
+		{
+			heroSubClass = value;
+		}
+	}
+
+	private void Awake()
+	{
+		id = Regex.Replace(heroName, "\\s+", "").ToLower();
+	}
 }

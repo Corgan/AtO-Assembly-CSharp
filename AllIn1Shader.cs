@@ -1,280 +1,301 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: AllIn1Shader
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 [ExecuteInEditMode]
 [AddComponentMenu("AllIn1SpriteShader/AddAllIn1Shader")]
 public class AllIn1Shader : MonoBehaviour
 {
-  private Material currMaterial;
-  private Material prevMaterial;
-  private bool matAssigned;
-  private bool destroyed;
+	private enum AfterSetAction
+	{
+		Clear,
+		CopyMaterial,
+		Reset
+	}
 
-  public void MakeNewMaterial() => this.SetMaterial(AllIn1Shader.AfterSetAction.Clear);
+	private Material currMaterial;
 
-  public void MakeCopy() => this.SetMaterial(AllIn1Shader.AfterSetAction.CopyMaterial);
+	private Material prevMaterial;
 
-  private void ResetAllProperties() => this.SetMaterial(AllIn1Shader.AfterSetAction.Reset);
+	private bool matAssigned;
 
-  private void SetMaterial(AllIn1Shader.AfterSetAction action)
-  {
-    Shader shader = UnityEngine.Resources.Load("AllIn1SpriteShader", typeof (Shader)) as Shader;
-    if (!Application.isPlaying && Application.isEditor && (Object) shader != (Object) null)
-    {
-      bool flag = false;
-      if ((Object) this.GetComponent<SpriteRenderer>() != (Object) null)
-      {
-        flag = true;
-        this.prevMaterial = new Material(this.GetComponent<Renderer>().sharedMaterial);
-        this.currMaterial = new Material(shader);
-        this.GetComponent<Renderer>().sharedMaterial = this.currMaterial;
-        this.GetComponent<Renderer>().sharedMaterial.hideFlags = HideFlags.None;
-        this.matAssigned = true;
-        this.DoAfterSetAction(action);
-      }
-      else
-      {
-        Image component = this.GetComponent<Image>();
-        if ((Object) component != (Object) null)
-        {
-          flag = true;
-          this.prevMaterial = new Material(component.material);
-          this.currMaterial = new Material(shader);
-          component.material = this.currMaterial;
-          component.material.hideFlags = HideFlags.None;
-          this.matAssigned = true;
-          this.DoAfterSetAction(action);
-        }
-      }
-      if (!flag)
-        this.MissingRenderer();
-      else
-        this.SetSceneDirty();
-    }
-    else
-    {
-      if (!((Object) shader == (Object) null))
-        return;
-      Debug.LogError((object) "Make sure the AllIn1SpriteShader file is inside the Resource folder!");
-    }
-  }
+	private bool destroyed;
 
-  private void DoAfterSetAction(AllIn1Shader.AfterSetAction action)
-  {
-    if (action != AllIn1Shader.AfterSetAction.Clear)
-    {
-      if (action != AllIn1Shader.AfterSetAction.CopyMaterial)
-        return;
-      this.currMaterial.CopyPropertiesFromMaterial(this.prevMaterial);
-    }
-    else
-      this.ClearAllKeywords();
-  }
+	public void MakeNewMaterial()
+	{
+		SetMaterial(AfterSetAction.Clear);
+	}
 
-  public void TryCreateNew()
-  {
-    bool flag = false;
-    if ((Object) this.GetComponent<SpriteRenderer>() != (Object) null)
-    {
-      flag = true;
-      Renderer component = this.GetComponent<Renderer>();
-      if ((Object) component != (Object) null && (Object) component.sharedMaterial != (Object) null && component.sharedMaterial.name.Contains("AllIn1"))
-      {
-        this.ResetAllProperties();
-        this.ClearAllKeywords();
-      }
-      else
-      {
-        this.CleanMaterial();
-        this.MakeNewMaterial();
-      }
-    }
-    else
-    {
-      Image component = this.GetComponent<Image>();
-      if ((Object) component != (Object) null)
-      {
-        flag = true;
-        if (component.material.name.Contains("AllIn1"))
-        {
-          this.ResetAllProperties();
-          this.ClearAllKeywords();
-        }
-        else
-          this.MakeNewMaterial();
-      }
-    }
-    if (!flag)
-      this.MissingRenderer();
-    this.SetSceneDirty();
-  }
+	public void MakeCopy()
+	{
+		SetMaterial(AfterSetAction.CopyMaterial);
+	}
 
-  public void ClearAllKeywords()
-  {
-    this.SetKeyword("RECTSIZE_ON");
-    this.SetKeyword("OFFSETUV_ON");
-    this.SetKeyword("CLIPPING_ON");
-    this.SetKeyword("POLARUV_ON");
-    this.SetKeyword("TWISTUV_ON");
-    this.SetKeyword("ROTATEUV_ON");
-    this.SetKeyword("FISHEYE_ON");
-    this.SetKeyword("PINCH_ON");
-    this.SetKeyword("SHAKEUV_ON");
-    this.SetKeyword("WAVEUV_ON");
-    this.SetKeyword("ROUNDWAVEUV_ON");
-    this.SetKeyword("DOODLE_ON");
-    this.SetKeyword("ZOOMUV_ON");
-    this.SetKeyword("FADE_ON");
-    this.SetKeyword("TEXTURESCROLL_ON");
-    this.SetKeyword("GLOW_ON");
-    this.SetKeyword("OUTBASE_ON");
-    this.SetKeyword("ONLYOUTLINE_ON");
-    this.SetKeyword("OUTTEX_ON");
-    this.SetKeyword("OUTDIST_ON");
-    this.SetKeyword("DISTORT_ON");
-    this.SetKeyword("WIND_ON");
-    this.SetKeyword("GRADIENT_ON");
-    this.SetKeyword("COLORSWAP_ON");
-    this.SetKeyword("HSV_ON");
-    this.SetKeyword("HITEFFECT_ON");
-    this.SetKeyword("PIXELATE_ON");
-    this.SetKeyword("NEGATIVE_ON");
-    this.SetKeyword("COLORRAMP_ON");
-    this.SetKeyword("GREYSCALE_ON");
-    this.SetKeyword("POSTERIZE_ON");
-    this.SetKeyword("BLUR_ON");
-    this.SetKeyword("MOTIONBLUR_ON");
-    this.SetKeyword("GHOST_ON");
-    this.SetKeyword("INNEROUTLINE_ON");
-    this.SetKeyword("ONLYINNEROUTLINE_ON");
-    this.SetKeyword("HOLOGRAM_ON");
-    this.SetKeyword("CHROMABERR_ON");
-    this.SetKeyword("GLITCH_ON");
-    this.SetKeyword("FLICKER_ON");
-    this.SetKeyword("SHADOW_ON");
-    this.SetKeyword("ALPHACUTOFF_ON");
-    this.SetKeyword("CHANGECOLOR_ON");
-    this.SetSceneDirty();
-  }
+	private void ResetAllProperties()
+	{
+		SetMaterial(AfterSetAction.Reset);
+	}
 
-  private void SetKeyword(string keyword, bool state = false)
-  {
-    if (this.destroyed)
-      return;
-    if ((Object) this.currMaterial == (Object) null)
-    {
-      this.FindCurrMaterial();
-      if ((Object) this.currMaterial == (Object) null)
-      {
-        this.MissingRenderer();
-        return;
-      }
-    }
-    if (!state)
-      this.currMaterial.DisableKeyword(keyword);
-    else
-      this.currMaterial.EnableKeyword(keyword);
-  }
+	private void SetMaterial(AfterSetAction action)
+	{
+		Shader shader = Resources.Load("AllIn1SpriteShader", typeof(Shader)) as Shader;
+		if (!Application.isPlaying && Application.isEditor && shader != null)
+		{
+			bool flag = false;
+			if (GetComponent<SpriteRenderer>() != null)
+			{
+				flag = true;
+				prevMaterial = new Material(GetComponent<Renderer>().sharedMaterial);
+				currMaterial = new Material(shader);
+				GetComponent<Renderer>().sharedMaterial = currMaterial;
+				GetComponent<Renderer>().sharedMaterial.hideFlags = HideFlags.None;
+				matAssigned = true;
+				DoAfterSetAction(action);
+			}
+			else
+			{
+				Image component = GetComponent<Image>();
+				if (component != null)
+				{
+					flag = true;
+					prevMaterial = new Material(component.material);
+					currMaterial = new Material(shader);
+					component.material = currMaterial;
+					component.material.hideFlags = HideFlags.None;
+					matAssigned = true;
+					DoAfterSetAction(action);
+				}
+			}
+			if (!flag)
+			{
+				MissingRenderer();
+			}
+			else
+			{
+				SetSceneDirty();
+			}
+		}
+		else if (shader == null)
+		{
+			Debug.LogError("Make sure the AllIn1SpriteShader file is inside the Resource folder!");
+		}
+	}
 
-  private void FindCurrMaterial()
-  {
-    if ((Object) this.GetComponent<SpriteRenderer>() != (Object) null)
-    {
-      this.currMaterial = this.GetComponent<Renderer>().sharedMaterial;
-      this.matAssigned = true;
-    }
-    else
-    {
-      Image component = this.GetComponent<Image>();
-      if (!((Object) component != (Object) null))
-        return;
-      this.currMaterial = component.material;
-      this.matAssigned = true;
-    }
-  }
+	private void DoAfterSetAction(AfterSetAction action)
+	{
+		switch (action)
+		{
+		case AfterSetAction.Clear:
+			ClearAllKeywords();
+			break;
+		case AfterSetAction.CopyMaterial:
+			currMaterial.CopyPropertiesFromMaterial(prevMaterial);
+			break;
+		}
+	}
 
-  public void CleanMaterial()
-  {
-    if ((Object) this.GetComponent<SpriteRenderer>() != (Object) null)
-    {
-      this.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Sprites/Default"));
-      this.matAssigned = false;
-    }
-    else
-    {
-      Image component = this.GetComponent<Image>();
-      if ((Object) component != (Object) null)
-      {
-        component.material = new Material(Shader.Find("Sprites/Default"));
-        this.matAssigned = false;
-      }
-    }
-    this.SetSceneDirty();
-  }
+	public void TryCreateNew()
+	{
+		bool flag = false;
+		if (GetComponent<SpriteRenderer>() != null)
+		{
+			flag = true;
+			Renderer component = GetComponent<Renderer>();
+			if (component != null && component.sharedMaterial != null && component.sharedMaterial.name.Contains("AllIn1"))
+			{
+				ResetAllProperties();
+				ClearAllKeywords();
+			}
+			else
+			{
+				CleanMaterial();
+				MakeNewMaterial();
+			}
+		}
+		else
+		{
+			Image component2 = GetComponent<Image>();
+			if (component2 != null)
+			{
+				flag = true;
+				if (component2.material.name.Contains("AllIn1"))
+				{
+					ResetAllProperties();
+					ClearAllKeywords();
+				}
+				else
+				{
+					MakeNewMaterial();
+				}
+			}
+		}
+		if (!flag)
+		{
+			MissingRenderer();
+		}
+		SetSceneDirty();
+	}
 
-  public void SaveMaterial()
-  {
-  }
+	public void ClearAllKeywords()
+	{
+		SetKeyword("RECTSIZE_ON");
+		SetKeyword("OFFSETUV_ON");
+		SetKeyword("CLIPPING_ON");
+		SetKeyword("POLARUV_ON");
+		SetKeyword("TWISTUV_ON");
+		SetKeyword("ROTATEUV_ON");
+		SetKeyword("FISHEYE_ON");
+		SetKeyword("PINCH_ON");
+		SetKeyword("SHAKEUV_ON");
+		SetKeyword("WAVEUV_ON");
+		SetKeyword("ROUNDWAVEUV_ON");
+		SetKeyword("DOODLE_ON");
+		SetKeyword("ZOOMUV_ON");
+		SetKeyword("FADE_ON");
+		SetKeyword("TEXTURESCROLL_ON");
+		SetKeyword("GLOW_ON");
+		SetKeyword("OUTBASE_ON");
+		SetKeyword("ONLYOUTLINE_ON");
+		SetKeyword("OUTTEX_ON");
+		SetKeyword("OUTDIST_ON");
+		SetKeyword("DISTORT_ON");
+		SetKeyword("WIND_ON");
+		SetKeyword("GRADIENT_ON");
+		SetKeyword("COLORSWAP_ON");
+		SetKeyword("HSV_ON");
+		SetKeyword("HITEFFECT_ON");
+		SetKeyword("PIXELATE_ON");
+		SetKeyword("NEGATIVE_ON");
+		SetKeyword("COLORRAMP_ON");
+		SetKeyword("GREYSCALE_ON");
+		SetKeyword("POSTERIZE_ON");
+		SetKeyword("BLUR_ON");
+		SetKeyword("MOTIONBLUR_ON");
+		SetKeyword("GHOST_ON");
+		SetKeyword("INNEROUTLINE_ON");
+		SetKeyword("ONLYINNEROUTLINE_ON");
+		SetKeyword("HOLOGRAM_ON");
+		SetKeyword("CHROMABERR_ON");
+		SetKeyword("GLITCH_ON");
+		SetKeyword("FLICKER_ON");
+		SetKeyword("SHADOW_ON");
+		SetKeyword("ALPHACUTOFF_ON");
+		SetKeyword("CHANGECOLOR_ON");
+		SetSceneDirty();
+	}
 
-  private void SaveMaterialWithOtherName(string path, int i = 1)
-  {
-    int num = i;
-    string str = path + "_" + num.ToString() + ".mat";
-    if (File.Exists(str))
-    {
-      int i1 = num + 1;
-      this.SaveMaterialWithOtherName(path, i1);
-    }
-    else
-      this.DoSaving(str);
-  }
+	private void SetKeyword(string keyword, bool state = false)
+	{
+		if (destroyed)
+		{
+			return;
+		}
+		if (currMaterial == null)
+		{
+			FindCurrMaterial();
+			if (currMaterial == null)
+			{
+				MissingRenderer();
+				return;
+			}
+		}
+		if (!state)
+		{
+			currMaterial.DisableKeyword(keyword);
+		}
+		else
+		{
+			currMaterial.EnableKeyword(keyword);
+		}
+	}
 
-  private void DoSaving(string fileName)
-  {
-  }
+	private void FindCurrMaterial()
+	{
+		if (GetComponent<SpriteRenderer>() != null)
+		{
+			currMaterial = GetComponent<Renderer>().sharedMaterial;
+			matAssigned = true;
+			return;
+		}
+		Image component = GetComponent<Image>();
+		if (component != null)
+		{
+			currMaterial = component.material;
+			matAssigned = true;
+		}
+	}
 
-  private void SetSceneDirty()
-  {
-  }
+	public void CleanMaterial()
+	{
+		if (GetComponent<SpriteRenderer>() != null)
+		{
+			GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Sprites/Default"));
+			matAssigned = false;
+		}
+		else
+		{
+			Image component = GetComponent<Image>();
+			if (component != null)
+			{
+				component.material = new Material(Shader.Find("Sprites/Default"));
+				matAssigned = false;
+			}
+		}
+		SetSceneDirty();
+	}
 
-  private void MissingRenderer()
-  {
-  }
+	public void SaveMaterial()
+	{
+	}
 
-  public void ToggleSetAtlasUvs(bool activate)
-  {
-    SetAtlasUvs setAtlasUvs = this.GetComponent<SetAtlasUvs>();
-    if (activate)
-    {
-      if ((Object) setAtlasUvs == (Object) null)
-        setAtlasUvs = this.gameObject.AddComponent<SetAtlasUvs>();
-      setAtlasUvs.GetAndSetUVs();
-      this.SetKeyword("ATLAS_ON", true);
-    }
-    else
-    {
-      if ((Object) setAtlasUvs != (Object) null)
-      {
-        setAtlasUvs.ResetAtlasUvs();
-        Object.DestroyImmediate((Object) setAtlasUvs);
-      }
-      this.SetKeyword("ATLAS_ON");
-    }
-    this.SetSceneDirty();
-  }
+	private void SaveMaterialWithOtherName(string path, int i = 1)
+	{
+		int num = i;
+		string text = string.Concat(path + "_" + num, ".mat");
+		if (File.Exists(text))
+		{
+			num++;
+			SaveMaterialWithOtherName(path, num);
+		}
+		else
+		{
+			DoSaving(text);
+		}
+	}
 
-  private enum AfterSetAction
-  {
-    Clear,
-    CopyMaterial,
-    Reset,
-  }
+	private void DoSaving(string fileName)
+	{
+	}
+
+	private void SetSceneDirty()
+	{
+	}
+
+	private void MissingRenderer()
+	{
+	}
+
+	public void ToggleSetAtlasUvs(bool activate)
+	{
+		SetAtlasUvs setAtlasUvs = GetComponent<SetAtlasUvs>();
+		if (activate)
+		{
+			if (setAtlasUvs == null)
+			{
+				setAtlasUvs = base.gameObject.AddComponent<SetAtlasUvs>();
+			}
+			setAtlasUvs.GetAndSetUVs();
+			SetKeyword("ATLAS_ON", state: true);
+		}
+		else
+		{
+			if (setAtlasUvs != null)
+			{
+				setAtlasUvs.ResetAtlasUvs();
+				Object.DestroyImmediate(setAtlasUvs);
+			}
+			SetKeyword("ATLAS_ON");
+		}
+		SetSceneDirty();
+	}
 }

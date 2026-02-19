@@ -1,104 +1,125 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TomeNumber
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class TomeNumber : MonoBehaviour
 {
-  public Transform backgroundT;
-  public Transform activeT;
-  public SpriteRenderer background;
-  public SpriteRenderer border;
-  public TMP_Text numberTxt;
-  private string number;
-  private Color colorActive;
-  private Color colorDeactive;
-  private bool active;
-  private bool visible;
-  private Vector3 positionOri;
-  private Vector3 positionShow;
-  private Vector3 positionHide;
-  private Vector3 positionActiveVector = new Vector3(0.2f, 0.0f, 0.0f);
+	public Transform backgroundT;
 
-  private void Awake()
-  {
-    this.colorActive = Functions.HexToColor("#FFA400");
-    this.colorDeactive = new Color(1f, 1f, 1f, 1f);
-  }
+	public Transform activeT;
 
-  public void Activate()
-  {
-    this.active = true;
-    this.activeT.gameObject.SetActive(true);
-    this.border.color = this.colorActive;
-    this.background.color = this.colorActive;
-    this.transform.localPosition = this.transform.localPosition - this.positionActiveVector;
-  }
+	public SpriteRenderer background;
 
-  public void Deactivate()
-  {
-    this.active = false;
-    this.background.color = this.colorDeactive;
-    this.activeT.gameObject.SetActive(false);
-    this.transform.localPosition = this.positionOri;
-  }
+	public SpriteRenderer border;
 
-  public bool IsActive() => this.active;
+	public TMP_Text numberTxt;
 
-  public void Init(int _number)
-  {
-    this.number = _number.ToString();
-    this.numberTxt.text = this.number;
-    this.positionOri = this.transform.localPosition;
-    this.positionShow = new Vector3(this.positionOri.x, this.transform.localPosition.y, 0.0f);
-    this.positionHide = new Vector3(this.positionOri.x + 1f, this.transform.localPosition.y, 100f);
-  }
+	private string number;
 
-  public void SetText(string _text) => this.numberTxt.text = _text;
+	private Color colorActive;
 
-  public void Show()
-  {
-    if (!this.gameObject.activeSelf || !this.transform.parent.gameObject.activeSelf)
-      return;
-    this.transform.localPosition = this.positionShow;
-    this.visible = true;
-  }
+	private Color colorDeactive;
 
-  public void Hide()
-  {
-    if (!this.gameObject.activeSelf || !this.transform.parent.gameObject.activeSelf)
-      return;
-    this.transform.localPosition = this.positionHide;
-    this.visible = false;
-  }
+	private bool active;
 
-  public bool IsVisible() => this.visible;
+	private bool visible;
 
-  private void OnMouseEnter()
-  {
-    if (this.active)
-      return;
-    this.border.color = Functions.HexToColor("#BBBBBB");
-    this.activeT.gameObject.SetActive(true);
-    GameManager.Instance.SetCursorHover();
-  }
+	private Vector3 positionOri;
 
-  private void OnMouseExit()
-  {
-    if (!this.active)
-      this.activeT.gameObject.SetActive(false);
-    GameManager.Instance.SetCursorPlain();
-  }
+	private Vector3 positionShow;
 
-  public void OnMouseUp()
-  {
-    if (!Functions.ClickedThisTransform(this.transform))
-      return;
-    TomeManager.Instance.SetPage(int.Parse(this.number));
-  }
+	private Vector3 positionHide;
+
+	private Vector3 positionActiveVector = new Vector3(0.2f, 0f, 0f);
+
+	private void Awake()
+	{
+		colorActive = Functions.HexToColor("#FFA400");
+		colorDeactive = new Color(1f, 1f, 1f, 1f);
+	}
+
+	public void Activate()
+	{
+		active = true;
+		activeT.gameObject.SetActive(value: true);
+		border.color = colorActive;
+		background.color = colorActive;
+		base.transform.localPosition = base.transform.localPosition - positionActiveVector;
+	}
+
+	public void Deactivate()
+	{
+		active = false;
+		background.color = colorDeactive;
+		activeT.gameObject.SetActive(value: false);
+		base.transform.localPosition = positionOri;
+	}
+
+	public bool IsActive()
+	{
+		return active;
+	}
+
+	public void Init(int _number)
+	{
+		number = _number.ToString();
+		numberTxt.text = number;
+		positionOri = base.transform.localPosition;
+		positionShow = new Vector3(positionOri.x, base.transform.localPosition.y, 0f);
+		positionHide = new Vector3(positionOri.x + 1f, base.transform.localPosition.y, 100f);
+	}
+
+	public void SetText(string _text)
+	{
+		numberTxt.text = _text;
+	}
+
+	public void Show()
+	{
+		if (base.gameObject.activeSelf && base.transform.parent.gameObject.activeSelf)
+		{
+			base.transform.localPosition = positionShow;
+			visible = true;
+		}
+	}
+
+	public void Hide()
+	{
+		if (base.gameObject.activeSelf && base.transform.parent.gameObject.activeSelf)
+		{
+			base.transform.localPosition = positionHide;
+			visible = false;
+		}
+	}
+
+	public bool IsVisible()
+	{
+		return visible;
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!active)
+		{
+			border.color = Functions.HexToColor("#BBBBBB");
+			activeT.gameObject.SetActive(value: true);
+			GameManager.Instance.SetCursorHover();
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!active)
+		{
+			activeT.gameObject.SetActive(value: false);
+		}
+		GameManager.Instance.SetCursorPlain();
+	}
+
+	public void OnMouseUp()
+	{
+		if (Functions.ClickedThisTransform(base.transform))
+		{
+			TomeManager.Instance.SetPage(int.Parse(number));
+		}
+	}
 }

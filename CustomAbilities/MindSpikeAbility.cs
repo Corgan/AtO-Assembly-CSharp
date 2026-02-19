@@ -1,29 +1,34 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CustomAbilities.MindSpikeAbility
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using Cards;
 
-#nullable disable
-namespace CustomAbilities
+namespace CustomAbilities;
+
+public class MindSpikeAbility
 {
-  public class MindSpikeAbility
-  {
-    private SpecialCardEnum _collectedSpecialCard = SpecialCardEnum.NightmareEcho;
-    private int _currentSpecialCardsUsedInMatch;
+	private SpecialCardEnum _collectedSpecialCard = SpecialCardEnum.NightmareEcho;
 
-    public SpecialCardEnum CollectedSpecialCard => this._collectedSpecialCard;
+	private int _currentSpecialCardsUsedInMatch;
 
-    public int CurrentSpecialCardsUsedInMatch
-    {
-      get => this._currentSpecialCardsUsedInMatch;
-      set => this._currentSpecialCardsUsedInMatch = value;
-    }
+	public SpecialCardEnum CollectedSpecialCard => _collectedSpecialCard;
 
-    public void IncreaseSpecialCardCount() => ++this._currentSpecialCardsUsedInMatch;
+	public int CurrentSpecialCardsUsedInMatch
+	{
+		get
+		{
+			return _currentSpecialCardsUsedInMatch;
+		}
+		set
+		{
+			_currentSpecialCardsUsedInMatch = value;
+		}
+	}
 
-    public void Reset() => this._currentSpecialCardsUsedInMatch = 0;
-  }
+	public void IncreaseSpecialCardCount()
+	{
+		_currentSpecialCardsUsedInMatch++;
+	}
+
+	public void Reset()
+	{
+		_currentSpecialCardsUsedInMatch = 0;
+	}
 }

@@ -1,110 +1,112 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TomeEdge
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using UnityEngine;
 
-#nullable disable
 public class TomeEdge : MonoBehaviour
 {
-  private GameObject arrow;
-  private SpriteRenderer arrowSprite;
-  private SpriteRenderer arrowBg;
-  private Coroutine moveCo;
-  public bool isPrev;
+	private GameObject arrow;
 
-  private void Start()
-  {
-    this.arrow = this.transform.GetChild(0).transform.gameObject;
-    this.arrowBg = this.arrow.transform.GetChild(0).transform.GetComponent<SpriteRenderer>();
-    this.arrowSprite = this.arrow.transform.GetChild(1).transform.GetComponent<SpriteRenderer>();
-    SpriteRenderer arrowBg = this.arrowBg;
-    SpriteRenderer arrowSprite = this.arrowSprite;
-    Color color1 = new Color(1f, 1f, 1f, 0.0f);
-    Color color2 = color1;
-    arrowSprite.color = color2;
-    Color color3 = color1;
-    arrowBg.color = color3;
-  }
+	private SpriteRenderer arrowSprite;
 
-  public void Show()
-  {
-    if (this.moveCo != null)
-      this.StopCoroutine(this.moveCo);
-    this.moveCo = this.StartCoroutine(this.ShowCo());
-  }
+	private SpriteRenderer arrowBg;
 
-  private IEnumerator ShowCo()
-  {
-    Color col = this.arrowBg.color;
-    this.arrow.SetActive(true);
-    while ((double) col.a < 0.5)
-    {
-      col.a += 0.05f;
-      this.arrowBg.color = col;
-      this.arrowSprite.color = col;
-      yield return (object) Globals.Instance.WaitForSeconds(0.025f);
-    }
-  }
+	private Coroutine moveCo;
 
-  public void Hide()
-  {
-    if (this.moveCo != null)
-      this.StopCoroutine(this.moveCo);
-    this.moveCo = this.StartCoroutine(this.HideCo());
-  }
+	public bool isPrev;
 
-  private IEnumerator HideCo()
-  {
-    Color col = this.arrowBg.color;
-    while ((double) col.a > 0.0)
-    {
-      col.a -= 0.05f;
-      this.arrowBg.color = col;
-      this.arrowSprite.color = col;
-      yield return (object) Globals.Instance.WaitForSeconds(0.025f);
-    }
-    this.arrow.SetActive(false);
-  }
+	private void Start()
+	{
+		arrow = base.transform.GetChild(0).transform.gameObject;
+		arrowBg = arrow.transform.GetChild(0).transform.GetComponent<SpriteRenderer>();
+		arrowSprite = arrow.transform.GetChild(1).transform.GetComponent<SpriteRenderer>();
+		SpriteRenderer spriteRenderer = arrowBg;
+		Color color = (arrowSprite.color = new Color(1f, 1f, 1f, 0f));
+		spriteRenderer.color = color;
+	}
 
-  private void OnMouseEnter()
-  {
-    if (this.isPrev)
-    {
-      if (!TomeManager.Instance.IsTherePrev())
-        return;
-      this.Show();
-    }
-    else
-    {
-      if (!TomeManager.Instance.IsThereNext())
-        return;
-      this.Show();
-    }
-  }
+	public void Show()
+	{
+		if (moveCo != null)
+		{
+			StopCoroutine(moveCo);
+		}
+		moveCo = StartCoroutine(ShowCo());
+	}
 
-  private void OnMouseExit() => this.Hide();
+	private IEnumerator ShowCo()
+	{
+		Color col = arrowBg.color;
+		arrow.SetActive(value: true);
+		while (col.a < 0.5f)
+		{
+			col.a += 0.05f;
+			arrowBg.color = col;
+			arrowSprite.color = col;
+			yield return Globals.Instance.WaitForSeconds(0.025f);
+		}
+	}
 
-  private void OnMouseUp()
-  {
-    if (this.isPrev)
-    {
-      if (!TomeManager.Instance.IsTherePrev())
-        return;
-      if (TomeManager.Instance.IsFirstPage())
-        this.Hide();
-      TomeManager.Instance.DoPrevPage();
-    }
-    else
-    {
-      if (!TomeManager.Instance.IsThereNext())
-        return;
-      if (TomeManager.Instance.IsLastPage())
-        this.Hide();
-      TomeManager.Instance.DoNextPage();
-    }
-  }
+	public void Hide()
+	{
+		if (moveCo != null)
+		{
+			StopCoroutine(moveCo);
+		}
+		moveCo = StartCoroutine(HideCo());
+	}
+
+	private IEnumerator HideCo()
+	{
+		Color col = arrowBg.color;
+		while (col.a > 0f)
+		{
+			col.a -= 0.05f;
+			arrowBg.color = col;
+			arrowSprite.color = col;
+			yield return Globals.Instance.WaitForSeconds(0.025f);
+		}
+		arrow.SetActive(value: false);
+	}
+
+	private void OnMouseEnter()
+	{
+		if (isPrev)
+		{
+			if (TomeManager.Instance.IsTherePrev())
+			{
+				Show();
+			}
+		}
+		else if (TomeManager.Instance.IsThereNext())
+		{
+			Show();
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		Hide();
+	}
+
+	private void OnMouseUp()
+	{
+		if (isPrev)
+		{
+			if (TomeManager.Instance.IsTherePrev())
+			{
+				if (TomeManager.Instance.IsFirstPage())
+				{
+					Hide();
+				}
+				TomeManager.Instance.DoPrevPage();
+			}
+		}
+		else if (TomeManager.Instance.IsThereNext())
+		{
+			if (TomeManager.Instance.IsLastPage())
+			{
+				Hide();
+			}
+			TomeManager.Instance.DoNextPage();
+		}
+	}
 }

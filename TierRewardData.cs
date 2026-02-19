@@ -1,69 +1,110 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TierRewardData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "Tier Reward", menuName = "Tier Reward Data", order = 61)]
 public class TierRewardData : ScriptableObject
 {
-  [SerializeField]
-  private int tierNum;
-  [SerializeField]
-  private int common;
-  [SerializeField]
-  private int uncommon;
-  [SerializeField]
-  private int rare;
-  [SerializeField]
-  private int epic;
-  [SerializeField]
-  private int mythic;
-  [SerializeField]
-  private int dust;
+	[SerializeField]
+	private int tierNum;
 
-  public int TierNum
-  {
-    get => this.tierNum;
-    set => this.tierNum = value;
-  }
+	[SerializeField]
+	private int common;
 
-  public int Common
-  {
-    get => this.common;
-    set => this.common = value;
-  }
+	[SerializeField]
+	private int uncommon;
 
-  public int Uncommon
-  {
-    get => this.uncommon;
-    set => this.uncommon = value;
-  }
+	[SerializeField]
+	private int rare;
 
-  public int Rare
-  {
-    get => this.rare;
-    set => this.rare = value;
-  }
+	[SerializeField]
+	private int epic;
 
-  public int Epic
-  {
-    get => this.epic;
-    set => this.epic = value;
-  }
+	[SerializeField]
+	private int mythic;
 
-  public int Mythic
-  {
-    get => this.mythic;
-    set => this.mythic = value;
-  }
+	[SerializeField]
+	private int dust;
 
-  public int Dust
-  {
-    get => this.dust;
-    set => this.dust = value;
-  }
+	public int TierNum
+	{
+		get
+		{
+			return tierNum;
+		}
+		set
+		{
+			tierNum = value;
+		}
+	}
+
+	public int Common
+	{
+		get
+		{
+			return common;
+		}
+		set
+		{
+			common = value;
+		}
+	}
+
+	public int Uncommon
+	{
+		get
+		{
+			return uncommon;
+		}
+		set
+		{
+			uncommon = value;
+		}
+	}
+
+	public int Rare
+	{
+		get
+		{
+			return rare;
+		}
+		set
+		{
+			rare = value;
+		}
+	}
+
+	public int Epic
+	{
+		get
+		{
+			return epic;
+		}
+		set
+		{
+			epic = value;
+		}
+	}
+
+	public int Mythic
+	{
+		get
+		{
+			return mythic;
+		}
+		set
+		{
+			mythic = value;
+		}
+	}
+
+	public int Dust
+	{
+		get
+		{
+			return dust;
+		}
+		set
+		{
+			dust = value;
+		}
+	}
 }

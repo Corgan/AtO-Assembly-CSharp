@@ -1,10 +1,3 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TownUpgradeWindow
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -12,175 +5,216 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class TownUpgradeWindow : MonoBehaviour
 {
-  public Transform elements;
-  public List<BotonSupply> botonSupply;
-  public TMP_Text requiredTM;
-  public Transform exitButton;
-  public Transform resetButton;
-  public Transform pointsButton;
-  public Transform sellSupplyT;
-  public Transform sellSupplyButton;
-  public TMP_Text supplySellQuantity;
-  public TMP_Text supplySellResult;
-  public Transform supplySellBg;
-  public List<Transform> sellSupplyTransforms;
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
+	public Transform elements;
 
-  private void Start()
-  {
-    if (GameManager.Instance.GetDeveloperMode())
-    {
-      this.resetButton.gameObject.SetActive(true);
-      this.pointsButton.gameObject.SetActive(true);
-    }
-    else
-    {
-      this.resetButton.gameObject.SetActive(false);
-      this.pointsButton.gameObject.SetActive(false);
-    }
-    this.sellSupplyT.gameObject.SetActive(false);
-  }
+	public List<BotonSupply> botonSupply;
 
-  public void Show(bool state)
-  {
-    this.elements.gameObject.SetActive(state);
-    if (state)
-    {
-      this.StartCoroutine(this.SetButtonsCo());
-      TownManager.Instance.ShowButtons(false);
-    }
-    else
-      TownManager.Instance.ShowButtons(true);
-  }
+	public TMP_Text requiredTM;
 
-  public void Refresh()
-  {
-    this.SetButtons();
-    TownManager.Instance.SetTownBuildings();
-  }
+	public Transform exitButton;
 
-  public void ShowSellSupply(bool state)
-  {
-    this.sellSupplyT.gameObject.SetActive(state);
-    this.supplySellQuantity.text = "0";
-    this.ModifySupplyQuantity(0);
-  }
+	public Transform resetButton;
 
-  public void ModifySupplyQuantity(int _quantity)
-  {
-    int quantity = int.Parse(this.supplySellQuantity.text.Split(' ', StringSplitOptions.None)[0]) + _quantity;
-    if (quantity < 0)
-      quantity = 0;
-    else if (quantity > PlayerManager.Instance.SupplyActual)
-      quantity = PlayerManager.Instance.SupplyActual;
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(quantity);
-    stringBuilder.Append(" <voffset=-.2><size=-.1><sprite name=supply>");
-    this.supplySellQuantity.text = stringBuilder.ToString();
-    this.ConvertSupply(quantity);
-  }
+	public Transform pointsButton;
 
-  private void ConvertSupply(int quantity)
-  {
-    int num = quantity * 100;
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(num);
-    stringBuilder.Append(" <sprite name=gold>");
-    stringBuilder.Append(" ");
-    stringBuilder.Append(num);
-    stringBuilder.Append(" <sprite name=dust>");
-    this.supplySellResult.text = stringBuilder.ToString();
-    this.supplySellBg.gameObject.SetActive(true);
-  }
+	public Transform sellSupplyT;
 
-  public void SellSupplyAction()
-  {
-    AtOManager.Instance.SellSupply(int.Parse(this.supplySellQuantity.text.Split(' ', StringSplitOptions.None)[0]));
-    this.ShowSellSupply(false);
-  }
+	public Transform sellSupplyButton;
 
-  private IEnumerator SetButtonsCo()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-    this.SetButtons();
-  }
+	public TMP_Text supplySellQuantity;
 
-  private void SetButtons()
-  {
-    int playerSupplyActual = PlayerManager.Instance.GetPlayerSupplyActual();
-    int num = PlayerManager.Instance.TotalPointsSpentInSupplys();
-    if (num < 30)
-    {
-      this.requiredTM.gameObject.SetActive(true);
-      this.requiredTM.text = string.Format(Texts.Instance.GetText("townRequired"), (object) (30 - num));
-    }
-    else
-      this.requiredTM.gameObject.SetActive(false);
-    for (int index = 0; index < this.botonSupply.Count; ++index)
-    {
-      if (PlayerManager.Instance.PlayerHaveSupply(this.botonSupply[index].supplyId))
-        this.botonSupply[index].ShowSelected();
-      else if (this.botonSupply[index].row == 1 && playerSupplyActual > 0)
-        this.botonSupply[index].ShowAvailable();
-      else if (PlayerManager.Instance.PointsRequiredForSupply(this.botonSupply[index].supplyId) <= playerSupplyActual && PlayerManager.Instance.PlayerHaveSupply(PlayerManager.Instance.SupplyRequiredForSupply(this.botonSupply[index].supplyId)))
-      {
-        if (this.botonSupply[index].row <= 3 || this.botonSupply[index].row > 3 && num >= 30)
-          this.botonSupply[index].ShowAvailable();
-        else
-          this.botonSupply[index].ShowLocked();
-      }
-      else
-        this.botonSupply[index].ShowLocked();
-    }
-    if (PlayerManager.Instance.PlayerHaveSupply("townUpgrade_6_6") && AtOManager.Instance.GetNgPlus() < 6)
-      this.sellSupplyButton.gameObject.SetActive(true);
-    else
-      this.sellSupplyButton.gameObject.SetActive(false);
-    if (!GameManager.Instance.GetDeveloperMode())
-      return;
-    this.sellSupplyButton.gameObject.SetActive(true);
-  }
+	public TMP_Text supplySellResult;
 
-  public bool IsActive() => this.elements.gameObject.activeSelf;
+	public Transform supplySellBg;
 
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    int absolutePosition = -1)
-  {
-    this._controllerList.Clear();
-    if (Functions.TransformIsVisible(this.sellSupplyT))
-    {
-      for (int index = 0; index < this.sellSupplyTransforms.Count; ++index)
-        this._controllerList.Add(this.sellSupplyTransforms[index].transform);
-    }
-    else
-    {
-      for (int index = 0; index < this.botonSupply.Count; ++index)
-        this._controllerList.Add(this.botonSupply[index].transform);
-      if (Functions.TransformIsVisible(this.sellSupplyButton))
-      {
-        this._controllerList.Add(this.sellSupplyButton);
-        this._controllerList.Add(this.exitButton);
-      }
-      else
-      {
-        this._controllerList.Add(this.exitButton);
-        this._controllerList.Add(this.exitButton);
-      }
-    }
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((UnityEngine.Object) this._controllerList[this.controllerHorizontalIndex] != (UnityEngine.Object) null))
-      return;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
+	public List<Transform> sellSupplyTransforms;
+
+	public int controllerHorizontalIndex = -1;
+
+	private Vector2 warpPosition = Vector2.zero;
+
+	private List<Transform> _controllerList = new List<Transform>();
+
+	private void Start()
+	{
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			resetButton.gameObject.SetActive(value: true);
+			pointsButton.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			resetButton.gameObject.SetActive(value: false);
+			pointsButton.gameObject.SetActive(value: false);
+		}
+		sellSupplyT.gameObject.SetActive(value: false);
+	}
+
+	public void Show(bool state)
+	{
+		elements.gameObject.SetActive(state);
+		if (state)
+		{
+			StartCoroutine(SetButtonsCo());
+			TownManager.Instance.ShowButtons(state: false);
+		}
+		else
+		{
+			TownManager.Instance.ShowButtons(state: true);
+		}
+	}
+
+	public void Refresh()
+	{
+		SetButtons();
+		TownManager.Instance.SetTownBuildings();
+	}
+
+	public void ShowSellSupply(bool state)
+	{
+		sellSupplyT.gameObject.SetActive(state);
+		supplySellQuantity.text = "0";
+		ModifySupplyQuantity(0);
+	}
+
+	public void ModifySupplyQuantity(int _quantity)
+	{
+		int num = int.Parse(supplySellQuantity.text.Split(' ')[0]);
+		num += _quantity;
+		if (num < 0)
+		{
+			num = 0;
+		}
+		else if (num > PlayerManager.Instance.SupplyActual)
+		{
+			num = PlayerManager.Instance.SupplyActual;
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(num);
+		stringBuilder.Append(" <voffset=-.2><size=-.1><sprite name=supply>");
+		supplySellQuantity.text = stringBuilder.ToString();
+		ConvertSupply(num);
+	}
+
+	private void ConvertSupply(int quantity)
+	{
+		int value = quantity * 100;
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(value);
+		stringBuilder.Append(" <sprite name=gold>");
+		stringBuilder.Append(" ");
+		stringBuilder.Append(value);
+		stringBuilder.Append(" <sprite name=dust>");
+		supplySellResult.text = stringBuilder.ToString();
+		supplySellBg.gameObject.SetActive(value: true);
+	}
+
+	public void SellSupplyAction()
+	{
+		int quantity = int.Parse(supplySellQuantity.text.Split(' ')[0]);
+		AtOManager.Instance.SellSupply(quantity);
+		ShowSellSupply(state: false);
+	}
+
+	private IEnumerator SetButtonsCo()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.01f);
+		SetButtons();
+	}
+
+	private void SetButtons()
+	{
+		int playerSupplyActual = PlayerManager.Instance.GetPlayerSupplyActual();
+		int num = PlayerManager.Instance.TotalPointsSpentInSupplys();
+		if (num < 30)
+		{
+			requiredTM.gameObject.SetActive(value: true);
+			requiredTM.text = string.Format(Texts.Instance.GetText("townRequired"), 30 - num);
+		}
+		else
+		{
+			requiredTM.gameObject.SetActive(value: false);
+		}
+		for (int i = 0; i < botonSupply.Count; i++)
+		{
+			if (PlayerManager.Instance.PlayerHaveSupply(botonSupply[i].supplyId))
+			{
+				botonSupply[i].ShowSelected();
+			}
+			else if (botonSupply[i].row == 1 && playerSupplyActual > 0)
+			{
+				botonSupply[i].ShowAvailable();
+			}
+			else if (PlayerManager.Instance.PointsRequiredForSupply(botonSupply[i].supplyId) <= playerSupplyActual && PlayerManager.Instance.PlayerHaveSupply(PlayerManager.Instance.SupplyRequiredForSupply(botonSupply[i].supplyId)))
+			{
+				if (botonSupply[i].row <= 3 || (botonSupply[i].row > 3 && num >= 30))
+				{
+					botonSupply[i].ShowAvailable();
+				}
+				else
+				{
+					botonSupply[i].ShowLocked();
+				}
+			}
+			else
+			{
+				botonSupply[i].ShowLocked();
+			}
+		}
+		if (PlayerManager.Instance.PlayerHaveSupply("townUpgrade_6_6") && AtOManager.Instance.GetNgPlus() < 6)
+		{
+			sellSupplyButton.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			sellSupplyButton.gameObject.SetActive(value: false);
+		}
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			sellSupplyButton.gameObject.SetActive(value: true);
+		}
+	}
+
+	public bool IsActive()
+	{
+		return elements.gameObject.activeSelf;
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, int absolutePosition = -1)
+	{
+		_controllerList.Clear();
+		if (Functions.TransformIsVisible(sellSupplyT))
+		{
+			for (int i = 0; i < sellSupplyTransforms.Count; i++)
+			{
+				_controllerList.Add(sellSupplyTransforms[i].transform);
+			}
+		}
+		else
+		{
+			for (int j = 0; j < botonSupply.Count; j++)
+			{
+				_controllerList.Add(botonSupply[j].transform);
+			}
+			if (Functions.TransformIsVisible(sellSupplyButton))
+			{
+				_controllerList.Add(sellSupplyButton);
+				_controllerList.Add(exitButton);
+			}
+			else
+			{
+				_controllerList.Add(exitButton);
+				_controllerList.Add(exitButton);
+			}
+		}
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
 }

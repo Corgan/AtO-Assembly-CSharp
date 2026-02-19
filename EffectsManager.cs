@@ -1,440 +1,450 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EffectsManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-#nullable disable
 public class EffectsManager : MonoBehaviour
 {
-  public GameObject effectsPrefab;
-  private List<GameObject> listEffects;
-  public GameObject slashPrefab;
-  private Dictionary<string, float> EffectPlayedTimePassed = new Dictionary<string, float>();
+	public GameObject effectsPrefab;
 
-  public static EffectsManager Instance { get; private set; }
+	private List<GameObject> listEffects;
 
-  private void Awake()
-  {
-    if ((Object) EffectsManager.Instance == (Object) null)
-      EffectsManager.Instance = this;
-    else if ((Object) EffectsManager.Instance != (Object) this)
-      Object.Destroy((Object) this.gameObject);
-    this.CreateEffects(60, this.effectsPrefab);
-  }
+	public GameObject slashPrefab;
 
-  public void CreateEffects(int size, GameObject prefab)
-  {
-    this.listEffects = new List<GameObject>();
-    for (int index = 0; index < size; ++index)
-    {
-      GameObject gameObject = Object.Instantiate<GameObject>(prefab, this.transform);
-      this.listEffects.Add(gameObject);
-      gameObject.SetActive(false);
-    }
-  }
+	private Dictionary<string, float> EffectPlayedTimePassed = new Dictionary<string, float>();
 
-  public void PlayEffect(string effectName, float posX)
-  {
-    this.StartCoroutine(this.PlayEffectCo(effectName, posX));
-  }
+	public static EffectsManager Instance { get; private set; }
 
-  private IEnumerator PlayEffectCo(string effectName, float posX)
-  {
-    GameObject effectGO = this.GetEffect();
-    Effects effects = effectGO.GetComponent<Effects>();
-    if (!effectGO.gameObject.activeSelf)
-      effectGO.gameObject.SetActive(true);
-    effects.Play(effectName, posX, false, false, false);
-    for (int exhaust = 0; !effects.HasStopped() && exhaust < 50; ++exhaust)
-      yield return (object) Globals.Instance.WaitForSeconds(0.05f);
-    effects.Stop(effectName);
-    this.DestroyEffect(effectGO);
-    yield return (object) null;
-  }
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(base.gameObject);
+		}
+		CreateEffects(60, effectsPrefab);
+	}
 
-  public void PlayEffect(string effectName, Transform theTransform)
-  {
-    this.StartCoroutine(this.PlayEffectCo(effectName, theTransform));
-  }
+	public void CreateEffects(int size, GameObject prefab)
+	{
+		listEffects = new List<GameObject>();
+		for (int i = 0; i < size; i++)
+		{
+			GameObject gameObject = Object.Instantiate(prefab, base.transform);
+			listEffects.Add(gameObject);
+			gameObject.SetActive(value: false);
+		}
+	}
 
-  private IEnumerator PlayEffectCo(string effectName, Transform theTransform)
-  {
-    GameObject effectGO = this.GetEffect();
-    Effects effects = effectGO.GetComponent<Effects>();
-    if (!effectGO.gameObject.activeSelf)
-      effectGO.gameObject.SetActive(true);
-    effects.Play(effectName, theTransform, false, false, false);
-    for (int exhaust = 0; !effects.HasStopped() && exhaust < 50; ++exhaust)
-      yield return (object) Globals.Instance.WaitForSeconds(0.05f);
-    effects.Stop(effectName);
-    this.DestroyEffect(effectGO);
-    yield return (object) null;
-  }
+	public void PlayEffect(string effectName, float posX)
+	{
+		StartCoroutine(PlayEffectCo(effectName, posX));
+	}
 
-  public void PlayEffect(
-    CardData card,
-    bool isCaster,
-    bool isHero,
-    Transform theTransform,
-    float delay = 0.0f)
-  {
-    if (!GameManager.Instance.ConfigShowEffects)
-      return;
-    this.StartCoroutine(this.PlayEffectCo(card, isCaster, isHero, theTransform));
-  }
+	private IEnumerator PlayEffectCo(string effectName, float posX)
+	{
+		GameObject effectGO = GetEffect();
+		Effects effects = effectGO.GetComponent<Effects>();
+		if (!effectGO.gameObject.activeSelf)
+		{
+			effectGO.gameObject.SetActive(value: true);
+		}
+		effects.Play(effectName, posX, isHero: false, flip: false, castInCenter: false);
+		int exhaust = 0;
+		while (!effects.HasStopped() && exhaust < 50)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.05f);
+			exhaust++;
+		}
+		effects.Stop(effectName);
+		DestroyEffect(effectGO);
+		yield return null;
+	}
 
-  public void PlayEffect(
-    string TargetEffect,
-    Transform TargetTransform,
-    bool isHero,
-    bool castInCenter,
-    float delay = 0.0f)
-  {
-    this.StartCoroutine(this.PlayEffectCo(TargetEffect, TargetTransform, isHero, castInCenter, delay));
-  }
+	public void PlayEffect(string effectName, Transform theTransform)
+	{
+		StartCoroutine(PlayEffectCo(effectName, theTransform));
+	}
 
-  private IEnumerator PlayEffectCo(
-    string TargetEffect,
-    Transform TargetTransform,
-    bool isHero,
-    bool castInCenter,
-    float delay = 0.0f)
-  {
-    EffectsManager effectsManager = this;
-    yield return (object) new WaitForSeconds(delay);
-    GameObject effect = effectsManager.GetEffect();
-    Effects component = effect.GetComponent<Effects>();
-    if (!effect.gameObject.activeSelf)
-      effect.gameObject.SetActive(true);
-    component.Play(TargetEffect, TargetTransform, isHero, !isHero, castInCenter);
-    effectsManager.StartCoroutine(effectsManager.StopEffectWithDelay(effect, component, TargetEffect, 3f));
-  }
+	private IEnumerator PlayEffectCo(string effectName, Transform theTransform)
+	{
+		GameObject effectGO = GetEffect();
+		Effects effects = effectGO.GetComponent<Effects>();
+		if (!effectGO.gameObject.activeSelf)
+		{
+			effectGO.gameObject.SetActive(value: true);
+		}
+		effects.Play(effectName, theTransform, isHero: false, flip: false, castInCenter: false);
+		int exhaust = 0;
+		while (!effects.HasStopped() && exhaust < 50)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.05f);
+			exhaust++;
+		}
+		effects.Stop(effectName);
+		DestroyEffect(effectGO);
+		yield return null;
+	}
 
-  private IEnumerator PlayEffectCo(
-    CardData card,
-    bool isCaster,
-    bool isHero,
-    Transform theTransform,
-    float delay = 0.0f)
-  {
-    GameObject effectGO = this.GetEffect();
-    Effects effects = effectGO.GetComponent<Effects>();
-    if (!effectGO.gameObject.activeSelf)
-      effectGO.gameObject.SetActive(true);
-    string effect = "";
-    bool flip = false;
-    if (card.CardClass == Enums.CardClass.Monster)
-      flip = true;
-    effect = !isCaster ? card.EffectTarget : card.EffectCaster;
-    string key = effect + theTransform.name;
-    float num1 = 0.0f;
-    float num2 = 0.2f;
-    if (this.EffectPlayedTimePassed.TryGetValue(key, out num1))
-    {
-      if ((double) Time.time < (double) this.EffectPlayedTimePassed[key] + (double) num2)
-        yield break;
-      else
-        this.EffectPlayedTimePassed[key] = Time.time;
-    }
-    else
-      this.EffectPlayedTimePassed.Add(key, Time.time);
-    bool castInCenter = false;
-    if (isCaster && card.EffectCastCenter)
-      castInCenter = true;
-    if (isHero)
-      effects.Play(effect, theTransform, true, flip, castInCenter);
-    else
-      effects.Play(effect, theTransform, false, flip, castInCenter);
-    for (int _exhaust = 0; !effects.HasStopped() && _exhaust < 50; ++_exhaust)
-      yield return (object) Globals.Instance.WaitForSeconds(0.05f);
-    effects.Stop(effect);
-    this.DestroyEffect(effectGO);
-    yield return (object) null;
-  }
+	public void PlayEffect(CardData card, bool isCaster, bool isHero, Transform theTransform, float delay = 0f)
+	{
+		if (GameManager.Instance.ConfigShowEffects)
+		{
+			StartCoroutine(PlayEffectCo(card, isCaster, isHero, theTransform));
+		}
+	}
 
-  public void PlayEffectAC(
-    string effect,
-    bool isHero,
-    Transform theTransform,
-    bool flip,
-    float delay = 0.0f,
-    bool casterInCenter = false)
-  {
-    if (!GameManager.Instance.ConfigShowEffects)
-      return;
-    this.StartCoroutine(this.PlayEffectACCo(effect, isHero, theTransform, flip, delay, casterInCenter));
-  }
+	public void PlayEffect(string TargetEffect, Transform TargetTransform, bool isHero, bool castInCenter, float delay = 0f)
+	{
+		StartCoroutine(PlayEffectCo(TargetEffect, TargetTransform, isHero, castInCenter, delay));
+	}
 
-  private IEnumerator PlayEffectACCo(
-    string effect,
-    bool isHero,
-    Transform theTransform,
-    bool flip,
-    float delay,
-    bool casterInCenter = false)
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * delay);
-    if (!((Object) theTransform == (Object) null))
-    {
-      string key = effect + theTransform.name;
-      float num1 = 0.0f;
-      float num2 = 1f;
-      if (this.EffectPlayedTimePassed.TryGetValue(key, out num1))
-      {
-        if ((double) Time.time < (double) this.EffectPlayedTimePassed[key] + (double) num2)
-          yield break;
-        else
-          this.EffectPlayedTimePassed[key] = Time.time;
-      }
-      else
-        this.EffectPlayedTimePassed.Add(key, Time.time);
-      GameObject effectGO = this.GetEffect();
-      if ((Object) effectGO != (Object) null)
-      {
-        Effects effects = effectGO.GetComponent<Effects>();
-        effectGO.gameObject.SetActive(true);
-        effects.Play(effect, theTransform, isHero, flip, casterInCenter);
-        for (int _exhaust = 0; !effects.HasStopped() && _exhaust < 50; ++_exhaust)
-          yield return (object) Globals.Instance.WaitForSeconds((float) ((double) Time.deltaTime * 60.0 * 0.10000000149011612));
-        effects.Stop(effect);
-        this.DestroyEffect(effectGO);
-        effects = (Effects) null;
-      }
-    }
-  }
+	private IEnumerator PlayEffectCo(string TargetEffect, Transform TargetTransform, bool isHero, bool castInCenter, float delay = 0f)
+	{
+		yield return new WaitForSeconds(delay);
+		GameObject effect = GetEffect();
+		Effects component = effect.GetComponent<Effects>();
+		if (!effect.gameObject.activeSelf)
+		{
+			effect.gameObject.SetActive(value: true);
+		}
+		component.Play(TargetEffect, TargetTransform, isHero, !isHero, castInCenter);
+		StartCoroutine(StopEffectWithDelay(effect, component, TargetEffect, 3f));
+	}
 
-  public void PlayEffectTrail(
-    CardData card,
-    bool isHero,
-    Transform from,
-    Transform to,
-    int distance)
-  {
-    if (!GameManager.Instance.ConfigShowEffects || !GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
-      MatchManager.Instance.waitingTrail = false;
-    else
-      this.StartCoroutine(this.PlayEffectTrailCo(card, isHero, from, to, distance));
-  }
+	private IEnumerator PlayEffectCo(CardData card, bool isCaster, bool isHero, Transform theTransform, float delay = 0f)
+	{
+		GameObject effectGO = GetEffect();
+		Effects effects = effectGO.GetComponent<Effects>();
+		if (!effectGO.gameObject.activeSelf)
+		{
+			effectGO.gameObject.SetActive(value: true);
+		}
+		bool flip = false;
+		if (card.CardClass == Enums.CardClass.Monster)
+		{
+			flip = true;
+		}
+		string effect = ((!isCaster) ? card.EffectTarget : card.EffectCaster);
+		string key = effect + theTransform.name;
+		float value = 0f;
+		float num = 0.2f;
+		if (EffectPlayedTimePassed.TryGetValue(key, out value))
+		{
+			if (Time.time < EffectPlayedTimePassed[key] + num)
+			{
+				yield break;
+			}
+			EffectPlayedTimePassed[key] = Time.time;
+		}
+		else
+		{
+			EffectPlayedTimePassed.Add(key, Time.time);
+		}
+		bool castInCenter = false;
+		if (isCaster && card.EffectCastCenter)
+		{
+			castInCenter = true;
+		}
+		if (isHero)
+		{
+			effects.Play(effect, theTransform, isHero: true, flip, castInCenter);
+		}
+		else
+		{
+			effects.Play(effect, theTransform, isHero: false, flip, castInCenter);
+		}
+		int _exhaust = 0;
+		while (!effects.HasStopped() && _exhaust < 50)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.05f);
+			_exhaust++;
+		}
+		effects.Stop(effect);
+		DestroyEffect(effectGO);
+		yield return null;
+	}
 
-  private IEnumerator PlayEffectTrailCo(
-    CardData card,
-    bool isHero,
-    Transform from,
-    Transform to,
-    int distance)
-  {
-    if (!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
-    {
-      MatchManager.Instance.waitingTrail = false;
-    }
-    else
-    {
-      GameObject effectGO = this.GetEffect();
-      if (!((Object) effectGO == (Object) null))
-      {
-        Effects effects = effectGO.GetComponent<Effects>();
-        if ((Object) effects == (Object) null)
-        {
-          Debug.LogError((object) "Effects is null");
-        }
-        else
-        {
-          if (!effectGO.gameObject.activeSelf)
-            effectGO.gameObject.SetActive(true);
-          if (isHero)
-            effects.Play(card.EffectTrail, from, true, false, false);
-          else
-            effects.Play(card.EffectTrail, from, false, true, false);
-          Vector3 vector3_1 = new Vector3(to.position.x, 1.4f, to.position.z);
-          Transform effectT = effectGO.transform;
-          effectT.position = new Vector3(from.position.x, 1.4f, from.position.z);
-          if (card.EffectTrailAngle == Enums.EffectTrailAngle.Parabolic || card.EffectTrailAngle == Enums.EffectTrailAngle.Horizontal)
-          {
-            if ((double) to.position.x > (double) from.position.x)
-              effectT.position += new Vector3(0.6f, 0.0f, 0.0f);
-            else
-              effectT.position -= new Vector3(0.6f, 0.0f, 0.0f);
-          }
-          if (card.CardClass == Enums.CardClass.Monster)
-            effectT.localScale = new Vector3(effectT.localScale.x * -1f, effectT.localScale.y * -1f, effectT.localScale.z);
-          bool goingRight;
-          float iterationDelay;
-          float speed;
-          Vector3 targetPos1;
-          float stepY;
-          if (card.EffectTrailAngle == Enums.EffectTrailAngle.Diagonal || card.EffectTrailAngle == Enums.EffectTrailAngle.Vertical)
-          {
-            float num1 = (float) Screen.height * 0.005f;
-            float num2 = (float) Screen.width * 0.0015f;
-            goingRight = true;
-            float num3 = (float) (-(double) effectT.localPosition.y + 1.7999999523162842);
-            if (card.EffectTrailAngle == Enums.EffectTrailAngle.Vertical)
-            {
-              iterationDelay = 0.01f;
-              speed = 6f * card.EffectTrailSpeed;
-              if (GameManager.Instance.IsMultiplayer() || GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Fast || GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
-                speed *= 1.5f;
-              else
-                speed *= 1.2f;
-              effectT.position = new Vector3(to.position.x, num1 + 2f, to.position.z);
-              targetPos1 = new Vector3(to.position.x, 1.4f, to.position.z);
-              bool finished = false;
-              effectT.rotation = Quaternion.Euler(0.0f, 0.0f, 90f);
-              while (!finished)
-              {
-                Vector3 vector3_2 = Vector3.MoveTowards(effectT.position, targetPos1, speed * Time.deltaTime);
-                Debug.Log((object) vector3_2.y);
-                effectT.position = vector3_2;
-                if ((double) Mathf.Abs(vector3_2.y - targetPos1.y) < 0.10000000149011612)
-                  finished = true;
-                yield return (object) Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * iterationDelay);
-              }
-              targetPos1 = new Vector3();
-            }
-            else
-            {
-              float num4 = num3 - 0.2f;
-              if ((double) to.position.x > (double) from.position.x)
-              {
-                effectT.localRotation = Quaternion.Euler(0.0f, 0.0f, -45f);
-                effectT.position = to.position + new Vector3(-num2 - num4, num1 + 2f, 0.0f);
-              }
-              else
-              {
-                goingRight = false;
-                effectT.localRotation = Quaternion.Euler(0.0f, 0.0f, 45f);
-                effectT.position = to.position + new Vector3(num2 + num4, num1 + 2f, 0.0f);
-              }
-              speed = 40f;
-              iterationDelay = num2 / speed;
-              stepY = num1 / speed;
-              effectT.position += new Vector3(0.0f, stepY, 0.0f);
-              for (int i = 0; (double) i < (double) speed; ++i)
-              {
-                if (card.EffectTrailAngle == Enums.EffectTrailAngle.Vertical)
-                  effectT.position += new Vector3(0.0f, -stepY, 0.0f);
-                else if (goingRight)
-                  effectT.position += new Vector3(iterationDelay, -stepY, 0.0f);
-                else
-                  effectT.position += new Vector3(-iterationDelay, -stepY, 0.0f);
-                yield return (object) Globals.Instance.WaitForSeconds((float) ((double) Time.deltaTime * 60.0 * 0.0099999997764825821));
-              }
-            }
-          }
-          else
-          {
-            float num5 = Globals.Instance.sizeW * 0.8f;
-            float num6 = Globals.Instance.sizeW * 0.2f;
-            stepY = 0.01f;
-            iterationDelay = 14f * card.EffectTrailSpeed;
-            if (GameManager.Instance.IsMultiplayer() || GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Fast || GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
-              iterationDelay *= 1.85f;
-            else
-              iterationDelay *= 1.7f;
-            float x1 = 0.4f;
-            targetPos1 = new Vector3(from.position.x, 1.4f, from.position.z);
-            Vector3 targetPos2 = new Vector3(to.position.x - to.localPosition.x, 1.4f, to.position.z);
-            if ((double) targetPos1.x < (double) targetPos2.x)
-            {
-              targetPos1 += new Vector3(x1, 0.0f, 0.0f);
-              targetPos2 -= new Vector3(x1, 0.0f, 0.0f);
-            }
-            else
-            {
-              targetPos1 -= new Vector3(x1, 0.0f, 0.0f);
-              targetPos2 += new Vector3(x1, 0.0f, 0.0f);
-            }
-            float num7 = Mathf.Abs(targetPos1.x - targetPos2.x);
-            effectT.position = targetPos1;
-            if (card.EffectTrailAngle == Enums.EffectTrailAngle.Parabolic)
-            {
-              goingRight = false;
-              float min = 0.1f;
-              float max = 4f;
-              speed = Mathf.Clamp(min + (float) (((double) num7 - (double) num6) / ((double) num5 - (double) num6) * ((double) max - (double) min)), min, max);
-              while (!goingRight)
-              {
-                float x2 = targetPos1.x;
-                float x3 = targetPos2.x;
-                float num8 = x3 - x2;
-                float x4 = Mathf.MoveTowards(effectT.position.x, x3, iterationDelay * Time.deltaTime);
-                float num9 = Mathf.Lerp(targetPos1.y, targetPos2.y, (x4 - x2) / num8);
-                float num10 = (float) ((double) speed * ((double) x4 - (double) x2) * ((double) x4 - (double) x3) / (-0.25 * (double) num8 * (double) num8));
-                Vector3 vector3_3 = new Vector3(x4, num9 + num10, effectT.position.z);
-                effectT.rotation = this.LookAt2D((Vector2) (vector3_3 - effectT.position));
-                effectT.position = vector3_3;
-                if ((double) Mathf.Abs(vector3_3.x - targetPos2.x) < 0.10000000149011612)
-                  goingRight = true;
-                yield return (object) Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * stepY);
-              }
-            }
-            else
-            {
-              goingRight = false;
-              while (!goingRight)
-              {
-                Vector3 vector3_4 = Vector3.MoveTowards(effectT.position, targetPos2, iterationDelay * Time.deltaTime);
-                effectT.rotation = this.LookAt2D((Vector2) (vector3_4 - effectT.position));
-                effectT.position = vector3_4;
-                if ((double) Mathf.Abs(vector3_4.x - targetPos2.x) < 0.10000000149011612)
-                  goingRight = true;
-                yield return (object) Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * stepY);
-              }
-            }
-            targetPos1 = new Vector3();
-            targetPos2 = new Vector3();
-          }
-          effectT.localRotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
-          MatchManager.Instance.waitingTrail = false;
-          effects.Stop(card.EffectTrail);
-          this.DestroyEffect(effectGO);
-        }
-      }
-    }
-  }
+	public void PlayEffectAC(string effect, bool isHero, Transform theTransform, bool flip, float delay = 0f, bool casterInCenter = false)
+	{
+		if (GameManager.Instance.ConfigShowEffects)
+		{
+			StartCoroutine(PlayEffectACCo(effect, isHero, theTransform, flip, delay, casterInCenter));
+		}
+	}
 
-  private Quaternion LookAt2D(Vector2 forward)
-  {
-    return Quaternion.Euler(0.0f, 0.0f, Mathf.Atan2(forward.y, forward.x) * 57.29578f);
-  }
+	private IEnumerator PlayEffectACCo(string effect, bool isHero, Transform theTransform, bool flip, float delay, bool casterInCenter = false)
+	{
+		yield return Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * delay);
+		if (theTransform == null)
+		{
+			yield break;
+		}
+		string key = effect + theTransform.name;
+		float value = 0f;
+		float num = 1f;
+		if (EffectPlayedTimePassed.TryGetValue(key, out value))
+		{
+			if (Time.time < EffectPlayedTimePassed[key] + num)
+			{
+				yield break;
+			}
+			EffectPlayedTimePassed[key] = Time.time;
+		}
+		else
+		{
+			EffectPlayedTimePassed.Add(key, Time.time);
+		}
+		GameObject effectGO = GetEffect();
+		if (effectGO != null)
+		{
+			Effects effects = effectGO.GetComponent<Effects>();
+			effectGO.gameObject.SetActive(value: true);
+			effects.Play(effect, theTransform, isHero, flip, casterInCenter);
+			int _exhaust = 0;
+			while (!effects.HasStopped() && _exhaust < 50)
+			{
+				yield return Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * 0.1f);
+				_exhaust++;
+			}
+			effects.Stop(effect);
+			DestroyEffect(effectGO);
+		}
+	}
 
-  public GameObject GetEffect()
-  {
-    if (this.listEffects.Count <= 0)
-      return (GameObject) null;
-    GameObject listEffect = this.listEffects[0];
-    if ((double) listEffect.transform.localScale.x < 0.0)
-      listEffect.transform.localScale = new Vector3(Mathf.Abs(listEffect.transform.localScale.x), Mathf.Abs(listEffect.transform.localScale.y), listEffect.transform.localScale.z);
-    this.listEffects.RemoveAt(0);
-    return listEffect;
-  }
+	public void PlayEffectTrail(CardData card, bool isHero, Transform from, Transform to, int distance)
+	{
+		if (!GameManager.Instance.ConfigShowEffects || (!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast))
+		{
+			MatchManager.Instance.waitingTrail = false;
+		}
+		else
+		{
+			StartCoroutine(PlayEffectTrailCo(card, isHero, from, to, distance));
+		}
+	}
 
-  public void DestroyEffect(GameObject obj)
-  {
-    if (obj.gameObject.activeSelf)
-      obj.gameObject.SetActive(false);
-    this.listEffects.Add(obj);
-  }
+	private IEnumerator PlayEffectTrailCo(CardData card, bool isHero, Transform from, Transform to, int distance)
+	{
+		if (!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
+		{
+			MatchManager.Instance.waitingTrail = false;
+			yield break;
+		}
+		GameObject effectGO = GetEffect();
+		if (effectGO == null)
+		{
+			yield break;
+		}
+		Effects effects = effectGO.GetComponent<Effects>();
+		if (effects == null)
+		{
+			Debug.LogError("Effects is null");
+			yield break;
+		}
+		if (!effectGO.gameObject.activeSelf)
+		{
+			effectGO.gameObject.SetActive(value: true);
+		}
+		if (isHero)
+		{
+			effects.Play(card.EffectTrail, from, isHero: true, flip: false, castInCenter: false);
+		}
+		else
+		{
+			effects.Play(card.EffectTrail, from, isHero: false, flip: true, castInCenter: false);
+		}
+		new Vector3(to.position.x, 1.4f, to.position.z);
+		Transform effectT = effectGO.transform;
+		effectT.position = new Vector3(from.position.x, 1.4f, from.position.z);
+		if (card.EffectTrailAngle == Enums.EffectTrailAngle.Parabolic || card.EffectTrailAngle == Enums.EffectTrailAngle.Horizontal)
+		{
+			if (to.position.x > from.position.x)
+			{
+				effectT.position += new Vector3(0.6f, 0f, 0f);
+			}
+			else
+			{
+				effectT.position -= new Vector3(0.6f, 0f, 0f);
+			}
+		}
+		if (card.CardClass == Enums.CardClass.Monster)
+		{
+			effectT.localScale = new Vector3(effectT.localScale.x * -1f, effectT.localScale.y * -1f, effectT.localScale.z);
+		}
+		if (card.EffectTrailAngle == Enums.EffectTrailAngle.Diagonal || card.EffectTrailAngle == Enums.EffectTrailAngle.Vertical)
+		{
+			float num = (float)Screen.height * 0.005f;
+			float num2 = (float)Screen.width * 0.0015f;
+			bool goingRight = true;
+			float num3 = 0f - effectT.localPosition.y + 1.8f;
+			if (card.EffectTrailAngle == Enums.EffectTrailAngle.Vertical)
+			{
+				float iterationDelay = 0.01f;
+				float speed = 6f * card.EffectTrailSpeed;
+				speed = ((!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed != Enums.ConfigSpeed.Fast && GameManager.Instance.configGameSpeed != Enums.ConfigSpeed.Ultrafast) ? (speed * 1.2f) : (speed * 1.5f));
+				Vector3 position = new Vector3(to.position.x, num + 2f, to.position.z);
+				effectT.position = position;
+				Vector3 targetPos = new Vector3(to.position.x, 1.4f, to.position.z);
+				bool finished = false;
+				effectT.rotation = Quaternion.Euler(0f, 0f, 90f);
+				while (!finished)
+				{
+					Vector3 position2 = Vector3.MoveTowards(effectT.position, targetPos, speed * Time.deltaTime);
+					Debug.Log(position2.y);
+					effectT.position = position2;
+					if (Mathf.Abs(position2.y - targetPos.y) < 0.1f)
+					{
+						finished = true;
+					}
+					yield return Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * iterationDelay);
+				}
+			}
+			else
+			{
+				num3 -= 0.2f;
+				if (to.position.x > from.position.x)
+				{
+					effectT.localRotation = Quaternion.Euler(0f, 0f, -45f);
+					effectT.position = to.position + new Vector3(0f - num2 - num3, num + 2f, 0f);
+				}
+				else
+				{
+					goingRight = false;
+					effectT.localRotation = Quaternion.Euler(0f, 0f, 45f);
+					effectT.position = to.position + new Vector3(num2 + num3, num + 2f, 0f);
+				}
+				float speed = 40f;
+				float iterationDelay = num2 / speed;
+				float stepY = num / speed;
+				effectT.position += new Vector3(0f, stepY, 0f);
+				for (int i = 0; (float)i < speed; i++)
+				{
+					if (card.EffectTrailAngle == Enums.EffectTrailAngle.Vertical)
+					{
+						effectT.position += new Vector3(0f, 0f - stepY, 0f);
+					}
+					else if (goingRight)
+					{
+						effectT.position += new Vector3(iterationDelay, 0f - stepY, 0f);
+					}
+					else
+					{
+						effectT.position += new Vector3(0f - iterationDelay, 0f - stepY, 0f);
+					}
+					yield return Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * 0.01f);
+				}
+			}
+		}
+		else
+		{
+			float num4 = Globals.Instance.sizeW * 0.8f;
+			float num5 = Globals.Instance.sizeW * 0.2f;
+			float stepY = 0.01f;
+			float iterationDelay = 14f * card.EffectTrailSpeed;
+			iterationDelay = ((!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed != Enums.ConfigSpeed.Fast && GameManager.Instance.configGameSpeed != Enums.ConfigSpeed.Ultrafast) ? (iterationDelay * 1.7f) : (iterationDelay * 1.85f));
+			float x = 0.4f;
+			Vector3 targetPos = new Vector3(from.position.x, 1.4f, from.position.z);
+			Vector3 targetPos2 = new Vector3(to.position.x - to.localPosition.x, 1.4f, to.position.z);
+			if (targetPos.x < targetPos2.x)
+			{
+				targetPos += new Vector3(x, 0f, 0f);
+				targetPos2 -= new Vector3(x, 0f, 0f);
+			}
+			else
+			{
+				targetPos -= new Vector3(x, 0f, 0f);
+				targetPos2 += new Vector3(x, 0f, 0f);
+			}
+			float num6 = Mathf.Abs(targetPos.x - targetPos2.x);
+			effectT.position = targetPos;
+			if (card.EffectTrailAngle == Enums.EffectTrailAngle.Parabolic)
+			{
+				bool goingRight = false;
+				float num7 = 0.1f;
+				float num8 = 4f;
+				float speed = Mathf.Clamp(num7 + (num6 - num5) / (num4 - num5) * (num8 - num7), num7, num8);
+				while (!goingRight)
+				{
+					float x2 = targetPos.x;
+					float x3 = targetPos2.x;
+					float num9 = x3 - x2;
+					float num10 = Mathf.MoveTowards(effectT.position.x, x3, iterationDelay * Time.deltaTime);
+					float num11 = Mathf.Lerp(targetPos.y, targetPos2.y, (num10 - x2) / num9);
+					float num12 = speed * (num10 - x2) * (num10 - x3) / (-0.25f * num9 * num9);
+					Vector3 vector = new Vector3(num10, num11 + num12, effectT.position.z);
+					effectT.rotation = LookAt2D(vector - effectT.position);
+					effectT.position = vector;
+					if (Mathf.Abs(vector.x - targetPos2.x) < 0.1f)
+					{
+						goingRight = true;
+					}
+					yield return Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * stepY);
+				}
+			}
+			else
+			{
+				bool goingRight = false;
+				while (!goingRight)
+				{
+					Vector3 vector2 = Vector3.MoveTowards(effectT.position, targetPos2, iterationDelay * Time.deltaTime);
+					effectT.rotation = LookAt2D(vector2 - effectT.position);
+					effectT.position = vector2;
+					if (Mathf.Abs(vector2.x - targetPos2.x) < 0.1f)
+					{
+						goingRight = true;
+					}
+					yield return Globals.Instance.WaitForSeconds(Time.deltaTime * 60f * stepY);
+				}
+			}
+		}
+		effectT.localRotation = Quaternion.Euler(0f, 0f, 0f);
+		MatchManager.Instance.waitingTrail = false;
+		effects.Stop(card.EffectTrail);
+		DestroyEffect(effectGO);
+	}
 
-  private IEnumerator StopEffectWithDelay(
-    GameObject obj,
-    Effects effects,
-    string effect,
-    float delay)
-  {
-    yield return (object) new WaitForSeconds(delay);
-    effects.Stop(effect);
-    this.DestroyEffect(obj);
-  }
+	private Quaternion LookAt2D(Vector2 forward)
+	{
+		return Quaternion.Euler(0f, 0f, Mathf.Atan2(forward.y, forward.x) * 57.29578f);
+	}
 
-  public void ClearEffects()
-  {
-    this.listEffects.Clear();
-    this.listEffects = (List<GameObject>) null;
-  }
+	public GameObject GetEffect()
+	{
+		if (listEffects.Count > 0)
+		{
+			GameObject gameObject = listEffects[0];
+			if (gameObject.transform.localScale.x < 0f)
+			{
+				gameObject.transform.localScale = new Vector3(Mathf.Abs(gameObject.transform.localScale.x), Mathf.Abs(gameObject.transform.localScale.y), gameObject.transform.localScale.z);
+			}
+			listEffects.RemoveAt(0);
+			return gameObject;
+		}
+		return null;
+	}
+
+	public void DestroyEffect(GameObject obj)
+	{
+		if (obj.gameObject.activeSelf)
+		{
+			obj.gameObject.SetActive(value: false);
+		}
+		listEffects.Add(obj);
+	}
+
+	private IEnumerator StopEffectWithDelay(GameObject obj, Effects effects, string effect, float delay)
+	{
+		yield return new WaitForSeconds(delay);
+		effects.Stop(effect);
+		DestroyEffect(obj);
+	}
+
+	public void ClearEffects()
+	{
+		listEffects.Clear();
+		listEffects = null;
+	}
 }

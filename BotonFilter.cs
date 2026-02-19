@@ -1,53 +1,57 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BotonFilter
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class BotonFilter : MonoBehaviour
 {
-  public Transform border;
-  public Transform bg;
-  public string id;
-  public string type;
-  private bool active;
+	public Transform border;
 
-  private void Awake()
-  {
-    this.ShowBorder(false);
-    this.select(false);
-  }
+	public Transform bg;
 
-  private void ShowBorder(bool state) => this.border.gameObject.SetActive(state);
+	public string id;
 
-  private void ShowBackground(bool state) => this.bg.gameObject.SetActive(state);
+	public string type;
 
-  public void select(bool state)
-  {
-    this.active = state;
-    this.ShowBackground(state);
-  }
+	private bool active;
 
-  private void OnMouseEnter()
-  {
-    this.ShowBorder(true);
-    if (!(this.id != ""))
-      return;
-    PopupManager.Instance.SetText(Texts.Instance.GetText(this.id), true);
-  }
+	private void Awake()
+	{
+		ShowBorder(state: false);
+		select(state: false);
+	}
 
-  private void OnMouseExit()
-  {
-    this.ShowBorder(false);
-    PopupManager.Instance.ClosePopup();
-  }
+	private void ShowBorder(bool state)
+	{
+		border.gameObject.SetActive(state);
+	}
 
-  private void OnMouseUp()
-  {
-    this.select(!this.active);
-    CardCraftManager.Instance.SelectFilter(this.type, this.id, this.active);
-  }
+	private void ShowBackground(bool state)
+	{
+		bg.gameObject.SetActive(state);
+	}
+
+	public void select(bool state)
+	{
+		active = state;
+		ShowBackground(state);
+	}
+
+	private void OnMouseEnter()
+	{
+		ShowBorder(state: true);
+		if (id != "")
+		{
+			PopupManager.Instance.SetText(Texts.Instance.GetText(id), fast: true);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		ShowBorder(state: false);
+		PopupManager.Instance.ClosePopup();
+	}
+
+	private void OnMouseUp()
+	{
+		select(!active);
+		CardCraftManager.Instance.SelectFilter(type, id, active);
+	}
 }

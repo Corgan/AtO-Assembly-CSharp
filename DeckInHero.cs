@@ -1,41 +1,46 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: DeckInHero
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class DeckInHero : MonoBehaviour
 {
-  public bool isNormalDeck;
-  private SpriteRenderer cardSprite;
-  public int heroIndex;
+	public bool isNormalDeck;
 
-  private void Awake() => this.cardSprite = this.GetComponent<SpriteRenderer>();
+	private SpriteRenderer cardSprite;
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || MatchManager.Instance.CardDrag)
-      return;
-    this.transform.localScale = new Vector3(1.1f, 1.1f, 1f);
-  }
+	public int heroIndex;
 
-  private void OnMouseExit()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || MatchManager.Instance.CardDrag)
-      return;
-    this.transform.localScale = new Vector3(1f, 1f, 1f);
-  }
+	private void Awake()
+	{
+		cardSprite = GetComponent<SpriteRenderer>();
+	}
 
-  private void OnMouseUp()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || MatchManager.Instance.CardDrag)
-      return;
-    if (!this.isNormalDeck)
-      MatchManager.Instance.ShowCharacterWindow("combatdiscard", characterIndex: this.heroIndex);
-    else
-      MatchManager.Instance.ShowCharacterWindow("combatdeck", characterIndex: this.heroIndex);
-  }
+	private void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive() && !MatchManager.Instance.CardDrag)
+		{
+			base.transform.localScale = new Vector3(1.1f, 1.1f, 1f);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive() && !MatchManager.Instance.CardDrag)
+		{
+			base.transform.localScale = new Vector3(1f, 1f, 1f);
+		}
+	}
+
+	private void OnMouseUp()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive() && !MatchManager.Instance.CardDrag)
+		{
+			if (!isNormalDeck)
+			{
+				MatchManager.Instance.ShowCharacterWindow("combatdiscard", isHero: true, heroIndex);
+			}
+			else
+			{
+				MatchManager.Instance.ShowCharacterWindow("combatdeck", isHero: true, heroIndex);
+			}
+		}
+	}
 }

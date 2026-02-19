@@ -1,398 +1,711 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TraitData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Trait", menuName = "Trait Data", order = 58)]
 public class TraitData : ScriptableObject
 {
-  [SerializeField]
-  private string traitName;
-  [SerializeField]
-  private string id;
-  [TextArea]
-  [SerializeField]
-  private string description;
-  [SerializeField]
-  private Enums.EventActivation activation;
-  [SerializeField]
-  private bool activateOnRuneTypeAdded;
-  [SerializeField]
-  private bool tryActivateOnEveryEvent;
-  [SerializeField]
-  private int timesPerTurn;
-  [SerializeField]
-  private int timesPerRound;
-  [Header("Card reward")]
-  [SerializeField]
-  private CardData traitCard;
-  [Header("Card reward for all heroes")]
-  [SerializeField]
-  private CardData traitCardForAllHeroes;
-  [Header("Character stat modification")]
-  [SerializeField]
-  private Enums.CharacterStat characterStatModified;
-  [SerializeField]
-  private int characterStatModifiedValue;
-  [Header("Resist modification")]
-  [SerializeField]
-  private Enums.DamageType resistModified1;
-  [SerializeField]
-  private int resistModifiedValue1;
-  [SerializeField]
-  private Enums.DamageType resistModified2;
-  [SerializeField]
-  private int resistModifiedValue2;
-  [SerializeField]
-  private Enums.DamageType resistModified3;
-  [SerializeField]
-  private int resistModifiedValue3;
-  [Header("AuraCurse immunity")]
-  [SerializeField]
-  private string auracurseImmune1 = "";
-  [SerializeField]
-  private string auracurseImmune2 = "";
-  [SerializeField]
-  private string auracurseImmune3 = "";
-  [SerializeField]
-  private int maxBleedDamagePerTurn = -1;
-  [Header("AuraCurse bonus")]
-  [SerializeField]
-  private AuraCurseData auracurseBonus1;
-  [SerializeField]
-  private int auracurseBonusValue1;
-  [SerializeField]
-  private AuraCurseData auracurseBonus2;
-  [SerializeField]
-  private int auracurseBonusValue2;
-  [SerializeField]
-  private AuraCurseData auracurseBonus3;
-  [SerializeField]
-  private int auracurseBonusValue3;
-  [Header("Heal bonus")]
-  [SerializeField]
-  private int healFlatBonus;
-  [SerializeField]
-  private float healPercentBonus;
-  [SerializeField]
-  private int healReceivedFlatBonus;
-  [SerializeField]
-  private float healReceivedPercentBonus;
-  [Header("Damage value bonus")]
-  [SerializeField]
-  private Enums.DamageType damageBonusFlat;
-  [SerializeField]
-  private int damageBonusFlatValue;
-  [SerializeField]
-  private Enums.DamageType damageBonusFlat2;
-  [SerializeField]
-  private int damageBonusFlatValue2;
-  [SerializeField]
-  private Enums.DamageType damageBonusFlat3;
-  [SerializeField]
-  private int damageBonusFlatValue3;
-  [SerializeField]
-  private Enums.DamageType damageBonusPercent;
-  [SerializeField]
-  private float damageBonusPercentValue;
-  [SerializeField]
-  private Enums.DamageType damageBonusPercent2;
-  [SerializeField]
-  private float damageBonusPercentValue2;
-  [SerializeField]
-  private Enums.DamageType damageBonusPercent3;
-  [SerializeField]
-  private float damageBonusPercentValue3;
-  [Header("Keynotes")]
-  [SerializeField]
-  private List<KeyNotesData> keyNotes;
+	[SerializeField]
+	private string traitName;
 
-  public void Init() => this.id = Regex.Replace(this.traitName, "\\s+", "").ToLower();
+	[SerializeField]
+	private string id;
 
-  public void SetNameAndDescription()
-  {
-    string text1 = Texts.Instance.GetText(this.id, "Traits");
-    if (text1 != "")
-      this.traitName = text1;
-    string text2 = Texts.Instance.GetText(this.id + "_description", "Traits");
-    if (!(text2 != ""))
-      return;
-    this.description = text2;
-  }
+	[TextArea]
+	[SerializeField]
+	private string description;
 
-  public string TraitName
-  {
-    get => this.traitName;
-    set => this.traitName = value;
-  }
+	[SerializeField]
+	private Enums.EventActivation activation;
 
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
+	[SerializeField]
+	private bool activateOnRuneTypeAdded;
 
-  public string Description
-  {
-    get => this.description;
-    set => this.description = value;
-  }
+	[SerializeField]
+	private bool tryActivateOnEveryEvent;
 
-  public Enums.EventActivation Activation
-  {
-    get => this.activation;
-    set => this.activation = value;
-  }
+	[SerializeField]
+	private int timesPerTurn;
 
-  public Enums.CharacterStat CharacterStatModified
-  {
-    get => this.characterStatModified;
-    set => this.characterStatModified = value;
-  }
+	[SerializeField]
+	private int timesPerRound;
 
-  public int CharacterStatModifiedValue
-  {
-    get => this.characterStatModifiedValue;
-    set => this.characterStatModifiedValue = value;
-  }
+	[Header("Card reward")]
+	[SerializeField]
+	private CardData traitCard;
 
-  public Enums.DamageType ResistModified1
-  {
-    get => this.resistModified1;
-    set => this.resistModified1 = value;
-  }
+	[Header("Card reward for all heroes")]
+	[SerializeField]
+	private CardData traitCardForAllHeroes;
 
-  public int ResistModifiedValue1
-  {
-    get => this.resistModifiedValue1;
-    set => this.resistModifiedValue1 = value;
-  }
+	[Header("Character stat modification")]
+	[SerializeField]
+	private Enums.CharacterStat characterStatModified;
 
-  public Enums.DamageType ResistModified2
-  {
-    get => this.resistModified2;
-    set => this.resistModified2 = value;
-  }
+	[SerializeField]
+	private int characterStatModifiedValue;
 
-  public int ResistModifiedValue2
-  {
-    get => this.resistModifiedValue2;
-    set => this.resistModifiedValue2 = value;
-  }
+	[Header("Resist modification")]
+	[SerializeField]
+	private Enums.DamageType resistModified1;
 
-  public Enums.DamageType ResistModified3
-  {
-    get => this.resistModified3;
-    set => this.resistModified3 = value;
-  }
+	[SerializeField]
+	private int resistModifiedValue1;
 
-  public int ResistModifiedValue3
-  {
-    get => this.resistModifiedValue3;
-    set => this.resistModifiedValue3 = value;
-  }
+	[SerializeField]
+	private Enums.DamageType resistModified2;
 
-  public string AuracurseImmune1
-  {
-    get => this.auracurseImmune1;
-    set => this.auracurseImmune1 = value;
-  }
+	[SerializeField]
+	private int resistModifiedValue2;
 
-  public string AuracurseImmune2
-  {
-    get => this.auracurseImmune2;
-    set => this.auracurseImmune2 = value;
-  }
+	[SerializeField]
+	private Enums.DamageType resistModified3;
 
-  public string AuracurseImmune3
-  {
-    get => this.auracurseImmune3;
-    set => this.auracurseImmune3 = value;
-  }
+	[SerializeField]
+	private int resistModifiedValue3;
 
-  public List<KeyNotesData> KeyNotes
-  {
-    get => this.keyNotes;
-    set => this.keyNotes = value;
-  }
+	[Header("AuraCurse immunity")]
+	[SerializeField]
+	private string auracurseImmune1 = "";
 
-  public Enums.DamageType DamageBonusFlat
-  {
-    get => this.damageBonusFlat;
-    set => this.damageBonusFlat = value;
-  }
+	[SerializeField]
+	private string auracurseImmune2 = "";
 
-  public int DamageBonusFlatValue
-  {
-    get => this.damageBonusFlatValue;
-    set => this.damageBonusFlatValue = value;
-  }
+	[SerializeField]
+	private string auracurseImmune3 = "";
 
-  public Enums.DamageType DamageBonusFlat2
-  {
-    get => this.damageBonusFlat2;
-    set => this.damageBonusFlat2 = value;
-  }
+	[SerializeField]
+	private int maxBleedDamagePerTurn = -1;
 
-  public int DamageBonusFlatValue2
-  {
-    get => this.damageBonusFlatValue2;
-    set => this.damageBonusFlatValue2 = value;
-  }
+	[Header("AuraCurse bonus")]
+	[SerializeField]
+	private AuraCurseData auracurseBonus1;
 
-  public Enums.DamageType DamageBonusFlat3
-  {
-    get => this.damageBonusFlat3;
-    set => this.damageBonusFlat3 = value;
-  }
+	[SerializeField]
+	private int auracurseBonusValue1;
 
-  public int DamageBonusFlatValue3
-  {
-    get => this.damageBonusFlatValue3;
-    set => this.damageBonusFlatValue3 = value;
-  }
+	[SerializeField]
+	private AuraCurseData auracurseBonus2;
 
-  public Enums.DamageType DamageBonusPercent
-  {
-    get => this.damageBonusPercent;
-    set => this.damageBonusPercent = value;
-  }
+	[SerializeField]
+	private int auracurseBonusValue2;
 
-  public float DamageBonusPercentValue
-  {
-    get => this.damageBonusPercentValue;
-    set => this.damageBonusPercentValue = value;
-  }
+	[SerializeField]
+	private AuraCurseData auracurseBonus3;
 
-  public Enums.DamageType DamageBonusPercent2
-  {
-    get => this.damageBonusPercent2;
-    set => this.damageBonusPercent2 = value;
-  }
+	[SerializeField]
+	private int auracurseBonusValue3;
 
-  public float DamageBonusPercentValue2
-  {
-    get => this.damageBonusPercentValue2;
-    set => this.damageBonusPercentValue2 = value;
-  }
+	[Header("Heal bonus")]
+	[SerializeField]
+	private int healFlatBonus;
 
-  public Enums.DamageType DamageBonusPercent3
-  {
-    get => this.damageBonusPercent3;
-    set => this.damageBonusPercent3 = value;
-  }
+	[SerializeField]
+	private float healPercentBonus;
 
-  public float DamageBonusPercentValue3
-  {
-    get => this.damageBonusPercentValue3;
-    set => this.damageBonusPercentValue3 = value;
-  }
+	[SerializeField]
+	private int healReceivedFlatBonus;
 
-  public int HealFlatBonus
-  {
-    get => this.healFlatBonus;
-    set => this.healFlatBonus = value;
-  }
+	[SerializeField]
+	private float healReceivedPercentBonus;
 
-  public float HealPercentBonus
-  {
-    get => this.healPercentBonus;
-    set => this.healPercentBonus = value;
-  }
+	[Header("Damage value bonus")]
+	[SerializeField]
+	private Enums.DamageType damageBonusFlat;
 
-  public int HealReceivedFlatBonus
-  {
-    get => this.healReceivedFlatBonus;
-    set => this.healReceivedFlatBonus = value;
-  }
+	[SerializeField]
+	private int damageBonusFlatValue;
 
-  public float HealReceivedPercentBonus
-  {
-    get => this.healReceivedPercentBonus;
-    set => this.healReceivedPercentBonus = value;
-  }
+	[SerializeField]
+	private Enums.DamageType damageBonusFlat2;
 
-  public AuraCurseData AuracurseBonus1
-  {
-    get => this.auracurseBonus1;
-    set => this.auracurseBonus1 = value;
-  }
+	[SerializeField]
+	private int damageBonusFlatValue2;
 
-  public int AuracurseBonusValue1
-  {
-    get => this.auracurseBonusValue1;
-    set => this.auracurseBonusValue1 = value;
-  }
+	[SerializeField]
+	private Enums.DamageType damageBonusFlat3;
 
-  public AuraCurseData AuracurseBonus2
-  {
-    get => this.auracurseBonus2;
-    set => this.auracurseBonus2 = value;
-  }
+	[SerializeField]
+	private int damageBonusFlatValue3;
 
-  public int AuracurseBonusValue2
-  {
-    get => this.auracurseBonusValue2;
-    set => this.auracurseBonusValue2 = value;
-  }
+	[SerializeField]
+	private Enums.DamageType damageBonusPercent;
 
-  public AuraCurseData AuracurseBonus3
-  {
-    get => this.auracurseBonus3;
-    set => this.auracurseBonus3 = value;
-  }
+	[SerializeField]
+	private float damageBonusPercentValue;
 
-  public int AuracurseBonusValue3
-  {
-    get => this.auracurseBonusValue3;
-    set => this.auracurseBonusValue3 = value;
-  }
+	[SerializeField]
+	private Enums.DamageType damageBonusPercent2;
 
-  public CardData TraitCard
-  {
-    get => this.traitCard;
-    set => this.traitCard = value;
-  }
+	[SerializeField]
+	private float damageBonusPercentValue2;
 
-  public CardData TraitCardForAllHeroes
-  {
-    get => this.traitCardForAllHeroes;
-    set => this.traitCardForAllHeroes = value;
-  }
+	[SerializeField]
+	private Enums.DamageType damageBonusPercent3;
 
-  public int TimesPerTurn
-  {
-    get => this.timesPerTurn;
-    set => this.timesPerTurn = value;
-  }
+	[SerializeField]
+	private float damageBonusPercentValue3;
 
-  public int TimesPerRound
-  {
-    get => this.timesPerRound;
-    set => this.timesPerRound = value;
-  }
+	[Header("Keynotes")]
+	[SerializeField]
+	private List<KeyNotesData> keyNotes;
 
-  public bool ActivateOnRuneTypeAdded
-  {
-    get => this.activateOnRuneTypeAdded;
-    set => this.activateOnRuneTypeAdded = value;
-  }
+	public string TraitName
+	{
+		get
+		{
+			return traitName;
+		}
+		set
+		{
+			traitName = value;
+		}
+	}
 
-  public bool TryActivateOnEveryEvent
-  {
-    get => this.tryActivateOnEveryEvent;
-    set => this.tryActivateOnEveryEvent = value;
-  }
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
 
-  public int MaxBleedDamagePerTurn
-  {
-    get => this.maxBleedDamagePerTurn;
-    set => this.maxBleedDamagePerTurn = value;
-  }
+	public string Description
+	{
+		get
+		{
+			return description;
+		}
+		set
+		{
+			description = value;
+		}
+	}
+
+	public Enums.EventActivation Activation
+	{
+		get
+		{
+			return activation;
+		}
+		set
+		{
+			activation = value;
+		}
+	}
+
+	public Enums.CharacterStat CharacterStatModified
+	{
+		get
+		{
+			return characterStatModified;
+		}
+		set
+		{
+			characterStatModified = value;
+		}
+	}
+
+	public int CharacterStatModifiedValue
+	{
+		get
+		{
+			return characterStatModifiedValue;
+		}
+		set
+		{
+			characterStatModifiedValue = value;
+		}
+	}
+
+	public Enums.DamageType ResistModified1
+	{
+		get
+		{
+			return resistModified1;
+		}
+		set
+		{
+			resistModified1 = value;
+		}
+	}
+
+	public int ResistModifiedValue1
+	{
+		get
+		{
+			return resistModifiedValue1;
+		}
+		set
+		{
+			resistModifiedValue1 = value;
+		}
+	}
+
+	public Enums.DamageType ResistModified2
+	{
+		get
+		{
+			return resistModified2;
+		}
+		set
+		{
+			resistModified2 = value;
+		}
+	}
+
+	public int ResistModifiedValue2
+	{
+		get
+		{
+			return resistModifiedValue2;
+		}
+		set
+		{
+			resistModifiedValue2 = value;
+		}
+	}
+
+	public Enums.DamageType ResistModified3
+	{
+		get
+		{
+			return resistModified3;
+		}
+		set
+		{
+			resistModified3 = value;
+		}
+	}
+
+	public int ResistModifiedValue3
+	{
+		get
+		{
+			return resistModifiedValue3;
+		}
+		set
+		{
+			resistModifiedValue3 = value;
+		}
+	}
+
+	public string AuracurseImmune1
+	{
+		get
+		{
+			return auracurseImmune1;
+		}
+		set
+		{
+			auracurseImmune1 = value;
+		}
+	}
+
+	public string AuracurseImmune2
+	{
+		get
+		{
+			return auracurseImmune2;
+		}
+		set
+		{
+			auracurseImmune2 = value;
+		}
+	}
+
+	public string AuracurseImmune3
+	{
+		get
+		{
+			return auracurseImmune3;
+		}
+		set
+		{
+			auracurseImmune3 = value;
+		}
+	}
+
+	public List<KeyNotesData> KeyNotes
+	{
+		get
+		{
+			return keyNotes;
+		}
+		set
+		{
+			keyNotes = value;
+		}
+	}
+
+	public Enums.DamageType DamageBonusFlat
+	{
+		get
+		{
+			return damageBonusFlat;
+		}
+		set
+		{
+			damageBonusFlat = value;
+		}
+	}
+
+	public int DamageBonusFlatValue
+	{
+		get
+		{
+			return damageBonusFlatValue;
+		}
+		set
+		{
+			damageBonusFlatValue = value;
+		}
+	}
+
+	public Enums.DamageType DamageBonusFlat2
+	{
+		get
+		{
+			return damageBonusFlat2;
+		}
+		set
+		{
+			damageBonusFlat2 = value;
+		}
+	}
+
+	public int DamageBonusFlatValue2
+	{
+		get
+		{
+			return damageBonusFlatValue2;
+		}
+		set
+		{
+			damageBonusFlatValue2 = value;
+		}
+	}
+
+	public Enums.DamageType DamageBonusFlat3
+	{
+		get
+		{
+			return damageBonusFlat3;
+		}
+		set
+		{
+			damageBonusFlat3 = value;
+		}
+	}
+
+	public int DamageBonusFlatValue3
+	{
+		get
+		{
+			return damageBonusFlatValue3;
+		}
+		set
+		{
+			damageBonusFlatValue3 = value;
+		}
+	}
+
+	public Enums.DamageType DamageBonusPercent
+	{
+		get
+		{
+			return damageBonusPercent;
+		}
+		set
+		{
+			damageBonusPercent = value;
+		}
+	}
+
+	public float DamageBonusPercentValue
+	{
+		get
+		{
+			return damageBonusPercentValue;
+		}
+		set
+		{
+			damageBonusPercentValue = value;
+		}
+	}
+
+	public Enums.DamageType DamageBonusPercent2
+	{
+		get
+		{
+			return damageBonusPercent2;
+		}
+		set
+		{
+			damageBonusPercent2 = value;
+		}
+	}
+
+	public float DamageBonusPercentValue2
+	{
+		get
+		{
+			return damageBonusPercentValue2;
+		}
+		set
+		{
+			damageBonusPercentValue2 = value;
+		}
+	}
+
+	public Enums.DamageType DamageBonusPercent3
+	{
+		get
+		{
+			return damageBonusPercent3;
+		}
+		set
+		{
+			damageBonusPercent3 = value;
+		}
+	}
+
+	public float DamageBonusPercentValue3
+	{
+		get
+		{
+			return damageBonusPercentValue3;
+		}
+		set
+		{
+			damageBonusPercentValue3 = value;
+		}
+	}
+
+	public int HealFlatBonus
+	{
+		get
+		{
+			return healFlatBonus;
+		}
+		set
+		{
+			healFlatBonus = value;
+		}
+	}
+
+	public float HealPercentBonus
+	{
+		get
+		{
+			return healPercentBonus;
+		}
+		set
+		{
+			healPercentBonus = value;
+		}
+	}
+
+	public int HealReceivedFlatBonus
+	{
+		get
+		{
+			return healReceivedFlatBonus;
+		}
+		set
+		{
+			healReceivedFlatBonus = value;
+		}
+	}
+
+	public float HealReceivedPercentBonus
+	{
+		get
+		{
+			return healReceivedPercentBonus;
+		}
+		set
+		{
+			healReceivedPercentBonus = value;
+		}
+	}
+
+	public AuraCurseData AuracurseBonus1
+	{
+		get
+		{
+			return auracurseBonus1;
+		}
+		set
+		{
+			auracurseBonus1 = value;
+		}
+	}
+
+	public int AuracurseBonusValue1
+	{
+		get
+		{
+			return auracurseBonusValue1;
+		}
+		set
+		{
+			auracurseBonusValue1 = value;
+		}
+	}
+
+	public AuraCurseData AuracurseBonus2
+	{
+		get
+		{
+			return auracurseBonus2;
+		}
+		set
+		{
+			auracurseBonus2 = value;
+		}
+	}
+
+	public int AuracurseBonusValue2
+	{
+		get
+		{
+			return auracurseBonusValue2;
+		}
+		set
+		{
+			auracurseBonusValue2 = value;
+		}
+	}
+
+	public AuraCurseData AuracurseBonus3
+	{
+		get
+		{
+			return auracurseBonus3;
+		}
+		set
+		{
+			auracurseBonus3 = value;
+		}
+	}
+
+	public int AuracurseBonusValue3
+	{
+		get
+		{
+			return auracurseBonusValue3;
+		}
+		set
+		{
+			auracurseBonusValue3 = value;
+		}
+	}
+
+	public CardData TraitCard
+	{
+		get
+		{
+			return traitCard;
+		}
+		set
+		{
+			traitCard = value;
+		}
+	}
+
+	public CardData TraitCardForAllHeroes
+	{
+		get
+		{
+			return traitCardForAllHeroes;
+		}
+		set
+		{
+			traitCardForAllHeroes = value;
+		}
+	}
+
+	public int TimesPerTurn
+	{
+		get
+		{
+			return timesPerTurn;
+		}
+		set
+		{
+			timesPerTurn = value;
+		}
+	}
+
+	public int TimesPerRound
+	{
+		get
+		{
+			return timesPerRound;
+		}
+		set
+		{
+			timesPerRound = value;
+		}
+	}
+
+	public bool ActivateOnRuneTypeAdded
+	{
+		get
+		{
+			return activateOnRuneTypeAdded;
+		}
+		set
+		{
+			activateOnRuneTypeAdded = value;
+		}
+	}
+
+	public bool TryActivateOnEveryEvent
+	{
+		get
+		{
+			return tryActivateOnEveryEvent;
+		}
+		set
+		{
+			tryActivateOnEveryEvent = value;
+		}
+	}
+
+	public int MaxBleedDamagePerTurn
+	{
+		get
+		{
+			return maxBleedDamagePerTurn;
+		}
+		set
+		{
+			maxBleedDamagePerTurn = value;
+		}
+	}
+
+	public void Init()
+	{
+		id = Regex.Replace(traitName, "[\\s']+", "").ToLower();
+	}
+
+	public void SetNameAndDescription()
+	{
+		string text = Texts.Instance.GetText(id, "Traits");
+		if (text != "")
+		{
+			traitName = text;
+		}
+		string text2 = Texts.Instance.GetText(id + "_description", "Traits");
+		if (text2 != "")
+		{
+			description = text2;
+		}
+	}
 }

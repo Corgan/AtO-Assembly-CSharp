@@ -1,24 +1,33 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ChallengeMadness
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class ChallengeMadness : MonoBehaviour
 {
-  public SpriteRenderer background;
-  public SpriteRenderer icon;
+	public SpriteRenderer background;
 
-  public void SetBackground(string _color) => this.background.color = Functions.HexToColor(_color);
+	public SpriteRenderer icon;
 
-  public void SetDisable() => this.SetBackground("#353535");
+	public void SetBackground(string _color)
+	{
+		background.color = Functions.HexToColor(_color);
+	}
 
-  public void SetActive() => this.SetBackground("#AD844D");
+	public void SetDisable()
+	{
+		SetBackground("#353535");
+	}
 
-  public void SetDefault() => this.SetBackground("#5D3578");
+	public void SetActive()
+	{
+		SetBackground("#AD844D");
+	}
 
-  public void SetIcon(Sprite _sprite) => this.icon.sprite = _sprite;
+	public void SetDefault()
+	{
+		SetBackground("#5D3578");
+	}
+
+	public void SetIcon(Sprite _sprite)
+	{
+		icon.sprite = _sprite;
+	}
 }

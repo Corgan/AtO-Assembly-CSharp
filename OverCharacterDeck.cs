@@ -1,35 +1,38 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: OverCharacterDeck
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-#nullable disable
 public class OverCharacterDeck : MonoBehaviour
 {
-  private OverCharacter overCharacter;
-  private int heroIndex;
-  private Transform deckImage;
-  private Transform deckText;
-  private TMP_Text textGO;
-  private Vector3 oriImgScale;
-  private Scene scene;
-  private string botName;
+	private OverCharacter overCharacter;
 
-  private void Awake()
-  {
-    this.overCharacter = this.transform.parent.transform.GetComponent<OverCharacter>();
-    this.deckImage = this.transform.GetChild(0);
-    this.deckText = this.transform.GetChild(1);
-    this.textGO = this.deckText.GetComponent<TMP_Text>();
-    this.oriImgScale = this.deckImage.localScale;
-    this.scene = SceneManager.GetActiveScene();
-    this.botName = this.gameObject.name;
-  }
+	private int heroIndex;
 
-  public void SetIndex(int index) => this.heroIndex = index;
+	private Transform deckImage;
+
+	private Transform deckText;
+
+	private TMP_Text textGO;
+
+	private Vector3 oriImgScale;
+
+	private Scene scene;
+
+	private string botName;
+
+	private void Awake()
+	{
+		overCharacter = base.transform.parent.transform.GetComponent<OverCharacter>();
+		deckImage = base.transform.GetChild(0);
+		deckText = base.transform.GetChild(1);
+		textGO = deckText.GetComponent<TMP_Text>();
+		oriImgScale = deckImage.localScale;
+		scene = SceneManager.GetActiveScene();
+		botName = base.gameObject.name;
+	}
+
+	public void SetIndex(int index)
+	{
+		heroIndex = index;
+	}
 }

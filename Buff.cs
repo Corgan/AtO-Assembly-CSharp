@@ -1,225 +1,310 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Buff
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using System.Text;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class Buff : MonoBehaviour
 {
-  public string buffId = "";
-  public AuraCurseData acData;
-  public SpriteRenderer spriteSR;
-  public SpriteRenderer spriteSRShadow;
-  public TMP_Text chargesTM;
-  private MeshRenderer chargesTMMesh;
-  public Transform spriteAnim;
-  private Animator spriteAnimator;
-  private TMP_Text chargesAnimTM;
-  private int charges;
-  public string buffStatus = "";
-  public SpriteRenderer bgIconSprite;
-  private bool auraImmunity;
-  private Color colorAura = new Color(0.0f, 0.26f, 1f, 1f);
-  private Color colorCurse = new Color(0.81f, 0.04f, 0.72f, 1f);
-  private Color colorOver = new Color(0.6f, 0.6f, 0.6f, 1f);
-  private Coroutine AmplifyCo;
-  private string charId = "";
+	public string buffId = "";
 
-  private void Awake()
-  {
-    this.chargesAnimTM = this.spriteAnim.GetChild(0).transform.GetComponent<TMP_Text>();
-    this.chargesTMMesh = this.chargesTM.GetComponent<MeshRenderer>();
-    this.spriteAnimator = this.spriteAnim.GetComponent<Animator>();
-    this.spriteAnimator.enabled = false;
-  }
+	public AuraCurseData acData;
 
-  public void DisplayBecauseCard(bool _status)
-  {
-    if (!this.gameObject.activeSelf)
-      return;
-    if (_status)
-    {
-      this.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
-      this.bgIconSprite.color = new Color(1f, 0.69f, 0.0f, 1f);
-    }
-    else
-      this.transform.localScale = new Vector3(1f, 1f, 1f);
-  }
+	public SpriteRenderer spriteSR;
 
-  public void RestoreBecauseCard()
-  {
-    this.transform.localScale = new Vector3(1f, 1f, 1f);
-    this.RestoreColor();
-  }
+	public SpriteRenderer spriteSRShadow;
 
-  public void CleanBuff()
-  {
-    if (!((Object) this.gameObject != (Object) null))
-      return;
-    this.buffStatus = "";
-    this.gameObject.name = "";
-    if (!this.gameObject.activeSelf)
-      return;
-    this.gameObject.SetActive(false);
-  }
+	public TMP_Text chargesTM;
 
-  public void SetBuffInStats(bool _auraImmunity = false)
-  {
-    if (!this.gameObject.activeSelf)
-      this.gameObject.SetActive(true);
-    this.auraImmunity = _auraImmunity;
-    this.spriteSR.sortingOrder = 1001;
-    this.spriteSR.sortingLayerName = "UI";
-    if (this.spriteSRShadow.transform.gameObject.activeSelf)
-      this.spriteSRShadow.gameObject.SetActive(false);
-    if (this.auraImmunity)
-    {
-      if (this.chargesTM.gameObject.activeSelf)
-        this.chargesTM.gameObject.SetActive(false);
-    }
-    else
-    {
-      if (!this.chargesTM.gameObject.activeSelf)
-        this.chargesTM.gameObject.SetActive(true);
-      this.chargesTMMesh.sortingOrder = 1005;
-      this.chargesTMMesh.sortingLayerName = "UI";
-    }
-    this.transform.localScale = new Vector3(1.7f, 1.7f, 1f);
-    this.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, -5f);
-  }
+	private MeshRenderer chargesTMMesh;
 
-  public void SetBuffInStatsCharges()
-  {
-    if (!this.gameObject.activeSelf)
-      this.gameObject.SetActive(true);
-    this.spriteSR.sortingOrder = 1601;
-    this.spriteSR.sortingLayerName = "UI";
-    if (this.spriteSRShadow.gameObject.activeSelf)
-      this.spriteSRShadow.gameObject.SetActive(false);
-    if (!this.chargesTM.gameObject.activeSelf)
-      this.chargesTM.gameObject.SetActive(true);
-    this.chargesTMMesh.sortingOrder = 1605;
-    this.chargesTMMesh.sortingLayerName = "UI";
-    this.chargesTM.transform.localPosition = new Vector3(0.0f, this.chargesTM.transform.localPosition.y, this.chargesTM.transform.localPosition.z);
-    this.transform.localScale = new Vector3(1.7f, 1.7f, 1f);
-    this.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, -5f);
-  }
+	public Transform spriteAnim;
 
-  public void SetBuff(AuraCurseData _acData, int _charges, string _chargesStr = "", string _charId = "")
-  {
-    this.charId = _charId;
-    if ((Object) this.spriteSR == (Object) null)
-    {
-      if (!this.gameObject.activeSelf)
-        return;
-      this.gameObject.SetActive(false);
-    }
-    else if ((Object) _acData != (Object) null)
-    {
-      this.acData = _acData;
-      this.spriteSR.sprite = this.spriteSRShadow.sprite = _acData.Sprite;
-      this.buffId = _acData.Id.ToLower();
-      if (_charges == 0 && _chargesStr == "")
-      {
-        this.buffId = "";
-        if (!this.gameObject.activeSelf)
-          return;
-        this.gameObject.SetActive(false);
-      }
-      else
-      {
-        if (!this.gameObject.activeSelf)
-          this.gameObject.SetActive(true);
-        this.RestoreColor();
-        this.chargesTM.text = !(_chargesStr == "") ? _chargesStr : _charges.ToString();
-        this.charges = _charges;
-        if (!this.spriteSR.transform.gameObject.activeSelf)
-          this.spriteSR.transform.gameObject.SetActive(true);
-        if (this.chargesTM.transform.gameObject.activeSelf)
-          return;
-        this.chargesTM.transform.gameObject.SetActive(true);
-      }
-    }
-    else
-    {
-      this.buffId = "";
-      if (!this.gameObject.activeSelf)
-        return;
-      this.gameObject.SetActive(false);
-    }
-  }
+	private Animator spriteAnimator;
 
-  public void SetTauntSize()
-  {
-    if (!((Object) this.spriteSR != (Object) null))
-      return;
-    this.spriteAnim.localScale = new Vector3(1.4f, 1.4f, 1f);
-    this.chargesAnimTM.GetComponent<MeshRenderer>().sortingOrder = 32021;
-    if (this.spriteSR.transform.gameObject.activeSelf)
-      this.spriteSR.transform.gameObject.SetActive(false);
-    if (this.chargesTM.transform.gameObject.activeSelf)
-      this.chargesTM.transform.gameObject.SetActive(false);
-    this.spriteSR.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
-    this.spriteSR.sortingOrder = 32010;
-    this.chargesTM.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
-    this.chargesTM.transform.localPosition = new Vector3(-0.1f, -0.13f, 0.0f);
-    this.chargesTMMesh.sortingOrder = 32011;
-  }
+	private TMP_Text chargesAnimTM;
 
-  public void Amplify(int charges)
-  {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append("+");
-    stringBuilder.Append(charges);
-    this.chargesAnimTM.text = stringBuilder.ToString();
-    if (!this.spriteAnim.transform.gameObject.activeSelf)
-      this.spriteAnim.gameObject.SetActive(true);
-    this.spriteAnimator.enabled = true;
-    if (this.AmplifyCo != null)
-      this.StopCoroutine(this.AmplifyCo);
-    this.AmplifyCo = this.StartCoroutine(this.AmplifyHiddenCo());
-  }
+	private int charges;
 
-  private IEnumerator AmplifyHiddenCo()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(1f);
-    if (this.spriteAnim.transform.gameObject.activeSelf)
-      this.spriteAnim.gameObject.SetActive(false);
-    this.spriteAnimator.enabled = false;
-  }
+	public string buffStatus = "";
 
-  private void OnMouseEnter()
-  {
-    if ((Object) this.acData != (Object) null)
-    {
-      if (!this.auraImmunity)
-        PopupManager.Instance.SetAuraCurse(this.transform, this.acData.Id, this.chargesTM.text, true, this.charId);
-      else
-        PopupManager.Instance.ShowKeyNote(this.transform, this.acData.Id, "center", true);
-    }
-    this.bgIconSprite.color = this.colorOver;
-  }
+	public SpriteRenderer bgIconSprite;
 
-  private void OnMouseExit()
-  {
-    PopupManager.Instance.ClosePopup();
-    this.RestoreColor();
-  }
+	private bool auraImmunity;
 
-  private void RestoreColor()
-  {
-    if ((Object) this.acData == (Object) null)
-      return;
-    this.bgIconSprite.color = !this.acData.IsAura ? this.colorCurse : this.colorAura;
-    this.bgIconSprite.color = this.bgIconSprite.color with
-    {
-      a = !GameManager.Instance.ConfigACBackgrounds ? 0.0f : 1f
-    };
-  }
+	private Color colorAura = new Color(0f, 0.26f, 1f, 1f);
+
+	private Color colorCurse = new Color(0.81f, 0.04f, 0.72f, 1f);
+
+	private Color colorOver = new Color(0.6f, 0.6f, 0.6f, 1f);
+
+	private Coroutine AmplifyCo;
+
+	private string charId = "";
+
+	private void Awake()
+	{
+		chargesAnimTM = spriteAnim.GetChild(0).transform.GetComponent<TMP_Text>();
+		chargesTMMesh = chargesTM.GetComponent<MeshRenderer>();
+		spriteAnimator = spriteAnim.GetComponent<Animator>();
+		spriteAnimator.enabled = false;
+	}
+
+	public void DisplayBecauseCard(bool _status)
+	{
+		if (base.gameObject.activeSelf)
+		{
+			if (_status)
+			{
+				base.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
+				bgIconSprite.color = new Color(1f, 0.69f, 0f, 1f);
+			}
+			else
+			{
+				base.transform.localScale = new Vector3(1f, 1f, 1f);
+			}
+		}
+	}
+
+	public void RestoreBecauseCard()
+	{
+		base.transform.localScale = new Vector3(1f, 1f, 1f);
+		RestoreColor();
+	}
+
+	public void CleanBuff()
+	{
+		if (base.gameObject != null)
+		{
+			buffStatus = "";
+			base.gameObject.name = "";
+			if (base.gameObject.activeSelf)
+			{
+				base.gameObject.SetActive(value: false);
+			}
+		}
+	}
+
+	public void SetBuffInStats(bool _auraImmunity = false)
+	{
+		if (!base.gameObject.activeSelf)
+		{
+			base.gameObject.SetActive(value: true);
+		}
+		auraImmunity = _auraImmunity;
+		spriteSR.sortingOrder = 1001;
+		spriteSR.sortingLayerName = "UI";
+		if (spriteSRShadow.transform.gameObject.activeSelf)
+		{
+			spriteSRShadow.gameObject.SetActive(value: false);
+		}
+		if (auraImmunity)
+		{
+			if (chargesTM.gameObject.activeSelf)
+			{
+				chargesTM.gameObject.SetActive(value: false);
+			}
+		}
+		else
+		{
+			if (!chargesTM.gameObject.activeSelf)
+			{
+				chargesTM.gameObject.SetActive(value: true);
+			}
+			chargesTMMesh.sortingOrder = 1005;
+			chargesTMMesh.sortingLayerName = "UI";
+		}
+		base.transform.localScale = new Vector3(1.7f, 1.7f, 1f);
+		base.transform.position = new Vector3(base.transform.position.x, base.transform.position.y, -5f);
+	}
+
+	public void SetBuffInStatsCharges()
+	{
+		if (!base.gameObject.activeSelf)
+		{
+			base.gameObject.SetActive(value: true);
+		}
+		spriteSR.sortingOrder = 1601;
+		spriteSR.sortingLayerName = "UI";
+		if (spriteSRShadow.gameObject.activeSelf)
+		{
+			spriteSRShadow.gameObject.SetActive(value: false);
+		}
+		if (!chargesTM.gameObject.activeSelf)
+		{
+			chargesTM.gameObject.SetActive(value: true);
+		}
+		chargesTMMesh.sortingOrder = 1605;
+		chargesTMMesh.sortingLayerName = "UI";
+		chargesTM.transform.localPosition = new Vector3(0f, chargesTM.transform.localPosition.y, chargesTM.transform.localPosition.z);
+		base.transform.localScale = new Vector3(1.7f, 1.7f, 1f);
+		base.transform.position = new Vector3(base.transform.position.x, base.transform.position.y, -5f);
+	}
+
+	public void SetBuff(AuraCurseData _acData, int _charges, string _chargesStr = "", string _charId = "")
+	{
+		charId = _charId;
+		if (spriteSR == null)
+		{
+			if (base.gameObject.activeSelf)
+			{
+				base.gameObject.SetActive(value: false);
+			}
+		}
+		else if (_acData != null)
+		{
+			acData = _acData;
+			SpriteRenderer spriteRenderer = spriteSR;
+			Sprite sprite = (spriteSRShadow.sprite = _acData.Sprite);
+			spriteRenderer.sprite = sprite;
+			buffId = _acData.Id.ToLower();
+			if (_charges == 0 && _chargesStr == "")
+			{
+				buffId = "";
+				if (base.gameObject.activeSelf)
+				{
+					base.gameObject.SetActive(value: false);
+				}
+				return;
+			}
+			if (!base.gameObject.activeSelf)
+			{
+				base.gameObject.SetActive(value: true);
+			}
+			RestoreColor();
+			if (_chargesStr == "")
+			{
+				chargesTM.text = _charges.ToString();
+			}
+			else
+			{
+				chargesTM.text = _chargesStr;
+			}
+			charges = _charges;
+			if (!spriteSR.transform.gameObject.activeSelf)
+			{
+				spriteSR.transform.gameObject.SetActive(value: true);
+			}
+			if (!chargesTM.transform.gameObject.activeSelf)
+			{
+				chargesTM.transform.gameObject.SetActive(value: true);
+			}
+		}
+		else
+		{
+			buffId = "";
+			if (base.gameObject.activeSelf)
+			{
+				base.gameObject.SetActive(value: false);
+			}
+		}
+	}
+
+	public void SetTauntSize()
+	{
+		if (spriteSR != null)
+		{
+			spriteAnim.localScale = new Vector3(1.4f, 1.4f, 1f);
+			chargesAnimTM.GetComponent<MeshRenderer>().sortingOrder = 32021;
+			if (spriteSR.transform.gameObject.activeSelf)
+			{
+				spriteSR.transform.gameObject.SetActive(value: false);
+			}
+			if (chargesTM.transform.gameObject.activeSelf)
+			{
+				chargesTM.transform.gameObject.SetActive(value: false);
+			}
+			spriteSR.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
+			spriteSR.sortingOrder = 32010;
+			chargesTM.transform.localScale = new Vector3(1.2f, 1.2f, 1f);
+			chargesTM.transform.localPosition = new Vector3(-0.1f, -0.13f, 0f);
+			chargesTMMesh.sortingOrder = 32011;
+		}
+	}
+
+	public void Amplify(int charges)
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("+");
+		stringBuilder.Append(charges);
+		chargesAnimTM.text = stringBuilder.ToString();
+		stringBuilder = null;
+		if (!spriteAnim.transform.gameObject.activeSelf)
+		{
+			spriteAnim.gameObject.SetActive(value: true);
+		}
+		spriteAnimator.enabled = true;
+		if (AmplifyCo != null)
+		{
+			StopCoroutine(AmplifyCo);
+		}
+		AmplifyCo = StartCoroutine(AmplifyHiddenCo());
+	}
+
+	private IEnumerator AmplifyHiddenCo()
+	{
+		yield return Globals.Instance.WaitForSeconds(1f);
+		if (spriteAnim.transform.gameObject.activeSelf)
+		{
+			spriteAnim.gameObject.SetActive(value: false);
+		}
+		spriteAnimator.enabled = false;
+	}
+
+	private void OnMouseEnter()
+	{
+		if (acData != null)
+		{
+			if (!auraImmunity)
+			{
+				PopupManager.Instance.SetAuraCurse(base.transform, acData.Id, chargesTM.text, fast: true, charId);
+			}
+			else
+			{
+				PopupManager.Instance.ShowKeyNote(base.transform, acData.Id, "center", fast: true);
+			}
+		}
+		bgIconSprite.color = colorOver;
+	}
+
+	private void OnMouseExit()
+	{
+		PopupManager.Instance.ClosePopup();
+		RestoreColor();
+	}
+
+	private void RestoreColor()
+	{
+		if (!(acData == null))
+		{
+			if (acData.IsAura)
+			{
+				bgIconSprite.color = colorAura;
+			}
+			else
+			{
+				bgIconSprite.color = colorCurse;
+			}
+			Color color = bgIconSprite.color;
+			if (GameManager.Instance.ConfigACBackgrounds)
+			{
+				color.a = 1f;
+			}
+			else
+			{
+				color.a = 0f;
+			}
+			bgIconSprite.color = color;
+		}
+	}
+
+	public void SetSortingInCombatHUD()
+	{
+		spriteSR.sortingOrder += 601;
+		spriteSRShadow.sortingOrder += 601;
+		chargesTMMesh.sortingOrder += 601;
+		chargesTMMesh.sortingOrder += 601;
+		chargesAnimTM.GetComponent<MeshRenderer>().sortingOrder += 601;
+		chargesTMMesh.sortingOrder += 601;
+		bgIconSprite.sortingOrder += 601;
+	}
 }

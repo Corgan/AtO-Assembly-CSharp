@@ -1,56 +1,61 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: DemoCircleExpositor
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
+using System;
 using UnityEngine;
 
-#nullable disable
 public class DemoCircleExpositor : MonoBehaviour
 {
-  [SerializeField]
-  private float radius = 40f;
-  [SerializeField]
-  private float rotateSpeed = 10f;
-  private Transform[] items;
-  private int count;
-  private int currentTarget;
-  private float offsetRotation;
-  private float iniY;
-  private Quaternion dummyRotation;
+	[SerializeField]
+	private float radius = 40f;
 
-  private void Start()
-  {
-    this.dummyRotation = this.transform.rotation;
-    this.iniY = this.transform.position.y;
-    this.items = new Transform[this.transform.childCount];
-    foreach (Transform transform in this.transform)
-    {
-      this.items[this.count] = transform;
-      ++this.count;
-    }
-    this.offsetRotation = 360f / (float) this.count;
-    for (int index = 0; index < this.count; ++index)
-    {
-      float f = (float) ((double) index * 3.1415927410125732 * 2.0) / (float) this.count;
-      Vector3 vector3 = new Vector3(Mathf.Sin(f) * this.radius, this.iniY, -Mathf.Cos(f) * this.radius);
-      this.items[index].position = vector3;
-    }
-  }
+	[SerializeField]
+	private float rotateSpeed = 10f;
 
-  private void Update()
-  {
-    this.transform.rotation = Quaternion.Slerp(this.transform.rotation, this.dummyRotation, this.rotateSpeed * Time.deltaTime);
-  }
+	private Transform[] items;
 
-  public void ChangeTarget(int offset)
-  {
-    this.currentTarget += offset;
-    if (this.currentTarget > this.items.Length - 1)
-      this.currentTarget = 0;
-    else if (this.currentTarget < 0)
-      this.currentTarget = this.items.Length - 1;
-    this.dummyRotation *= Quaternion.Euler(Vector3.up * (float) offset * this.offsetRotation);
-  }
+	private int count;
+
+	private int currentTarget;
+
+	private float offsetRotation;
+
+	private float iniY;
+
+	private Quaternion dummyRotation;
+
+	private void Start()
+	{
+		dummyRotation = base.transform.rotation;
+		iniY = base.transform.position.y;
+		items = new Transform[base.transform.childCount];
+		foreach (Transform item in base.transform)
+		{
+			items[count] = item;
+			count++;
+		}
+		offsetRotation = 360f / (float)count;
+		for (int i = 0; i < count; i++)
+		{
+			float f = (float)i * MathF.PI * 2f / (float)count;
+			Vector3 position = new Vector3(Mathf.Sin(f) * radius, iniY, (0f - Mathf.Cos(f)) * radius);
+			items[i].position = position;
+		}
+	}
+
+	private void Update()
+	{
+		base.transform.rotation = Quaternion.Slerp(base.transform.rotation, dummyRotation, rotateSpeed * Time.deltaTime);
+	}
+
+	public void ChangeTarget(int offset)
+	{
+		currentTarget += offset;
+		if (currentTarget > items.Length - 1)
+		{
+			currentTarget = 0;
+		}
+		else if (currentTarget < 0)
+		{
+			currentTarget = items.Length - 1;
+		}
+		dummyRotation *= Quaternion.Euler(Vector3.up * offset * offsetRotation);
+	}
 }

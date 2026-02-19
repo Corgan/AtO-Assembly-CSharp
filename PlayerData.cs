@@ -1,259 +1,496 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PlayerData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using System.Collections.Generic;
 
-#nullable disable
 [Serializable]
 public class PlayerData
 {
-  private string steamUserId;
-  private string[] lastUsedTeam;
-  private int townTutorialStep;
-  private List<string> tutorialWatched;
-  private List<string> unlockedHeroes;
-  private List<string> unlockedCards;
-  private List<string> unlockedNodes;
-  private List<string> playerRuns;
-  private List<string> bossesKilledName;
-  private List<string> supplyBought;
-  private bool ngUnlocked;
-  private int ngLevel;
-  private int playerRankProgress;
-  private int maxAdventureMadnessLevel;
-  private int obeliskMadnessLevel;
-  private int singularityMadnessLevel;
-  private int bossesKilled;
-  private int monstersKilled;
-  private int expGained;
-  private int cardsCrafted;
-  private int cardsUpgraded;
-  private int goldGained;
-  private int dustGained;
-  private int bestScore;
-  private int purchasedItems;
-  private int supplyGained;
-  private int supplyActual;
-  private int corruptionsCompleted;
-  private List<string> treasuresClaimed;
-  private Dictionary<string, List<string>> unlockedCardsByGame;
-  private Dictionary<string, int> heroProgress;
-  private Dictionary<string, List<string>> heroPerks;
-  private Dictionary<string, string> skinUsed;
-  private Dictionary<string, string> cardbackUsed;
-  private string sandboxSettings = "";
+	private string steamUserId;
 
-  public List<string> UnlockedHeroes
-  {
-    get => this.unlockedHeroes;
-    set => this.unlockedHeroes = value;
-  }
+	private string[] lastUsedTeam;
 
-  public List<string> UnlockedCards
-  {
-    get => this.unlockedCards;
-    set => this.unlockedCards = value;
-  }
+	private int townTutorialStep;
 
-  public List<string> UnlockedNodes
-  {
-    get => this.unlockedNodes;
-    set => this.unlockedNodes = value;
-  }
+	private List<string> tutorialWatched;
 
-  public List<string> PlayerRuns
-  {
-    get => this.playerRuns;
-    set => this.playerRuns = value;
-  }
+	private List<string> unlockedHeroes;
 
-  public List<string> TreasuresClaimed
-  {
-    get => this.treasuresClaimed;
-    set => this.treasuresClaimed = value;
-  }
+	private List<string> unlockedCards;
 
-  public Dictionary<string, List<string>> UnlockedCardsByGame
-  {
-    get => this.unlockedCardsByGame;
-    set => this.unlockedCardsByGame = value;
-  }
+	private List<string> unlockedNodes;
 
-  public List<string> TutorialWatched
-  {
-    get => this.tutorialWatched;
-    set => this.tutorialWatched = value;
-  }
+	private List<string> playerRuns;
 
-  public string[] LastUsedTeam
-  {
-    get => this.lastUsedTeam;
-    set => this.lastUsedTeam = value;
-  }
+	private List<string> bossesKilledName;
 
-  public int BossesKilled
-  {
-    get => this.bossesKilled;
-    set => this.bossesKilled = value;
-  }
+	private List<string> supplyBought;
 
-  public int MonstersKilled
-  {
-    get => this.monstersKilled;
-    set => this.monstersKilled = value;
-  }
+	private bool ngUnlocked;
 
-  public int CardsCrafted
-  {
-    get => this.cardsCrafted;
-    set => this.cardsCrafted = value;
-  }
+	private int ngLevel;
 
-  public int CardsUpgraded
-  {
-    get => this.cardsUpgraded;
-    set => this.cardsUpgraded = value;
-  }
+	private int playerRankProgress;
 
-  public int GoldGained
-  {
-    get => this.goldGained;
-    set => this.goldGained = value;
-  }
+	private int maxAdventureMadnessLevel;
 
-  public int DustGained
-  {
-    get => this.dustGained;
-    set => this.dustGained = value;
-  }
+	private int obeliskMadnessLevel;
 
-  public int BestScore
-  {
-    get => this.bestScore;
-    set => this.bestScore = value;
-  }
+	private int singularityMadnessLevel;
 
-  public int ExpGained
-  {
-    get => this.expGained;
-    set => this.expGained = value;
-  }
+	private int bossesKilled;
 
-  public int PurchasedItems
-  {
-    get => this.purchasedItems;
-    set => this.purchasedItems = value;
-  }
+	private int monstersKilled;
 
-  public Dictionary<string, int> HeroProgress
-  {
-    get => this.heroProgress;
-    set => this.heroProgress = value;
-  }
+	private int expGained;
 
-  public Dictionary<string, List<string>> HeroPerks
-  {
-    get => this.heroPerks;
-    set => this.heroPerks = value;
-  }
+	private int cardsCrafted;
 
-  public List<string> BossesKilledName
-  {
-    get => this.bossesKilledName;
-    set => this.bossesKilledName = value;
-  }
+	private int cardsUpgraded;
 
-  public int SupplyGained
-  {
-    get => this.supplyGained;
-    set => this.supplyGained = value;
-  }
+	private int goldGained;
 
-  public int SupplyActual
-  {
-    get => this.supplyActual;
-    set => this.supplyActual = value;
-  }
+	private int dustGained;
 
-  public List<string> SupplyBought
-  {
-    get => this.supplyBought;
-    set => this.supplyBought = value;
-  }
+	private int bestScore;
 
-  public bool NgUnlocked
-  {
-    get => this.ngUnlocked;
-    set => this.ngUnlocked = value;
-  }
+	private int purchasedItems;
 
-  public int CorruptionsCompleted
-  {
-    get => this.corruptionsCompleted;
-    set => this.corruptionsCompleted = value;
-  }
+	private int supplyGained;
 
-  public string SteamUserId
-  {
-    get => this.steamUserId;
-    set => this.steamUserId = value;
-  }
+	private int supplyActual;
 
-  public int NgLevel
-  {
-    get => this.ngLevel;
-    set => this.ngLevel = value;
-  }
+	private int corruptionsCompleted;
 
-  public Dictionary<string, string> SkinUsed
-  {
-    get => this.skinUsed;
-    set => this.skinUsed = value;
-  }
+	private List<string> treasuresClaimed;
 
-  public Dictionary<string, string> CardbackUsed
-  {
-    get => this.cardbackUsed;
-    set => this.cardbackUsed = value;
-  }
+	private Dictionary<string, List<string>> unlockedCardsByGame;
 
-  public int ObeliskMadnessLevel
-  {
-    get => this.obeliskMadnessLevel;
-    set => this.obeliskMadnessLevel = value;
-  }
+	private Dictionary<string, int> heroProgress;
 
-  public int MaxAdventureMadnessLevel
-  {
-    get => this.maxAdventureMadnessLevel;
-    set => this.maxAdventureMadnessLevel = value;
-  }
+	private Dictionary<string, List<string>> heroPerks;
 
-  public int SingularityMadnessLevel
-  {
-    get => this.singularityMadnessLevel;
-    set => this.singularityMadnessLevel = value;
-  }
+	private Dictionary<string, string> skinUsed;
 
-  public int PlayerRankProgress
-  {
-    get => this.playerRankProgress;
-    set => this.playerRankProgress = value;
-  }
+	private Dictionary<string, string> cardbackUsed;
 
-  public int TownTutorialStep
-  {
-    get => this.townTutorialStep;
-    set => this.townTutorialStep = value;
-  }
+	private string sandboxSettings = "";
 
-  public string SandboxSettings
-  {
-    get => this.sandboxSettings;
-    set => this.sandboxSettings = value;
-  }
+	public List<string> UnlockedHeroes
+	{
+		get
+		{
+			return unlockedHeroes;
+		}
+		set
+		{
+			unlockedHeroes = value;
+		}
+	}
+
+	public List<string> UnlockedCards
+	{
+		get
+		{
+			return unlockedCards;
+		}
+		set
+		{
+			unlockedCards = value;
+		}
+	}
+
+	public List<string> UnlockedNodes
+	{
+		get
+		{
+			return unlockedNodes;
+		}
+		set
+		{
+			unlockedNodes = value;
+		}
+	}
+
+	public List<string> PlayerRuns
+	{
+		get
+		{
+			return playerRuns;
+		}
+		set
+		{
+			playerRuns = value;
+		}
+	}
+
+	public List<string> TreasuresClaimed
+	{
+		get
+		{
+			return treasuresClaimed;
+		}
+		set
+		{
+			treasuresClaimed = value;
+		}
+	}
+
+	public Dictionary<string, List<string>> UnlockedCardsByGame
+	{
+		get
+		{
+			return unlockedCardsByGame;
+		}
+		set
+		{
+			unlockedCardsByGame = value;
+		}
+	}
+
+	public List<string> TutorialWatched
+	{
+		get
+		{
+			return tutorialWatched;
+		}
+		set
+		{
+			tutorialWatched = value;
+		}
+	}
+
+	public string[] LastUsedTeam
+	{
+		get
+		{
+			return lastUsedTeam;
+		}
+		set
+		{
+			lastUsedTeam = value;
+		}
+	}
+
+	public int BossesKilled
+	{
+		get
+		{
+			return bossesKilled;
+		}
+		set
+		{
+			bossesKilled = value;
+		}
+	}
+
+	public int MonstersKilled
+	{
+		get
+		{
+			return monstersKilled;
+		}
+		set
+		{
+			monstersKilled = value;
+		}
+	}
+
+	public int CardsCrafted
+	{
+		get
+		{
+			return cardsCrafted;
+		}
+		set
+		{
+			cardsCrafted = value;
+		}
+	}
+
+	public int CardsUpgraded
+	{
+		get
+		{
+			return cardsUpgraded;
+		}
+		set
+		{
+			cardsUpgraded = value;
+		}
+	}
+
+	public int GoldGained
+	{
+		get
+		{
+			return goldGained;
+		}
+		set
+		{
+			goldGained = value;
+		}
+	}
+
+	public int DustGained
+	{
+		get
+		{
+			return dustGained;
+		}
+		set
+		{
+			dustGained = value;
+		}
+	}
+
+	public int BestScore
+	{
+		get
+		{
+			return bestScore;
+		}
+		set
+		{
+			bestScore = value;
+		}
+	}
+
+	public int ExpGained
+	{
+		get
+		{
+			return expGained;
+		}
+		set
+		{
+			expGained = value;
+		}
+	}
+
+	public int PurchasedItems
+	{
+		get
+		{
+			return purchasedItems;
+		}
+		set
+		{
+			purchasedItems = value;
+		}
+	}
+
+	public Dictionary<string, int> HeroProgress
+	{
+		get
+		{
+			return heroProgress;
+		}
+		set
+		{
+			heroProgress = value;
+		}
+	}
+
+	public Dictionary<string, List<string>> HeroPerks
+	{
+		get
+		{
+			return heroPerks;
+		}
+		set
+		{
+			heroPerks = value;
+		}
+	}
+
+	public List<string> BossesKilledName
+	{
+		get
+		{
+			return bossesKilledName;
+		}
+		set
+		{
+			bossesKilledName = value;
+		}
+	}
+
+	public int SupplyGained
+	{
+		get
+		{
+			return supplyGained;
+		}
+		set
+		{
+			supplyGained = value;
+		}
+	}
+
+	public int SupplyActual
+	{
+		get
+		{
+			return supplyActual;
+		}
+		set
+		{
+			supplyActual = value;
+		}
+	}
+
+	public List<string> SupplyBought
+	{
+		get
+		{
+			return supplyBought;
+		}
+		set
+		{
+			supplyBought = value;
+		}
+	}
+
+	public bool NgUnlocked
+	{
+		get
+		{
+			return ngUnlocked;
+		}
+		set
+		{
+			ngUnlocked = value;
+		}
+	}
+
+	public int CorruptionsCompleted
+	{
+		get
+		{
+			return corruptionsCompleted;
+		}
+		set
+		{
+			corruptionsCompleted = value;
+		}
+	}
+
+	public string SteamUserId
+	{
+		get
+		{
+			return steamUserId;
+		}
+		set
+		{
+			steamUserId = value;
+		}
+	}
+
+	public int NgLevel
+	{
+		get
+		{
+			return ngLevel;
+		}
+		set
+		{
+			ngLevel = value;
+		}
+	}
+
+	public Dictionary<string, string> SkinUsed
+	{
+		get
+		{
+			return skinUsed;
+		}
+		set
+		{
+			skinUsed = value;
+		}
+	}
+
+	public Dictionary<string, string> CardbackUsed
+	{
+		get
+		{
+			return cardbackUsed;
+		}
+		set
+		{
+			cardbackUsed = value;
+		}
+	}
+
+	public int ObeliskMadnessLevel
+	{
+		get
+		{
+			return obeliskMadnessLevel;
+		}
+		set
+		{
+			obeliskMadnessLevel = value;
+		}
+	}
+
+	public int MaxAdventureMadnessLevel
+	{
+		get
+		{
+			return maxAdventureMadnessLevel;
+		}
+		set
+		{
+			maxAdventureMadnessLevel = value;
+		}
+	}
+
+	public int SingularityMadnessLevel
+	{
+		get
+		{
+			return singularityMadnessLevel;
+		}
+		set
+		{
+			singularityMadnessLevel = value;
+		}
+	}
+
+	public int PlayerRankProgress
+	{
+		get
+		{
+			return playerRankProgress;
+		}
+		set
+		{
+			playerRankProgress = value;
+		}
+	}
+
+	public int TownTutorialStep
+	{
+		get
+		{
+			return townTutorialStep;
+		}
+		set
+		{
+			townTutorialStep = value;
+		}
+	}
+
+	public string SandboxSettings
+	{
+		get
+		{
+			return sandboxSettings;
+		}
+		set
+		{
+			sandboxSettings = value;
+		}
+	}
 }

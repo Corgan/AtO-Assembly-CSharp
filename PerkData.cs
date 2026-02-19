@@ -1,192 +1,334 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PerkData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Perk", menuName = "Perk Data", order = 57)]
 public class PerkData : ScriptableObject
 {
-  [SerializeField]
-  private string id = "";
-  [Header("Attributes")]
-  [SerializeField]
-  private Enums.CardClass cardClass;
-  [SerializeField]
-  private bool mainPerk;
-  [SerializeField]
-  private bool obeliskPerk;
-  [SerializeField]
-  private int level;
-  [SerializeField]
-  private int row;
-  [SerializeField]
-  private Sprite icon;
-  [SerializeField]
-  private string iconTextValue;
-  [SerializeField]
-  private string customDescription;
-  [Header("Currency")]
-  [SerializeField]
-  private int additionalCurrency;
-  [SerializeField]
-  private int additionalShards;
-  [Header("Stat modification")]
-  [SerializeField]
-  private int maxHealth;
-  [Header("Energy begin combat")]
-  [SerializeField]
-  private int energyBegin;
-  [Header("Speed combat")]
-  [SerializeField]
-  private int speedQuantity;
-  [Header("Damage value bonus")]
-  [SerializeField]
-  private Enums.DamageType damageFlatBonus;
-  [SerializeField]
-  private int damageFlatBonusValue;
-  [Header("AuraCurse bonus")]
-  [SerializeField]
-  private AuraCurseData auracurseBonus;
-  [SerializeField]
-  private int auracurseBonusValue;
-  [Header("Resist modification")]
-  [SerializeField]
-  private Enums.DamageType resistModified;
-  [SerializeField]
-  private int resistModifiedValue;
-  [Header("Heal bonus")]
-  [SerializeField]
-  private int healQuantity;
+	[SerializeField]
+	private string id = "";
 
-  public void Init() => this.id = this.id.ToLower();
+	[Header("Attributes")]
+	[SerializeField]
+	private Enums.CardClass cardClass;
 
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
+	[SerializeField]
+	private bool mainPerk;
 
-  public int Level
-  {
-    get => this.level;
-    set => this.level = value;
-  }
+	[SerializeField]
+	private bool obeliskPerk;
 
-  public int Row
-  {
-    get => this.row;
-    set => this.row = value;
-  }
+	[SerializeField]
+	private int level;
 
-  public int MaxHealth
-  {
-    get => this.maxHealth;
-    set => this.maxHealth = value;
-  }
+	[SerializeField]
+	private int row;
 
-  public Enums.DamageType DamageFlatBonus
-  {
-    get => this.damageFlatBonus;
-    set => this.damageFlatBonus = value;
-  }
+	[SerializeField]
+	private Sprite icon;
 
-  public int DamageFlatBonusValue
-  {
-    get => this.damageFlatBonusValue;
-    set => this.damageFlatBonusValue = value;
-  }
+	[SerializeField]
+	private string iconTextValue;
 
-  public int EnergyBegin
-  {
-    get => this.energyBegin;
-    set => this.energyBegin = value;
-  }
+	[SerializeField]
+	private string customDescription;
 
-  public AuraCurseData AuracurseBonus
-  {
-    get => this.auracurseBonus;
-    set => this.auracurseBonus = value;
-  }
+	[Header("Currency")]
+	[SerializeField]
+	private int additionalCurrency;
 
-  public int AuracurseBonusValue
-  {
-    get => this.auracurseBonusValue;
-    set => this.auracurseBonusValue = value;
-  }
+	[SerializeField]
+	private int additionalShards;
 
-  public Enums.DamageType ResistModified
-  {
-    get => this.resistModified;
-    set => this.resistModified = value;
-  }
+	[Header("Stat modification")]
+	[SerializeField]
+	private int maxHealth;
 
-  public int ResistModifiedValue
-  {
-    get => this.resistModifiedValue;
-    set => this.resistModifiedValue = value;
-  }
+	[Header("Energy begin combat")]
+	[SerializeField]
+	private int energyBegin;
 
-  public Enums.CardClass CardClass
-  {
-    get => this.cardClass;
-    set => this.cardClass = value;
-  }
+	[Header("Speed combat")]
+	[SerializeField]
+	private int speedQuantity;
 
-  public int SpeedQuantity
-  {
-    get => this.speedQuantity;
-    set => this.speedQuantity = value;
-  }
+	[Header("Damage value bonus")]
+	[SerializeField]
+	private Enums.DamageType damageFlatBonus;
 
-  public Sprite Icon
-  {
-    get => this.icon;
-    set => this.icon = value;
-  }
+	[SerializeField]
+	private int damageFlatBonusValue;
 
-  public string IconTextValue
-  {
-    get => this.iconTextValue;
-    set => this.iconTextValue = value;
-  }
+	[Header("AuraCurse bonus")]
+	[SerializeField]
+	private AuraCurseData auracurseBonus;
 
-  public int AdditionalCurrency
-  {
-    get => this.additionalCurrency;
-    set => this.additionalCurrency = value;
-  }
+	[SerializeField]
+	private int auracurseBonusValue;
 
-  public int HealQuantity
-  {
-    get => this.healQuantity;
-    set => this.healQuantity = value;
-  }
+	[Header("Resist modification")]
+	[SerializeField]
+	private Enums.DamageType resistModified;
 
-  public bool ObeliskPerk
-  {
-    get => this.obeliskPerk;
-    set => this.obeliskPerk = value;
-  }
+	[SerializeField]
+	private int resistModifiedValue;
 
-  public bool MainPerk
-  {
-    get => this.mainPerk;
-    set => this.mainPerk = value;
-  }
+	[Header("Heal bonus")]
+	[SerializeField]
+	private int healQuantity;
 
-  public int AdditionalShards
-  {
-    get => this.additionalShards;
-    set => this.additionalShards = value;
-  }
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
 
-  public string CustomDescription
-  {
-    get => this.customDescription;
-    set => this.customDescription = value;
-  }
+	public int Level
+	{
+		get
+		{
+			return level;
+		}
+		set
+		{
+			level = value;
+		}
+	}
+
+	public int Row
+	{
+		get
+		{
+			return row;
+		}
+		set
+		{
+			row = value;
+		}
+	}
+
+	public int MaxHealth
+	{
+		get
+		{
+			return maxHealth;
+		}
+		set
+		{
+			maxHealth = value;
+		}
+	}
+
+	public Enums.DamageType DamageFlatBonus
+	{
+		get
+		{
+			return damageFlatBonus;
+		}
+		set
+		{
+			damageFlatBonus = value;
+		}
+	}
+
+	public int DamageFlatBonusValue
+	{
+		get
+		{
+			return damageFlatBonusValue;
+		}
+		set
+		{
+			damageFlatBonusValue = value;
+		}
+	}
+
+	public int EnergyBegin
+	{
+		get
+		{
+			return energyBegin;
+		}
+		set
+		{
+			energyBegin = value;
+		}
+	}
+
+	public AuraCurseData AuracurseBonus
+	{
+		get
+		{
+			return auracurseBonus;
+		}
+		set
+		{
+			auracurseBonus = value;
+		}
+	}
+
+	public int AuracurseBonusValue
+	{
+		get
+		{
+			return auracurseBonusValue;
+		}
+		set
+		{
+			auracurseBonusValue = value;
+		}
+	}
+
+	public Enums.DamageType ResistModified
+	{
+		get
+		{
+			return resistModified;
+		}
+		set
+		{
+			resistModified = value;
+		}
+	}
+
+	public int ResistModifiedValue
+	{
+		get
+		{
+			return resistModifiedValue;
+		}
+		set
+		{
+			resistModifiedValue = value;
+		}
+	}
+
+	public Enums.CardClass CardClass
+	{
+		get
+		{
+			return cardClass;
+		}
+		set
+		{
+			cardClass = value;
+		}
+	}
+
+	public int SpeedQuantity
+	{
+		get
+		{
+			return speedQuantity;
+		}
+		set
+		{
+			speedQuantity = value;
+		}
+	}
+
+	public Sprite Icon
+	{
+		get
+		{
+			return icon;
+		}
+		set
+		{
+			icon = value;
+		}
+	}
+
+	public string IconTextValue
+	{
+		get
+		{
+			return iconTextValue;
+		}
+		set
+		{
+			iconTextValue = value;
+		}
+	}
+
+	public int AdditionalCurrency
+	{
+		get
+		{
+			return additionalCurrency;
+		}
+		set
+		{
+			additionalCurrency = value;
+		}
+	}
+
+	public int HealQuantity
+	{
+		get
+		{
+			return healQuantity;
+		}
+		set
+		{
+			healQuantity = value;
+		}
+	}
+
+	public bool ObeliskPerk
+	{
+		get
+		{
+			return obeliskPerk;
+		}
+		set
+		{
+			obeliskPerk = value;
+		}
+	}
+
+	public bool MainPerk
+	{
+		get
+		{
+			return mainPerk;
+		}
+		set
+		{
+			mainPerk = value;
+		}
+	}
+
+	public int AdditionalShards
+	{
+		get
+		{
+			return additionalShards;
+		}
+		set
+		{
+			additionalShards = value;
+		}
+	}
+
+	public string CustomDescription
+	{
+		get
+		{
+			return customDescription;
+		}
+		set
+		{
+			customDescription = value;
+		}
+	}
+
+	public void Init()
+	{
+		id = id.ToLower();
+	}
 }

@@ -1,105 +1,186 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Dracula
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
+using System.Collections;
 using UnityEngine;
 
-#nullable disable
 public class Dracula : BossNPC
 {
-  private const string NPC_SWAP_VFX_NAME = "lightningstrike";
-  private int _nextSlotJumpStep = 1;
-  private bool transformed;
+	private const string NPC_SWAP_VFX_NAME = "lightningstrike";
 
-  public Dracula(NPC npc)
-    : base(npc)
-  {
-    MatchManager.Instance.OnLoadCombatFinished += new Action(this.SetupCombatStartEffects);
-    MatchManager.Instance.OnCardCastByHeroBegins += new Action<Hero, CardData>(this.SwapPosition);
-    MatchManager.OnCharacterDamaged += new Action<Character, int>(this.OnCharacterDamaged);
-  }
+	private const string TRANSFORMATION_VFX_NAME = "CountTransitionVFX";
 
-  public override void Dispose()
-  {
-    base.Dispose();
-    MatchManager.Instance.OnLoadCombatFinished -= new Action(this.SetupCombatStartEffects);
-    MatchManager.Instance.OnCardCastByHeroBegins -= new Action<Hero, CardData>(this.SwapPosition);
-    MatchManager.OnCharacterDamaged -= new Action<Character, int>(this.OnCharacterDamaged);
-  }
+	public int _nextSlotJumpStep = 1;
 
-  private void SetupCombatStartEffects()
-  {
-    NPC[] teamNpc = MatchManager.Instance.GetTeamNPC();
-    for (int index = 0; index < teamNpc.Length; ++index)
-    {
-      if (teamNpc[index] != null && teamNpc[index].Alive && teamNpc[index].InternalId != this.npc.InternalId)
-        teamNpc[index].SetAura((Character) null, Globals.Instance.GetAuraCurseData("invulnerable"), 1);
-    }
-  }
+	private float _transformationHealthThreshold = 0.4f;
 
-  private void SwapPosition(Hero arg1, CardData arg2)
-  {
-    int position = this.npc.Position;
-    int npcIndex = this.npc.NPCIndex;
-    int nextSlotJumpStep = this._nextSlotJumpStep;
-    int num1 = (position + nextSlotJumpStep) % 4;
-    int index2 = (npcIndex + this._nextSlotJumpStep) % 4;
-    NPC[] teamNpc = MatchManager.Instance.GetTeamNPC();
-    NPC npc1 = teamNpc[index2];
-    MatchManager.Instance.SwapNPCDeck(npcIndex, index2);
-    MatchManager.Instance.SwapNPCDeckDiscard(npcIndex, index2);
-    MatchManager.Instance.SwapNPCHand(npcIndex, index2);
-    MatchManager.Instance.SwapCharacterOrder(this.npc.Id, npc1.Id, npcIndex, index2);
-    npc1.Position = this.npc.Position;
-    npc1.NPCIndex = this.npc.NPCIndex;
-    this.npc.Position = num1;
-    this.npc.NPCIndex = index2;
-    Transform target = MatchManager.Instance.GetTarget();
-    if ((UnityEngine.Object) target == (UnityEngine.Object) npc1.GO.transform)
-      MatchManager.Instance.SetTarget(this.npc.GO.transform);
-    else if ((UnityEngine.Object) target == (UnityEngine.Object) this.npc.GO.transform)
-      MatchManager.Instance.SetTarget(npc1.GO.transform);
-    NPC[] npcArray1 = teamNpc;
-    int index1 = npcIndex;
-    NPC[] npcArray2 = teamNpc;
-    int num2 = index2;
-    NPC npc2 = teamNpc[index2];
-    NPC npc3 = teamNpc[npcIndex];
-    npcArray1[index1] = npc2;
-    int index3 = num2;
-    NPC npc4 = npc3;
-    npcArray2[index3] = npc4;
-    for (int index4 = 0; index4 < teamNpc.Length; ++index4)
-    {
-      if (index4 == npcIndex || index4 == index2)
-        EffectsManager.Instance.PlayEffect("lightningstrike", teamNpc[index4].NPCItem.CharImageT);
-      teamNpc[index4].NPCItem.SetPosition(true);
-    }
-    this._nextSlotJumpStep = 3 - this._nextSlotJumpStep;
-  }
+	private bool transformed;
 
-  private void OnCharacterDamaged(Character character, int damage)
-  {
-    if (!(bool) (UnityEngine.Object) character.NpcData || !(character.NpcData.Id == "count") || (double) character.HpCurrent / (double) character.GetMaxHP() >= 0.40000000596046448 || this.transformed)
-      return;
-    this.transformed = true;
-    foreach (CharacterGOItem characterGoItem in UnityEngine.Object.FindObjectsOfType<CharacterGOItem>())
-    {
-      if (characterGoItem.name.Contains("count"))
-      {
-        UnityEngine.Object.Destroy((UnityEngine.Object) characterGoItem.gameObject);
-        character.TransformedModel = true;
-        character.NPCItem.Init(MatchManager.Instance.GetTeamNPC()[character.Position], true);
-        character.SpriteSpeed = character.NpcData.SpriteSpeedAlternate;
-        character.SpritePortrait = character.NpcData.SpritePortraitAlternate;
-        MatchManager.Instance.SortCharacterSprites();
-        MatchManager.Instance.SetInitiatives();
-        MatchManager.Instance.RepositionCharacters();
-        EffectsManager.Instance.PlayEffect("fireburst", MatchManager.Instance.GetTeamNPC()[character.Position].NPCItem.CharImageT, false, false);
-      }
-    }
-  }
+	public Dracula(NPC npc)
+		: base(npc)
+	{
+		MatchManager instance = MatchManager.Instance;
+		instance.OnLoadCombatFinished = (Action)Delegate.Combine(instance.OnLoadCombatFinished, new Action(SetupCombatStartEffects));
+		MatchManager instance2 = MatchManager.Instance;
+		instance2.OnCardCastByHeroBegins = (Action<Hero, CardData>)Delegate.Combine(instance2.OnCardCastByHeroBegins, new Action<Hero, CardData>(SwapPosition));
+		MatchManager.OnCharacterDamaged = (Action<Character, int, int>)Delegate.Combine(MatchManager.OnCharacterDamaged, new Action<Character, int, int>(OnCharacterDamaged));
+		MatchManager.Instance.DoComic(npc, Texts.Instance.GetText("fluffCountDialogStart"), 9f);
+	}
+
+	public override void Dispose()
+	{
+		base.Dispose();
+		MatchManager instance = MatchManager.Instance;
+		instance.OnLoadCombatFinished = (Action)Delegate.Remove(instance.OnLoadCombatFinished, new Action(SetupCombatStartEffects));
+		MatchManager instance2 = MatchManager.Instance;
+		instance2.OnCardCastByHeroBegins = (Action<Hero, CardData>)Delegate.Remove(instance2.OnCardCastByHeroBegins, new Action<Hero, CardData>(SwapPosition));
+		MatchManager.OnCharacterDamaged = (Action<Character, int, int>)Delegate.Remove(MatchManager.OnCharacterDamaged, new Action<Character, int, int>(OnCharacterDamaged));
+	}
+
+	private void SetupCombatStartEffects()
+	{
+		NPC[] teamNPC = MatchManager.Instance.GetTeamNPC();
+		for (int i = 0; i < teamNPC.Length; i++)
+		{
+			if (teamNPC[i] != null && teamNPC[i].Alive && teamNPC[i].InternalId != npc.InternalId)
+			{
+				teamNPC[i].SetAura(null, Globals.Instance.GetAuraCurseData("invulnerableunremovable"), 1);
+			}
+		}
+	}
+
+	private void SwapPosition(Hero arg1, CardData arg2)
+	{
+		int position = npc.Position;
+		int nPCIndex = npc.NPCIndex;
+		int position2 = (position + _nextSlotJumpStep) % 4;
+		int num = (nPCIndex + _nextSlotJumpStep) % 4;
+		NPC[] teamNPC = MatchManager.Instance.GetTeamNPC();
+		NPC nPC = teamNPC[num];
+		MatchManager.Instance.SwapNPCDeck(nPCIndex, num);
+		MatchManager.Instance.SwapNPCDeckDiscard(nPCIndex, num);
+		MatchManager.Instance.SwapNPCHand(nPCIndex, num);
+		MatchManager.Instance.SwapCharacterOrder(npc.Id, nPC.Id, nPCIndex, num);
+		nPC.Position = npc.Position;
+		nPC.NPCIndex = npc.NPCIndex;
+		npc.Position = position2;
+		npc.NPCIndex = num;
+		NPC[] array = teamNPC;
+		int num2 = nPCIndex;
+		int num3 = num;
+		NPC nPC2 = teamNPC[num];
+		NPC nPC3 = teamNPC[nPCIndex];
+		array[num2] = nPC2;
+		teamNPC[num3] = nPC3;
+		for (int i = 0; i < teamNPC.Length; i++)
+		{
+			if (i == nPCIndex || i == num)
+			{
+				EffectsManager.Instance.PlayEffect("lightningstrike", teamNPC[i].NPCItem.CharImageT);
+			}
+			teamNPC[i].NPCItem.SetPosition(instant: true);
+		}
+		Transform target = MatchManager.Instance.GetTarget();
+		if (target != null)
+		{
+			if (target == nPC.GO.transform)
+			{
+				MatchManager.Instance.SetTarget(npc.GO.transform);
+			}
+			else if (target == npc.GO.transform)
+			{
+				MatchManager.Instance.SetTarget(nPC.GO.transform);
+			}
+		}
+		_nextSlotJumpStep = 3 - _nextSlotJumpStep;
+	}
+
+	public override void OnCharacterDamaged(Character character, int damage, int hpCurrent)
+	{
+		if ((bool)character.NpcData && character.NpcData.Id.StartsWith("count"))
+		{
+			DoDraculaTransformation(character);
+		}
+	}
+
+	public void DoDraculaTransformation(Character character, bool instantTransition = false)
+	{
+		if (!((float)character.HpCurrent / (float)character.GetMaxHP() < _transformationHealthThreshold) || transformed)
+		{
+			return;
+		}
+		transformed = true;
+		CharacterGOItem[] array = UnityEngine.Object.FindObjectsOfType<CharacterGOItem>();
+		foreach (CharacterGOItem characterGOItem in array)
+		{
+			if (characterGOItem.name.Contains("count"))
+			{
+				character.TransformedModel = true;
+				character.NPCItem.Init(MatchManager.Instance.GetTeamNPC()[character.Position], useAltModels: true);
+				character.SpriteSpeed = character.NpcData.SpriteSpeedAlternate;
+				character.SpritePortrait = character.NpcData.SpritePortraitAlternate;
+				if (instantTransition)
+				{
+					GameManager.Instance.StartCoroutine(DoDraculaTransitionInstant(characterGOItem, character));
+				}
+				else
+				{
+					GameManager.Instance.StartCoroutine(DoDraculaTransitionSequence(characterGOItem, character));
+				}
+				MatchManager.Instance.SortCharacterSprites();
+				MatchManager.Instance.SetInitiatives();
+				MatchManager.Instance.RepositionCharacters();
+				if (!instantTransition)
+				{
+					GameObject obj = UnityEngine.Object.Instantiate(Globals.Instance.GetResourceEffect("CountTransitionVFX"), MatchManager.Instance.GetTeamNPC()[character.Position].NPCItem.CharImageT.position + new Vector3(0.75f, 0f, 0f), Quaternion.identity);
+					UnityEngine.Object.Instantiate(MatchManager.Instance.VignetteSprite, MatchManager.Instance.GetTeamNPC()[character.Position].NPCItem.CharImageT.position, Quaternion.identity);
+					EffectsManager.Instance.PlayEffect("CountTransitionVFX", MatchManager.Instance.GetTeamNPC()[character.Position].NPCItem.CharImageT, isHero: false, castInCenter: false);
+					UnityEngine.Object.Destroy(obj, 10f);
+					UnityEngine.Object.Destroy(characterGOItem.gameObject, 10f);
+				}
+				else
+				{
+					UnityEngine.Object.Destroy(characterGOItem.gameObject);
+				}
+			}
+		}
+	}
+
+	private IEnumerator DoDraculaTransitionSequence(CharacterGOItem humanDracula, Character beastDracula)
+	{
+		GameManager.Instance.DisableCardCast = true;
+		GameManager.Instance.ConfigAutoEnd = false;
+		SetDraculaSpriteAlpha(beastDracula, 0);
+		yield return new WaitForSeconds(1f);
+		beastDracula.NPCItem.animatedTransform.gameObject.SetActive(value: true);
+		yield return new WaitForSeconds(0.1f);
+		humanDracula.GetComponent<Animator>().SetTrigger("transitionOut");
+		beastDracula.NPCItem.Anim.SetTrigger("transitionIn");
+		beastDracula.SetAuraTrait(beastDracula, "powerful", 3);
+		beastDracula.SetAuraTrait(beastDracula, "fury", 6);
+		yield return new WaitForSeconds(0.01f);
+		SetDraculaSpriteAlpha(beastDracula, 1);
+		yield return new WaitForSeconds(7f);
+		GameManager.Instance.DisableCardCast = false;
+		if (SaveManager.PrefsHasKey("autoEnd"))
+		{
+			GameManager.Instance.ConfigAutoEnd = SaveManager.LoadPrefsBool("autoEnd");
+		}
+		MatchManager.Instance.RedrawCardsBorder();
+	}
+
+	private IEnumerator DoDraculaTransitionInstant(CharacterGOItem humanDracula, Character beastDracula)
+	{
+		yield return new WaitForSeconds(0.1f);
+		SetDraculaSpriteAlpha(beastDracula, 0);
+		beastDracula.NPCItem.animatedTransform.gameObject.SetActive(value: true);
+		yield return new WaitForSeconds(0.1f);
+		SetDraculaSpriteAlpha(beastDracula, 1);
+	}
+
+	private void SetDraculaSpriteAlpha(Character beastDracula, int alpha)
+	{
+		foreach (SpriteRenderer animatedSprite in beastDracula.NPCItem.animatedSprites)
+		{
+			animatedSprite.enabled = alpha == 1;
+		}
+	}
 }

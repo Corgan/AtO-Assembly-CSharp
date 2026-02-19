@@ -1,66 +1,65 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: DeckPile
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class DeckPile : MonoBehaviour
 {
-  private SpriteRenderer spr;
+	private SpriteRenderer spr;
 
-  private void Awake() => this.spr = this.GetComponent<SpriteRenderer>();
+	private void Awake()
+	{
+		spr = GetComponent<SpriteRenderer>();
+	}
 
-  private void OnMouseUp()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || MatchManager.Instance.characterWindow.IsActive())
-      return;
-    GameManager.Instance.SetCursorPlain();
-    if (this.gameObject.name == "discardpile")
-    {
-      if (MatchManager.Instance.CountHeroDiscard() <= 0)
-        return;
-      MatchManager.Instance.ShowCharacterWindow("combatdiscard", characterIndex: MatchManager.Instance.GetHeroActive());
-    }
-    else
-      MatchManager.Instance.ShowCharacterWindow("combatdeck", characterIndex: MatchManager.Instance.GetHeroActive());
-  }
+	private void OnMouseUp()
+	{
+		if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || MatchManager.Instance.characterWindow.IsActive())
+		{
+			return;
+		}
+		GameManager.Instance.SetCursorPlain();
+		if (base.gameObject.name == "discardpile")
+		{
+			if (MatchManager.Instance.CountHeroDiscard() > 0)
+			{
+				MatchManager.Instance.ShowCharacterWindow("combatdiscard", isHero: true, MatchManager.Instance.GetHeroActive());
+			}
+		}
+		else
+		{
+			MatchManager.Instance.ShowCharacterWindow("combatdeck", isHero: true, MatchManager.Instance.GetHeroActive());
+		}
+	}
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || MatchManager.Instance.characterWindow.IsActive() || (bool) (Object) MatchManager.Instance && MatchManager.Instance.CardDrag)
-      return;
-    if (this.gameObject.name != "discardpile" || MatchManager.Instance.CountHeroDiscard() > 0)
-    {
-      GameManager.Instance.SetCursorHover();
-      GameManager.Instance.PlayLibraryAudio("castnpccardfast");
-    }
-    if (this.gameObject.name == "discardpile")
-    {
-      MatchManager.Instance.DeckParticlesShow(1, true);
-    }
-    else
-    {
-      MatchManager.Instance.DeckParticlesShow(0, true);
-      this.spr.color = new Color(0.9f, 0.8f, 0.1f, 1f);
-    }
-  }
+	private void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive() && !MatchManager.Instance.characterWindow.IsActive() && (!MatchManager.Instance || !MatchManager.Instance.CardDrag))
+		{
+			if (base.gameObject.name != "discardpile" || MatchManager.Instance.CountHeroDiscard() > 0)
+			{
+				GameManager.Instance.SetCursorHover();
+				GameManager.Instance.PlayLibraryAudio("castnpccardfast");
+			}
+			if (base.gameObject.name == "discardpile")
+			{
+				MatchManager.Instance.DeckParticlesShow(1, state: true);
+				return;
+			}
+			MatchManager.Instance.DeckParticlesShow(0, state: true);
+			spr.color = new Color(0.9f, 0.8f, 0.1f, 1f);
+		}
+	}
 
-  private void OnMouseExit()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || (bool) (Object) MatchManager.Instance && MatchManager.Instance.CardDrag)
-      return;
-    GameManager.Instance.SetCursorPlain();
-    if (this.gameObject.name == "discardpile")
-    {
-      MatchManager.Instance.DeckParticlesShow(1, false);
-    }
-    else
-    {
-      MatchManager.Instance.DeckParticlesShow(0, false);
-      this.spr.color = new Color(1f, 1f, 1f, 1f);
-    }
-  }
+	private void OnMouseExit()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive() && (!MatchManager.Instance || !MatchManager.Instance.CardDrag))
+		{
+			GameManager.Instance.SetCursorPlain();
+			if (base.gameObject.name == "discardpile")
+			{
+				MatchManager.Instance.DeckParticlesShow(1, state: false);
+				return;
+			}
+			MatchManager.Instance.DeckParticlesShow(0, state: false);
+			spr.color = new Color(1f, 1f, 1f, 1f);
+		}
+	}
 }

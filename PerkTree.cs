@@ -1,9 +1,3 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PerkTree
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,929 +6,1165 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class PerkTree : MonoBehaviour
 {
-  public Transform elements;
-  public Transform nodes;
-  public GameObject perkNodeGO;
-  public GameObject perkNodeAmplifyGO;
-  public Transform posBegin;
-  public Transform posEnd;
-  public SpriteRenderer charSprite;
-  public TMP_Text availablePerksPoints;
-  public TMP_Text usedPerksPoints;
-  public PerkBackgroundRow[] perkBgRow;
-  public Transform[] categoryT;
-  public BotonGeneric[] buttonType;
-  public BotonGeneric buttonConfirm;
-  public BotonGeneric buttonReset;
-  public BotonGeneric buttonImport;
-  public BotonGeneric buttonExport;
-  public Transform buttonExit;
-  public Transform saveSlots;
-  public Sprite iconPerkMultiple;
-  private float oriX;
-  private float endX;
-  private float oriY;
-  private float endY;
-  private float cols = 12f;
-  private float rows = 7f;
-  private float offsetX;
-  private float offsetY;
-  private Dictionary<string, PerkNodeData> perkNodeDatas;
-  private Dictionary<string, PerkNode> perkNodes;
-  private Dictionary<string, GameObject> perkNodesGO;
-  private Dictionary<string, List<string>> perkChildIncompatible;
-  private Dictionary<string, List<string>> teamPerks;
-  private List<string> selectedPerks;
-  private int totalAvailablePoints;
-  private int availablePoints;
-  private int usedPoints;
-  private string subClassId = "";
-  private int[] usedPointsArray;
-  private int[] usedPointsCategory;
-  private bool canModify;
-  private int savingSlot;
-  private int loadingSlot;
-  public PerkSlot[] perkSlot;
-  public bool IsOwner;
-  public TMP_Text rankProgress;
-  public TMP_Text maxProgress;
-  public Transform perkBarMask;
-  public SpriteRenderer perkBar;
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
-  private List<Transform> _controllerVerticalList = new List<Transform>();
+	public Transform elements;
 
-  public static PerkTree Instance { get; private set; }
+	public Transform nodes;
 
-  private void Awake()
-  {
-    if ((UnityEngine.Object) PerkTree.Instance == (UnityEngine.Object) null)
-      PerkTree.Instance = this;
-    else if ((UnityEngine.Object) PerkTree.Instance != (UnityEngine.Object) this)
-      UnityEngine.Object.Destroy((UnityEngine.Object) this.gameObject);
-    UnityEngine.Object.DontDestroyOnLoad((UnityEngine.Object) this.gameObject);
-    this.usedPointsArray = new int[7];
-    this.usedPointsArray[0] = 0;
-    this.usedPointsArray[1] = 3;
-    this.usedPointsArray[2] = 6;
-    this.usedPointsArray[3] = 10;
-    this.usedPointsArray[4] = 16;
-    this.usedPointsArray[5] = 22;
-    this.usedPointsArray[6] = 30;
-    this.usedPointsCategory = new int[4];
-  }
+	public GameObject perkNodeGO;
 
-  public void InitPerkTree()
-  {
-    this.oriX = this.posBegin.localPosition.x;
-    this.oriY = this.posBegin.localPosition.y;
-    this.endX = this.posEnd.localPosition.x;
-    this.endY = this.posEnd.localPosition.y;
-    if (this.posBegin.gameObject.activeSelf)
-      this.posBegin.gameObject.SetActive(false);
-    if (this.posEnd.gameObject.activeSelf)
-      this.posEnd.gameObject.SetActive(false);
-    this.offsetX = Mathf.Abs(this.oriX - this.endX) / (this.cols - 1f);
-    this.offsetY = Mathf.Abs(this.oriY - this.endY) / (this.rows - 1f);
-    for (int index = 0; index < this.perkBgRow.Length; ++index)
-      this.perkBgRow[index].SetRequired(this.usedPointsArray[index]);
-    this.buttonConfirm.Disable();
-    if (this.buttonConfirm.gameObject.activeSelf)
-      this.buttonConfirm.gameObject.SetActive(false);
-    this.DrawTree();
-    this.StartCoroutine(this.HideCo());
-  }
+	public GameObject perkNodeAmplifyGO;
 
-  private IEnumerator HideCo()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-    this.Hide();
-  }
+	public Transform posBegin;
 
-  public int GetPointsNeeded(int _row) => this.usedPointsArray[_row];
+	public Transform posEnd;
 
-  public int GetPointsAvailable() => this.availablePoints;
+	public SpriteRenderer charSprite;
 
-  public string GetActiveHero() => this.subClassId;
+	public TMP_Text availablePerksPoints;
 
-  public void ExportTree()
-  {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(this.usedPoints);
-    stringBuilder.Append("_");
-    for (int index = 0; index < this.selectedPerks.Count; ++index)
-    {
-      stringBuilder.Append(this.selectedPerks[index]);
-      if (index < this.selectedPerks.Count - 1)
-        stringBuilder.Append("-");
-    }
-    string inputText = Functions.CompressString(stringBuilder.ToString());
-    AlertManager.Instance.AlertCopyPaste(Texts.Instance.GetText("pressForCopyPaste"), inputText);
-  }
+	public TMP_Text usedPerksPoints;
 
-  public void ImportTree()
-  {
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.ImportTreeAction);
-    AlertManager.Instance.AlertPasteCopy(Texts.Instance.GetText("pressForImportTree"));
-  }
+	public PerkBackgroundRow[] perkBgRow;
 
-  public void ImportTreeAction()
-  {
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.ImportTreeAction);
-    if (!AlertManager.Instance.GetConfirmAnswer())
-      return;
-    string compressedText = Functions.OnlyAscii(AlertManager.Instance.GetInputPCValue()).Trim();
-    string str = "";
-    bool flag = false;
-    try
-    {
-      str = Functions.DecompressString(compressedText);
-    }
-    catch
-    {
-      flag = true;
-    }
-    if (flag)
-    {
-      this.ErrorImport();
-    }
-    else
-    {
-      if (!(str != ""))
-        return;
-      string[] strArray1 = str.Split('_', StringSplitOptions.None);
-      if (strArray1.Length == 2)
-      {
-        int _points = int.Parse(strArray1[0]);
-        if (this.totalAvailablePoints < _points)
-        {
-          this.ErrorImport(1, _points);
-        }
-        else
-        {
-          string[] strArray2 = strArray1[1].Split('-', StringSplitOptions.None);
-          this.selectedPerks = new List<string>();
-          for (int index = 0; index < strArray2.Length; ++index)
-            this.selectedPerks.Add(strArray2[index]);
-          this.Refresh();
-          this.ErrorImport(-1);
-          this.buttonConfirm.Enable();
-        }
-      }
-      else
-        this.ErrorImport();
-    }
-  }
+	public Transform[] categoryT;
 
-  private void ErrorImport(int _error = 0, int _points = 0)
-  {
-    this.StartCoroutine(this.ErrorImportCo(_error, _points));
-  }
+	public BotonGeneric[] buttonType;
 
-  private IEnumerator ErrorImportCo(int _error, int _points)
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-    switch (_error)
-    {
-      case -1:
-        AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("importedTree"));
-        break;
-      case 0:
-        AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("invalidImportTalentTreeCode"));
-        break;
-      case 1:
-        AlertManager.Instance.AlertConfirm(string.Format(Texts.Instance.GetText("importPerkTreeNotPoints"), (object) _points));
-        break;
-    }
-  }
+	public BotonGeneric buttonConfirm;
 
-  private void DoPerkRank()
-  {
-    int playerRankProgress = PlayerManager.Instance.GetPlayerRankProgress();
-    int perkPrevLevelPoints = PlayerManager.Instance.GetPerkPrevLevelPoints("");
-    int perkNextLevelPoints = PlayerManager.Instance.GetPerkNextLevelPoints("");
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append("<color=#FFF>");
-    stringBuilder.Append(playerRankProgress.ToString());
-    if (perkNextLevelPoints != 0)
-    {
-      stringBuilder.Append("</color><size=-.5> / ");
-      stringBuilder.Append(perkNextLevelPoints.ToString());
-    }
-    this.maxProgress.text = stringBuilder.ToString();
-    int highestCharacterRank = PlayerManager.Instance.GetHighestCharacterRank();
-    this.rankProgress.text = string.Format(Texts.Instance.GetText("rankProgress"), (object) highestCharacterRank);
-    this.perkBarMask.localScale = new Vector3((float) (((double) playerRankProgress - (double) perkPrevLevelPoints) / ((double) perkNextLevelPoints - (double) perkPrevLevelPoints) * 3.3650000095367432), this.perkBarMask.localScale.y, this.perkBarMask.localScale.z);
-  }
+	public BotonGeneric buttonReset;
 
-  public void Show(string _subClassId = "", int currentHeroIndex = -1)
-  {
-    this.DoPerkRank();
-    this.canModify = (bool) (UnityEngine.Object) HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame() || AtOManager.Instance.CharInTown() && AtOManager.Instance.GetTownTier() == 0;
-    if (!GameManager.Instance.IsMultiplayer() || (bool) (UnityEngine.Object) HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame() || currentHeroIndex > -1 && AtOManager.Instance.GetHero(currentHeroIndex).Owner == NetworkManager.Instance.GetPlayerNick())
-    {
-      this.IsOwner = true;
-      if (!this.buttonReset.gameObject.activeSelf)
-        this.buttonReset.gameObject.SetActive(true);
-    }
-    else
-    {
-      this.IsOwner = false;
-      if (this.buttonReset.gameObject.activeSelf)
-        this.buttonReset.gameObject.SetActive(false);
-    }
-    this.selectedPerks = new List<string>();
-    this.subClassId = _subClassId;
-    this.charSprite.sprite = Globals.Instance.GetSubClassData(this.subClassId).SpritePortrait;
-    this.totalAvailablePoints = PlayerManager.Instance.GetHighestCharacterRank();
-    if (this.totalAvailablePoints > Globals.MaxPerkPoints)
-      this.totalAvailablePoints = Globals.MaxPerkPoints;
-    this.buttonConfirm.Disable();
-    if ((bool) (UnityEngine.Object) HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame())
-    {
-      if (!this.buttonReset.gameObject.activeSelf)
-        this.buttonReset.gameObject.SetActive(true);
-      if (!this.buttonImport.gameObject.activeSelf)
-        this.buttonImport.gameObject.SetActive(true);
-      if (!this.buttonExport.gameObject.activeSelf)
-        this.buttonExport.gameObject.SetActive(true);
-      if (!this.saveSlots.gameObject.activeSelf)
-        this.saveSlots.gameObject.SetActive(true);
-    }
-    else
-    {
-      if (this.buttonReset.gameObject.activeSelf)
-        this.buttonReset.gameObject.SetActive(false);
-      if (this.buttonImport.gameObject.activeSelf)
-        this.buttonImport.gameObject.SetActive(false);
-      if (this.buttonExport.gameObject.activeSelf)
-        this.buttonExport.gameObject.SetActive(false);
-      if (this.saveSlots.gameObject.activeSelf)
-        this.saveSlots.gameObject.SetActive(false);
-    }
-    if (this.buttonConfirm.gameObject.activeSelf != this.canModify)
-      this.buttonConfirm.gameObject.SetActive(this.canModify);
-    this.GetHeroPerks();
-    this.SetCategory();
-    this.LoadSavedPerks();
-    this.DoTeamPerks();
-    if (!this.elements.gameObject.activeSelf)
-      this.elements.gameObject.SetActive(true);
-    this.controllerHorizontalIndex = -1;
-  }
+	public BotonGeneric buttonImport;
 
-  public void Hide()
-  {
-    if (this.buttonConfirm.gameObject.activeSelf && this.buttonConfirm.buttonEnabled && SceneStatic.GetSceneName() != "MainMenu")
-    {
-      AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.HideConfirm);
-      AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("wantExitPerks"));
-    }
-    else
-      this.HideAction();
-  }
+	public BotonGeneric buttonExport;
 
-  public void HideConfirm()
-  {
-    int num = AlertManager.Instance.GetConfirmAnswer() ? 1 : 0;
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.HideConfirm);
-    if (num == 0)
-      return;
-    this.HideAction();
-  }
+	public Transform buttonExit;
 
-  public void HideAction(bool checkSubclass = true)
-  {
-    if (checkSubclass && this.subClassId != "")
-    {
-      if ((UnityEngine.Object) HeroSelectionManager.Instance != (UnityEngine.Object) null)
-      {
-        HeroSelectionManager.Instance.RefreshPerkPoints(this.subClassId);
-      }
-      else
-      {
-        Hero[] team = AtOManager.Instance.GetTeam();
-        if (team != null)
-        {
-          for (int characterIndex = 0; characterIndex < team.Length; ++characterIndex)
-          {
-            if (team[characterIndex].HeroData.HeroSubClass.Id == this.subClassId)
-            {
-              AtOManager.Instance.SideBarCharacterClicked(characterIndex);
-              break;
-            }
-          }
-        }
-      }
-    }
-    this.buttonConfirm.Disable();
-    if (this.elements.gameObject.activeSelf)
-      this.elements.gameObject.SetActive(false);
-    PopupManager.Instance.ClosePopup();
-  }
+	public Transform saveSlots;
 
-  public bool IsActive() => this.elements.gameObject.activeSelf;
+	public Sprite iconPerkMultiple;
 
-  public void SetCategory(int _type = 0)
-  {
-    for (int index = 0; index < this.buttonType.Length; ++index)
-    {
-      if (_type == index)
-      {
-        this.buttonType[index].transform.localScale = new Vector3(1.05f, 1.05f, 1.05f);
-        this.buttonType[index].transform.localPosition = new Vector3(this.buttonType[index].transform.localPosition.x, 0.05f, this.buttonType[index].transform.localPosition.z);
-        this.buttonType[index].Disable();
-      }
-      else
-      {
-        this.buttonType[index].transform.localScale = new Vector3(1f, 1f, 1f);
-        this.buttonType[index].transform.localPosition = new Vector3(this.buttonType[index].transform.localPosition.x, 0.0f, this.buttonType[index].transform.localPosition.z);
-        this.buttonType[index].Enable();
-      }
-    }
-    for (int index = 0; index < this.categoryT.Length; ++index)
-    {
-      if (_type != index)
-      {
-        if (this.categoryT[index].gameObject.activeSelf)
-          this.categoryT[index].gameObject.SetActive(false);
-      }
-      else if (!this.categoryT[index].gameObject.activeSelf)
-        this.categoryT[index].gameObject.SetActive(true);
-    }
-    this.Refresh();
-  }
+	private float oriX;
 
-  private void DrawTree()
-  {
-    this.perkNodeDatas = new Dictionary<string, PerkNodeData>();
-    this.perkNodes = new Dictionary<string, PerkNode>();
-    this.perkNodesGO = new Dictionary<string, GameObject>();
-    this.perkChildIncompatible = new Dictionary<string, List<string>>();
-    foreach (KeyValuePair<string, PerkNodeData> keyValuePair in Globals.Instance.PerksNodesSource)
-      this.perkNodeDatas.Add(keyValuePair.Value.Id, keyValuePair.Value);
-    foreach (KeyValuePair<string, PerkNodeData> perkNodeData in this.perkNodeDatas)
-    {
-      GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.perkNodeGO, new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity, this.categoryT[perkNodeData.Value.Type]);
-      gameObject.name = perkNodeData.Key;
-      gameObject.transform.localPosition = new Vector3(this.oriX + this.offsetX * (float) perkNodeData.Value.Column, this.oriY - this.offsetY * (float) perkNodeData.Value.Row, 0.0f);
-      this.perkNodesGO.Add(perkNodeData.Key, gameObject);
-    }
-    foreach (KeyValuePair<string, PerkNodeData> perkNodeData in this.perkNodeDatas)
-    {
-      List<string> stringList = new List<string>();
-      if (perkNodeData.Value.PerksConnected.Length != 0)
-      {
-        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.perkNodeAmplifyGO, new Vector3(0.0f, -1f, 0.0f), Quaternion.identity, this.categoryT[perkNodeData.Value.Type]);
-        gameObject.name = perkNodeData.Key + "_amplify";
-        gameObject.transform.localPosition = new Vector3(this.oriX + this.offsetX * (float) perkNodeData.Value.Column, (float) ((double) this.oriY - (double) this.offsetY * (double) perkNodeData.Value.Row - 1.1000000238418579), -1f);
-        for (int index = 0; index < perkNodeData.Value.PerksConnected.Length; ++index)
-        {
-          this.perkNodesGO[perkNodeData.Value.PerksConnected[index].Id].transform.parent = gameObject.transform.GetComponent<PerkNodeAmplify>().amplifyNodes;
-          this.perkNodesGO[perkNodeData.Value.PerksConnected[index].Id].transform.localPosition = new Vector3((float) index * 1.4f, 0.0f, -1f);
-          this.perkNodesGO[perkNodeData.Value.PerksConnected[index].Id].transform.GetComponent<PerkNode>().SetNodeAsChild();
-          stringList.Add(perkNodeData.Value.PerksConnected[index].Id);
-        }
-        gameObject.transform.GetComponent<PerkNodeAmplify>().SetForNodes(perkNodeData.Value.PerksConnected.Length);
-      }
-      for (int index1 = 0; index1 < stringList.Count; ++index1)
-      {
-        this.perkChildIncompatible.Add(stringList[index1], new List<string>());
-        for (int index2 = 0; index2 < stringList.Count; ++index2)
-        {
-          if (index1 != index2)
-            this.perkChildIncompatible[stringList[index1]].Add(stringList[index2]);
-        }
-      }
-    }
-    foreach (KeyValuePair<string, PerkNodeData> perkNodeData in this.perkNodeDatas)
-    {
-      PerkNode component = this.perkNodesGO[perkNodeData.Value.Id].GetComponent<PerkNode>();
-      component.SetPND(perkNodeData.Value);
-      if ((UnityEngine.Object) perkNodeData.Value.PerkRequired != (UnityEngine.Object) null && this.perkNodesGO.ContainsKey(perkNodeData.Value.PerkRequired.Id))
-      {
-        GameObject gameObject1 = this.perkNodesGO[perkNodeData.Value.Id];
-        GameObject gameObject2 = this.perkNodesGO[perkNodeData.Value.PerkRequired.Id];
-        component.SetArrow(new Vector3(0.0f, gameObject2.transform.localPosition.y - gameObject1.transform.localPosition.y, 0.0f), Vector3.zero);
-      }
-      this.perkNodes.Add(perkNodeData.Value.Id, component);
-    }
-    this.perkNodeGO.SetActive(false);
-  }
+	private float endX;
 
-  private void GetHeroPerks()
-  {
-    List<string> heroPerks = PlayerManager.Instance.GetHeroPerks(this.subClassId);
-    if (heroPerks == null)
-      return;
-    for (int index = 0; index < heroPerks.Count; ++index)
-      this.selectedPerks.Add(heroPerks[index]);
-  }
+	private float oriY;
 
-  public void DoTeamPerks()
-  {
-    this.teamPerks = new Dictionary<string, List<string>>();
-    if ((bool) (UnityEngine.Object) HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame())
-    {
-      if (!GameManager.Instance.IsMultiplayer())
-      {
-        for (int _index = 0; _index < 4; ++_index)
-        {
-          if ((UnityEngine.Object) HeroSelectionManager.Instance.GetBoxHeroFromIndex(_index) != (UnityEngine.Object) null)
-          {
-            string _hero = HeroSelectionManager.Instance.GetBoxHeroFromIndex(_index).GetSubclassName().Replace(" ", "");
-            if (_hero != "" && _hero != this.subClassId)
-            {
-              List<string> heroPerks = PlayerManager.Instance.GetHeroPerks(_hero, true);
-              if (heroPerks != null)
-              {
-                for (int index = 0; index < heroPerks.Count; ++index)
-                {
-                  if (!this.teamPerks.ContainsKey(heroPerks[index]))
-                    this.teamPerks[heroPerks[index]] = new List<string>();
-                  this.teamPerks[heroPerks[index]].Add(_hero);
-                }
-              }
-            }
-          }
-        }
-      }
-      else
-      {
-        for (int _index = 0; _index < 4; ++_index)
-        {
-          if ((UnityEngine.Object) HeroSelectionManager.Instance.GetBoxHeroFromIndex(_index) != (UnityEngine.Object) null)
-          {
-            string subclassName = HeroSelectionManager.Instance.GetBoxHeroFromIndex(_index).GetSubclassName();
-            string lower = (HeroSelectionManager.Instance.GetBoxOwnerFromIndex(_index) + "_" + subclassName).ToLower();
-            if (subclassName != "" && subclassName != this.subClassId && HeroSelectionManager.Instance.PlayerHeroPerksDict != null && HeroSelectionManager.Instance.PlayerHeroPerksDict.ContainsKey(lower))
-            {
-              List<string> stringList = HeroSelectionManager.Instance.PlayerHeroPerksDict[lower];
-              if (stringList != null)
-              {
-                for (int index = 0; index < stringList.Count; ++index)
-                {
-                  if (!this.teamPerks.ContainsKey(stringList[index]))
-                    this.teamPerks[stringList[index]] = new List<string>();
-                  this.teamPerks[stringList[index]].Add(subclassName);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    else
-    {
-      Hero[] team = AtOManager.Instance.GetTeam();
-      if (team != null)
-      {
-        for (int index1 = 0; index1 < team.Length; ++index1)
-        {
-          if (team[index1] != null && !((UnityEngine.Object) team[index1].HeroData == (UnityEngine.Object) null))
-          {
-            if (team[index1].HeroData.HeroSubClass.Id != this.subClassId && team[index1].PerkList != null)
-            {
-              for (int index2 = 0; index2 < team[index1].PerkList.Count; ++index2)
-              {
-                if (!this.teamPerks.ContainsKey(team[index1].PerkList[index2]))
-                  this.teamPerks[team[index1].PerkList[index2]] = new List<string>();
-                this.teamPerks[team[index1].PerkList[index2]].Add(team[index1].HeroData.HeroSubClass.Id);
-              }
-            }
-            team[index1].ClearCaches();
-          }
-        }
-      }
-    }
-    foreach (KeyValuePair<string, PerkNode> perkNode in this.perkNodes)
-    {
-      if ((UnityEngine.Object) perkNode.Value.PND != (UnityEngine.Object) null)
-      {
-        string key = "";
-        if ((UnityEngine.Object) perkNode.Value.PND.Perk != (UnityEngine.Object) null)
-          key = perkNode.Value.PND.Perk.Id;
-        if (key != "" && this.teamPerks.ContainsKey(key))
-          perkNode.Value.TeamSelected(this.teamPerks[key].Count, this.teamPerks[key]);
-        else if (perkNode.Value.PND.PerksConnected.Length != 0)
-        {
-          int _number = 0;
-          for (int index = 0; index < perkNode.Value.PND.PerksConnected.Length; ++index)
-          {
-            if (this.teamPerks.ContainsKey(perkNode.Value.PND.PerksConnected[index].Perk.Id))
-              _number += this.teamPerks[perkNode.Value.PND.PerksConnected[index].Perk.Id].Count;
-          }
-          perkNode.Value.TeamSelected(_number);
-        }
-        else
-          perkNode.Value.TeamSelected(0);
-      }
-    }
-  }
+	private float endY;
 
-  private void Refresh()
-  {
-    this.SetUsedPerks();
-    this.SetNodes();
-    this.SetRows();
-    this.SetButtons();
-  }
+	private float cols = 12f;
 
-  private void SetRows()
-  {
-    for (int index = 0; index < this.perkBgRow.Length; ++index)
-    {
-      if (this.usedPoints >= this.usedPointsArray[index])
-        this.perkBgRow[index].ShowLockIcon(false);
-      else
-        this.perkBgRow[index].ShowLockIcon(true);
-    }
-  }
+	private float rows = 7f;
 
-  private void SetUsedPerks()
-  {
-    this.usedPoints = 0;
-    for (int index = 0; index < 4; ++index)
-      this.usedPointsCategory[index] = 0;
-    foreach (KeyValuePair<string, PerkNodeData> perkNodeData in this.perkNodeDatas)
-    {
-      PerkNode component = this.perkNodesGO[perkNodeData.Value.Id].GetComponent<PerkNode>();
-      if (this.IsThisPerkNodeDataSelected(perkNodeData.Value))
-      {
-        int pointsForNode = this.GetPointsForNode(perkNodeData.Value);
-        this.usedPoints += pointsForNode;
-        this.usedPointsCategory[perkNodeData.Value.Type] += pointsForNode;
-        component.SetSelected(true);
-      }
-      else
-      {
-        component.SetSelected(false);
-        bool flag = false;
-        for (int index = 0; index < perkNodeData.Value.PerksConnected.Length; ++index)
-        {
-          if (this.IsThisPerkNodeDataSelected(perkNodeData.Value.PerksConnected[index]))
-          {
-            using (Dictionary<string, PerkNode>.Enumerator enumerator = this.perkNodes.GetEnumerator())
-            {
-              while (enumerator.MoveNext())
-              {
-                KeyValuePair<string, PerkNode> current = enumerator.Current;
-                if (current.Value.PND.Id == perkNodeData.Value.PerksConnected[index].Id)
-                {
-                  component.SetValuesAsChildNode(current.Value);
-                  flag = true;
-                }
-              }
-              break;
-            }
-          }
-        }
-        if (!flag)
-          component.SetDefaultIcon();
-      }
-    }
-    this.availablePoints = this.totalAvailablePoints - this.usedPoints;
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append("<voffset=.2><size=-.4><sprite name=perk></size></voffset>");
-    stringBuilder.Append(Texts.Instance.GetText("perks"));
-    if (this.IsOwner && this.canModify)
-    {
-      stringBuilder.Append("<br><space=-.7><b><size=+2><color=#FFF>");
-      stringBuilder.Append(this.availablePoints);
-      stringBuilder.Append("</color></size>/");
-      stringBuilder.Append(this.totalAvailablePoints);
-    }
-    this.availablePerksPoints.text = stringBuilder.ToString();
-    stringBuilder.Clear();
-    stringBuilder.Append("<size=+.2>[<color=#FFF>");
-    stringBuilder.Append(this.usedPoints);
-    stringBuilder.Append("</color>]");
-    this.usedPerksPoints.text = string.Format(Texts.Instance.GetText("usedPoints"), (object) stringBuilder.ToString());
-  }
+	private float offsetX;
 
-  public int GetPointsForNode(PerkNodeData _pnd)
-  {
-    return (int) Enum.Parse(typeof (Enums.PerkCost), Enum.GetName(typeof (Enums.PerkCost), (object) _pnd.Cost));
-  }
+	private float offsetY;
 
-  private bool IsThisPerkNodeDataSelected(PerkNodeData _pnd)
-  {
-    return (UnityEngine.Object) _pnd.Perk != (UnityEngine.Object) null && this.selectedPerks.Contains(_pnd.Perk.Id.ToLower());
-  }
+	private Dictionary<string, PerkNodeData> perkNodeDatas;
 
-  private void SetButtons()
-  {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(Texts.Instance.GetText("general"));
-    stringBuilder.Append(" (<color=#FFF><size=+.2>");
-    stringBuilder.Append(this.usedPointsCategory[0].ToString());
-    stringBuilder.Append("</size></color>)");
-    this.buttonType[0].SetText(stringBuilder.ToString());
-    stringBuilder.Clear();
-    stringBuilder.Append(Texts.Instance.GetText("physical"));
-    stringBuilder.Append(" (<color=#FFF><size=+.2>");
-    stringBuilder.Append(this.usedPointsCategory[1].ToString());
-    stringBuilder.Append("</size></color>)");
-    this.buttonType[1].SetText(stringBuilder.ToString());
-    stringBuilder.Clear();
-    stringBuilder.Append(Texts.Instance.GetText("elemental"));
-    stringBuilder.Append(" (<color=#FFF><size=+.2>");
-    stringBuilder.Append(this.usedPointsCategory[2].ToString());
-    stringBuilder.Append("</size></color>)");
-    this.buttonType[2].SetText(stringBuilder.ToString());
-    stringBuilder.Clear();
-    stringBuilder.Append(Texts.Instance.GetText("mystical"));
-    stringBuilder.Append(" (<color=#FFF><size=+.2>");
-    stringBuilder.Append(this.usedPointsCategory[3].ToString());
-    stringBuilder.Append("</size></color>)");
-    this.buttonType[3].SetText(stringBuilder.ToString());
-  }
+	private Dictionary<string, PerkNode> perkNodes;
 
-  private void SetNodes()
-  {
-    foreach (KeyValuePair<string, PerkNode> perkNode in this.perkNodes)
-    {
-      if (this.usedPoints >= this.usedPointsArray[perkNode.Value.GetRow()])
-        perkNode.Value.SetLocked(false);
-      else
-        perkNode.Value.SetLocked(true);
-      perkNode.Value.SetRequired(false);
-      if (AtOManager.Instance.CharInTown() && AtOManager.Instance.GetTownTier() == 0 && perkNode.Value.PND.LockedInTown)
-        perkNode.Value.SetIconLock(true);
-      else
-        perkNode.Value.SetIconLock();
-    }
-    foreach (KeyValuePair<string, PerkNode> perkNode in this.perkNodes)
-    {
-      if (!perkNode.Value.IsLocked() && (UnityEngine.Object) perkNode.Value.PND.PerkRequired != (UnityEngine.Object) null && !this.IsThisPerkNodeDataSelected(perkNode.Value.PND.PerkRequired))
-      {
-        perkNode.Value.SetLocked(true);
-        perkNode.Value.SetRequired(true);
-      }
-    }
-  }
+	private Dictionary<string, GameObject> perkNodesGO;
 
-  public void SelectPerk(string _perkId, PerkNode _perkNode)
-  {
-    if ((!AtOManager.Instance.CharInTown() || AtOManager.Instance.GetTownTier() != 0 || _perkNode.PND.LockedInTown) && (!(bool) (UnityEngine.Object) HeroSelectionManager.Instance || GameManager.Instance.IsLoadingGame()))
-      return;
-    bool flag1 = false;
-    _perkId = _perkId.ToLower();
-    if (!this.selectedPerks.Contains(_perkId))
-    {
-      bool flag2 = false;
-      if (_perkNode.IsChildNode() && this.perkChildIncompatible.ContainsKey(_perkNode.PND.Id))
-      {
-        for (int index = 0; index < this.perkChildIncompatible[_perkNode.PND.Id].Count; ++index)
-        {
-          string key = this.perkChildIncompatible[_perkNode.PND.Id][index];
-          if (key != "")
-          {
-            string lower = this.perkNodes[key].PND.Perk.Id.ToLower();
-            if (this.selectedPerks.Contains(lower))
-            {
-              this.selectedPerks.Remove(lower);
-              this.selectedPerks.Add(_perkId);
-              flag2 = true;
-              flag1 = true;
-              break;
-            }
-          }
-        }
-      }
-      if (!flag2 && this.availablePoints >= this.GetPointsForNode(_perkNode.PND))
-      {
-        this.selectedPerks.Add(_perkId);
-        flag1 = true;
-      }
-    }
-    else
-    {
-      PerkNodeData pnd = _perkNode.PND;
-      foreach (KeyValuePair<string, PerkNodeData> perkNodeData in this.perkNodeDatas)
-      {
-        if ((UnityEngine.Object) perkNodeData.Value.PerkRequired != (UnityEngine.Object) null && perkNodeData.Value.PerkRequired.Id == pnd.Id && this.IsThisPerkNodeDataSelected(perkNodeData.Value))
-          return;
-      }
-      int num1 = 0;
-      foreach (KeyValuePair<string, PerkNode> perkNode in this.perkNodes)
-      {
-        if (perkNode.Value.PND.Id != pnd.Id && perkNode.Value.IsSelected() && perkNode.Value.GetRow() <= _perkNode.GetRow())
-          num1 += this.GetPointsForNode(_perkNode.PND);
-      }
-      foreach (KeyValuePair<string, PerkNode> perkNode1 in this.perkNodes)
-      {
-        if (perkNode1.Value.IsSelected() && perkNode1.Value.PND.Id != pnd.Id)
-        {
-          int row = perkNode1.Value.GetRow();
-          if (row > _perkNode.GetRow())
-          {
-            int num2 = 0;
-            foreach (KeyValuePair<string, PerkNode> perkNode2 in this.perkNodes)
-            {
-              if (perkNode2.Value.PND.Id != pnd.Id && perkNode2.Value.PND.Id != perkNode1.Value.PND.Id && perkNode2.Value.IsSelected() && perkNode2.Value.GetRow() < row)
-                num2 += this.GetPointsForNode(perkNode2.Value.PND);
-            }
-            if (this.usedPointsArray[row] > num2)
-              return;
-          }
-        }
-      }
-      this.selectedPerks.Remove(_perkId);
-      flag1 = true;
-    }
-    if (flag1)
-      this.buttonConfirm.Enable();
-    this.Refresh();
-    if (this.availablePoints >= 0)
-      return;
-    this.buttonConfirm.Disable();
-  }
+	private Dictionary<string, List<string>> perkChildIncompatible;
 
-  public void PerksAssignConfirm()
-  {
-    if ((bool) (UnityEngine.Object) HeroSelectionManager.Instance)
-    {
-      PlayerManager.Instance.AssignPerkList(this.subClassId, this.selectedPerks);
-      if (!GameManager.Instance.IsMultiplayer())
-        this.DoTeamPerks();
-    }
-    else
-    {
-      Hero[] team = AtOManager.Instance.GetTeam();
-      for (int _heroIndex = 0; _heroIndex < team.Length; ++_heroIndex)
-      {
-        if (team[_heroIndex].HeroData.HeroSubClass.Id == this.subClassId)
-        {
-          AtOManager.Instance.AddPerkToHeroGlobalList(_heroIndex, this.selectedPerks);
-          if (!GameManager.Instance.IsMultiplayer())
-          {
-            this.DoTeamPerks();
-            break;
-          }
-          break;
-        }
-      }
-    }
-    this.buttonConfirm.Disable();
-  }
+	private Dictionary<string, List<string>> teamPerks;
 
-  public void PerksReset()
-  {
-    if (this.selectedPerks.Count <= 0)
-      return;
-    this.selectedPerks = new List<string>();
-    this.buttonConfirm.Enable();
-    this.Refresh();
-  }
+	private List<string> selectedPerks;
 
-  public Dictionary<string, PerkNodeData> GetPerkNodeDatas() => this.perkNodeDatas;
+	private int totalAvailablePoints;
 
-  public bool CanModify() => this.canModify;
+	private int availablePoints;
 
-  public void SavePerkSlot(int slot)
-  {
-    this.savingSlot = slot;
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.SavePerkSlotAction);
-    AlertManager.Instance.AlertInput(Texts.Instance.GetText("inputConfigSaveName"), Texts.Instance.GetText("accept").ToUpper());
-  }
+	private int usedPoints;
 
-  public void SavePerkSlotAction()
-  {
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.SavePerkSlotAction);
-    string str = Functions.OnlyAscii(AlertManager.Instance.GetInputValue()).Trim();
-    if (str == "")
-      return;
-    if (!PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle.ContainsKey(this.subClassId))
-      PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle.Add(this.subClassId, new string[10]);
-    if (!PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks.ContainsKey(this.subClassId))
-      PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks.Add(this.subClassId, new List<string>[10]);
-    if (!PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints.ContainsKey(this.subClassId))
-      PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints.Add(this.subClassId, new int[10]);
-    List<string> stringList = new List<string>();
-    for (int index = 0; index < this.selectedPerks.Count; ++index)
-      stringList.Add(this.selectedPerks[index]);
-    PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[this.subClassId][this.savingSlot] = str;
-    PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks[this.subClassId][this.savingSlot] = stringList;
-    PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints[this.subClassId][this.savingSlot] = this.usedPoints;
-    SaveManager.SavePlayerPerkConfig();
-    this.LoadSavedPerks();
-  }
+	private string subClassId = "";
 
-  public void RemovePerkSlot(int slot)
-  {
-    this.savingSlot = slot;
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.RemovePerkSlotAction);
-    AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("savedConfigDeleteConfirm"));
-  }
+	private int[] usedPointsArray;
 
-  public void RemovePerkSlotAction()
-  {
-    int num = AlertManager.Instance.GetConfirmAnswer() ? 1 : 0;
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.RemovePerkSlotAction);
-    if (num == 0)
-      return;
-    PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[this.subClassId][this.savingSlot] = "";
-    PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks[this.subClassId][this.savingSlot] = new List<string>();
-    PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints[this.subClassId][this.savingSlot] = 0;
-    SaveManager.SavePlayerPerkConfig();
-    this.LoadSavedPerks();
-  }
+	private int[] usedPointsCategory;
 
-  private void LoadSavedPerks()
-  {
-    StringBuilder stringBuilder = new StringBuilder();
-    for (int index = 0; index < this.perkSlot.Length; ++index)
-    {
-      if ((UnityEngine.Object) this.perkSlot[index] != (UnityEngine.Object) null)
-      {
-        stringBuilder.Clear();
-        if (PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle.ContainsKey(this.subClassId) && PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[this.subClassId][index] != null && PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[this.subClassId][index] != "")
-        {
-          stringBuilder.Append(PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[this.subClassId][index]);
-          this.perkSlot[index].SetActive(stringBuilder.ToString(), PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints[this.subClassId][index].ToString());
-        }
-        else
-          this.perkSlot[index].SetEmpty(true);
-        if ((bool) (UnityEngine.Object) HeroSelectionManager.Instance)
-          this.perkSlot[index].SetDisable(false);
-        else
-          this.perkSlot[index].SetDisable(true);
-      }
-    }
-  }
+	private bool canModify;
 
-  public void LoadPerkConfig(int slot)
-  {
-    this.loadingSlot = slot;
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.LoadPerkConfigAction);
-    AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("wantOverwritePerks"));
-  }
+	private int savingSlot;
 
-  public void LoadPerkConfigAction()
-  {
-    int num = AlertManager.Instance.GetConfirmAnswer() ? 1 : 0;
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.LoadPerkConfigAction);
-    if (num == 0)
-      return;
-    this.selectedPerks = new List<string>();
-    for (int index = 0; index < PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks[this.subClassId][this.loadingSlot].Count; ++index)
-      this.selectedPerks.Add(PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks[this.subClassId][this.loadingSlot][index]);
-    this.Refresh();
-    if (this.availablePoints < 0)
-      this.buttonConfirm.Disable();
-    else
-      this.buttonConfirm.Enable();
-  }
+	private int loadingSlot;
 
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    int absolutePosition = -1)
-  {
-    this._controllerList.Clear();
-    for (int index = 0; index < this.buttonType.Length; ++index)
-      this._controllerList.Add(this.buttonType[index].transform);
-    foreach (KeyValuePair<string, GameObject> keyValuePair in this.perkNodesGO)
-    {
-      if (Functions.TransformIsVisible(keyValuePair.Value.transform))
-        this._controllerList.Add(keyValuePair.Value.transform);
-    }
-    if (Functions.TransformIsVisible(this.buttonConfirm.transform))
-      this._controllerList.Add(this.buttonConfirm.transform);
-    if (Functions.TransformIsVisible(this.buttonReset.transform))
-      this._controllerList.Add(this.buttonReset.transform);
-    if (Functions.TransformIsVisible(this.buttonExport.transform))
-    {
-      this._controllerList.Add(this.buttonExport.transform);
-      this._controllerList.Add(this.buttonImport.transform);
-    }
-    this._controllerList.Add(this.buttonExit.transform);
-    if (Functions.TransformIsVisible(this.perkSlot[0].transform))
-    {
-      for (int index = 0; index < this.perkSlot.Length; ++index)
-      {
-        if (this.perkSlot[index].GetComponent<BoxCollider2D>().enabled)
-        {
-          this._controllerList.Add(this.perkSlot[index].transform);
-          if (Functions.TransformIsVisible(this.perkSlot[index].transform.GetChild(5).transform))
-            this._controllerList.Add(this.perkSlot[index].transform.GetChild(5).transform);
-        }
-        else if (Functions.TransformIsVisible(this.perkSlot[index].transform.GetChild(4).transform))
-          this._controllerList.Add(this.perkSlot[index].transform.GetChild(4).transform);
-      }
-    }
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((UnityEngine.Object) this._controllerList[this.controllerHorizontalIndex] != (UnityEngine.Object) null))
-      return;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
+	public PerkSlot[] perkSlot;
+
+	public bool IsOwner;
+
+	public TMP_Text rankProgress;
+
+	public TMP_Text maxProgress;
+
+	public Transform perkBarMask;
+
+	public SpriteRenderer perkBar;
+
+	public int controllerHorizontalIndex = -1;
+
+	private Vector2 warpPosition = Vector2.zero;
+
+	private List<Transform> _controllerList = new List<Transform>();
+
+	private List<Transform> _controllerVerticalList = new List<Transform>();
+
+	public static PerkTree Instance { get; private set; }
+
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			UnityEngine.Object.Destroy(base.gameObject);
+		}
+		UnityEngine.Object.DontDestroyOnLoad(base.gameObject);
+		usedPointsArray = new int[7];
+		usedPointsArray[0] = 0;
+		usedPointsArray[1] = 3;
+		usedPointsArray[2] = 6;
+		usedPointsArray[3] = 10;
+		usedPointsArray[4] = 16;
+		usedPointsArray[5] = 22;
+		usedPointsArray[6] = 30;
+		usedPointsCategory = new int[4];
+	}
+
+	public void InitPerkTree()
+	{
+		oriX = posBegin.localPosition.x;
+		oriY = posBegin.localPosition.y;
+		endX = posEnd.localPosition.x;
+		endY = posEnd.localPosition.y;
+		if (posBegin.gameObject.activeSelf)
+		{
+			posBegin.gameObject.SetActive(value: false);
+		}
+		if (posEnd.gameObject.activeSelf)
+		{
+			posEnd.gameObject.SetActive(value: false);
+		}
+		offsetX = Mathf.Abs(oriX - endX) / (cols - 1f);
+		offsetY = Mathf.Abs(oriY - endY) / (rows - 1f);
+		for (int i = 0; i < perkBgRow.Length; i++)
+		{
+			perkBgRow[i].SetRequired(usedPointsArray[i]);
+		}
+		buttonConfirm.Disable();
+		if (buttonConfirm.gameObject.activeSelf)
+		{
+			buttonConfirm.gameObject.SetActive(value: false);
+		}
+		DrawTree();
+		StartCoroutine(HideCo());
+	}
+
+	private IEnumerator HideCo()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.01f);
+		Hide();
+	}
+
+	public int GetPointsNeeded(int _row)
+	{
+		return usedPointsArray[_row];
+	}
+
+	public int GetPointsAvailable()
+	{
+		return availablePoints;
+	}
+
+	public string GetActiveHero()
+	{
+		return subClassId;
+	}
+
+	public void ExportTree()
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(usedPoints);
+		stringBuilder.Append("_");
+		for (int i = 0; i < selectedPerks.Count; i++)
+		{
+			stringBuilder.Append(selectedPerks[i]);
+			if (i < selectedPerks.Count - 1)
+			{
+				stringBuilder.Append("-");
+			}
+		}
+		string inputText = Functions.CompressString(stringBuilder.ToString());
+		AlertManager.Instance.AlertCopyPaste(Texts.Instance.GetText("pressForCopyPaste"), inputText);
+	}
+
+	public void ImportTree()
+	{
+		AlertManager.buttonClickDelegate = ImportTreeAction;
+		AlertManager.Instance.AlertPasteCopy(Texts.Instance.GetText("pressForImportTree"));
+	}
+
+	public void ImportTreeAction()
+	{
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(ImportTreeAction));
+		if (!AlertManager.Instance.GetConfirmAnswer())
+		{
+			return;
+		}
+		string compressedText = Functions.OnlyAscii(AlertManager.Instance.GetInputPCValue()).Trim();
+		string text = "";
+		bool flag = false;
+		try
+		{
+			text = Functions.DecompressString(compressedText);
+		}
+		catch
+		{
+			flag = true;
+		}
+		if (flag)
+		{
+			ErrorImport();
+		}
+		else
+		{
+			if (!(text != ""))
+			{
+				return;
+			}
+			string[] array = text.Split('_');
+			if (array.Length == 2)
+			{
+				int num = int.Parse(array[0]);
+				if (totalAvailablePoints < num)
+				{
+					ErrorImport(1, num);
+					return;
+				}
+				string[] array2 = array[1].Split('-');
+				selectedPerks = new List<string>();
+				for (int i = 0; i < array2.Length; i++)
+				{
+					selectedPerks.Add(array2[i]);
+				}
+				Refresh();
+				ErrorImport(-1);
+				buttonConfirm.Enable();
+			}
+			else
+			{
+				ErrorImport();
+			}
+		}
+	}
+
+	private void ErrorImport(int _error = 0, int _points = 0)
+	{
+		StartCoroutine(ErrorImportCo(_error, _points));
+	}
+
+	private IEnumerator ErrorImportCo(int _error, int _points)
+	{
+		yield return Globals.Instance.WaitForSeconds(0.1f);
+		switch (_error)
+		{
+		case -1:
+			AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("importedTree"));
+			break;
+		case 0:
+			AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("invalidImportTalentTreeCode"));
+			break;
+		case 1:
+		{
+			string text = string.Format(Texts.Instance.GetText("importPerkTreeNotPoints"), _points);
+			AlertManager.Instance.AlertConfirm(text);
+			break;
+		}
+		}
+	}
+
+	private void DoPerkRank()
+	{
+		int playerRankProgress = PlayerManager.Instance.GetPlayerRankProgress();
+		int perkPrevLevelPoints = PlayerManager.Instance.GetPerkPrevLevelPoints("");
+		int perkNextLevelPoints = PlayerManager.Instance.GetPerkNextLevelPoints("");
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("<color=#FFF>");
+		stringBuilder.Append(playerRankProgress.ToString());
+		if (perkNextLevelPoints != 0)
+		{
+			stringBuilder.Append("</color><size=-.5> / ");
+			stringBuilder.Append(perkNextLevelPoints.ToString());
+		}
+		maxProgress.text = stringBuilder.ToString();
+		int highestCharacterRank = PlayerManager.Instance.GetHighestCharacterRank();
+		rankProgress.text = string.Format(Texts.Instance.GetText("rankProgress"), highestCharacterRank);
+		float x = ((float)playerRankProgress - (float)perkPrevLevelPoints) / ((float)perkNextLevelPoints - (float)perkPrevLevelPoints) * 3.365f;
+		perkBarMask.localScale = new Vector3(x, perkBarMask.localScale.y, perkBarMask.localScale.z);
+	}
+
+	public void Show(string _subClassId = "", int currentHeroIndex = -1)
+	{
+		DoPerkRank();
+		if (((bool)HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame()) || (AtOManager.Instance.CharInTown() && AtOManager.Instance.GetTownTier() == 0))
+		{
+			canModify = true;
+		}
+		else
+		{
+			canModify = false;
+		}
+		if (!GameManager.Instance.IsMultiplayer() || ((bool)HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame()) || (currentHeroIndex > -1 && AtOManager.Instance.GetHero(currentHeroIndex).Owner == NetworkManager.Instance.GetPlayerNick()))
+		{
+			IsOwner = true;
+			if (!buttonReset.gameObject.activeSelf)
+			{
+				buttonReset.gameObject.SetActive(value: true);
+			}
+		}
+		else
+		{
+			IsOwner = false;
+			if (buttonReset.gameObject.activeSelf)
+			{
+				buttonReset.gameObject.SetActive(value: false);
+			}
+		}
+		selectedPerks = new List<string>();
+		subClassId = _subClassId;
+		SubClassData subClassData = Globals.Instance.GetSubClassData(subClassId);
+		charSprite.sprite = subClassData.SpritePortrait;
+		if (AtOManager.Instance.IsCombatTool)
+		{
+			totalAvailablePoints = 50;
+		}
+		else
+		{
+			totalAvailablePoints = PlayerManager.Instance.GetHighestCharacterRank();
+		}
+		if (totalAvailablePoints > Globals.MaxPerkPoints)
+		{
+			totalAvailablePoints = Globals.MaxPerkPoints;
+		}
+		buttonConfirm.Disable();
+		if ((bool)HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame())
+		{
+			if (!buttonReset.gameObject.activeSelf)
+			{
+				buttonReset.gameObject.SetActive(value: true);
+			}
+			if (!buttonImport.gameObject.activeSelf)
+			{
+				buttonImport.gameObject.SetActive(value: true);
+			}
+			if (!buttonExport.gameObject.activeSelf)
+			{
+				buttonExport.gameObject.SetActive(value: true);
+			}
+			if (!saveSlots.gameObject.activeSelf)
+			{
+				saveSlots.gameObject.SetActive(value: true);
+			}
+		}
+		else
+		{
+			if (buttonReset.gameObject.activeSelf)
+			{
+				buttonReset.gameObject.SetActive(value: false);
+			}
+			if (buttonImport.gameObject.activeSelf)
+			{
+				buttonImport.gameObject.SetActive(value: false);
+			}
+			if (buttonExport.gameObject.activeSelf)
+			{
+				buttonExport.gameObject.SetActive(value: false);
+			}
+			if (saveSlots.gameObject.activeSelf)
+			{
+				saveSlots.gameObject.SetActive(value: false);
+			}
+		}
+		if (buttonConfirm.gameObject.activeSelf != canModify)
+		{
+			buttonConfirm.gameObject.SetActive(canModify);
+		}
+		GetHeroPerks();
+		SetCategory();
+		LoadSavedPerks();
+		DoTeamPerks();
+		if (!elements.gameObject.activeSelf)
+		{
+			elements.gameObject.SetActive(value: true);
+		}
+		controllerHorizontalIndex = -1;
+	}
+
+	public void Hide()
+	{
+		if (buttonConfirm.gameObject.activeSelf && buttonConfirm.buttonEnabled && SceneStatic.GetSceneName() != "MainMenu")
+		{
+			AlertManager.buttonClickDelegate = HideConfirm;
+			AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("wantExitPerks"));
+		}
+		else
+		{
+			HideAction();
+		}
+	}
+
+	public void HideConfirm()
+	{
+		bool confirmAnswer = AlertManager.Instance.GetConfirmAnswer();
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(HideConfirm));
+		if (confirmAnswer)
+		{
+			HideAction();
+		}
+	}
+
+	public void HideAction(bool checkSubclass = true)
+	{
+		if (checkSubclass && subClassId != "")
+		{
+			if (HeroSelectionManager.Instance != null)
+			{
+				HeroSelectionManager.Instance.RefreshPerkPoints(subClassId);
+			}
+			else
+			{
+				Hero[] team = AtOManager.Instance.GetTeam();
+				if (team != null)
+				{
+					for (int i = 0; i < team.Length; i++)
+					{
+						if (team[i].HeroData.HeroSubClass.Id == subClassId)
+						{
+							AtOManager.Instance.SideBarCharacterClicked(i);
+							break;
+						}
+					}
+				}
+			}
+		}
+		buttonConfirm.Disable();
+		if (elements.gameObject.activeSelf)
+		{
+			elements.gameObject.SetActive(value: false);
+		}
+		PopupManager.Instance.ClosePopup();
+	}
+
+	public bool IsActive()
+	{
+		return elements.gameObject.activeSelf;
+	}
+
+	public void SetCategory(int _type = 0)
+	{
+		for (int i = 0; i < buttonType.Length; i++)
+		{
+			if (_type == i)
+			{
+				buttonType[i].transform.localScale = new Vector3(1.05f, 1.05f, 1.05f);
+				buttonType[i].transform.localPosition = new Vector3(buttonType[i].transform.localPosition.x, 0.05f, buttonType[i].transform.localPosition.z);
+				buttonType[i].Disable();
+			}
+			else
+			{
+				buttonType[i].transform.localScale = new Vector3(1f, 1f, 1f);
+				buttonType[i].transform.localPosition = new Vector3(buttonType[i].transform.localPosition.x, 0f, buttonType[i].transform.localPosition.z);
+				buttonType[i].Enable();
+			}
+		}
+		for (int j = 0; j < categoryT.Length; j++)
+		{
+			if (_type != j)
+			{
+				if (categoryT[j].gameObject.activeSelf)
+				{
+					categoryT[j].gameObject.SetActive(value: false);
+				}
+			}
+			else if (!categoryT[j].gameObject.activeSelf)
+			{
+				categoryT[j].gameObject.SetActive(value: true);
+			}
+		}
+		Refresh();
+	}
+
+	private void DrawTree()
+	{
+		perkNodeDatas = new Dictionary<string, PerkNodeData>();
+		perkNodes = new Dictionary<string, PerkNode>();
+		perkNodesGO = new Dictionary<string, GameObject>();
+		perkChildIncompatible = new Dictionary<string, List<string>>();
+		foreach (KeyValuePair<string, PerkNodeData> item in Globals.Instance.PerksNodesSource)
+		{
+			perkNodeDatas.Add(item.Value.Id, item.Value);
+		}
+		foreach (KeyValuePair<string, PerkNodeData> perkNodeData in perkNodeDatas)
+		{
+			GameObject gameObject = UnityEngine.Object.Instantiate(perkNodeGO, new Vector3(0f, 0f, 0f), Quaternion.identity, categoryT[perkNodeData.Value.Type]);
+			gameObject.name = perkNodeData.Key;
+			gameObject.transform.localPosition = new Vector3(oriX + offsetX * (float)perkNodeData.Value.Column, oriY - offsetY * (float)perkNodeData.Value.Row, 0f);
+			perkNodesGO.Add(perkNodeData.Key, gameObject);
+		}
+		foreach (KeyValuePair<string, PerkNodeData> perkNodeData2 in perkNodeDatas)
+		{
+			List<string> list = new List<string>();
+			if (perkNodeData2.Value.PerksConnected.Length != 0)
+			{
+				GameObject gameObject2 = UnityEngine.Object.Instantiate(perkNodeAmplifyGO, new Vector3(0f, -1f, 0f), Quaternion.identity, categoryT[perkNodeData2.Value.Type]);
+				gameObject2.name = perkNodeData2.Key + "_amplify";
+				gameObject2.transform.localPosition = new Vector3(oriX + offsetX * (float)perkNodeData2.Value.Column, oriY - offsetY * (float)perkNodeData2.Value.Row - 1.1f, -1f);
+				for (int i = 0; i < perkNodeData2.Value.PerksConnected.Length; i++)
+				{
+					perkNodesGO[perkNodeData2.Value.PerksConnected[i].Id].transform.parent = gameObject2.transform.GetComponent<PerkNodeAmplify>().amplifyNodes;
+					perkNodesGO[perkNodeData2.Value.PerksConnected[i].Id].transform.localPosition = new Vector3((float)i * 1.4f, 0f, -1f);
+					perkNodesGO[perkNodeData2.Value.PerksConnected[i].Id].transform.GetComponent<PerkNode>().SetNodeAsChild();
+					list.Add(perkNodeData2.Value.PerksConnected[i].Id);
+				}
+				gameObject2.transform.GetComponent<PerkNodeAmplify>().SetForNodes(perkNodeData2.Value.PerksConnected.Length);
+			}
+			for (int j = 0; j < list.Count; j++)
+			{
+				perkChildIncompatible.Add(list[j], new List<string>());
+				for (int k = 0; k < list.Count; k++)
+				{
+					if (j != k)
+					{
+						perkChildIncompatible[list[j]].Add(list[k]);
+					}
+				}
+			}
+		}
+		foreach (KeyValuePair<string, PerkNodeData> perkNodeData3 in perkNodeDatas)
+		{
+			PerkNode component = perkNodesGO[perkNodeData3.Value.Id].GetComponent<PerkNode>();
+			component.SetPND(perkNodeData3.Value);
+			if (perkNodeData3.Value.PerkRequired != null && perkNodesGO.ContainsKey(perkNodeData3.Value.PerkRequired.Id))
+			{
+				GameObject gameObject3 = perkNodesGO[perkNodeData3.Value.Id];
+				GameObject gameObject4 = perkNodesGO[perkNodeData3.Value.PerkRequired.Id];
+				component.SetArrow(new Vector3(0f, gameObject4.transform.localPosition.y - gameObject3.transform.localPosition.y, 0f), Vector3.zero);
+			}
+			perkNodes.Add(perkNodeData3.Value.Id, component);
+		}
+		perkNodeGO.SetActive(value: false);
+	}
+
+	private void GetHeroPerks()
+	{
+		List<string> heroPerks = PlayerManager.Instance.GetHeroPerks(subClassId);
+		if (heroPerks != null)
+		{
+			for (int i = 0; i < heroPerks.Count; i++)
+			{
+				selectedPerks.Add(heroPerks[i]);
+			}
+		}
+	}
+
+	public void DoTeamPerks()
+	{
+		teamPerks = new Dictionary<string, List<string>>();
+		if ((bool)HeroSelectionManager.Instance && !GameManager.Instance.IsLoadingGame())
+		{
+			if (!GameManager.Instance.IsMultiplayer())
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					if (!(HeroSelectionManager.Instance.GetBoxHeroFromIndex(i) != null))
+					{
+						continue;
+					}
+					string subclassName = HeroSelectionManager.Instance.GetBoxHeroFromIndex(i).GetSubclassName();
+					subclassName = subclassName.Replace(" ", "");
+					if (!(subclassName != "") || !(subclassName != subClassId))
+					{
+						continue;
+					}
+					List<string> heroPerks = PlayerManager.Instance.GetHeroPerks(subclassName, forceFromPlayerManager: true);
+					if (heroPerks == null)
+					{
+						continue;
+					}
+					for (int j = 0; j < heroPerks.Count; j++)
+					{
+						if (!teamPerks.ContainsKey(heroPerks[j]))
+						{
+							teamPerks[heroPerks[j]] = new List<string>();
+						}
+						teamPerks[heroPerks[j]].Add(subclassName);
+					}
+				}
+			}
+			else
+			{
+				for (int k = 0; k < 4; k++)
+				{
+					if (!(HeroSelectionManager.Instance.GetBoxHeroFromIndex(k) != null))
+					{
+						continue;
+					}
+					string subclassName2 = HeroSelectionManager.Instance.GetBoxHeroFromIndex(k).GetSubclassName();
+					string key = (HeroSelectionManager.Instance.GetBoxOwnerFromIndex(k) + "_" + subclassName2).ToLower();
+					if (!(subclassName2 != "") || !(subclassName2 != subClassId) || HeroSelectionManager.Instance.PlayerHeroPerksDict == null || !HeroSelectionManager.Instance.PlayerHeroPerksDict.ContainsKey(key))
+					{
+						continue;
+					}
+					List<string> list = HeroSelectionManager.Instance.PlayerHeroPerksDict[key];
+					if (list == null)
+					{
+						continue;
+					}
+					for (int l = 0; l < list.Count; l++)
+					{
+						if (!teamPerks.ContainsKey(list[l]))
+						{
+							teamPerks[list[l]] = new List<string>();
+						}
+						teamPerks[list[l]].Add(subclassName2);
+					}
+				}
+			}
+		}
+		else
+		{
+			Hero[] team = AtOManager.Instance.GetTeam();
+			if (team != null)
+			{
+				for (int m = 0; m < team.Length; m++)
+				{
+					if (team[m] == null || team[m].HeroData == null)
+					{
+						continue;
+					}
+					if (team[m].HeroData.HeroSubClass.Id != subClassId && team[m].PerkList != null)
+					{
+						for (int n = 0; n < team[m].PerkList.Count; n++)
+						{
+							if (!teamPerks.ContainsKey(team[m].PerkList[n]))
+							{
+								teamPerks[team[m].PerkList[n]] = new List<string>();
+							}
+							teamPerks[team[m].PerkList[n]].Add(team[m].HeroData.HeroSubClass.Id);
+						}
+					}
+					team[m].ClearCaches();
+				}
+			}
+		}
+		foreach (KeyValuePair<string, PerkNode> perkNode in perkNodes)
+		{
+			if (!(perkNode.Value.PND != null))
+			{
+				continue;
+			}
+			string text = "";
+			if (perkNode.Value.PND.Perk != null)
+			{
+				text = perkNode.Value.PND.Perk.Id;
+			}
+			if (text != "" && teamPerks.ContainsKey(text))
+			{
+				perkNode.Value.TeamSelected(teamPerks[text].Count, teamPerks[text]);
+			}
+			else if (perkNode.Value.PND.PerksConnected.Length != 0)
+			{
+				int num = 0;
+				for (int num2 = 0; num2 < perkNode.Value.PND.PerksConnected.Length; num2++)
+				{
+					if (teamPerks.ContainsKey(perkNode.Value.PND.PerksConnected[num2].Perk.Id))
+					{
+						num += teamPerks[perkNode.Value.PND.PerksConnected[num2].Perk.Id].Count;
+					}
+				}
+				perkNode.Value.TeamSelected(num);
+			}
+			else
+			{
+				perkNode.Value.TeamSelected(0);
+			}
+		}
+	}
+
+	private void Refresh()
+	{
+		SetUsedPerks();
+		SetNodes();
+		SetRows();
+		SetButtons();
+	}
+
+	private void SetRows()
+	{
+		for (int i = 0; i < perkBgRow.Length; i++)
+		{
+			if (usedPoints >= usedPointsArray[i])
+			{
+				perkBgRow[i].ShowLockIcon(_state: false);
+			}
+			else
+			{
+				perkBgRow[i].ShowLockIcon(_state: true);
+			}
+		}
+	}
+
+	private void SetUsedPerks()
+	{
+		usedPoints = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			usedPointsCategory[i] = 0;
+		}
+		foreach (KeyValuePair<string, PerkNodeData> perkNodeData in perkNodeDatas)
+		{
+			PerkNode component = perkNodesGO[perkNodeData.Value.Id].GetComponent<PerkNode>();
+			if (IsThisPerkNodeDataSelected(perkNodeData.Value))
+			{
+				int pointsForNode = GetPointsForNode(perkNodeData.Value);
+				usedPoints += pointsForNode;
+				usedPointsCategory[perkNodeData.Value.Type] += pointsForNode;
+				component.SetSelected(_status: true);
+				continue;
+			}
+			component.SetSelected(_status: false);
+			bool flag = false;
+			for (int j = 0; j < perkNodeData.Value.PerksConnected.Length; j++)
+			{
+				if (!IsThisPerkNodeDataSelected(perkNodeData.Value.PerksConnected[j]))
+				{
+					continue;
+				}
+				foreach (KeyValuePair<string, PerkNode> perkNode in perkNodes)
+				{
+					if (perkNode.Value.PND.Id == perkNodeData.Value.PerksConnected[j].Id)
+					{
+						component.SetValuesAsChildNode(perkNode.Value);
+						flag = true;
+					}
+				}
+				break;
+			}
+			if (!flag)
+			{
+				component.SetDefaultIcon();
+			}
+		}
+		availablePoints = totalAvailablePoints - usedPoints;
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("<voffset=.2><size=-.4><sprite name=perk></size></voffset>");
+		stringBuilder.Append(Texts.Instance.GetText("perks"));
+		if (IsOwner && canModify)
+		{
+			stringBuilder.Append("<br><space=-.7><b><size=+2><color=#FFF>");
+			stringBuilder.Append(availablePoints);
+			stringBuilder.Append("</color></size>/");
+			stringBuilder.Append(totalAvailablePoints);
+		}
+		availablePerksPoints.text = stringBuilder.ToString();
+		stringBuilder.Clear();
+		stringBuilder.Append("<size=+.2>[<color=#FFF>");
+		stringBuilder.Append(usedPoints);
+		stringBuilder.Append("</color>]");
+		usedPerksPoints.text = string.Format(Texts.Instance.GetText("usedPoints"), stringBuilder.ToString());
+	}
+
+	public int GetPointsForNode(PerkNodeData _pnd)
+	{
+		string value = Enum.GetName(typeof(Enums.PerkCost), _pnd.Cost);
+		return (int)Enum.Parse(typeof(Enums.PerkCost), value);
+	}
+
+	private bool IsThisPerkNodeDataSelected(PerkNodeData _pnd)
+	{
+		if (_pnd.Perk != null && selectedPerks.Contains(_pnd.Perk.Id.ToLower()))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	private void SetButtons()
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(Texts.Instance.GetText("general"));
+		stringBuilder.Append(" (<color=#FFF><size=+.2>");
+		stringBuilder.Append(usedPointsCategory[0].ToString());
+		stringBuilder.Append("</size></color>)");
+		buttonType[0].SetText(stringBuilder.ToString());
+		stringBuilder.Clear();
+		stringBuilder.Append(Texts.Instance.GetText("physical"));
+		stringBuilder.Append(" (<color=#FFF><size=+.2>");
+		stringBuilder.Append(usedPointsCategory[1].ToString());
+		stringBuilder.Append("</size></color>)");
+		buttonType[1].SetText(stringBuilder.ToString());
+		stringBuilder.Clear();
+		stringBuilder.Append(Texts.Instance.GetText("elemental"));
+		stringBuilder.Append(" (<color=#FFF><size=+.2>");
+		stringBuilder.Append(usedPointsCategory[2].ToString());
+		stringBuilder.Append("</size></color>)");
+		buttonType[2].SetText(stringBuilder.ToString());
+		stringBuilder.Clear();
+		stringBuilder.Append(Texts.Instance.GetText("mystical"));
+		stringBuilder.Append(" (<color=#FFF><size=+.2>");
+		stringBuilder.Append(usedPointsCategory[3].ToString());
+		stringBuilder.Append("</size></color>)");
+		buttonType[3].SetText(stringBuilder.ToString());
+	}
+
+	private void SetNodes()
+	{
+		foreach (KeyValuePair<string, PerkNode> perkNode in perkNodes)
+		{
+			if (usedPoints >= usedPointsArray[perkNode.Value.GetRow()])
+			{
+				perkNode.Value.SetLocked(_status: false);
+			}
+			else
+			{
+				perkNode.Value.SetLocked(_status: true);
+			}
+			perkNode.Value.SetRequired(_status: false);
+			if (AtOManager.Instance.CharInTown() && AtOManager.Instance.GetTownTier() == 0 && perkNode.Value.PND.LockedInTown)
+			{
+				perkNode.Value.SetIconLock(_state: true);
+			}
+			else
+			{
+				perkNode.Value.SetIconLock();
+			}
+		}
+		foreach (KeyValuePair<string, PerkNode> perkNode2 in perkNodes)
+		{
+			if (!perkNode2.Value.IsLocked() && perkNode2.Value.PND.PerkRequired != null && !IsThisPerkNodeDataSelected(perkNode2.Value.PND.PerkRequired))
+			{
+				perkNode2.Value.SetLocked(_status: true);
+				perkNode2.Value.SetRequired(_status: true);
+			}
+		}
+	}
+
+	public void SelectPerk(string _perkId, PerkNode _perkNode)
+	{
+		if ((!AtOManager.Instance.CharInTown() || AtOManager.Instance.GetTownTier() != 0 || _perkNode.PND.LockedInTown) && (!HeroSelectionManager.Instance || GameManager.Instance.IsLoadingGame()))
+		{
+			return;
+		}
+		bool flag = false;
+		_perkId = _perkId.ToLower();
+		if (!selectedPerks.Contains(_perkId))
+		{
+			bool flag2 = false;
+			if (_perkNode.IsChildNode() && perkChildIncompatible.ContainsKey(_perkNode.PND.Id))
+			{
+				for (int i = 0; i < perkChildIncompatible[_perkNode.PND.Id].Count; i++)
+				{
+					string text = perkChildIncompatible[_perkNode.PND.Id][i];
+					if (text != "")
+					{
+						string item = perkNodes[text].PND.Perk.Id.ToLower();
+						if (selectedPerks.Contains(item))
+						{
+							selectedPerks.Remove(item);
+							selectedPerks.Add(_perkId);
+							flag2 = true;
+							flag = true;
+							break;
+						}
+					}
+				}
+			}
+			if (!flag2 && availablePoints >= GetPointsForNode(_perkNode.PND))
+			{
+				selectedPerks.Add(_perkId);
+				flag = true;
+			}
+		}
+		else
+		{
+			PerkNodeData pND = _perkNode.PND;
+			foreach (KeyValuePair<string, PerkNodeData> perkNodeData in perkNodeDatas)
+			{
+				if (perkNodeData.Value.PerkRequired != null && perkNodeData.Value.PerkRequired.Id == pND.Id && IsThisPerkNodeDataSelected(perkNodeData.Value))
+				{
+					return;
+				}
+			}
+			int num = 0;
+			foreach (KeyValuePair<string, PerkNode> perkNode in perkNodes)
+			{
+				if (perkNode.Value.PND.Id != pND.Id && perkNode.Value.IsSelected() && perkNode.Value.GetRow() <= _perkNode.GetRow())
+				{
+					num += GetPointsForNode(_perkNode.PND);
+				}
+			}
+			foreach (KeyValuePair<string, PerkNode> perkNode2 in perkNodes)
+			{
+				if (!perkNode2.Value.IsSelected() || !(perkNode2.Value.PND.Id != pND.Id))
+				{
+					continue;
+				}
+				int row = perkNode2.Value.GetRow();
+				if (row <= _perkNode.GetRow())
+				{
+					continue;
+				}
+				num = 0;
+				foreach (KeyValuePair<string, PerkNode> perkNode3 in perkNodes)
+				{
+					if (perkNode3.Value.PND.Id != pND.Id && perkNode3.Value.PND.Id != perkNode2.Value.PND.Id && perkNode3.Value.IsSelected() && perkNode3.Value.GetRow() < row)
+					{
+						num += GetPointsForNode(perkNode3.Value.PND);
+					}
+				}
+				if (usedPointsArray[row] > num)
+				{
+					return;
+				}
+			}
+			selectedPerks.Remove(_perkId);
+			flag = true;
+		}
+		if (flag)
+		{
+			buttonConfirm.Enable();
+		}
+		Refresh();
+		if (availablePoints < 0)
+		{
+			buttonConfirm.Disable();
+		}
+	}
+
+	public void PerksAssignConfirm()
+	{
+		if ((bool)HeroSelectionManager.Instance)
+		{
+			PlayerManager.Instance.AssignPerkList(subClassId, selectedPerks);
+			if (!GameManager.Instance.IsMultiplayer())
+			{
+				DoTeamPerks();
+			}
+		}
+		else
+		{
+			Hero[] team = AtOManager.Instance.GetTeam();
+			for (int i = 0; i < team.Length; i++)
+			{
+				if (team[i].HeroData.HeroSubClass.Id == subClassId)
+				{
+					AtOManager.Instance.AddPerkToHeroGlobalList(i, selectedPerks);
+					if (!GameManager.Instance.IsMultiplayer())
+					{
+						DoTeamPerks();
+					}
+					break;
+				}
+			}
+		}
+		buttonConfirm.Disable();
+	}
+
+	public void PerksReset()
+	{
+		if (selectedPerks.Count > 0)
+		{
+			selectedPerks = new List<string>();
+			buttonConfirm.Enable();
+			Refresh();
+		}
+	}
+
+	public Dictionary<string, PerkNodeData> GetPerkNodeDatas()
+	{
+		return perkNodeDatas;
+	}
+
+	public bool CanModify()
+	{
+		return canModify;
+	}
+
+	public void SavePerkSlot(int slot)
+	{
+		savingSlot = slot;
+		AlertManager.buttonClickDelegate = SavePerkSlotAction;
+		AlertManager.Instance.AlertInput(Texts.Instance.GetText("inputConfigSaveName"), Texts.Instance.GetText("accept").ToUpper());
+	}
+
+	public void SavePerkSlotAction()
+	{
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(SavePerkSlotAction));
+		string text = Functions.OnlyAscii(AlertManager.Instance.GetInputValue()).Trim();
+		if (!(text == ""))
+		{
+			if (!PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle.ContainsKey(subClassId))
+			{
+				PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle.Add(subClassId, new string[10]);
+			}
+			if (!PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks.ContainsKey(subClassId))
+			{
+				PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks.Add(subClassId, new List<string>[10]);
+			}
+			if (!PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints.ContainsKey(subClassId))
+			{
+				PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints.Add(subClassId, new int[10]);
+			}
+			List<string> list = new List<string>();
+			for (int i = 0; i < selectedPerks.Count; i++)
+			{
+				list.Add(selectedPerks[i]);
+			}
+			PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[subClassId][savingSlot] = text;
+			PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks[subClassId][savingSlot] = list;
+			PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints[subClassId][savingSlot] = usedPoints;
+			SaveManager.SavePlayerPerkConfig();
+			LoadSavedPerks();
+		}
+	}
+
+	public void RemovePerkSlot(int slot)
+	{
+		savingSlot = slot;
+		AlertManager.buttonClickDelegate = RemovePerkSlotAction;
+		AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("savedConfigDeleteConfirm"));
+	}
+
+	public void RemovePerkSlotAction()
+	{
+		bool confirmAnswer = AlertManager.Instance.GetConfirmAnswer();
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(RemovePerkSlotAction));
+		if (confirmAnswer)
+		{
+			PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[subClassId][savingSlot] = "";
+			PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks[subClassId][savingSlot] = new List<string>();
+			PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints[subClassId][savingSlot] = 0;
+			SaveManager.SavePlayerPerkConfig();
+			LoadSavedPerks();
+		}
+	}
+
+	private void LoadSavedPerks()
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < perkSlot.Length; i++)
+		{
+			if (perkSlot[i] != null)
+			{
+				stringBuilder.Clear();
+				if (PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle.ContainsKey(subClassId) && PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[subClassId][i] != null && PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[subClassId][i] != "")
+				{
+					stringBuilder.Append(PlayerManager.Instance.PlayerSavedPerk.PerkConfigTitle[subClassId][i]);
+					perkSlot[i].SetActive(stringBuilder.ToString(), PlayerManager.Instance.PlayerSavedPerk.PerkConfigPoints[subClassId][i].ToString());
+				}
+				else
+				{
+					perkSlot[i].SetEmpty(state: true);
+				}
+				if ((bool)HeroSelectionManager.Instance)
+				{
+					perkSlot[i].SetDisable(_state: false);
+				}
+				else
+				{
+					perkSlot[i].SetDisable(_state: true);
+				}
+			}
+		}
+	}
+
+	public void LoadPerkConfig(int slot)
+	{
+		loadingSlot = slot;
+		AlertManager.buttonClickDelegate = LoadPerkConfigAction;
+		AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("wantOverwritePerks"));
+	}
+
+	public void LoadPerkConfigAction()
+	{
+		bool confirmAnswer = AlertManager.Instance.GetConfirmAnswer();
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(LoadPerkConfigAction));
+		if (confirmAnswer)
+		{
+			selectedPerks = new List<string>();
+			for (int i = 0; i < PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks[subClassId][loadingSlot].Count; i++)
+			{
+				selectedPerks.Add(PlayerManager.Instance.PlayerSavedPerk.PerkConfigPerks[subClassId][loadingSlot][i]);
+			}
+			Refresh();
+			if (availablePoints < 0)
+			{
+				buttonConfirm.Disable();
+			}
+			else
+			{
+				buttonConfirm.Enable();
+			}
+		}
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, int absolutePosition = -1)
+	{
+		_controllerList.Clear();
+		for (int i = 0; i < buttonType.Length; i++)
+		{
+			_controllerList.Add(buttonType[i].transform);
+		}
+		foreach (KeyValuePair<string, GameObject> item in perkNodesGO)
+		{
+			if (Functions.TransformIsVisible(item.Value.transform))
+			{
+				_controllerList.Add(item.Value.transform);
+			}
+		}
+		if (Functions.TransformIsVisible(buttonConfirm.transform))
+		{
+			_controllerList.Add(buttonConfirm.transform);
+		}
+		if (Functions.TransformIsVisible(buttonReset.transform))
+		{
+			_controllerList.Add(buttonReset.transform);
+		}
+		if (Functions.TransformIsVisible(buttonExport.transform))
+		{
+			_controllerList.Add(buttonExport.transform);
+			_controllerList.Add(buttonImport.transform);
+		}
+		_controllerList.Add(buttonExit.transform);
+		if (Functions.TransformIsVisible(perkSlot[0].transform))
+		{
+			for (int j = 0; j < perkSlot.Length; j++)
+			{
+				if (perkSlot[j].GetComponent<BoxCollider2D>().enabled)
+				{
+					_controllerList.Add(perkSlot[j].transform);
+					if (Functions.TransformIsVisible(perkSlot[j].transform.GetChild(5).transform))
+					{
+						_controllerList.Add(perkSlot[j].transform.GetChild(5).transform);
+					}
+				}
+				else if (Functions.TransformIsVisible(perkSlot[j].transform.GetChild(4).transform))
+				{
+					_controllerList.Add(perkSlot[j].transform.GetChild(4).transform);
+				}
+			}
+		}
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
 }

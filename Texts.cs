@@ -1,305 +1,344 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Texts
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-#nullable disable
 public class Texts : MonoBehaviour
 {
-  [SerializeField]
-  private Dictionary<string, Dictionary<string, string>> TextStrings;
-  private Dictionary<string, Dictionary<string, string>> TextKeynotes;
-  private List<string> tipsList;
-  private string lang = "";
-  private bool countWords;
-  private bool translationLoaded;
-  private bool translationFinished;
+	[SerializeField]
+	private Dictionary<string, Dictionary<string, string>> TextStrings;
 
-  public static Texts Instance { get; private set; }
+	private Dictionary<string, Dictionary<string, string>> TextKeynotes;
 
-  public List<string> TipsList
-  {
-    get => this.tipsList;
-    set => this.tipsList = value;
-  }
+	private List<string> tipsList;
 
-  private void Awake()
-  {
-    if ((UnityEngine.Object) Texts.Instance == (UnityEngine.Object) null)
-      Texts.Instance = this;
-    else if ((UnityEngine.Object) Texts.Instance != (UnityEngine.Object) this)
-      UnityEngine.Object.Destroy((UnityEngine.Object) this.gameObject);
-    UnityEngine.Object.DontDestroyOnLoad((UnityEngine.Object) this.gameObject);
-    this.TextStrings = new Dictionary<string, Dictionary<string, string>>((IEqualityComparer<string>) StringComparer.OrdinalIgnoreCase);
-    this.TextKeynotes = new Dictionary<string, Dictionary<string, string>>((IEqualityComparer<string>) StringComparer.OrdinalIgnoreCase);
-  }
+	private string lang = "";
 
-  public bool GotTranslations() => this.translationFinished;
+	private bool countWords;
 
-  public void LoadTranslation()
-  {
-    if (!GameManager.Instance.PrefsLoaded)
-      return;
-    if (this.translationLoaded)
-    {
-      Debug.LogError((object) "LoadTranslation translationLoaded");
-    }
-    else
-    {
-      this.translationLoaded = true;
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) nameof (LoadTranslation));
-      this.lang = "en";
-      this.TextStrings[this.lang] = new Dictionary<string, string>();
-      this.TextKeynotes[this.lang] = new Dictionary<string, string>();
-      this.LoadTranslationText("cards");
-      this.LoadTranslationText("traits");
-      this.LoadTranslationText("");
-      this.LoadTranslationText("keynotes");
-      this.LoadTranslationText("auracurse");
-      this.LoadTranslationText("events");
-      this.LoadTranslationText("nodes");
-      this.LoadTranslationText("fluff");
-      this.LoadTranslationText("class");
-      this.LoadTranslationText("monsters");
-      this.LoadTranslationText("requirements");
-      this.LoadTranslationText("tips");
-      if (Globals.Instance.CurrentLang != "en")
-      {
-        this.lang = Globals.Instance.CurrentLang;
-        this.TextStrings[this.lang] = this.TextStrings["en"];
-        this.TextKeynotes[this.lang] = this.TextKeynotes["en"];
-        this.LoadTranslationText("cards");
-        this.LoadTranslationText("traits");
-        this.LoadTranslationText("");
-        this.LoadTranslationText("keynotes");
-        this.LoadTranslationText("auracurse");
-        this.LoadTranslationText("events");
-        this.LoadTranslationText("nodes");
-        this.LoadTranslationText("fluff");
-        this.LoadTranslationText("class");
-        this.LoadTranslationText("monsters");
-        this.LoadTranslationText("requirements");
-        this.LoadTranslationText("tips");
-      }
-      this.translationFinished = true;
-    }
-  }
+	private bool translationLoaded;
 
-  private void LoadTranslationText(string type)
-  {
-    TextAsset textAsset = new TextAsset();
-    string str1 = "";
-    type = type.ToLower();
-    StringBuilder stringBuilder1 = new StringBuilder();
-    stringBuilder1.Append("Lang/");
-    stringBuilder1.Append(this.lang);
-    stringBuilder1.Append("/");
-    stringBuilder1.Append(this.lang);
-    switch (type)
-    {
-      case "":
-        str1 = this.lang + ".txt";
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "keynotes":
-        str1 = this.lang + "_keynotes.txt";
-        stringBuilder1.Append("_keynotes");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "traits":
-        str1 = this.lang + "_traits.txt";
-        stringBuilder1.Append("_traits");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "auracurse":
-        str1 = this.lang + "_auracurse.txt";
-        stringBuilder1.Append("_auracurse");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "events":
-        str1 = this.lang + "_events.txt";
-        stringBuilder1.Append("_events");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "nodes":
-        str1 = this.lang + "_nodes.txt";
-        stringBuilder1.Append("_nodes");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "cards":
-        str1 = this.lang + "_cards.txt";
-        stringBuilder1.Append("_cards");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "fluff":
-        str1 = this.lang + "_cardsfluff.txt";
-        stringBuilder1.Append("_cardsfluff");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "class":
-        str1 = this.lang + "_class.txt";
-        stringBuilder1.Append("_class");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "monsters":
-        str1 = this.lang + "_monsters.txt";
-        stringBuilder1.Append("_monsters");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "requirements":
-        str1 = this.lang + "_requirements.txt";
-        stringBuilder1.Append("_requirements");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        break;
-      case "tips":
-        str1 = this.lang + "_tips.txt";
-        stringBuilder1.Append("_tips");
-        textAsset = Resources.Load(stringBuilder1.ToString()) as TextAsset;
-        this.tipsList = new List<string>();
-        break;
-    }
-    if ((UnityEngine.Object) textAsset == (UnityEngine.Object) null)
-      return;
-    List<string> stringList = new List<string>((IEnumerable<string>) textAsset.text.Split('\n', StringSplitOptions.None));
-    int num = 0;
-    StringBuilder stringBuilder2 = new StringBuilder();
-    StringBuilder stringBuilder3 = new StringBuilder();
-    StringBuilder stringBuilder4 = new StringBuilder();
-    StringBuilder stringBuilder5 = new StringBuilder();
-    for (int index = 0; index < stringList.Count; ++index)
-    {
-      string str2 = stringList[index];
-      if (!(str2 == "") && str2[0] != '#')
-      {
-        string[] strArray = str2.Trim().Split(new char[1]
-        {
-          '='
-        }, 2);
-        if (strArray != null && strArray.Length >= 2)
-        {
-          strArray[0] = strArray[0].Trim().ToLower();
-          strArray[1] = Functions.SplitString("//", strArray[1])[0].Trim();
-          switch (type)
-          {
-            case "keynotes":
-              stringBuilder2.Append("keynotes_");
-              break;
-            case "traits":
-              stringBuilder2.Append("traits_");
-              break;
-            case "auracurse":
-              stringBuilder2.Append("auracurse_");
-              break;
-            case "events":
-              stringBuilder2.Append("events_");
-              break;
-            case "nodes":
-              stringBuilder2.Append("nodes_");
-              break;
-            case "cards":
-            case "fluff":
-              stringBuilder2.Append("cards_");
-              break;
-            case "class":
-              stringBuilder2.Append("class_");
-              break;
-            case "monsters":
-              stringBuilder2.Append("monsters_");
-              break;
-            case "requirements":
-              stringBuilder2.Append("requirements_");
-              break;
-            case "tips":
-              stringBuilder2.Append("tips_");
-              break;
-          }
-          stringBuilder2.Append(strArray[0]);
-          if (this.TextStrings[this.lang].ContainsKey(stringBuilder2.ToString()))
-            this.TextStrings[this.lang][stringBuilder2.ToString()] = strArray[1];
-          else
-            this.TextStrings[this.lang].Add(stringBuilder2.ToString(), strArray[1]);
-          if (type == "tips")
-            this.tipsList.Add(strArray[1]);
-          bool flag = true;
-          if (type == "")
-          {
-            if (strArray[1].StartsWith("rptd_", StringComparison.OrdinalIgnoreCase))
-            {
-              stringBuilder3.Append(strArray[1].Substring(5).ToLower());
-              this.TextStrings[this.lang][stringBuilder2.ToString()] = this.TextStrings[this.lang][stringBuilder3.ToString()];
-              flag = false;
-              stringBuilder3.Clear();
-            }
-          }
-          else if (type == "events")
-          {
-            if (strArray[1].StartsWith("rptd_", StringComparison.OrdinalIgnoreCase))
-            {
-              stringBuilder3.Append("events_");
-              stringBuilder3.Append(strArray[1].Substring(5).ToLower());
-              if (this.TextStrings[this.lang].ContainsKey(stringBuilder3.ToString()))
-                this.TextStrings[this.lang][stringBuilder2.ToString()] = this.TextStrings[this.lang][stringBuilder3.ToString()];
-              flag = false;
-              stringBuilder3.Clear();
-            }
-          }
-          else if (type == "cards")
-          {
-            if (strArray[1].StartsWith("rptd_", StringComparison.OrdinalIgnoreCase))
-            {
-              stringBuilder3.Append("cards_");
-              stringBuilder3.Append(strArray[1].Substring(5).ToLower());
-              this.TextStrings[this.lang][stringBuilder2.ToString()] = this.TextStrings[this.lang][stringBuilder3.ToString()];
-              flag = false;
-              stringBuilder3.Clear();
-            }
-          }
-          else if (type == "monsters" && strArray[1].StartsWith("rptd_", StringComparison.OrdinalIgnoreCase))
-          {
-            stringBuilder3.Append("monsters_");
-            stringBuilder3.Append(strArray[1].Substring(5).ToLower());
-            this.TextStrings[this.lang][stringBuilder2.ToString()] = this.TextStrings[this.lang][stringBuilder3.ToString()];
-            flag = false;
-            stringBuilder3.Clear();
-          }
-          if (flag && this.countWords)
-          {
-            string str3 = Regex.Replace(Regex.Replace(strArray[1], "<(.*?)>", ""), "\\s+", " ");
-            num += str3.Split(" ", StringSplitOptions.None).Length;
-          }
-          stringBuilder2.Clear();
-        }
-      }
-    }
-    if (this.countWords)
-      Debug.Log((object) ("Count words file -> " + str1 + " = " + num.ToString()));
-  }
+	private bool translationFinished;
 
-  public string GetText(string _id, string _type = "")
-  {
-    if ((UnityEngine.Object) Globals.Instance == (UnityEngine.Object) null || !GameManager.Instance.PrefsLoaded || string.IsNullOrWhiteSpace(_id))
-      return "";
-    _id = _id.Replace(" ", "").ToLower();
-    if (!string.IsNullOrEmpty(_type))
-      _id = _type.ToLower() + "_" + _id;
-    Dictionary<string, string> dictionary;
-    string str;
-    return this.TextStrings.TryGetValue(Globals.Instance.CurrentLang, out dictionary) && dictionary.TryGetValue(_id, out str) ? str : "";
-  }
+	public static Texts Instance { get; private set; }
 
-  public void SetText(string _id, string _text)
-  {
-    _id = _id.Replace(" ", "").ToLower();
-    if (!(_id != "") || this.TextStrings[Globals.Instance.CurrentLang].ContainsKey(_id))
-      return;
-    this.TextStrings[Globals.Instance.CurrentLang][_id] = _text;
-  }
+	public List<string> TipsList
+	{
+		get
+		{
+			return tipsList;
+		}
+		set
+		{
+			tipsList = value;
+		}
+	}
+
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			UnityEngine.Object.Destroy(base.gameObject);
+		}
+		UnityEngine.Object.DontDestroyOnLoad(base.gameObject);
+		TextStrings = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+		TextKeynotes = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+	}
+
+	public bool GotTranslations()
+	{
+		return translationFinished;
+	}
+
+	public void LoadTranslation()
+	{
+		if (!GameManager.Instance.PrefsLoaded)
+		{
+			return;
+		}
+		if (translationLoaded)
+		{
+			Debug.LogError("LoadTranslation translationLoaded");
+			return;
+		}
+		translationLoaded = true;
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("LoadTranslation");
+		}
+		lang = "en";
+		TextStrings[lang] = new Dictionary<string, string>();
+		TextKeynotes[lang] = new Dictionary<string, string>();
+		LoadTranslationText("cards");
+		LoadTranslationText("traits");
+		LoadTranslationText("");
+		LoadTranslationText("keynotes");
+		LoadTranslationText("auracurse");
+		LoadTranslationText("events");
+		LoadTranslationText("nodes");
+		LoadTranslationText("fluff");
+		LoadTranslationText("class");
+		LoadTranslationText("monsters");
+		LoadTranslationText("requirements");
+		LoadTranslationText("tips");
+		if (Globals.Instance.CurrentLang != "en")
+		{
+			lang = Globals.Instance.CurrentLang;
+			TextStrings[lang] = TextStrings["en"];
+			TextKeynotes[lang] = TextKeynotes["en"];
+			LoadTranslationText("cards");
+			LoadTranslationText("traits");
+			LoadTranslationText("");
+			LoadTranslationText("keynotes");
+			LoadTranslationText("auracurse");
+			LoadTranslationText("events");
+			LoadTranslationText("nodes");
+			LoadTranslationText("fluff");
+			LoadTranslationText("class");
+			LoadTranslationText("monsters");
+			LoadTranslationText("requirements");
+			LoadTranslationText("tips");
+		}
+		translationFinished = true;
+	}
+
+	private void LoadTranslationText(string type)
+	{
+		TextAsset textAsset = new TextAsset();
+		string text = "";
+		type = type.ToLower();
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("Lang/");
+		stringBuilder.Append(lang);
+		stringBuilder.Append("/");
+		stringBuilder.Append(lang);
+		switch (type)
+		{
+		case "":
+			text = lang + ".txt";
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "keynotes":
+			text = lang + "_keynotes.txt";
+			stringBuilder.Append("_keynotes");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "traits":
+			text = lang + "_traits.txt";
+			stringBuilder.Append("_traits");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "auracurse":
+			text = lang + "_auracurse.txt";
+			stringBuilder.Append("_auracurse");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "events":
+			text = lang + "_events.txt";
+			stringBuilder.Append("_events");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "nodes":
+			text = lang + "_nodes.txt";
+			stringBuilder.Append("_nodes");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "cards":
+			text = lang + "_cards.txt";
+			stringBuilder.Append("_cards");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "fluff":
+			text = lang + "_cardsfluff.txt";
+			stringBuilder.Append("_cardsfluff");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "class":
+			text = lang + "_class.txt";
+			stringBuilder.Append("_class");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "monsters":
+			text = lang + "_monsters.txt";
+			stringBuilder.Append("_monsters");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "requirements":
+			text = lang + "_requirements.txt";
+			stringBuilder.Append("_requirements");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			break;
+		case "tips":
+			text = lang + "_tips.txt";
+			stringBuilder.Append("_tips");
+			textAsset = Resources.Load(stringBuilder.ToString()) as TextAsset;
+			tipsList = new List<string>();
+			break;
+		}
+		if (textAsset == null)
+		{
+			return;
+		}
+		List<string> list = new List<string>(textAsset.text.Split('\n'));
+		int num = 0;
+		bool flag = true;
+		StringBuilder stringBuilder2 = new StringBuilder();
+		StringBuilder stringBuilder3 = new StringBuilder();
+		new StringBuilder();
+		new StringBuilder();
+		for (int i = 0; i < list.Count; i++)
+		{
+			string text2 = list[i];
+			if (text2 == "" || text2[0] == '#')
+			{
+				continue;
+			}
+			string[] array = text2.Trim().Split(new char[1] { '=' }, 2);
+			if (array == null || array.Length < 2)
+			{
+				continue;
+			}
+			array[0] = array[0].Trim().ToLower();
+			array[1] = Functions.SplitString("//", array[1])[0].Trim();
+			switch (type)
+			{
+			case "keynotes":
+				stringBuilder2.Append("keynotes_");
+				break;
+			case "traits":
+				stringBuilder2.Append("traits_");
+				break;
+			case "auracurse":
+				stringBuilder2.Append("auracurse_");
+				break;
+			case "events":
+				stringBuilder2.Append("events_");
+				break;
+			case "nodes":
+				stringBuilder2.Append("nodes_");
+				break;
+			case "cards":
+			case "fluff":
+				stringBuilder2.Append("cards_");
+				break;
+			case "class":
+				stringBuilder2.Append("class_");
+				break;
+			case "monsters":
+				stringBuilder2.Append("monsters_");
+				break;
+			case "requirements":
+				stringBuilder2.Append("requirements_");
+				break;
+			case "tips":
+				stringBuilder2.Append("tips_");
+				break;
+			}
+			stringBuilder2.Append(array[0]);
+			if (TextStrings[lang].ContainsKey(stringBuilder2.ToString()))
+			{
+				TextStrings[lang][stringBuilder2.ToString()] = array[1];
+			}
+			else
+			{
+				TextStrings[lang].Add(stringBuilder2.ToString(), array[1]);
+			}
+			if (type == "tips")
+			{
+				tipsList.Add(array[1]);
+			}
+			flag = true;
+			switch (type)
+			{
+			case "":
+				if (array[1].StartsWith("rptd_", StringComparison.OrdinalIgnoreCase))
+				{
+					stringBuilder3.Append(array[1].Substring(5).ToLower());
+					TextStrings[lang][stringBuilder2.ToString()] = TextStrings[lang][stringBuilder3.ToString()];
+					flag = false;
+					stringBuilder3.Clear();
+				}
+				break;
+			case "events":
+				if (array[1].StartsWith("rptd_", StringComparison.OrdinalIgnoreCase))
+				{
+					stringBuilder3.Append("events_");
+					stringBuilder3.Append(array[1].Substring(5).ToLower());
+					if (TextStrings[lang].ContainsKey(stringBuilder3.ToString()))
+					{
+						TextStrings[lang][stringBuilder2.ToString()] = TextStrings[lang][stringBuilder3.ToString()];
+					}
+					flag = false;
+					stringBuilder3.Clear();
+				}
+				break;
+			case "cards":
+				if (array[1].StartsWith("rptd_", StringComparison.OrdinalIgnoreCase))
+				{
+					stringBuilder3.Append("cards_");
+					stringBuilder3.Append(array[1].Substring(5).ToLower());
+					TextStrings[lang][stringBuilder2.ToString()] = TextStrings[lang][stringBuilder3.ToString()];
+					flag = false;
+					stringBuilder3.Clear();
+				}
+				break;
+			case "monsters":
+				if (array[1].StartsWith("rptd_", StringComparison.OrdinalIgnoreCase))
+				{
+					stringBuilder3.Append("monsters_");
+					stringBuilder3.Append(array[1].Substring(5).ToLower());
+					TextStrings[lang][stringBuilder2.ToString()] = TextStrings[lang][stringBuilder3.ToString()];
+					flag = false;
+					stringBuilder3.Clear();
+				}
+				break;
+			}
+			if (flag && countWords)
+			{
+				string input = Regex.Replace(array[1], "<(.*?)>", "");
+				input = Regex.Replace(input, "\\s+", " ");
+				num += input.Split(" ").Length;
+			}
+			stringBuilder2.Clear();
+		}
+		if (countWords)
+		{
+			Debug.Log("Count words file -> " + text + " = " + num);
+		}
+		textAsset = null;
+		stringBuilder2 = null;
+		stringBuilder3 = null;
+	}
+
+	public string GetText(string _id, string _type = "")
+	{
+		if (Globals.Instance == null || !GameManager.Instance.PrefsLoaded || string.IsNullOrWhiteSpace(_id))
+		{
+			return "";
+		}
+		_id = _id.Replace(" ", "").ToLower();
+		if (!string.IsNullOrEmpty(_type))
+		{
+			_id = _type.ToLower() + "_" + _id;
+		}
+		if (TextStrings.TryGetValue(Globals.Instance.CurrentLang, out var value) && value.TryGetValue(_id, out var value2))
+		{
+			return value2;
+		}
+		return "";
+	}
+
+	public void SetText(string _id, string _text)
+	{
+		_id = _id.Replace(" ", "").ToLower();
+		if (_id != "" && !TextStrings[Globals.Instance.CurrentLang].ContainsKey(_id))
+		{
+			TextStrings[Globals.Instance.CurrentLang][_id] = _text;
+		}
+	}
 }

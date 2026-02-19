@@ -1,49 +1,45 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Demo2AutoScroll
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using UnityEngine;
 
-#nullable disable
 public class Demo2AutoScroll : MonoBehaviour
 {
-  private Transform[] children;
-  public float totalTime;
-  public GameObject sceneDescription;
+	private Transform[] children;
 
-  private void Start()
-  {
-    this.sceneDescription.SetActive(false);
-    Camera.main.fieldOfView = 60f;
-    this.children = this.GetComponentsInChildren<Transform>();
-    for (int index = 0; index < this.children.Length; ++index)
-    {
-      if ((Object) this.children[index].gameObject != (Object) this.gameObject)
-      {
-        this.children[index].gameObject.SetActive(false);
-        this.children[index].localPosition = Vector3.zero;
-      }
-    }
-    this.totalTime /= (float) this.children.Length;
-    this.StartCoroutine(this.ScrollElements());
-  }
+	public float totalTime;
 
-  private IEnumerator ScrollElements()
-  {
-    Demo2AutoScroll demo2AutoScroll = this;
-    int i = 0;
-    while (true)
-    {
-      for (; !((Object) demo2AutoScroll.children[i].gameObject == (Object) demo2AutoScroll.gameObject); i = (i + 1) % demo2AutoScroll.children.Length)
-      {
-        demo2AutoScroll.children[i].gameObject.SetActive(true);
-        yield return (object) new WaitForSeconds(demo2AutoScroll.totalTime);
-        demo2AutoScroll.children[i].gameObject.SetActive(false);
-      }
-      i = (i + 1) % demo2AutoScroll.children.Length;
-    }
-  }
+	public GameObject sceneDescription;
+
+	private void Start()
+	{
+		sceneDescription.SetActive(value: false);
+		Camera.main.fieldOfView = 60f;
+		children = GetComponentsInChildren<Transform>();
+		for (int i = 0; i < children.Length; i++)
+		{
+			if (children[i].gameObject != base.gameObject)
+			{
+				children[i].gameObject.SetActive(value: false);
+				children[i].localPosition = Vector3.zero;
+			}
+		}
+		totalTime /= children.Length;
+		StartCoroutine(ScrollElements());
+	}
+
+	private IEnumerator ScrollElements()
+	{
+		int i = 0;
+		while (true)
+		{
+			if (children[i].gameObject == base.gameObject)
+			{
+				i = (i + 1) % children.Length;
+				continue;
+			}
+			children[i].gameObject.SetActive(value: true);
+			yield return new WaitForSeconds(totalTime);
+			children[i].gameObject.SetActive(value: false);
+			i = (i + 1) % children.Length;
+		}
+	}
 }

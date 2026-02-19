@@ -1,102 +1,65 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: SimplerAES
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-#nullable disable
 public class SimplerAES
 {
-  private static byte[] key = new byte[32]
-  {
-    (byte) 123,
-    (byte) 217,
-    (byte) 19,
-    (byte) 11,
-    (byte) 24,
-    (byte) 26,
-    (byte) 85,
-    (byte) 45,
-    (byte) 114,
-    (byte) 184,
-    (byte) 1,
-    (byte) 2,
-    (byte) 6,
-    (byte) 15,
-    (byte) 32,
-    (byte) 45,
-    (byte) 51,
-    (byte) 24,
-    (byte) 175,
-    (byte) 144,
-    (byte) 173,
-    (byte) 53,
-    (byte) 196,
-    (byte) 29,
-    (byte) 24,
-    (byte) 26,
-    (byte) 17,
-    (byte) 218,
-    (byte) 131,
-    (byte) 236,
-    (byte) 53,
-    (byte) 209
-  };
-  private static byte[] vector = new byte[16]
-  {
-    (byte) 146,
-    (byte) 64,
-    (byte) 191,
-    (byte) 1,
-    (byte) 2,
-    (byte) 6,
-    (byte) 15,
-    (byte) 32,
-    (byte) 45,
-    (byte) 51,
-    (byte) 121,
-    (byte) 112,
-    (byte) 79,
-    (byte) 32,
-    (byte) 114,
-    (byte) 156
-  };
-  private ICryptoTransform encryptor;
-  private ICryptoTransform decryptor;
-  private UTF8Encoding encoder;
+	private static byte[] key = new byte[32]
+	{
+		123, 217, 19, 11, 24, 26, 85, 45, 114, 184,
+		1, 2, 6, 15, 32, 45, 51, 24, 175, 144,
+		173, 53, 196, 29, 24, 26, 17, 218, 131, 236,
+		53, 209
+	};
 
-  public SimplerAES()
-  {
-    RijndaelManaged rijndaelManaged = new RijndaelManaged();
-    this.encryptor = rijndaelManaged.CreateEncryptor(SimplerAES.key, SimplerAES.vector);
-    this.decryptor = rijndaelManaged.CreateDecryptor(SimplerAES.key, SimplerAES.vector);
-    this.encoder = new UTF8Encoding();
-  }
+	private static byte[] vector = new byte[16]
+	{
+		146, 64, 191, 1, 2, 6, 15, 32, 45, 51,
+		121, 112, 79, 32, 114, 156
+	};
 
-  public string Encrypt(string unencrypted)
-  {
-    return Convert.ToBase64String(this.Encrypt(this.encoder.GetBytes(unencrypted)));
-  }
+	private ICryptoTransform encryptor;
 
-  public string Decrypt(string encrypted)
-  {
-    return this.encoder.GetString(this.Decrypt(Convert.FromBase64String(encrypted)));
-  }
+	private ICryptoTransform decryptor;
 
-  public byte[] Encrypt(byte[] buffer) => this.Transform(buffer, this.encryptor);
+	private UTF8Encoding encoder;
 
-  public byte[] Decrypt(byte[] buffer) => this.Transform(buffer, this.decryptor);
+	public SimplerAES()
+	{
+		RijndaelManaged rijndaelManaged = new RijndaelManaged();
+		encryptor = rijndaelManaged.CreateEncryptor(key, vector);
+		decryptor = rijndaelManaged.CreateDecryptor(key, vector);
+		encoder = new UTF8Encoding();
+	}
 
-  protected byte[] Transform(byte[] buffer, ICryptoTransform transform)
-  {
-    MemoryStream memoryStream = new MemoryStream();
-    using (CryptoStream cryptoStream = new CryptoStream((Stream) memoryStream, transform, CryptoStreamMode.Write))
-      cryptoStream.Write(buffer, 0, buffer.Length);
-    return memoryStream.ToArray();
-  }
+	public string Encrypt(string unencrypted)
+	{
+		return Convert.ToBase64String(Encrypt(encoder.GetBytes(unencrypted)));
+	}
+
+	public string Decrypt(string encrypted)
+	{
+		return encoder.GetString(Decrypt(Convert.FromBase64String(encrypted)));
+	}
+
+	public byte[] Encrypt(byte[] buffer)
+	{
+		return Transform(buffer, encryptor);
+	}
+
+	public byte[] Decrypt(byte[] buffer)
+	{
+		return Transform(buffer, decryptor);
+	}
+
+	protected byte[] Transform(byte[] buffer, ICryptoTransform transform)
+	{
+		MemoryStream memoryStream = new MemoryStream();
+		using (CryptoStream cryptoStream = new CryptoStream(memoryStream, transform, CryptoStreamMode.Write))
+		{
+			cryptoStream.Write(buffer, 0, buffer.Length);
+		}
+		return memoryStream.ToArray();
+	}
 }

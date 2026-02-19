@@ -1,133 +1,143 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: AlertPlayer
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 public class AlertPlayer : MonoBehaviour
 {
-  public TMP_Text playerName;
-  public TMP_Text playerDescription;
-  public Image playerPlatformImage;
-  public Transform muteButton;
-  public Transform unmuteButton;
-  private string playerNick = "";
-  private int playerSlot = -1;
-  private Enums.Platform playerPlatform;
+	public TMP_Text playerName;
 
-  public void SetPlayer(int _playerSlot, string _playerNick)
-  {
-    this.playerSlot = _playerSlot;
-    this.playerNick = _playerNick;
-    this.playerName.color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(this.playerNick));
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(_playerNick);
-    if (_playerSlot == 0)
-    {
-      stringBuilder.Append(" (");
-      stringBuilder.Append(Texts.Instance.GetText("master"));
-      stringBuilder.Append(")");
-    }
-    this.playerName.text = stringBuilder.ToString();
-    this.playerPlatformImage.sprite = NetworkManager.Instance.GetSlotPlatformImage(_playerSlot);
-    if (NetworkManager.Instance.GetPlayerNick() != this.playerNick)
-    {
-      if (NetworkManager.Instance.IsPlayerMutedBySlot(_playerSlot))
-      {
-        this.HideMute();
-        this.ShowUnmute();
-      }
-      else
-      {
-        this.ShowMute();
-        this.HideUnmute();
-      }
-    }
-    else
-    {
-      this.HideMute();
-      this.HideUnmute();
-    }
-  }
+	public TMP_Text playerDescription;
 
-  public void SetDescription()
-  {
-    StringBuilder stringBuilder = new StringBuilder();
-    if (NetworkManager.Instance.PlayerPing.ContainsKey(this.playerNick))
-    {
-      if (stringBuilder.Length > 0)
-        stringBuilder.Append(" | ");
-      stringBuilder.Append(Texts.Instance.GetText("ping"));
-      stringBuilder.Append(": ");
-      stringBuilder.Append(NetworkManager.Instance.PlayerPing[this.playerNick]);
-      stringBuilder.Append("ms");
-    }
-    this.playerDescription.text = stringBuilder.ToString();
-  }
+	public Image playerPlatformImage;
 
-  public void ShowMute()
-  {
-    if (this.muteButton.gameObject.activeSelf)
-      return;
-    this.muteButton.gameObject.SetActive(true);
-  }
+	public Transform muteButton;
 
-  public void ShowUnmute()
-  {
-    if (this.unmuteButton.gameObject.activeSelf)
-      return;
-    this.unmuteButton.gameObject.SetActive(true);
-  }
+	public Transform unmuteButton;
 
-  public void HideMute()
-  {
-    if (!this.muteButton.gameObject.activeSelf)
-      return;
-    this.muteButton.gameObject.SetActive(false);
-  }
+	private string playerNick = "";
 
-  public void HideUnmute()
-  {
-    if (!this.unmuteButton.gameObject.activeSelf)
-      return;
-    this.unmuteButton.gameObject.SetActive(false);
-  }
+	private int playerSlot = -1;
 
-  public void DoMute()
-  {
-    NetworkManager.Instance.DoMute(this.playerSlot);
-    if (!NetworkManager.Instance.IsPlayerMutedBySlot(this.playerSlot))
-      return;
-    this.HideMute();
-    this.ShowUnmute();
-  }
+	private Enums.Platform playerPlatform;
 
-  public void DoUnmute()
-  {
-    NetworkManager.Instance.DoUnmute(this.playerSlot);
-    if (NetworkManager.Instance.IsPlayerMutedBySlot(this.playerSlot))
-      return;
-    this.HideUnmute();
-    this.ShowMute();
-  }
+	public void SetPlayer(int _playerSlot, string _playerNick)
+	{
+		playerSlot = _playerSlot;
+		playerNick = _playerNick;
+		playerName.color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(playerNick));
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(_playerNick);
+		if (_playerSlot == 0)
+		{
+			stringBuilder.Append(" (");
+			stringBuilder.Append(Texts.Instance.GetText("master"));
+			stringBuilder.Append(")");
+		}
+		playerName.text = stringBuilder.ToString();
+		playerPlatformImage.sprite = NetworkManager.Instance.GetSlotPlatformImage(_playerSlot);
+		if (NetworkManager.Instance.GetPlayerNick() != playerNick)
+		{
+			if (NetworkManager.Instance.IsPlayerMutedBySlot(_playerSlot))
+			{
+				HideMute();
+				ShowUnmute();
+			}
+			else
+			{
+				ShowMute();
+				HideUnmute();
+			}
+		}
+		else
+		{
+			HideMute();
+			HideUnmute();
+		}
+	}
 
-  public void Show()
-  {
-    if (this.gameObject.activeSelf)
-      return;
-    this.gameObject.SetActive(true);
-  }
+	public void SetDescription()
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		if (NetworkManager.Instance.PlayerPing.ContainsKey(playerNick))
+		{
+			if (stringBuilder.Length > 0)
+			{
+				stringBuilder.Append(" | ");
+			}
+			stringBuilder.Append(Texts.Instance.GetText("ping"));
+			stringBuilder.Append(": ");
+			stringBuilder.Append(NetworkManager.Instance.PlayerPing[playerNick]);
+			stringBuilder.Append("ms");
+		}
+		playerDescription.text = stringBuilder.ToString();
+	}
 
-  public void Hide()
-  {
-    if (!this.gameObject.activeSelf)
-      return;
-    this.gameObject.SetActive(false);
-  }
+	public void ShowMute()
+	{
+		if (!muteButton.gameObject.activeSelf)
+		{
+			muteButton.gameObject.SetActive(value: true);
+		}
+	}
+
+	public void ShowUnmute()
+	{
+		if (!unmuteButton.gameObject.activeSelf)
+		{
+			unmuteButton.gameObject.SetActive(value: true);
+		}
+	}
+
+	public void HideMute()
+	{
+		if (muteButton.gameObject.activeSelf)
+		{
+			muteButton.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void HideUnmute()
+	{
+		if (unmuteButton.gameObject.activeSelf)
+		{
+			unmuteButton.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void DoMute()
+	{
+		NetworkManager.Instance.DoMute(playerSlot);
+		if (NetworkManager.Instance.IsPlayerMutedBySlot(playerSlot))
+		{
+			HideMute();
+			ShowUnmute();
+		}
+	}
+
+	public void DoUnmute()
+	{
+		NetworkManager.Instance.DoUnmute(playerSlot);
+		if (!NetworkManager.Instance.IsPlayerMutedBySlot(playerSlot))
+		{
+			HideUnmute();
+			ShowMute();
+		}
+	}
+
+	public void Show()
+	{
+		if (!base.gameObject.activeSelf)
+		{
+			base.gameObject.SetActive(value: true);
+		}
+	}
+
+	public void Hide()
+	{
+		if (base.gameObject.activeSelf)
+		{
+			base.gameObject.SetActive(value: false);
+		}
+	}
 }

@@ -1,70 +1,83 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CurvedLineRenderer
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
-[RequireComponent(typeof (LineRenderer))]
+[RequireComponent(typeof(LineRenderer))]
 public class CurvedLineRenderer : MonoBehaviour
 {
-  public float lineSegmentSize = 0.15f;
-  public float lineWidth = 0.1f;
-  [Header("Gizmos")]
-  public bool showGizmos = true;
-  public float gizmoSize = 0.1f;
-  public Color gizmoColor = new Color(1f, 0.0f, 0.0f, 0.5f);
-  private CurvedLinePoint[] linePoints = new CurvedLinePoint[0];
-  private Vector3[] linePositions = new Vector3[0];
-  private Vector3[] linePositionsOld = new Vector3[0];
+	public float lineSegmentSize = 0.15f;
 
-  public void Update()
-  {
-    this.GetPoints();
-    this.SetPointsToLine();
-  }
+	public float lineWidth = 0.1f;
 
-  private void GetPoints()
-  {
-    this.linePoints = this.GetComponentsInChildren<CurvedLinePoint>();
-    this.linePositions = new Vector3[this.linePoints.Length];
-    for (int index = 0; index < this.linePoints.Length; ++index)
-      this.linePositions[index] = this.linePoints[index].transform.position;
-  }
+	[Header("Gizmos")]
+	public bool showGizmos = true;
 
-  private void SetPointsToLine()
-  {
-    if (this.linePositionsOld.Length != this.linePositions.Length)
-      this.linePositionsOld = new Vector3[this.linePositions.Length];
-    bool flag = false;
-    for (int index = 0; index < this.linePositions.Length; ++index)
-    {
-      if (this.linePositions[index] != this.linePositionsOld[index])
-        flag = true;
-    }
-    if (!flag)
-      return;
-    LineRenderer component = this.GetComponent<LineRenderer>();
-    Vector3[] positions = LineSmoother.SmoothLine(this.linePositions, this.lineSegmentSize);
-    component.positionCount = positions.Length;
-    component.SetPositions(positions);
-    component.startWidth = this.lineWidth;
-    component.endWidth = this.lineWidth;
-  }
+	public float gizmoSize = 0.1f;
 
-  private void OnDrawGizmosSelected() => this.Update();
+	public Color gizmoColor = new Color(1f, 0f, 0f, 0.5f);
 
-  private void OnDrawGizmos()
-  {
-    if (this.linePoints.Length == 0)
-      this.GetPoints();
-    foreach (CurvedLinePoint linePoint in this.linePoints)
-    {
-      linePoint.showGizmo = this.showGizmos;
-      linePoint.gizmoSize = this.gizmoSize;
-      linePoint.gizmoColor = this.gizmoColor;
-    }
-  }
+	private CurvedLinePoint[] linePoints = new CurvedLinePoint[0];
+
+	private Vector3[] linePositions = new Vector3[0];
+
+	private Vector3[] linePositionsOld = new Vector3[0];
+
+	public void Update()
+	{
+		GetPoints();
+		SetPointsToLine();
+	}
+
+	private void GetPoints()
+	{
+		linePoints = GetComponentsInChildren<CurvedLinePoint>();
+		linePositions = new Vector3[linePoints.Length];
+		for (int i = 0; i < linePoints.Length; i++)
+		{
+			linePositions[i] = linePoints[i].transform.position;
+		}
+	}
+
+	private void SetPointsToLine()
+	{
+		if (linePositionsOld.Length != linePositions.Length)
+		{
+			linePositionsOld = new Vector3[linePositions.Length];
+		}
+		bool flag = false;
+		for (int i = 0; i < linePositions.Length; i++)
+		{
+			if (linePositions[i] != linePositionsOld[i])
+			{
+				flag = true;
+			}
+		}
+		if (flag)
+		{
+			LineRenderer component = GetComponent<LineRenderer>();
+			Vector3[] array = LineSmoother.SmoothLine(linePositions, lineSegmentSize);
+			component.positionCount = array.Length;
+			component.SetPositions(array);
+			component.startWidth = lineWidth;
+			component.endWidth = lineWidth;
+		}
+	}
+
+	private void OnDrawGizmosSelected()
+	{
+		Update();
+	}
+
+	private void OnDrawGizmos()
+	{
+		if (linePoints.Length == 0)
+		{
+			GetPoints();
+		}
+		CurvedLinePoint[] array = linePoints;
+		foreach (CurvedLinePoint obj in array)
+		{
+			obj.showGizmo = showGizmos;
+			obj.gizmoSize = gizmoSize;
+			obj.gizmoColor = gizmoColor;
+		}
+	}
 }

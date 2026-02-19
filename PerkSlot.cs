@@ -1,92 +1,109 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PerkSlot
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class PerkSlot : MonoBehaviour
 {
-  public TMP_Text title;
-  public TMP_Text cards;
-  public SpriteRenderer background;
-  public Transform backgroundDisable;
-  public Transform numContainer;
-  public int slot;
-  public Transform saveButton;
-  public Transform deleteButton;
-  private string colorActive = "#37303C";
-  private string colorHover = "#735687";
-  private string colorEmpty = "#54475E";
-  private BoxCollider2D collider;
-  private bool initiated;
+	public TMP_Text title;
 
-  private void Init()
-  {
-    this.collider = this.GetComponent<BoxCollider2D>();
-    this.saveButton.GetComponent<BotonGeneric>().auxInt = this.slot;
-    this.deleteButton.GetComponent<BotonGeneric>().auxInt = this.slot;
-  }
+	public TMP_Text cards;
 
-  public void SetDisable(bool _state)
-  {
-    if (!this.initiated)
-      this.Init();
-    this.backgroundDisable.gameObject.SetActive(_state);
-  }
+	public SpriteRenderer background;
 
-  public void SetEmpty(bool state)
-  {
-    if (!this.initiated)
-      this.Init();
-    this.title.text = Texts.Instance.GetText("emptySave");
-    this.background.color = Functions.HexToColor(this.colorEmpty);
-    this.numContainer.gameObject.SetActive(false);
-    this.saveButton.gameObject.SetActive(true);
-    this.deleteButton.gameObject.SetActive(false);
-    this.collider.enabled = false;
-    if (state)
-      this.saveButton.GetComponent<BotonGeneric>().Enable();
-    else
-      this.saveButton.GetComponent<BotonGeneric>().Disable();
-  }
+	public Transform backgroundDisable;
 
-  public void SetActive(string _title, string _num)
-  {
-    if (!this.initiated)
-      this.Init();
-    this.title.text = _title;
-    this.cards.text = _num;
-    this.background.color = Functions.HexToColor(this.colorActive);
-    this.numContainer.gameObject.SetActive(true);
-    this.saveButton.gameObject.SetActive(false);
-    this.deleteButton.gameObject.SetActive(true);
-    this.collider.enabled = true;
-    this.background.color = Functions.HexToColor(this.colorActive);
-  }
+	public Transform numContainer;
 
-  public void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
-      return;
-    this.background.color = Functions.HexToColor(this.colorHover);
-    PopupManager.Instance.SetText(string.Format(Texts.Instance.GetText("loadThisPerkConf"), (object) this.cards.text), true);
-  }
+	public int slot;
 
-  public void OnMouseExit()
-  {
-    this.background.color = Functions.HexToColor(this.colorActive);
-    PopupManager.Instance.ClosePopup();
-  }
+	public Transform saveButton;
 
-  public void OnMouseUp()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
-      return;
-    PerkTree.Instance.LoadPerkConfig(this.slot);
-    PopupManager.Instance.ClosePopup();
-  }
+	public Transform deleteButton;
+
+	private string colorActive = "#37303C";
+
+	private string colorHover = "#735687";
+
+	private string colorEmpty = "#54475E";
+
+	private BoxCollider2D collider;
+
+	private bool initiated;
+
+	private void Init()
+	{
+		collider = GetComponent<BoxCollider2D>();
+		saveButton.GetComponent<BotonGeneric>().auxInt = slot;
+		deleteButton.GetComponent<BotonGeneric>().auxInt = slot;
+	}
+
+	public void SetDisable(bool _state)
+	{
+		if (!initiated)
+		{
+			Init();
+		}
+		backgroundDisable.gameObject.SetActive(_state);
+	}
+
+	public void SetEmpty(bool state)
+	{
+		if (!initiated)
+		{
+			Init();
+		}
+		title.text = Texts.Instance.GetText("emptySave");
+		background.color = Functions.HexToColor(colorEmpty);
+		numContainer.gameObject.SetActive(value: false);
+		saveButton.gameObject.SetActive(value: true);
+		deleteButton.gameObject.SetActive(value: false);
+		collider.enabled = false;
+		if (state)
+		{
+			saveButton.GetComponent<BotonGeneric>().Enable();
+		}
+		else
+		{
+			saveButton.GetComponent<BotonGeneric>().Disable();
+		}
+	}
+
+	public void SetActive(string _title, string _num)
+	{
+		if (!initiated)
+		{
+			Init();
+		}
+		title.text = _title;
+		cards.text = _num;
+		background.color = Functions.HexToColor(colorActive);
+		numContainer.gameObject.SetActive(value: true);
+		saveButton.gameObject.SetActive(value: false);
+		deleteButton.gameObject.SetActive(value: true);
+		collider.enabled = true;
+		background.color = Functions.HexToColor(colorActive);
+	}
+
+	public void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive())
+		{
+			background.color = Functions.HexToColor(colorHover);
+			PopupManager.Instance.SetText(string.Format(Texts.Instance.GetText("loadThisPerkConf"), cards.text), fast: true);
+		}
+	}
+
+	public void OnMouseExit()
+	{
+		background.color = Functions.HexToColor(colorActive);
+		PopupManager.Instance.ClosePopup();
+	}
+
+	public void OnMouseUp()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive())
+		{
+			PerkTree.Instance.LoadPerkConfig(slot);
+			PopupManager.Instance.ClosePopup();
+		}
+	}
 }

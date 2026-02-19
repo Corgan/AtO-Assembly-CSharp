@@ -1,130 +1,163 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EpicToonFX.ETFXEffectControllerPooled
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
-namespace EpicToonFX
+namespace EpicToonFX;
+
+public class ETFXEffectControllerPooled : MonoBehaviour
 {
-  public class ETFXEffectControllerPooled : MonoBehaviour
-  {
-    public GameObject[] effects;
-    private List<GameObject> effectsPool;
-    private int effectIndex;
-    [Space(10f)]
-    [Header("Spawn Settings")]
-    public bool disableLights = true;
-    public bool disableSound = true;
-    public float startDelay = 0.2f;
-    public float respawnDelay = 0.5f;
-    public bool slideshowMode;
-    public bool autoRotation;
-    [Range(0.001f, 0.5f)]
-    public float autoRotationSpeed = 0.1f;
-    private GameObject currentEffect;
-    private Text effectNameText;
-    private Text effectIndexText;
-    private ETFXMouseOrbit etfxMouseOrbit;
+	public GameObject[] effects;
 
-    private void Awake()
-    {
-      this.effectNameText = GameObject.Find("EffectName").GetComponent<Text>();
-      this.effectIndexText = GameObject.Find("EffectIndex").GetComponent<Text>();
-      this.etfxMouseOrbit = Camera.main.GetComponent<ETFXMouseOrbit>();
-      this.etfxMouseOrbit.etfxEffectControllerPooled = this;
-      this.effectsPool = new List<GameObject>();
-      for (int index = 0; index < this.effects.Length; ++index)
-      {
-        GameObject gameObject = Object.Instantiate<GameObject>(this.effects[index], this.transform.position, Quaternion.identity);
-        gameObject.transform.parent = this.transform;
-        this.effectsPool.Add(gameObject);
-        gameObject.SetActive(false);
-      }
-    }
+	private List<GameObject> effectsPool;
 
-    private void Start() => this.Invoke("InitializeLoop", this.startDelay);
+	private int effectIndex;
 
-    private void Update()
-    {
-      if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
-        this.NextEffect();
-      if (!Input.GetKeyDown(KeyCode.A) && !Input.GetKeyDown(KeyCode.LeftArrow))
-        return;
-      this.PreviousEffect();
-    }
+	[Space(10f)]
+	[Header("Spawn Settings")]
+	public bool disableLights = true;
 
-    private void FixedUpdate()
-    {
-      if (!this.autoRotation)
-        return;
-      this.etfxMouseOrbit.SetAutoRotationSpeed(this.autoRotationSpeed);
-      if (this.etfxMouseOrbit.isAutoRotating)
-        return;
-      this.etfxMouseOrbit.InitializeAutoRotation();
-    }
+	public bool disableSound = true;
 
-    public void InitializeLoop() => this.StartCoroutine(this.EffectLoop());
+	public float startDelay = 0.2f;
 
-    public void NextEffect()
-    {
-      if (this.effectIndex < this.effects.Length - 1)
-        ++this.effectIndex;
-      else
-        this.effectIndex = 0;
-      this.CleanCurrentEffect();
-    }
+	public float respawnDelay = 0.5f;
 
-    public void PreviousEffect()
-    {
-      if (this.effectIndex > 0)
-        --this.effectIndex;
-      else
-        this.effectIndex = this.effects.Length - 1;
-      this.CleanCurrentEffect();
-    }
+	public bool slideshowMode;
 
-    private void CleanCurrentEffect()
-    {
-      this.StopAllCoroutines();
-      if ((Object) this.currentEffect != (Object) null)
-        this.currentEffect.SetActive(false);
-      this.StartCoroutine(this.EffectLoop());
-    }
+	public bool autoRotation;
 
-    private IEnumerator EffectLoop()
-    {
-      this.currentEffect = this.effectsPool[this.effectIndex];
-      this.currentEffect.SetActive(true);
-      if (this.disableLights && (bool) (Object) this.currentEffect.GetComponent<Light>())
-        this.currentEffect.GetComponent<Light>().enabled = false;
-      if (this.disableSound && (bool) (Object) this.currentEffect.GetComponent<AudioSource>())
-        this.currentEffect.GetComponent<AudioSource>().enabled = false;
-      this.effectNameText.text = this.effects[this.effectIndex].name;
-      this.effectIndexText.text = (this.effectIndex + 1).ToString() + " of " + this.effects.Length.ToString();
-      ParticleSystem particleSystem = this.currentEffect.GetComponent<ParticleSystem>();
-      while (true)
-      {
-        do
-        {
-          yield return (object) new WaitForSeconds(particleSystem.main.duration + this.respawnDelay);
-          if (this.slideshowMode)
-            goto label_8;
-        }
-        while (particleSystem.main.loop);
-        this.currentEffect.SetActive(false);
-        this.currentEffect.SetActive(true);
-        continue;
-label_8:
-        if (particleSystem.main.loop)
-          yield return (object) new WaitForSeconds(this.respawnDelay);
-        this.NextEffect();
-      }
-    }
-  }
+	[Range(0.001f, 0.5f)]
+	public float autoRotationSpeed = 0.1f;
+
+	private GameObject currentEffect;
+
+	private Text effectNameText;
+
+	private Text effectIndexText;
+
+	private ETFXMouseOrbit etfxMouseOrbit;
+
+	private void Awake()
+	{
+		effectNameText = GameObject.Find("EffectName").GetComponent<Text>();
+		effectIndexText = GameObject.Find("EffectIndex").GetComponent<Text>();
+		etfxMouseOrbit = Camera.main.GetComponent<ETFXMouseOrbit>();
+		etfxMouseOrbit.etfxEffectControllerPooled = this;
+		effectsPool = new List<GameObject>();
+		for (int i = 0; i < effects.Length; i++)
+		{
+			GameObject gameObject = Object.Instantiate(effects[i], base.transform.position, Quaternion.identity);
+			gameObject.transform.parent = base.transform;
+			effectsPool.Add(gameObject);
+			gameObject.SetActive(value: false);
+		}
+	}
+
+	private void Start()
+	{
+		Invoke("InitializeLoop", startDelay);
+	}
+
+	private void Update()
+	{
+		if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+		{
+			NextEffect();
+		}
+		if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+		{
+			PreviousEffect();
+		}
+	}
+
+	private void FixedUpdate()
+	{
+		if (autoRotation)
+		{
+			etfxMouseOrbit.SetAutoRotationSpeed(autoRotationSpeed);
+			if (!etfxMouseOrbit.isAutoRotating)
+			{
+				etfxMouseOrbit.InitializeAutoRotation();
+			}
+		}
+	}
+
+	public void InitializeLoop()
+	{
+		StartCoroutine(EffectLoop());
+	}
+
+	public void NextEffect()
+	{
+		if (effectIndex < effects.Length - 1)
+		{
+			effectIndex++;
+		}
+		else
+		{
+			effectIndex = 0;
+		}
+		CleanCurrentEffect();
+	}
+
+	public void PreviousEffect()
+	{
+		if (effectIndex > 0)
+		{
+			effectIndex--;
+		}
+		else
+		{
+			effectIndex = effects.Length - 1;
+		}
+		CleanCurrentEffect();
+	}
+
+	private void CleanCurrentEffect()
+	{
+		StopAllCoroutines();
+		if (currentEffect != null)
+		{
+			currentEffect.SetActive(value: false);
+		}
+		StartCoroutine(EffectLoop());
+	}
+
+	private IEnumerator EffectLoop()
+	{
+		currentEffect = effectsPool[effectIndex];
+		currentEffect.SetActive(value: true);
+		if (disableLights && (bool)currentEffect.GetComponent<Light>())
+		{
+			currentEffect.GetComponent<Light>().enabled = false;
+		}
+		if (disableSound && (bool)currentEffect.GetComponent<AudioSource>())
+		{
+			currentEffect.GetComponent<AudioSource>().enabled = false;
+		}
+		effectNameText.text = effects[effectIndex].name;
+		effectIndexText.text = effectIndex + 1 + " of " + effects.Length;
+		ParticleSystem particleSystem = currentEffect.GetComponent<ParticleSystem>();
+		while (true)
+		{
+			yield return new WaitForSeconds(particleSystem.main.duration + respawnDelay);
+			if (!slideshowMode)
+			{
+				if (!particleSystem.main.loop)
+				{
+					currentEffect.SetActive(value: false);
+					currentEffect.SetActive(value: true);
+				}
+			}
+			else
+			{
+				if (particleSystem.main.loop)
+				{
+					yield return new WaitForSeconds(respawnDelay);
+				}
+				NextEffect();
+			}
+		}
+	}
 }

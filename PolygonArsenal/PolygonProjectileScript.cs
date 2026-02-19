@@ -1,109 +1,122 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PolygonArsenal.PolygonProjectileScript
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
-namespace PolygonArsenal
+namespace PolygonArsenal;
+
+public class PolygonProjectileScript : MonoBehaviour
 {
-  public class PolygonProjectileScript : MonoBehaviour
-  {
-    public GameObject impactParticle;
-    public GameObject projectileParticle;
-    public GameObject muzzleParticle;
-    public GameObject[] trailParticles;
-    [Header("Adjust if not using Sphere Collider")]
-    public float colliderRadius = 1f;
-    [Range(0.0f, 1f)]
-    public float collideOffset = 0.15f;
-    private Rigidbody rb;
-    private Transform myTransform;
-    private SphereCollider sphereCollider;
-    private float destroyTimer;
-    private bool destroyed;
+	public GameObject impactParticle;
 
-    private void Start()
-    {
-      this.rb = this.GetComponent<Rigidbody>();
-      this.myTransform = this.transform;
-      this.sphereCollider = this.GetComponent<SphereCollider>();
-      this.projectileParticle = Object.Instantiate<GameObject>(this.projectileParticle, this.myTransform.position, this.myTransform.rotation);
-      this.projectileParticle.transform.parent = this.myTransform;
-      if (!(bool) (Object) this.muzzleParticle)
-        return;
-      this.muzzleParticle = Object.Instantiate<GameObject>(this.muzzleParticle, this.myTransform.position, this.myTransform.rotation);
-      Object.Destroy((Object) this.muzzleParticle, 1.5f);
-    }
+	public GameObject projectileParticle;
 
-    private void FixedUpdate()
-    {
-      if (this.destroyed)
-        return;
-      float radius = (bool) (Object) this.sphereCollider ? this.sphereCollider.radius : this.colliderRadius;
-      Vector3 velocity = this.rb.velocity;
-      float maxDistance = velocity.magnitude * Time.deltaTime;
-      if (this.rb.useGravity)
-      {
-        velocity += Physics.gravity * Time.deltaTime;
-        maxDistance = velocity.magnitude * Time.deltaTime;
-      }
-      RaycastHit hitInfo;
-      if (Physics.SphereCast(this.myTransform.position, radius, velocity, out hitInfo, maxDistance))
-      {
-        this.myTransform.position = hitInfo.point + hitInfo.normal * this.collideOffset;
-        GameObject gameObject1 = Object.Instantiate<GameObject>(this.impactParticle, this.myTransform.position, Quaternion.FromToRotation(Vector3.up, hitInfo.normal));
-        if (hitInfo.transform.tag == "Destructible")
-          Object.Destroy((Object) hitInfo.transform.gameObject);
-        foreach (Object trailParticle in this.trailParticles)
-        {
-          GameObject gameObject2 = this.myTransform.Find(this.projectileParticle.name + "/" + trailParticle.name).gameObject;
-          gameObject2.transform.parent = (Transform) null;
-          Object.Destroy((Object) gameObject2, 3f);
-        }
-        Object.Destroy((Object) this.projectileParticle, 3f);
-        Object.Destroy((Object) gameObject1, 5f);
-        this.DestroyMissile();
-      }
-      else
-      {
-        this.destroyTimer += Time.deltaTime;
-        if ((double) this.destroyTimer >= 5.0)
-          this.DestroyMissile();
-      }
-      this.RotateTowardsDirection();
-    }
+	public GameObject muzzleParticle;
 
-    private void DestroyMissile()
-    {
-      this.destroyed = true;
-      foreach (Object trailParticle in this.trailParticles)
-      {
-        GameObject gameObject = this.myTransform.Find(this.projectileParticle.name + "/" + trailParticle.name).gameObject;
-        gameObject.transform.parent = (Transform) null;
-        Object.Destroy((Object) gameObject, 3f);
-      }
-      Object.Destroy((Object) this.projectileParticle, 3f);
-      Object.Destroy((Object) this.gameObject);
-      ParticleSystem[] componentsInChildren = this.GetComponentsInChildren<ParticleSystem>();
-      for (int index = 1; index < componentsInChildren.Length; ++index)
-      {
-        ParticleSystem particleSystem = componentsInChildren[index];
-        if (particleSystem.gameObject.name.Contains("Trail"))
-        {
-          particleSystem.transform.SetParent((Transform) null);
-          Object.Destroy((Object) particleSystem.gameObject, 2f);
-        }
-      }
-    }
+	public GameObject[] trailParticles;
 
-    private void RotateTowardsDirection()
-    {
-      if (!(this.rb.velocity != Vector3.zero))
-        return;
-      this.myTransform.rotation = Quaternion.Slerp(this.myTransform.rotation, Quaternion.LookRotation(this.rb.velocity.normalized, Vector3.up), Vector3.Angle(this.myTransform.forward, this.rb.velocity.normalized) * Time.deltaTime);
-    }
-  }
+	[Header("Adjust if not using Sphere Collider")]
+	public float colliderRadius = 1f;
+
+	[Range(0f, 1f)]
+	public float collideOffset = 0.15f;
+
+	private Rigidbody rb;
+
+	private Transform myTransform;
+
+	private SphereCollider sphereCollider;
+
+	private float destroyTimer;
+
+	private bool destroyed;
+
+	private void Start()
+	{
+		rb = GetComponent<Rigidbody>();
+		myTransform = base.transform;
+		sphereCollider = GetComponent<SphereCollider>();
+		projectileParticle = Object.Instantiate(projectileParticle, myTransform.position, myTransform.rotation);
+		projectileParticle.transform.parent = myTransform;
+		if ((bool)muzzleParticle)
+		{
+			muzzleParticle = Object.Instantiate(muzzleParticle, myTransform.position, myTransform.rotation);
+			Object.Destroy(muzzleParticle, 1.5f);
+		}
+	}
+
+	private void FixedUpdate()
+	{
+		if (destroyed)
+		{
+			return;
+		}
+		float radius = (sphereCollider ? sphereCollider.radius : colliderRadius);
+		Vector3 velocity = rb.velocity;
+		float maxDistance = velocity.magnitude * Time.deltaTime;
+		if (rb.useGravity)
+		{
+			velocity += Physics.gravity * Time.deltaTime;
+			maxDistance = velocity.magnitude * Time.deltaTime;
+		}
+		if (Physics.SphereCast(myTransform.position, radius, velocity, out var hitInfo, maxDistance))
+		{
+			myTransform.position = hitInfo.point + hitInfo.normal * collideOffset;
+			GameObject obj = Object.Instantiate(impactParticle, myTransform.position, Quaternion.FromToRotation(Vector3.up, hitInfo.normal));
+			if (hitInfo.transform.tag == "Destructible")
+			{
+				Object.Destroy(hitInfo.transform.gameObject);
+			}
+			GameObject[] array = trailParticles;
+			foreach (GameObject gameObject in array)
+			{
+				GameObject obj2 = myTransform.Find(projectileParticle.name + "/" + gameObject.name).gameObject;
+				obj2.transform.parent = null;
+				Object.Destroy(obj2, 3f);
+			}
+			Object.Destroy(projectileParticle, 3f);
+			Object.Destroy(obj, 5f);
+			DestroyMissile();
+		}
+		else
+		{
+			destroyTimer += Time.deltaTime;
+			if (destroyTimer >= 5f)
+			{
+				DestroyMissile();
+			}
+		}
+		RotateTowardsDirection();
+	}
+
+	private void DestroyMissile()
+	{
+		destroyed = true;
+		GameObject[] array = trailParticles;
+		foreach (GameObject gameObject in array)
+		{
+			GameObject obj = myTransform.Find(projectileParticle.name + "/" + gameObject.name).gameObject;
+			obj.transform.parent = null;
+			Object.Destroy(obj, 3f);
+		}
+		Object.Destroy(projectileParticle, 3f);
+		Object.Destroy(base.gameObject);
+		ParticleSystem[] componentsInChildren = GetComponentsInChildren<ParticleSystem>();
+		for (int j = 1; j < componentsInChildren.Length; j++)
+		{
+			ParticleSystem particleSystem = componentsInChildren[j];
+			if (particleSystem.gameObject.name.Contains("Trail"))
+			{
+				particleSystem.transform.SetParent(null);
+				Object.Destroy(particleSystem.gameObject, 2f);
+			}
+		}
+	}
+
+	private void RotateTowardsDirection()
+	{
+		if (rb.velocity != Vector3.zero)
+		{
+			Quaternion b = Quaternion.LookRotation(rb.velocity.normalized, Vector3.up);
+			float t = Vector3.Angle(myTransform.forward, rb.velocity.normalized) * Time.deltaTime;
+			myTransform.rotation = Quaternion.Slerp(myTransform.rotation, b, t);
+		}
+	}
 }

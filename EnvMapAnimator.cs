@@ -1,34 +1,29 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EnvMapAnimator
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class EnvMapAnimator : MonoBehaviour
 {
-  public Vector3 RotationSpeeds;
-  private TMP_Text m_textMeshPro;
-  private Material m_material;
+	public Vector3 RotationSpeeds;
 
-  private void Awake()
-  {
-    this.m_textMeshPro = this.GetComponent<TMP_Text>();
-    this.m_material = this.m_textMeshPro.fontSharedMaterial;
-  }
+	private TMP_Text m_textMeshPro;
 
-  private IEnumerator Start()
-  {
-    Matrix4x4 matrix = new Matrix4x4();
-    while (true)
-    {
-      matrix.SetTRS(Vector3.zero, Quaternion.Euler(Time.time * this.RotationSpeeds.x, Time.time * this.RotationSpeeds.y, Time.time * this.RotationSpeeds.z), Vector3.one);
-      this.m_material.SetMatrix("_EnvMatrix", matrix);
-      yield return (object) null;
-    }
-  }
+	private Material m_material;
+
+	private void Awake()
+	{
+		m_textMeshPro = GetComponent<TMP_Text>();
+		m_material = m_textMeshPro.fontSharedMaterial;
+	}
+
+	private IEnumerator Start()
+	{
+		Matrix4x4 matrix = default(Matrix4x4);
+		while (true)
+		{
+			matrix.SetTRS(Vector3.zero, Quaternion.Euler(Time.time * RotationSpeeds.x, Time.time * RotationSpeeds.y, Time.time * RotationSpeeds.z), Vector3.one);
+			m_material.SetMatrix("_EnvMatrix", matrix);
+			yield return null;
+		}
+	}
 }

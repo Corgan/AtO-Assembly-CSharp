@@ -1,2435 +1,2966 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EventManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using Photon.Pun;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using WebSocketSharp;
 
-#nullable disable
 public class EventManager : MonoBehaviour
 {
-  public TMP_Text title;
-  public TMP_Text description;
-  public TMP_Text descriptionRolls;
-  public TMP_Text result;
-  public TMP_Text notMeeted;
-  public TMP_Text resultOK;
-  public TMP_Text resultOKc;
-  public TMP_Text resultKO;
-  public TMP_Text resultKOc;
-  public SpriteRenderer image;
-  public Transform replysT;
-  public GameObject replyPrefab;
-  public Transform continueButton;
-  public Transform cardKO;
-  public Transform cardKOCards;
-  public TMP_Text cardKOText;
-  public Transform cardOK;
-  public Transform cardOKCards;
-  public TMP_Text cardOKText;
-  private GameObject[] replysGOs;
-  private Reply[] replys;
-  private int numReplys;
-  private int replysInvalid;
-  public Transform[] characterT = new Transform[4];
-  private Transform[] characterTcards = new Transform[4];
-  private SpriteRenderer[] characterSPR = new SpriteRenderer[4];
-  private TMP_Text[] characterTnum = new TMP_Text[4];
-  private TMP_Text[] charTresultOK = new TMP_Text[4];
-  private TMP_Text[] charTresultKO = new TMP_Text[4];
-  private EventData currentEvent;
-  private EventReplyData replySelected;
-  [SerializeField]
-  private float topReply = 3.3f;
-  [SerializeField]
-  private float distanceReply = 1.2f;
-  public int optionSelected = -1;
-  private Hero[] heroes = new Hero[4];
-  private Hero[] heroesSource = new Hero[4];
-  private bool[] charRoll;
-  private int[] charRollIterations;
-  private int[] charRollResult;
-  private CardData[] charRollType;
-  private bool criticalSuccess;
-  private bool criticalFail;
-  private bool[] charWinner = new bool[4];
-  private bool groupWinner;
-  private int cardOrder;
-  private bool isGroup;
-  private CombatData followUpCombatData;
-  private EventData followUpEventData;
-  private int followUpDiscount;
-  private int followUpMaxQuantity;
-  private Enums.CardRarity followUpMaxCraftRarity;
-  private bool followUpUpgrade;
-  private bool followUpHealer;
-  private bool followUpCraft;
-  private bool followUpCorruption;
-  private bool followUpItemCorruption;
-  private bool followUpCardPlayerGame;
-  private CardPlayerPackData followUpCardPlayerGamePack;
-  private bool followUpCardPlayerPairsGame;
-  private CardPlayerPairsPackData followUpCardPlayerPairsGamePack;
-  private string followUpShopListId;
-  private string followUpLootListId;
-  private NodeData destinationNode;
-  private List<string> cardCharacters;
-  public Dictionary<string, int> MultiplayerPlayerSelection = new Dictionary<string, int>();
-  private List<int> probability;
-  private bool statusReady;
-  public Transform waitingMsg;
-  public TMP_Text waitingMsgText;
-  private Coroutine manualReadyCo;
-  private PhotonView photonView;
-  private int modRollMadness;
-  private int dustQuantity;
-  private int goldQuantity;
-  private bool[] characterPassRoll = new bool[4];
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
+	public TMP_Text title;
 
-  public static EventManager Instance { get; private set; }
+	public TMP_Text description;
 
-  public Hero[] Heroes
-  {
-    get => this.heroes;
-    set => this.heroes = value;
-  }
+	public TMP_Text descriptionRolls;
 
-  private void Awake()
-  {
-    if ((UnityEngine.Object) EventManager.Instance == (UnityEngine.Object) null)
-      EventManager.Instance = this;
-    else if ((UnityEngine.Object) EventManager.Instance != (UnityEngine.Object) this)
-      UnityEngine.Object.Destroy((UnityEngine.Object) this.gameObject);
-    this.photonView = MapManager.Instance.GetPhotonView();
-    for (int index = 0; index < 4; ++index)
-    {
-      this.characterSPR[index] = this.characterT[index].GetComponent<SpriteRenderer>();
-      this.characterTcards[index] = this.characterT[index].GetChild(0).transform;
-      this.characterTnum[index] = this.characterT[index].GetChild(1).transform.GetComponent<TMP_Text>();
-      this.charTresultKO[index] = this.characterT[index].GetChild(2).transform.GetComponent<TMP_Text>();
-      this.charTresultOK[index] = this.characterT[index].GetChild(3).transform.GetComponent<TMP_Text>();
-      this.characterPassRoll[index] = false;
-    }
-    this.waitingMsg.gameObject.SetActive(false);
-  }
+	public TMP_Text result;
 
-  private void Update()
-  {
-    if (!GameManager.Instance.GetDeveloperMode() || !Input.GetKeyDown(KeyCode.F1))
-      return;
-    MapManager.Instance.ShowHideEvent();
-  }
+	public TMP_Text notMeeted;
 
-  private void Start()
-  {
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      this.statusReady = false;
-      this.continueButton.GetComponent<BotonGeneric>().SetBackgroundColor(Functions.HexToColor(Globals.Instance.ClassColor["warrior"]));
-      if (NetworkManager.Instance.IsMaster())
-        NetworkManager.Instance.ClearAllPlayerManualReady();
-    }
-    this.continueButton.gameObject.SetActive(false);
-  }
+	public TMP_Text resultOK;
 
-  public void Show()
-  {
-    AudioManager.Instance.DoBSO("Event");
-    this.gameObject.SetActive(true);
-    GameManager.Instance.CleanTempContainer();
-    PopupManager.Instance.ClosePopup();
-    MapManager.Instance.HidePopup();
-    MapManager.Instance.sideCharacters.InCharacterScreen(true);
-    MapManager.Instance.sideCharacters.ResetCharacters();
-    AlertManager.Instance.HideAlert();
-    SettingsManager.Instance.ShowSettings(false);
-    DamageMeterManager.Instance.Hide();
-    MapManager.Instance.characterWindow.HideAllWindows();
-  }
+	public TMP_Text resultOKc;
 
-  public void CloseEvent()
-  {
-    Functions.DebugLogGD("EVENT CloseEvent", "trace");
-    foreach (Component component in this.replysT)
-      UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
-    MapManager.Instance.sideCharacters.InCharacterScreen(false);
-    PopupManager.Instance.ClosePopup();
-    AudioManager.Instance.DoBSO("Map");
-    SaveManager.SavePlayerData();
-    MapManager.Instance.CloseEventFromEvent(this.destinationNode, this.followUpCombatData, this.followUpEventData, this.followUpUpgrade, this.followUpDiscount, this.followUpMaxQuantity, this.followUpHealer, this.followUpCraft, this.followUpShopListId, this.followUpLootListId, this.followUpMaxCraftRarity, this.followUpCardPlayerGame, this.followUpCardPlayerGamePack, this.followUpCardPlayerPairsGame, this.followUpCardPlayerPairsGamePack, this.followUpCorruption, this.followUpItemCorruption);
-  }
+	public TMP_Text resultKO;
 
-  public void SetEvent(EventData _eventData)
-  {
-    this.destinationNode = (NodeData) null;
-    this.followUpCombatData = (CombatData) null;
-    this.followUpEventData = (EventData) null;
-    this.followUpDiscount = 0;
-    this.followUpMaxQuantity = -1;
-    this.followUpMaxCraftRarity = Enums.CardRarity.Common;
-    this.followUpUpgrade = false;
-    this.followUpHealer = false;
-    this.followUpCraft = false;
-    this.followUpCardPlayerGame = false;
-    this.followUpCardPlayerGamePack = (CardPlayerPackData) null;
-    this.followUpShopListId = "";
-    this.followUpLootListId = "";
-    this.currentEvent = Globals.Instance.GetEventData(_eventData.EventId);
-    this.optionSelected = -1;
-    this.cardOrder = 1000;
-    if (AtOManager.Instance.GetNgPlus() >= 4 || AtOManager.Instance.IsChallengeTraitActive("unlucky"))
-      this.modRollMadness = 1;
-    else if (AtOManager.Instance.IsChallengeTraitActive("lucky"))
-      this.modRollMadness = -1;
-    if ((UnityEngine.Object) this.currentEvent == (UnityEngine.Object) null)
-      return;
-    this.cardCharacters = new List<string>();
-    string text1 = Texts.Instance.GetText(_eventData.EventId + "_nm", "events");
-    if (text1 != "")
-    {
-      this.title.text = text1;
-    }
-    else
-    {
-      Debug.LogError((object) (_eventData.EventId + " <EventName> missing translation"));
-      this.title.text = this.currentEvent.EventName;
-    }
-    StringBuilder stringBuilder = new StringBuilder();
-    string text2 = Texts.Instance.GetText(_eventData.EventId + "_dsc", "events");
-    if (text2 != "")
-    {
-      stringBuilder.Append(text2);
-    }
-    else
-    {
-      Debug.LogError((object) (_eventData.EventId + " <Description> missing translation"));
-      stringBuilder.Append(this.currentEvent.Description);
-    }
-    stringBuilder.Append("\n\n<color=#333>");
-    string text3 = Texts.Instance.GetText(_eventData.EventId + "_dsca", "events");
-    if (text3 != "")
-      stringBuilder.Append(text3);
-    else
-      stringBuilder.Append(this.currentEvent.DescriptionAction);
-    this.description.text = stringBuilder.ToString();
-    stringBuilder.Clear();
-    stringBuilder.Append("<color=#FFF>");
-    stringBuilder.Append(Texts.Instance.GetText("eventRolls"));
-    stringBuilder.Append("</color><br><br>");
-    stringBuilder.Append("<u>");
-    stringBuilder.Append(Texts.Instance.GetText("single"));
-    stringBuilder.Append("</u><br>");
-    stringBuilder.Append(Texts.Instance.GetText("singleDesc"));
-    stringBuilder.Append("<br><br>");
-    stringBuilder.Append("<u>");
-    stringBuilder.Append(Texts.Instance.GetText("competition"));
-    stringBuilder.Append("</u><br>");
-    stringBuilder.Append(Texts.Instance.GetText("competitionDesc"));
-    stringBuilder.Append("<br><br>");
-    stringBuilder.Append("<u>");
-    stringBuilder.Append(Texts.Instance.GetText("group"));
-    stringBuilder.Append("</u><br>");
-    stringBuilder.Append(Texts.Instance.GetText("groupDesc"));
-    this.descriptionRolls.text = stringBuilder.ToString();
-    if ((UnityEngine.Object) this.currentEvent.EventSpriteBook != (UnityEngine.Object) null)
-      this.image.sprite = this.currentEvent.EventSpriteBook;
-    this.numReplys = this.currentEvent.Replys.Length;
-    this.replysGOs = new GameObject[this.numReplys];
-    this.replys = new Reply[this.numReplys];
-    this.heroes = AtOManager.Instance.GetTeam();
-    for (int index = 0; index < 4; ++index)
-      this.charWinner[index] = true;
-    this.Show();
-    this.SetProbability();
-  }
+	public TMP_Text resultKOc;
 
-  private void EndProbability() => this.StartCoroutine(this.SetReplys());
+	public SpriteRenderer image;
 
-  private void SetProbability()
-  {
-    bool flag = false;
-    for (int index = 0; index < this.numReplys; ++index)
-    {
-      if (this.currentEvent.Replys[index].SsRoll)
-      {
-        flag = true;
-        break;
-      }
-    }
-    if (!flag)
-    {
-      this.EndProbability();
-    }
-    else
-    {
-      if (this.probability == null)
-        this.probability = new List<int>();
-      else
-        this.probability.Clear();
-      Dictionary<int, List<string>> dictionary = new Dictionary<int, List<string>>();
-      for (int key = 0; key < 4; ++key)
-      {
-        dictionary[key] = new List<string>();
-        if (this.heroes[key] != null && (UnityEngine.Object) this.heroes[key].HeroData != (UnityEngine.Object) null && this.heroes[key].Cards != null)
-        {
-          for (int index = 0; index < this.heroes[key].Cards.Count; ++index)
-          {
-            string lower = this.heroes[key].Cards[index].ToLower();
-            if (!Globals.Instance.CardListByClass[Enums.CardClass.Boon].Contains(lower) && !Globals.Instance.CardListByClass[Enums.CardClass.Injury].Contains(lower))
-              dictionary[key].Add(lower);
-          }
-        }
-      }
-      int num1 = 50;
-      int[] numArray = new int[4];
-      for (int key = 0; key < 4; ++key)
-      {
-        numArray[key] = dictionary[key].Count;
-        if (numArray[key] > num1)
-          numArray[key] = num1;
-      }
-      int count1 = numArray[0];
-      int count2 = numArray[1];
-      int count3 = numArray[2];
-      int count4 = numArray[3];
-      if (count1 > dictionary[0].Count)
-        count1 = dictionary[0].Count;
-      if (count2 > dictionary[1].Count)
-        count2 = dictionary[1].Count;
-      if (count3 > dictionary[2].Count)
-        count3 = dictionary[2].Count;
-      if (count4 > dictionary[3].Count)
-        count4 = dictionary[3].Count;
-      for (int index1 = 0; index1 < count1; ++index1)
-      {
-        string key1 = dictionary[0][index1];
-        int num2 = !Globals.Instance.CardEnergyCost.ContainsKey(key1) ? 0 : Globals.Instance.CardEnergyCost[key1];
-        if (count2 > 0)
-        {
-          for (int index2 = 0; index2 < count2; ++index2)
-          {
-            string key2 = dictionary[1][index2];
-            int num3 = !Globals.Instance.CardEnergyCost.ContainsKey(key2) ? num2 : num2 + Globals.Instance.CardEnergyCost[key2];
-            if (count3 > 0)
-            {
-              for (int index3 = 0; index3 < count3; ++index3)
-              {
-                string key3 = dictionary[2][index3];
-                int num4 = !Globals.Instance.CardEnergyCost.ContainsKey(key3) ? num3 : num3 + Globals.Instance.CardEnergyCost[key3];
-                if (count4 > 0)
-                {
-                  for (int index4 = 0; index4 < count4; ++index4)
-                  {
-                    string key4 = dictionary[3][index4];
-                    this.probability.Add(!Globals.Instance.CardEnergyCost.ContainsKey(key4) ? num4 : num4 + Globals.Instance.CardEnergyCost[key4]);
-                  }
-                }
-                else
-                  this.probability.Add(num4);
-              }
-            }
-            else
-              this.probability.Add(num3);
-          }
-        }
-        else
-          this.probability.Add(num2);
-      }
-      this.EndProbability();
-    }
-  }
+	public Transform replysT;
 
-  public int GetProbability(int result, bool higherOrEqual)
-  {
-    int _times = 0;
-    for (int index = 0; index < this.probability.Count; ++index)
-    {
-      if (result == this.probability[index])
-        ++_times;
-      else if (this.probability[index] > result & higherOrEqual)
-        ++_times;
-      else if (this.probability[index] < result && !higherOrEqual)
-        ++_times;
-    }
-    return AtOManager.Instance.currentMapNode == "tutorial_2" ? 100 : this.ProbabilityResult(_times, this.probability.Count);
-  }
+	public GameObject replyPrefab;
 
-  private int ProbabilityResult(int _times, int _total)
-  {
-    int num = Mathf.CeilToInt((float) ((double) _times / (double) _total * 100.0));
-    if (num > 100)
-      num = 100;
-    else if (num < 0)
-      num = 0;
-    return num;
-  }
+	public Transform continueButton;
 
-  public int GetProbabilityType(Enums.CardType cType, string cClassId)
-  {
-    int _times = 0;
-    int index1 = -1;
-    for (int index2 = 0; index2 < this.heroes.Length; ++index2)
-    {
-      if (this.heroes[index2].HeroData.HeroSubClass.Id == cClassId)
-      {
-        index1 = index2;
-        break;
-      }
-    }
-    if (this.heroes[index1].GetItemToPassEventRoll() != "")
-      return 100;
-    int _total = 0;
-    for (int index3 = 0; index3 < this.heroes[index1].Cards.Count; ++index3)
-    {
-      string lower = this.heroes[index1].Cards[index3].ToLower();
-      if (!Globals.Instance.CardListByClass[Enums.CardClass.Boon].Contains(lower) && !Globals.Instance.CardListByClass[Enums.CardClass.Injury].Contains(lower))
-      {
-        if (Globals.Instance.CardListByType[cType].Contains(lower))
-          ++_times;
-        ++_total;
-      }
-    }
-    return this.ProbabilityResult(_times, _total);
-  }
+	public Transform cardKO;
 
-  public int GetProbabilitySingle(int result, bool higherOrEqual, int heroId)
-  {
-    if (this.heroes[heroId].GetItemToPassEventRoll() != "")
-      return 100;
-    int _times = 0;
-    int _total = 0;
-    if (this.heroes[heroId].Cards != null)
-    {
-      for (int index = 0; index < this.heroes[heroId].Cards.Count; ++index)
-      {
-        string lower = this.heroes[heroId].Cards[index].ToLower();
-        if (!Globals.Instance.CardListByClass[Enums.CardClass.Boon].Contains(lower) && !Globals.Instance.CardListByClass[Enums.CardClass.Injury].Contains(lower))
-        {
-          if (!Globals.Instance.CardEnergyCost.ContainsKey(lower))
-            Globals.Instance.CardEnergyCost.Add(lower, Globals.Instance.GetCardData(lower, false).EnergyCost);
-          int num = Globals.Instance.CardEnergyCost[lower];
-          if (result == num)
-            ++_times;
-          else if (num > result & higherOrEqual)
-            ++_times;
-          else if (num < result && !higherOrEqual)
-            ++_times;
-          ++_total;
-        }
-      }
-    }
-    return this.ProbabilityResult(_times, _total);
-  }
+	public Transform cardKOCards;
 
-  private IEnumerator SetReplys()
-  {
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      if (NetworkManager.Instance.IsMaster())
-      {
-        while (!NetworkManager.Instance.AllPlayersReady("eventreply"))
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        Functions.DebugLogGD("Game ready, Everybody checked eventreply");
-        NetworkManager.Instance.PlayersNetworkContinue("eventreply");
-        yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      }
-      else
-      {
-        NetworkManager.Instance.SetWaitingSyncro("eventreply", true);
-        NetworkManager.Instance.SetStatusReady("eventreply");
-        while (NetworkManager.Instance.WaitingSyncro["eventreply"])
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        Functions.DebugLogGD("eventreply, we can continue!");
-      }
-    }
-    GameManager.Instance.PlayLibraryAudio("ui_book_page");
-    GameManager.Instance.PlayLibraryAudio("ui_book_write");
-    int num = 0;
-    this.replysInvalid = 0;
-    int totalPlayersGold = AtOManager.Instance.GetTotalPlayersGold();
-    int totalPlayersDust = AtOManager.Instance.GetTotalPlayersDust();
-    for (int index1 = 0; index1 < this.numReplys && this.optionSelected <= -1; ++index1)
-    {
-      EventReplyData reply = this.currentEvent.Replys[index1];
-      bool flag1 = true;
-      if (!GameManager.Instance.IsMultiplayer() && reply.RequirementMultiplayer)
-        flag1 = false;
-      if (flag1 && (UnityEngine.Object) reply.RequiredClass != (UnityEngine.Object) null && !AtOManager.Instance.PlayerHasRequirementClass(reply.RequiredClass.Id))
-        flag1 = false;
-      if (flag1 && (UnityEngine.Object) reply.Requirement != (UnityEngine.Object) null && !AtOManager.Instance.PlayerHasRequirement(reply.Requirement))
-        flag1 = false;
-      if (flag1 && (UnityEngine.Object) reply.RequirementBlocked != (UnityEngine.Object) null && AtOManager.Instance.PlayerHasRequirement(reply.RequirementBlocked))
-        flag1 = false;
-      if (flag1 && (UnityEngine.Object) reply.RequirementItem != (UnityEngine.Object) null && AtOManager.Instance.PlayerHasRequirementItem(reply.RequirementItem, reply.RequiredClass) == -1)
-        flag1 = false;
-      if (flag1)
-      {
-        if (reply.SsRemoveItemSlot != Enums.ItemSlot.None && !AtOManager.Instance.SubClassDataHaveAnythingInSlot(reply.SsRemoveItemSlot, reply.RequiredClass))
-          flag1 = false;
-        if (flag1 && reply.SsCorruptItemSlot != Enums.ItemSlot.None && !AtOManager.Instance.SubClassDataHaveAnythingInSlot(reply.SsCorruptItemSlot, reply.RequiredClass))
-          flag1 = false;
-      }
-      if (flag1 && reply.RequirementCard != null && reply.RequirementCard.Count > 0)
-      {
-        flag1 = false;
-        for (int index2 = 0; index2 < reply.RequirementCard.Count; ++index2)
-        {
-          if ((UnityEngine.Object) reply.RequirementCard[index2] != (UnityEngine.Object) null && AtOManager.Instance.PlayerHasRequirementCard(reply.RequirementCard[index2], reply.RequiredClass))
-          {
-            flag1 = true;
-            break;
-          }
-        }
-      }
-      bool flag2 = false;
-      bool flag3 = false;
-      bool flag4 = false;
-      if (flag1)
-      {
-        if (reply.RequirementSku != "")
-        {
-          if (!GameManager.Instance.IsMultiplayer())
-          {
-            if (!SteamManager.Instance.PlayerHaveDLC(reply.RequirementSku))
-              flag4 = true;
-          }
-          else if (!NetworkManager.Instance.AnyPlayersHaveSku(reply.RequirementSku))
-            flag4 = true;
-        }
-        if (reply.GoldCost > 0 && totalPlayersGold < reply.GoldCost)
-          flag2 = true;
-        if (reply.DustCost > 0 && totalPlayersDust < reply.DustCost)
-          flag3 = true;
-      }
-      if (flag1)
-      {
-        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.replyPrefab, this.replysT);
-        gameObject.name = "reply_" + index1.ToString();
-        this.replysGOs[index1] = gameObject;
-        this.replys[index1] = gameObject.transform.GetComponent<Reply>();
-        if ((UnityEngine.Object) reply.Requirement != (UnityEngine.Object) null && (UnityEngine.Object) reply.Requirement.ItemSprite != (UnityEngine.Object) null)
-          this.replys[index1].SetImage(reply.Requirement.ItemSprite);
-        if (flag4)
-          this.replys[index1].Block(_showGoldShardMessage: false);
-        else if (flag2 | flag3)
-          this.replys[index1].Block();
-        ++num;
-      }
-      else
-      {
-        ++this.replysInvalid;
-        this.replysGOs[index1] = (GameObject) null;
-        this.replys[index1] = (Reply) null;
-      }
-    }
-    if (this.currentEvent.ReplyRandom > 0)
-    {
-      while (this.TotalValidGoInReplys() > this.currentEvent.ReplyRandom)
-      {
-        int randomIntRange = MapManager.Instance.GetRandomIntRange(0, this.replysGOs.Length);
-        if ((UnityEngine.Object) this.replysGOs[randomIntRange] != (UnityEngine.Object) null)
-        {
-          UnityEngine.Object.Destroy((UnityEngine.Object) this.replysGOs[randomIntRange]);
-          this.replysGOs[randomIntRange] = (GameObject) null;
-        }
-      }
-      this.replysInvalid = this.replysGOs.Length - this.TotalValidGoInReplys();
-    }
-    int _replyOrder = 0;
-    int replyIndexForAutomaticSelection = -1;
-    for (int _replyIndex = 0; _replyIndex < this.replysGOs.Length; ++_replyIndex)
-    {
-      if ((UnityEngine.Object) this.replysGOs[_replyIndex] != (UnityEngine.Object) null)
-      {
-        this.replysGOs[_replyIndex].transform.localPosition = new Vector3(0.0f, this.topReply - this.distanceReply * (float) _replyOrder, -1f);
-        this.replys[_replyIndex].Init(this.currentEvent.EventId, _replyIndex, _replyOrder);
-        ++_replyOrder;
-        replyIndexForAutomaticSelection = _replyIndex;
-      }
-    }
-    this.notMeeted.gameObject.SetActive(false);
-    if (this.replysInvalid > 0)
-    {
-      StringBuilder stringBuilder = new StringBuilder();
-      stringBuilder.Append(Texts.Instance.GetText("eventMissingOptions"));
-      stringBuilder.Append(" (");
-      stringBuilder.Append(this.replysInvalid);
-      stringBuilder.Append(")");
-      this.notMeeted.text = stringBuilder.ToString();
-      this.notMeeted.gameObject.SetActive(true);
-    }
-    if (!GameManager.Instance.IsMultiplayer() && _replyOrder == 1 && AtOManager.Instance.currentMapNode != "tutorial_2" && (UnityEngine.Object) this.currentEvent != (UnityEngine.Object) null && this.currentEvent.EventId != "e_challenge_finish" && !this.notMeeted.gameObject.activeSelf)
-    {
-      yield return (object) new WaitForSeconds(0.5f);
-      this.replys[replyIndexForAutomaticSelection].SelectThisOption();
-    }
-  }
+	public TMP_Text cardKOText;
 
-  private int TotalValidGoInReplys()
-  {
-    int num = 0;
-    for (int index = 0; index < this.replysGOs.Length; ++index)
-    {
-      if ((UnityEngine.Object) this.replysGOs[index] != (UnityEngine.Object) null)
-        ++num;
-    }
-    return num;
-  }
+	public Transform cardOK;
 
-  public void SelectOption(int _index)
-  {
-    if (this.optionSelected > -1)
-      return;
-    this.optionSelected = _index;
-    for (int index = 0; index < this.replys.Length; ++index)
-    {
-      if ((UnityEngine.Object) this.replys[index] != (UnityEngine.Object) null)
-        this.replys[index].DisableOption();
-    }
-    if (GameManager.Instance.IsMultiplayer())
-      this.photonView.RPC("NET_Event_OptionSelected", RpcTarget.All, (object) NetworkManager.Instance.GetPlayerNick(), (object) _index);
-    else
-      this.StartCoroutine(this.SelectOptionCo());
-  }
+	public Transform cardOKCards;
 
-  public void NET_OptionSelected(string _playerNick, int _option)
-  {
-    this.SelectOptionMP(_playerNick, _option);
-    GameManager.Instance.PlayLibraryAudio("ui_eventoptionselection");
-    if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster() || !AtOManager.Instance.followingTheLeader || !NetworkManager.Instance.PlayerIsMaster(_playerNick))
-      return;
-    this.StartCoroutine(this.AutoSelectClient(_option));
-  }
+	public TMP_Text cardOKText;
 
-  private IEnumerator AutoSelectClient(int _option)
-  {
-    if (_option < 0)
-    {
-      AtOManager.Instance.followingTheLeader = false;
-    }
-    else
-    {
-      while (this.replys == null || _option > this.replys.Length || (UnityEngine.Object) this.replys[_option] == (UnityEngine.Object) null)
-        yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-      this.replys[_option].SelectThisOption();
-    }
-  }
+	private GameObject[] replysGOs;
 
-  private void SelectOptionMP(string _playerNick, int _option)
-  {
-    if (!this.MultiplayerPlayerSelection.ContainsKey(_playerNick))
-      this.MultiplayerPlayerSelection.Add(_playerNick, _option);
-    for (int index = 0; index < this.replys.Length; ++index)
-    {
-      if ((UnityEngine.Object) this.replys[index] != (UnityEngine.Object) null && this.replys[index].GetOptionIndex() == _option)
-        this.replys[index].SelectedByMultiplayer(_playerNick);
-    }
-    if (!NetworkManager.Instance.IsMaster() || this.MultiplayerPlayerSelection.Count != NetworkManager.Instance.GetNumPlayers())
-      return;
-    this.SelectMultiplayerAnswer();
-  }
+	private Reply[] replys;
 
-  private void SelectMultiplayerAnswer()
-  {
-    int num = this.MultiplayerPlayerSelection.ElementAt<KeyValuePair<string, int>>(0).Value;
-    bool flag = false;
-    for (int index = 1; index < this.MultiplayerPlayerSelection.Count; ++index)
-    {
-      if (this.MultiplayerPlayerSelection.ElementAt<KeyValuePair<string, int>>(index).Value != num)
-      {
-        flag = true;
-        break;
-      }
-    }
-    if (!flag)
-      this.photonView.RPC("NET_Event_SelectAnswer", RpcTarget.All, (object) this.MultiplayerPlayerSelection.ElementAt<KeyValuePair<string, int>>(0).Value);
-    else
-      this.photonView.RPC("NET_DoConflict", RpcTarget.All);
-  }
+	private int numReplys;
 
-  public void NET_SelectAnswer(int _answerId)
-  {
-    this.optionSelected = _answerId;
-    this.StartCoroutine(this.SelectOptionCo());
-  }
+	private int replysInvalid;
 
-  private IEnumerator SelectOptionCo()
-  {
-    PopupManager.Instance.ClosePopup();
-    GameObject selectedGO = (GameObject) null;
-    for (int index = 0; index < this.replys.Length; ++index)
-    {
-      if ((UnityEngine.Object) this.replys[index] != (UnityEngine.Object) null)
-      {
-        if (this.replys[index].GetOptionIndex() != this.optionSelected)
-          this.replysGOs[index].gameObject.SetActive(false);
-        else
-          selectedGO = this.replysGOs[index];
-      }
-    }
-    float speed = (float) (((double) this.topReply - (double) selectedGO.transform.localPosition.y) * 0.20000000298023224);
-    yield return (object) Globals.Instance.WaitForSeconds(0.05f);
-    while ((double) selectedGO.transform.localPosition.y < (double) this.topReply)
-    {
-      selectedGO.transform.localPosition += new Vector3(0.0f, speed, 0.0f);
-      if ((double) speed > 0.10000000149011612)
-        speed *= 0.8f;
-      yield return (object) null;
-    }
-    selectedGO.transform.localPosition = new Vector3(selectedGO.transform.localPosition.x, this.topReply, selectedGO.transform.localPosition.z);
-    this.SelectOptionResult();
-  }
+	public Transform[] characterT = new Transform[4];
 
-  private void SelectOptionResult()
-  {
-    this.replySelected = this.currentEvent.Replys[this.optionSelected];
-    if (this.replySelected.GoldCost > 0)
-      AtOManager.Instance.PayGold(this.replySelected.GoldCost, false);
-    if (this.replySelected.DustCost > 0)
-      AtOManager.Instance.PayDust(this.replySelected.DustCost, false);
-    if (this.replySelected.SsRoll)
-    {
-      this.StartCoroutine(this.ShowCharactersRoll());
-    }
-    else
-    {
-      this.groupWinner = true;
-      this.FinalResolution();
-    }
-  }
+	private Transform[] characterTcards = new Transform[4];
 
-  private IEnumerator ShowCharactersRoll()
-  {
-    EventManager eventManager = this;
-    StringBuilder stringBuilder = new StringBuilder();
-    if (eventManager.replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
-    {
-      stringBuilder.Append(">=");
-      stringBuilder.Append(eventManager.replySelected.SsRollNumber + eventManager.modRollMadness);
-    }
-    else if (eventManager.replySelected.SsRollMode == Enums.RollMode.LowerOrEqual)
-    {
-      stringBuilder.Append("<=");
-      stringBuilder.Append(eventManager.replySelected.SsRollNumber - eventManager.modRollMadness);
-    }
-    else if (eventManager.replySelected.SsRollMode == Enums.RollMode.Highest)
-      stringBuilder.Append(">>");
-    else if (eventManager.replySelected.SsRollMode == Enums.RollMode.Lowest)
-    {
-      stringBuilder.Append("<<");
-    }
-    else
-    {
-      stringBuilder.Append("~");
-      stringBuilder.Append(eventManager.replySelected.SsRollNumber);
-    }
-    eventManager.replys[eventManager.optionSelected].SetRollBox(stringBuilder.ToString());
-    eventManager.charRoll = new bool[4];
-    eventManager.charRollIterations = new int[4];
-    eventManager.charRollResult = new int[4];
-    eventManager.charRollType = new CardData[4];
-    for (int i = 0; i < 4; ++i)
-    {
-      if (eventManager.heroes[i] != null && !((UnityEngine.Object) eventManager.heroes[i].HeroData == (UnityEngine.Object) null))
-      {
-        bool flag = true;
-        eventManager.charRollIterations[i] = -1;
-        eventManager.characterSPR[i].sprite = eventManager.heroes[i].SpritePortrait;
-        if (eventManager.replySelected.SsRollTarget == Enums.RollTarget.Character && eventManager.replySelected.RequiredClass.SubClassName != eventManager.heroes[i].HeroData.HeroSubClass.SubClassName)
-          flag = false;
-        eventManager.charRoll[i] = flag;
-        if (!flag)
-          eventManager.TurnOffCharacter(i);
-        eventManager.characterT[i].gameObject.SetActive(true);
-        yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      }
-    }
-    if ((bool) (UnityEngine.Object) MapManager.Instance)
-    {
-      string[] strArray = new string[7]
-      {
-        AtOManager.Instance.GetGameId(),
-        "_",
-        AtOManager.Instance.currentMapNode,
-        "_",
-        null,
-        null,
-        null
-      };
-      int num = AtOManager.Instance.GetTeamTotalHp();
-      strArray[4] = num.ToString();
-      strArray[5] = "_";
-      num = AtOManager.Instance.GetTeamTotalExperience();
-      strArray[6] = num.ToString();
-      MapManager.Instance.GenerateRandomStringBatch(100, string.Concat(strArray).GetDeterministicHashCode());
-    }
-    eventManager.StartCoroutine(eventManager.RollCards());
-  }
+	private SpriteRenderer[] characterSPR = new SpriteRenderer[4];
 
-  private IEnumerator RollCards()
-  {
-    EventManager eventManager = this;
-    int rolls = 0;
-    for (int i = 0; i < 4; ++i)
-    {
-      if (eventManager.charRoll[i])
-      {
-        yield return (object) Globals.Instance.WaitForSeconds(0.25f);
-        eventManager.DoCard(i);
-        ++rolls;
-      }
-    }
-    yield return (object) Globals.Instance.WaitForSeconds((float) (2.2999999523162842 + (double) rolls * 0.10000000149011612));
-    eventManager.StartCoroutine(eventManager.EventResult());
-  }
+	private TMP_Text[] characterTnum = new TMP_Text[4];
 
-  private void DoCard(int heroIndex)
-  {
-    if (this.heroes[heroIndex] == null || this.heroes[heroIndex].Cards == null)
-      return;
-    ++this.charRollIterations[heroIndex];
-    if (this.charRollIterations[heroIndex] > 3)
-      this.charRollIterations[heroIndex] = 3;
-    this.charRollResult[heroIndex] = -1;
-    this.charRollType[heroIndex] = (CardData) null;
-    List<string> stringList = new List<string>();
-    for (int index = 0; index < this.heroes[heroIndex].Cards.Count; ++index)
-      stringList.Add(this.heroes[heroIndex].Cards[index]);
-    bool flag = false;
-    string id = "";
-    string itemToPassEventRoll = this.heroes[heroIndex].GetItemToPassEventRoll();
-    if (itemToPassEventRoll != "" && (this.replySelected.SsRollTarget == Enums.RollTarget.Character || this.replySelected.SsRollTarget == Enums.RollTarget.Single))
-    {
-      id = itemToPassEventRoll;
-      this.characterPassRoll[heroIndex] = true;
-    }
-    else
-    {
-      while (!flag)
-      {
-        id = stringList[MapManager.Instance.GetRandomIntRange(0, stringList.Count)];
-        CardData cardData = Globals.Instance.GetCardData(id, false);
-        if (cardData.CardClass != Enums.CardClass.Injury && cardData.CardClass != Enums.CardClass.Boon)
-          flag = true;
-      }
-    }
-    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.characterTcards[heroIndex]);
-    CardItem component = gameObject.GetComponent<CardItem>();
-    component.gameObject.name = "EventRollCard";
-    component.SetCard(id, false);
-    component.SetCardback(this.heroes[heroIndex]);
-    gameObject.transform.localPosition = new Vector3(0.0f, (float) (-0.75 - 0.10000000149011612 * (double) this.charRollIterations[heroIndex]), 0.0f);
-    component.DoReward(false, true, selectable: false);
-    component.SetDestinationLocalScale(0.9f);
-    component.TopLayeringOrder("Book", this.cardOrder);
-    this.cardOrder += 50;
-    component.DisableCollider();
-    this.charRollResult[heroIndex] = Globals.Instance.GetCardData(id, false).EnergyCost;
-    this.charRollType[heroIndex] = Globals.Instance.GetCardData(id, false);
-    if (this.replySelected.SsRollCard != Enums.CardType.None)
-      return;
-    this.StartCoroutine(this.ShowNumRoll(heroIndex));
-  }
+	private TMP_Text[] charTresultOK = new TMP_Text[4];
 
-  private void ClearNumRoll(int heroIndex) => this.characterTnum[heroIndex].text = "";
+	private TMP_Text[] charTresultKO = new TMP_Text[4];
 
-  private IEnumerator ShowNumRoll(int heroIndex)
-  {
-    if (!this.charRoll[heroIndex])
-    {
-      this.characterTnum[heroIndex].text = "";
-    }
-    else
-    {
-      yield return (object) Globals.Instance.WaitForSeconds(2.2f);
-      this.characterTcards[heroIndex].GetChild(0).GetComponent<CardItem>().active = true;
-      this.characterTnum[heroIndex].text = this.charRollResult[heroIndex].ToString();
-    }
-  }
+	private EventData currentEvent;
 
-  private IEnumerator EventResult()
-  {
-    EventManager eventManager = this;
-    bool flag = false;
-    int num1 = 0;
-    while (!flag)
-    {
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      num1 = 0;
-      flag = true;
-      for (int index = 0; index < 4; ++index)
-      {
-        if (eventManager.charRoll[index] && eventManager.charRollResult[index] == -1)
-        {
-          flag = false;
-          break;
-        }
-        if (eventManager.charRoll[index])
-          num1 += eventManager.charRollResult[index];
-      }
-    }
-    eventManager.isGroup = true;
-    bool success1 = false;
-    int ssRollNumber = eventManager.replySelected.SsRollNumber;
-    int rollNumberCritical = eventManager.replySelected.SsRollNumberCritical;
-    int numberCriticalFail = eventManager.replySelected.SsRollNumberCriticalFail;
-    if (eventManager.replySelected.SsRollTarget == Enums.RollTarget.Group)
-    {
-      bool success2 = false;
-      if (eventManager.replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
-      {
-        if (num1 >= ssRollNumber + eventManager.modRollMadness)
-          success2 = true;
-        if (rollNumberCritical > -1 && num1 >= rollNumberCritical + eventManager.modRollMadness)
-          eventManager.criticalSuccess = true;
-        else if (rollNumberCritical > -1 && num1 <= numberCriticalFail + eventManager.modRollMadness)
-          eventManager.criticalFail = true;
-      }
-      else if (eventManager.replySelected.SsRollMode == Enums.RollMode.LowerOrEqual)
-      {
-        if (num1 <= ssRollNumber - eventManager.modRollMadness)
-          success2 = true;
-        if (rollNumberCritical > -1 && num1 <= rollNumberCritical - eventManager.modRollMadness)
-          eventManager.criticalSuccess = true;
-        else if (rollNumberCritical > -1 && num1 >= numberCriticalFail - eventManager.modRollMadness)
-          eventManager.criticalFail = true;
-      }
-      for (int index = 0; index < 4; ++index)
-        eventManager.charWinner[index] = success2;
-      eventManager.groupWinner = success2;
-      eventManager.StartCoroutine(eventManager.ShowResultTitle(success2));
-    }
-    else if (eventManager.replySelected.SsRollTarget == Enums.RollTarget.Character)
-    {
-      for (int index = 0; index < 4; ++index)
-      {
-        if (eventManager.charRoll[index])
-        {
-          success1 = false;
-          if (eventManager.characterPassRoll[index])
-          {
-            success1 = true;
-            if (eventManager.replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
-              eventManager.charRollResult[index] = ssRollNumber + eventManager.modRollMadness;
-            else if (eventManager.replySelected.SsRollMode == Enums.RollMode.LowerOrEqual)
-              eventManager.charRollResult[index] = ssRollNumber - eventManager.modRollMadness;
-          }
-          else if (eventManager.replySelected.SsRollCard != Enums.CardType.None)
-          {
-            if (eventManager.charRollType[index].HasCardType(eventManager.replySelected.SsRollCard))
-              success1 = true;
-          }
-          else if (eventManager.replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
-          {
-            if (eventManager.charRollResult[index] >= ssRollNumber + eventManager.modRollMadness)
-              success1 = true;
-          }
-          else if (eventManager.replySelected.SsRollMode == Enums.RollMode.LowerOrEqual && eventManager.charRollResult[index] <= ssRollNumber - eventManager.modRollMadness)
-            success1 = true;
-          eventManager.groupWinner = success1;
-        }
-      }
-      for (int index = 0; index < 4; ++index)
-        eventManager.charWinner[index] = eventManager.groupWinner;
-      eventManager.StartCoroutine(eventManager.ShowResultTitle(success1));
-    }
-    else if (eventManager.replySelected.SsRollTarget == Enums.RollTarget.Single)
-    {
-      eventManager.isGroup = false;
-      for (int heroIndex = 0; heroIndex < 4; ++heroIndex)
-      {
-        bool success3;
-        if (eventManager.characterPassRoll[heroIndex])
-        {
-          success3 = true;
-          if (eventManager.replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
-            eventManager.charRollResult[heroIndex] = ssRollNumber + eventManager.modRollMadness;
-          else if (eventManager.replySelected.SsRollMode == Enums.RollMode.LowerOrEqual)
-            eventManager.charRollResult[heroIndex] = ssRollNumber - eventManager.modRollMadness;
-        }
-        else
-        {
-          success3 = false;
-          if (eventManager.replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
-          {
-            if (eventManager.charRollResult[heroIndex] >= ssRollNumber + eventManager.modRollMadness)
-              success3 = true;
-          }
-          else if (eventManager.replySelected.SsRollMode == Enums.RollMode.LowerOrEqual && eventManager.charRollResult[heroIndex] <= ssRollNumber - eventManager.modRollMadness)
-            success3 = true;
-        }
-        eventManager.charWinner[heroIndex] = success3;
-        eventManager.StartCoroutine(eventManager.ShowResultTitle(success3, heroIndex));
-      }
-    }
-    else if (eventManager.replySelected.SsRollTarget == Enums.RollTarget.Competition)
-    {
-      eventManager.isGroup = false;
-      Dictionary<int, int> source = new Dictionary<int, int>();
-      for (int key = 0; key < 4; ++key)
-      {
-        eventManager.charWinner[key] = false;
-        if (eventManager.charRoll[key])
-          source.Add(key, eventManager.charRollResult[key]);
-      }
-      Dictionary<int, int> dictionary = source.OrderBy<KeyValuePair<int, int>, int>((Func<KeyValuePair<int, int>, int>) (x => x.Value)).ToDictionary<KeyValuePair<int, int>, int, int>((Func<KeyValuePair<int, int>, int>) (x => x.Key), (Func<KeyValuePair<int, int>, int>) (x => x.Value));
-      int num2 = -1;
-      int heroIndex = -1;
-      int index1 = dictionary.Count - 1;
-      KeyValuePair<int, int> keyValuePair;
-      if (index1 == 0)
-        heroIndex = dictionary.ElementAt<KeyValuePair<int, int>>(0).Key;
-      else if (eventManager.replySelected.SsRollMode == Enums.RollMode.Highest)
-      {
-        int num3 = dictionary.ElementAt<KeyValuePair<int, int>>(index1).Value;
-        keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(index1 - 1);
-        int num4 = keyValuePair.Value;
-        if (num3 == num4)
-        {
-          keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(index1);
-          num2 = keyValuePair.Value;
-        }
-        else
-        {
-          keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(index1);
-          heroIndex = keyValuePair.Key;
-        }
-      }
-      else if (eventManager.replySelected.SsRollMode == Enums.RollMode.Lowest)
-      {
-        int num5 = dictionary.ElementAt<KeyValuePair<int, int>>(0).Value;
-        keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(1);
-        int num6 = keyValuePair.Value;
-        if (num5 == num6)
-        {
-          keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(0);
-          num2 = keyValuePair.Value;
-        }
-        else
-        {
-          keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(0);
-          heroIndex = keyValuePair.Key;
-        }
-      }
-      if (num2 > -1)
-      {
-        for (int index2 = 0; index2 < dictionary.Count; ++index2)
-        {
-          keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(index2);
-          int key = keyValuePair.Key;
-          if (eventManager.charRoll[key])
-          {
-            keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(index2);
-            if (keyValuePair.Value == num2)
-            {
-              eventManager.charRoll[key] = true;
-              goto label_87;
-            }
-          }
-          eventManager.charRoll[key] = false;
-          eventManager.StartCoroutine(eventManager.ShowResultTitle(false, key));
-          eventManager.TurnOffCharacter(key);
-label_87:
-          eventManager.ClearNumRoll(key);
-        }
-        eventManager.StartCoroutine(eventManager.RollCards());
-        yield break;
-      }
-      else
-      {
-        eventManager.StartCoroutine(eventManager.ShowResultTitle(true, heroIndex));
-        eventManager.charWinner[heroIndex] = true;
-        for (int index3 = 0; index3 < dictionary.Count; ++index3)
-        {
-          keyValuePair = dictionary.ElementAt<KeyValuePair<int, int>>(index3);
-          int key = keyValuePair.Key;
-          if (key != heroIndex)
-          {
-            if (eventManager.charRoll[key])
-              eventManager.StartCoroutine(eventManager.ShowResultTitle(false, key));
-            eventManager.TurnOffCharacter(key);
-          }
-        }
-      }
-    }
-    eventManager.FinalResolution();
-  }
+	private EventReplyData replySelected;
 
-  private void FinalResolution()
-  {
-    GameManager.Instance.PlayLibraryAudio("ui_book_write");
-    bool flag1 = false;
-    bool flag2 = false;
-    if (this.replySelected.SsRoll)
-    {
-      if (this.isGroup)
-      {
-        if (this.groupWinner)
-          flag1 = true;
-        else
-          flag2 = true;
-      }
-      else
-      {
-        for (int index = 0; index < 4; ++index)
-        {
-          if (this.charWinner[index])
-            flag1 = true;
-          else
-            flag2 = true;
-        }
-      }
-    }
-    else
-    {
-      flag1 = true;
-      this.isGroup = true;
-    }
-    this.replys[this.optionSelected].HideRollBox();
-    if (AtOManager.Instance.Sandbox_alwaysPassEventRoll)
-    {
-      for (int index = 0; index < 4; ++index)
-        this.charWinner[index] = true;
-      this.criticalFail = false;
-      flag1 = true;
-      flag2 = false;
-    }
-    int num1 = 0;
-    int num2 = 0;
-    int num3 = 0;
-    int num4 = 0;
-    for (int index1 = 0; index1 < 4; ++index1)
-    {
-      if (this.heroes[index1] != null && !((UnityEngine.Object) this.heroes[index1].HeroData == (UnityEngine.Object) null))
-      {
-        if ((this.replySelected.ReplyActionText != Enums.EventAction.CharacterName || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName) && this.charWinner[index1])
-        {
-          if (!this.criticalSuccess)
-          {
-            if ((UnityEngine.Object) this.replySelected.SsAddCard1 != (UnityEngine.Object) null)
-            {
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.SsAddCard1.Id);
-              this.cardCharacters.Add(AtOManager.Instance.GetHero(index1).SourceName);
-            }
-            if ((UnityEngine.Object) this.replySelected.SsAddCard2 != (UnityEngine.Object) null)
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.SsAddCard2.Id);
-            if ((UnityEngine.Object) this.replySelected.SsAddCard3 != (UnityEngine.Object) null)
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.SsAddCard3.Id);
-          }
-          else
-          {
-            if ((UnityEngine.Object) this.replySelected.SscAddCard1 != (UnityEngine.Object) null)
-            {
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.SscAddCard1.Id);
-              this.cardCharacters.Add(AtOManager.Instance.GetHero(index1).SourceName);
-            }
-            if ((UnityEngine.Object) this.replySelected.SscAddCard2 != (UnityEngine.Object) null)
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.SscAddCard2.Id);
-            if ((UnityEngine.Object) this.replySelected.SscAddCard3 != (UnityEngine.Object) null)
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.SscAddCard3.Id);
-          }
-          if ((UnityEngine.Object) this.replySelected.SsPerkData != (UnityEngine.Object) null)
-            AtOManager.Instance.AddPerkToHero(index1, this.replySelected.SsPerkData.Id);
-          if ((UnityEngine.Object) this.replySelected.SsPerkData1 != (UnityEngine.Object) null)
-            AtOManager.Instance.AddPerkToHero(index1, this.replySelected.SsPerkData1.Id);
-        }
-        if ((this.replySelected.ReplyActionText != Enums.EventAction.CharacterName || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName) && !this.charWinner[index1])
-        {
-          if (!this.criticalFail)
-          {
-            if ((UnityEngine.Object) this.replySelected.FlAddCard1 != (UnityEngine.Object) null)
-            {
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.FlAddCard1.Id);
-              this.cardCharacters.Add(AtOManager.Instance.GetHero(index1).SourceName);
-            }
-            if ((UnityEngine.Object) this.replySelected.FlAddCard2 != (UnityEngine.Object) null)
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.FlAddCard2.Id);
-            if ((UnityEngine.Object) this.replySelected.FlAddCard3 != (UnityEngine.Object) null)
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.FlAddCard3.Id);
-          }
-          else
-          {
-            if ((UnityEngine.Object) this.replySelected.FlcAddCard1 != (UnityEngine.Object) null)
-            {
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.FlcAddCard1.Id);
-              this.cardCharacters.Add(AtOManager.Instance.GetHero(index1).SourceName);
-            }
-            if ((UnityEngine.Object) this.replySelected.FlcAddCard2 != (UnityEngine.Object) null)
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.FlcAddCard2.Id);
-            if ((UnityEngine.Object) this.replySelected.FlcAddCard3 != (UnityEngine.Object) null)
-              AtOManager.Instance.AddCardToHero(index1, this.replySelected.FlcAddCard3.Id);
-          }
-        }
-        Enums.ItemSlot itemSlot;
-        if (this.charWinner[index1])
-        {
-          if (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick())
-          {
-            ++num1;
-            if (!this.criticalSuccess)
-            {
-              if (this.replySelected.SsUpgradeRandomCard)
-                AtOManager.Instance.UpgradeRandomCardToHero(index1, this.replySelected.SsMaxQuantity);
-              if ((bool) (UnityEngine.Object) this.replySelected.SsAddItem && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-              {
-                string id = this.replySelected.SsAddItem.Id;
-                this.cardCharacters.Add(AtOManager.Instance.GetHero(index1).SourceName);
-                this.StartCoroutine(this.GenerateRewardCard(true, id));
-                if (!GameManager.Instance.IsMultiplayer())
-                  AtOManager.Instance.AddItemToHero(index1, id);
-                else
-                  AtOManager.Instance.AddItemToHeroMP(index1, id);
-              }
-              if (this.replySelected.SsRemoveItemSlot != Enums.ItemSlot.None && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-              {
-                List<string> stringList1 = new List<string>();
-                if (this.replySelected.SsRemoveItemSlot == Enums.ItemSlot.AllWithoutPet)
-                {
-                  stringList1.Add("weapon");
-                  stringList1.Add("armor");
-                  stringList1.Add("jewelry");
-                  stringList1.Add("accesory");
-                }
-                else if (this.replySelected.SsRemoveItemSlot == Enums.ItemSlot.AllIncludedPet)
-                {
-                  stringList1.Add("weapon");
-                  stringList1.Add("armor");
-                  stringList1.Add("jewelry");
-                  stringList1.Add("accesory");
-                  stringList1.Add("pet");
-                }
-                else
-                {
-                  List<string> stringList2 = stringList1;
-                  itemSlot = this.replySelected.SsRemoveItemSlot;
-                  string lower = itemSlot.ToString().ToLower();
-                  stringList2.Add(lower);
-                }
-                for (int index2 = 0; index2 < stringList1.Count; ++index2)
-                  AtOManager.Instance.RemoveItemFromHeroFromEvent(true, index1, stringList1[index2]);
-              }
-              if (this.replySelected.SsCorruptItemSlot != Enums.ItemSlot.None && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-              {
-                List<string> stringList3 = new List<string>();
-                if (this.replySelected.SsCorruptItemSlot == Enums.ItemSlot.AllWithoutPet)
-                {
-                  stringList3.Add("weapon");
-                  stringList3.Add("armor");
-                  stringList3.Add("jewelry");
-                  stringList3.Add("accesory");
-                }
-                else if (this.replySelected.SsCorruptItemSlot == Enums.ItemSlot.AllIncludedPet)
-                {
-                  stringList3.Add("weapon");
-                  stringList3.Add("armor");
-                  stringList3.Add("jewelry");
-                  stringList3.Add("accesory");
-                  stringList3.Add("pet");
-                }
-                else
-                {
-                  List<string> stringList4 = stringList3;
-                  itemSlot = this.replySelected.SsCorruptItemSlot;
-                  string lower = itemSlot.ToString().ToLower();
-                  stringList4.Add(lower);
-                }
-                for (int index3 = 0; index3 < stringList3.Count; ++index3)
-                  AtOManager.Instance.CorruptItemSlot(index1, stringList3[index3]);
-              }
-            }
-            else
-            {
-              if (this.replySelected.SscUpgradeRandomCard)
-                AtOManager.Instance.UpgradeRandomCardToHero(index1, this.replySelected.SscMaxQuantity);
-              if ((bool) (UnityEngine.Object) this.replySelected.SscAddItem && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-              {
-                string id = this.replySelected.SscAddItem.Id;
-                this.cardCharacters.Add(AtOManager.Instance.GetHero(index1).SourceName);
-                this.StartCoroutine(this.GenerateRewardCard(true, id));
-                if (!GameManager.Instance.IsMultiplayer())
-                  AtOManager.Instance.AddItemToHero(index1, id);
-                else
-                  AtOManager.Instance.AddItemToHeroMP(index1, id);
-              }
-              if (this.replySelected.SscRemoveItemSlot != Enums.ItemSlot.None && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-              {
-                List<string> stringList5 = new List<string>();
-                if (this.replySelected.SscRemoveItemSlot == Enums.ItemSlot.AllWithoutPet)
-                {
-                  stringList5.Add("weapon");
-                  stringList5.Add("armor");
-                  stringList5.Add("jewelry");
-                  stringList5.Add("accesory");
-                }
-                else if (this.replySelected.SscRemoveItemSlot == Enums.ItemSlot.AllIncludedPet)
-                {
-                  stringList5.Add("weapon");
-                  stringList5.Add("armor");
-                  stringList5.Add("jewelry");
-                  stringList5.Add("accesory");
-                  stringList5.Add("pet");
-                }
-                else
-                {
-                  List<string> stringList6 = stringList5;
-                  itemSlot = this.replySelected.SscRemoveItemSlot;
-                  string lower = itemSlot.ToString().ToLower();
-                  stringList6.Add(lower);
-                }
-                for (int index4 = 0; index4 < stringList5.Count; ++index4)
-                  AtOManager.Instance.RemoveItemFromHeroFromEvent(true, index1, stringList5[index4]);
-              }
-              if (this.replySelected.SscCorruptItemSlot != Enums.ItemSlot.None && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-              {
-                List<string> stringList7 = new List<string>();
-                if (this.replySelected.SscCorruptItemSlot == Enums.ItemSlot.AllWithoutPet)
-                {
-                  stringList7.Add("weapon");
-                  stringList7.Add("armor");
-                  stringList7.Add("jewelry");
-                  stringList7.Add("accesory");
-                }
-                else if (this.replySelected.SscCorruptItemSlot == Enums.ItemSlot.AllIncludedPet)
-                {
-                  stringList7.Add("weapon");
-                  stringList7.Add("armor");
-                  stringList7.Add("jewelry");
-                  stringList7.Add("accesory");
-                  stringList7.Add("pet");
-                }
-                else
-                {
-                  List<string> stringList8 = stringList7;
-                  itemSlot = this.replySelected.SscCorruptItemSlot;
-                  string lower = itemSlot.ToString().ToLower();
-                  stringList8.Add(lower);
-                }
-                for (int index5 = 0; index5 < stringList7.Count; ++index5)
-                  AtOManager.Instance.CorruptItemSlot(index1, stringList7[index5]);
-              }
-            }
-          }
-          if (!this.criticalSuccess)
-          {
-            AtOManager.Instance.ModifyHeroLife(index1, this.replySelected.SsRewardHealthFlat, this.replySelected.SsRewardHealthPercent);
-            if (this.replySelected.SsExperienceReward != 0)
-            {
-              int rewardForCharacter = this.heroes[index1].CalculateRewardForCharacter(this.replySelected.SsExperienceReward);
-              num3 += rewardForCharacter;
-              this.heroes[index1].GrantExperience(rewardForCharacter);
-            }
-            if (this.replySelected.SsGoldReward != 0)
-            {
-              this.goldQuantity = this.replySelected.SsGoldReward;
-              if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-              {
-                if (!GameManager.Instance.IsObeliskChallenge())
-                  this.goldQuantity -= Functions.FuncRoundToInt((float) this.goldQuantity * 0.5f);
-                else
-                  this.goldQuantity -= Functions.FuncRoundToInt((float) this.goldQuantity * 0.3f);
-                if (this.goldQuantity < 0)
-                  this.goldQuantity = 0;
-              }
-              if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-                this.goldQuantity += Functions.FuncRoundToInt((float) this.goldQuantity * 0.5f);
-              AtOManager.Instance.GivePlayer(0, this.goldQuantity, this.heroes[index1].Owner);
-              if (this.goldQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick()))
-                PlayerManager.Instance.GoldGainedSum(this.goldQuantity, false);
-            }
-            if (this.replySelected.SsDustReward != 0)
-            {
-              this.dustQuantity = this.replySelected.SsDustReward;
-              if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-              {
-                if (!GameManager.Instance.IsObeliskChallenge())
-                  this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-                else
-                  this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.3f);
-                if (this.dustQuantity < 0)
-                  this.dustQuantity = 0;
-              }
-              if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-                this.dustQuantity += Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-              AtOManager.Instance.GivePlayer(1, this.dustQuantity, this.heroes[index1].Owner);
-              if (this.dustQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick()))
-                PlayerManager.Instance.DustGainedSum(this.dustQuantity, false);
-            }
-          }
-          else
-          {
-            AtOManager.Instance.ModifyHeroLife(index1, this.replySelected.SscRewardHealthFlat, this.replySelected.SscRewardHealthPercent);
-            if (this.replySelected.SscExperienceReward != 0)
-            {
-              int rewardForCharacter = this.heroes[index1].CalculateRewardForCharacter(this.replySelected.SscExperienceReward);
-              num3 += rewardForCharacter;
-              this.heroes[index1].GrantExperience(rewardForCharacter);
-            }
-            if (this.replySelected.SscGoldReward != 0)
-            {
-              this.goldQuantity = this.replySelected.SscGoldReward;
-              if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-              {
-                if (!GameManager.Instance.IsObeliskChallenge())
-                  this.goldQuantity -= Functions.FuncRoundToInt((float) this.goldQuantity * 0.5f);
-                else
-                  this.goldQuantity -= Functions.FuncRoundToInt((float) this.goldQuantity * 0.3f);
-                if (this.goldQuantity < 0)
-                  this.goldQuantity = 0;
-              }
-              if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-                this.goldQuantity += Functions.FuncRoundToInt((float) this.goldQuantity * 0.5f);
-              AtOManager.Instance.GivePlayer(0, this.goldQuantity, this.heroes[index1].Owner);
-              if (this.goldQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick()))
-                PlayerManager.Instance.GoldGainedSum(this.goldQuantity, false);
-            }
-            if (this.replySelected.SscDustReward != 0)
-            {
-              this.dustQuantity = this.replySelected.SscDustReward;
-              if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-              {
-                if (!GameManager.Instance.IsObeliskChallenge())
-                  this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-                else
-                  this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.3f);
-                if (this.dustQuantity < 0)
-                  this.dustQuantity = 0;
-              }
-              if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-                this.dustQuantity += Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-              AtOManager.Instance.GivePlayer(1, this.dustQuantity, this.heroes[index1].Owner);
-              if (this.dustQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick()))
-                PlayerManager.Instance.DustGainedSum(this.dustQuantity, false);
-            }
-          }
-        }
-        else if (!this.criticalFail)
-        {
-          if (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick())
-          {
-            ++num2;
-            if (this.replySelected.FlUpgradeRandomCard)
-              AtOManager.Instance.UpgradeRandomCardToHero(index1, this.replySelected.FlMaxQuantity);
-            if ((bool) (UnityEngine.Object) this.replySelected.FlAddItem && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-            {
-              string id = this.replySelected.FlAddItem.Id;
-              this.cardCharacters.Add(AtOManager.Instance.GetHero(index1).SourceName);
-              this.StartCoroutine(this.GenerateRewardCard(false, id));
-              if (!GameManager.Instance.IsMultiplayer())
-                AtOManager.Instance.AddItemToHero(index1, id);
-              else
-                AtOManager.Instance.AddItemToHeroMP(index1, id);
-            }
-            if (this.replySelected.FlRemoveItemSlot != Enums.ItemSlot.None && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-            {
-              List<string> stringList9 = new List<string>();
-              if (this.replySelected.FlRemoveItemSlot == Enums.ItemSlot.AllWithoutPet)
-              {
-                stringList9.Add("weapon");
-                stringList9.Add("armor");
-                stringList9.Add("jewelry");
-                stringList9.Add("accesory");
-              }
-              else if (this.replySelected.FlRemoveItemSlot == Enums.ItemSlot.AllIncludedPet)
-              {
-                stringList9.Add("weapon");
-                stringList9.Add("armor");
-                stringList9.Add("jewelry");
-                stringList9.Add("accesory");
-                stringList9.Add("pet");
-              }
-              else
-              {
-                List<string> stringList10 = stringList9;
-                itemSlot = this.replySelected.FlRemoveItemSlot;
-                string lower = itemSlot.ToString().ToLower();
-                stringList10.Add(lower);
-              }
-              for (int index6 = 0; index6 < stringList9.Count; ++index6)
-                AtOManager.Instance.RemoveItemFromHeroFromEvent(true, index1, stringList9[index6]);
-            }
-            if (this.replySelected.FlCorruptItemSlot != Enums.ItemSlot.None && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-            {
-              List<string> stringList11 = new List<string>();
-              if (this.replySelected.FlCorruptItemSlot == Enums.ItemSlot.AllWithoutPet)
-              {
-                stringList11.Add("weapon");
-                stringList11.Add("armor");
-                stringList11.Add("jewelry");
-                stringList11.Add("accesory");
-              }
-              else if (this.replySelected.FlCorruptItemSlot == Enums.ItemSlot.AllIncludedPet)
-              {
-                stringList11.Add("weapon");
-                stringList11.Add("armor");
-                stringList11.Add("jewelry");
-                stringList11.Add("accesory");
-                stringList11.Add("pet");
-              }
-              else
-              {
-                List<string> stringList12 = stringList11;
-                itemSlot = this.replySelected.FlCorruptItemSlot;
-                string lower = itemSlot.ToString().ToLower();
-                stringList12.Add(lower);
-              }
-              for (int index7 = 0; index7 < stringList11.Count; ++index7)
-                AtOManager.Instance.CorruptItemSlot(index1, stringList11[index7]);
-            }
-          }
-          AtOManager.Instance.ModifyHeroLife(index1, this.replySelected.FlRewardHealthFlat, this.replySelected.FlRewardHealthPercent);
-          if (this.replySelected.FlExperienceReward != 0)
-          {
-            int rewardForCharacter = this.heroes[index1].CalculateRewardForCharacter(this.replySelected.FlExperienceReward);
-            num4 += rewardForCharacter;
-            this.heroes[index1].GrantExperience(rewardForCharacter);
-          }
-          if (this.replySelected.FlGoldReward != 0)
-          {
-            this.goldQuantity = this.replySelected.FlGoldReward;
-            if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-            {
-              if (!GameManager.Instance.IsObeliskChallenge())
-                this.goldQuantity -= Functions.FuncRoundToInt((float) this.goldQuantity * 0.5f);
-              else
-                this.goldQuantity -= Functions.FuncRoundToInt((float) this.goldQuantity * 0.3f);
-              if (this.goldQuantity < 0)
-                this.goldQuantity = 0;
-            }
-            if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-              this.goldQuantity += Functions.FuncRoundToInt((float) this.goldQuantity * 0.5f);
-            AtOManager.Instance.GivePlayer(0, this.goldQuantity, this.heroes[index1].Owner);
-            if (this.goldQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick()))
-              PlayerManager.Instance.GoldGainedSum(this.goldQuantity, false);
-          }
-          if (this.replySelected.FlDustReward != 0)
-          {
-            this.dustQuantity = this.replySelected.FlDustReward;
-            if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-            {
-              if (!GameManager.Instance.IsObeliskChallenge())
-                this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-              else
-                this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.3f);
-              if (this.dustQuantity < 0)
-                this.dustQuantity = 0;
-            }
-            if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-              this.dustQuantity += Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-            AtOManager.Instance.GivePlayer(1, this.dustQuantity, this.heroes[index1].Owner);
-            if (this.dustQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick()))
-              PlayerManager.Instance.DustGainedSum(this.dustQuantity, false);
-          }
-        }
-        else
-        {
-          if (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick())
-          {
-            ++num2;
-            if (this.replySelected.FlcUpgradeRandomCard)
-              AtOManager.Instance.UpgradeRandomCardToHero(index1, this.replySelected.FlcMaxQuantity);
-            if ((bool) (UnityEngine.Object) this.replySelected.FlcAddItem && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-            {
-              string id = this.replySelected.FlcAddItem.Id;
-              this.cardCharacters.Add(AtOManager.Instance.GetHero(index1).SourceName);
-              this.StartCoroutine(this.GenerateRewardCard(false, id));
-              if (!GameManager.Instance.IsMultiplayer())
-                AtOManager.Instance.AddItemToHero(index1, id);
-              else
-                AtOManager.Instance.AddItemToHeroMP(index1, id);
-            }
-            if (this.replySelected.FlcRemoveItemSlot != Enums.ItemSlot.None && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-            {
-              List<string> stringList13 = new List<string>();
-              if (this.replySelected.FlcRemoveItemSlot == Enums.ItemSlot.AllWithoutPet)
-              {
-                stringList13.Add("weapon");
-                stringList13.Add("armor");
-                stringList13.Add("jewelry");
-                stringList13.Add("accesory");
-              }
-              else if (this.replySelected.FlcRemoveItemSlot == Enums.ItemSlot.AllIncludedPet)
-              {
-                stringList13.Add("weapon");
-                stringList13.Add("armor");
-                stringList13.Add("jewelry");
-                stringList13.Add("accesory");
-                stringList13.Add("pet");
-              }
-              else
-              {
-                List<string> stringList14 = stringList13;
-                itemSlot = this.replySelected.FlcRemoveItemSlot;
-                string lower = itemSlot.ToString().ToLower();
-                stringList14.Add(lower);
-              }
-              for (int index8 = 0; index8 < stringList13.Count; ++index8)
-                AtOManager.Instance.RemoveItemFromHeroFromEvent(true, index1, stringList13[index8]);
-            }
-            if (this.replySelected.FlcCorruptItemSlot != Enums.ItemSlot.None && ((UnityEngine.Object) this.replySelected.RequiredClass == (UnityEngine.Object) null || this.replySelected.RequiredClass.SubClassName == this.heroes[index1].HeroData.HeroSubClass.SubClassName))
-            {
-              List<string> stringList15 = new List<string>();
-              if (this.replySelected.FlcCorruptItemSlot == Enums.ItemSlot.AllWithoutPet)
-              {
-                stringList15.Add("weapon");
-                stringList15.Add("armor");
-                stringList15.Add("jewelry");
-                stringList15.Add("accesory");
-              }
-              else if (this.replySelected.FlcCorruptItemSlot == Enums.ItemSlot.AllIncludedPet)
-              {
-                stringList15.Add("weapon");
-                stringList15.Add("armor");
-                stringList15.Add("jewelry");
-                stringList15.Add("accesory");
-                stringList15.Add("pet");
-              }
-              else
-              {
-                List<string> stringList16 = stringList15;
-                itemSlot = this.replySelected.FlcCorruptItemSlot;
-                string lower = itemSlot.ToString().ToLower();
-                stringList16.Add(lower);
-              }
-              for (int index9 = 0; index9 < stringList15.Count; ++index9)
-                AtOManager.Instance.CorruptItemSlot(index1, stringList15[index9]);
-            }
-          }
-          AtOManager.Instance.ModifyHeroLife(index1, this.replySelected.FlcRewardHealthFlat, this.replySelected.FlcRewardHealthPercent);
-          if (this.replySelected.FlcExperienceReward != 0)
-          {
-            int rewardForCharacter = this.heroes[index1].CalculateRewardForCharacter(this.replySelected.FlcExperienceReward);
-            num4 += rewardForCharacter;
-            this.heroes[index1].GrantExperience(rewardForCharacter);
-          }
-          if (this.replySelected.FlcGoldReward != 0)
-          {
-            this.goldQuantity = this.replySelected.FlcGoldReward;
-            if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-            {
-              if (!GameManager.Instance.IsObeliskChallenge())
-                this.goldQuantity -= Functions.FuncRoundToInt((float) this.goldQuantity * 0.5f);
-              else
-                this.goldQuantity -= Functions.FuncRoundToInt((float) this.goldQuantity * 0.3f);
-              if (this.goldQuantity < 0)
-                this.goldQuantity = 0;
-            }
-            if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-              this.goldQuantity += Functions.FuncRoundToInt((float) this.goldQuantity * 0.5f);
-            AtOManager.Instance.GivePlayer(0, this.goldQuantity, this.heroes[index1].Owner);
-            if (this.goldQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick()))
-              PlayerManager.Instance.GoldGainedSum(this.goldQuantity, false);
-          }
-          if (this.replySelected.FlcDustReward != 0)
-          {
-            this.dustQuantity = this.replySelected.FlcDustReward;
-            if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-            {
-              if (!GameManager.Instance.IsObeliskChallenge())
-                this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-              else
-                this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.3f);
-              if (this.dustQuantity < 0)
-                this.dustQuantity = 0;
-            }
-            if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-              this.dustQuantity += Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-            AtOManager.Instance.GivePlayer(1, this.dustQuantity, this.heroes[index1].Owner);
-            if (this.dustQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || this.heroes[index1].Owner == NetworkManager.Instance.GetPlayerNick()))
-              PlayerManager.Instance.DustGainedSum(this.dustQuantity, false);
-          }
-        }
-      }
-    }
-    StringBuilder stringBuilder = new StringBuilder();
-    if (flag1)
-    {
-      if (!this.criticalSuccess)
-      {
-        this.destinationNode = this.replySelected.SsNodeTravel;
-        this.followUpCombatData = this.replySelected.SsCombat;
-        this.followUpEventData = this.replySelected.SsEvent;
-        if (!this.isGroup)
-        {
-          stringBuilder.Append("<color=#098C20><u>");
-          stringBuilder.Append(Texts.Instance.GetText("success"));
-          stringBuilder.Append("</u></color>\n\n");
-        }
-        string text = Texts.Instance.GetText(this.currentEvent.EventId + "_rp" + this.replySelected.IndexForAnswerTranslation.ToString() + "_s", "events");
-        if (text != "")
-        {
-          stringBuilder.Append(text);
-        }
-        else
-        {
-          Debug.LogError((object) (this.currentEvent.EventId + " <" + this.optionSelected.ToString() + "-> success> missing translation"));
-          stringBuilder.Append(this.replySelected.SsRewardText);
-        }
-        bool flag3 = false;
-        if (this.replySelected.SsGoldReward != 0 || this.replySelected.SsDustReward != 0 || num3 > 0 || this.replySelected.SsSupplyReward != 0)
-        {
-          stringBuilder.Append("\n\n<color=#202020>");
-          stringBuilder.Append(Texts.Instance.GetText("eventYouGet"));
-          stringBuilder.Append(" ");
-          flag3 = true;
-        }
-        if (this.replySelected.SsGoldReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=gold>");
-          stringBuilder.Append(this.goldQuantity * num1);
-          stringBuilder.Append("  ");
-        }
-        if (this.replySelected.SsDustReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=dust>");
-          stringBuilder.Append(this.dustQuantity * num1);
-          stringBuilder.Append("  ");
-        }
-        if (num3 > 0)
-        {
-          stringBuilder.Append(" <sprite name=experience>");
-          stringBuilder.Append(num3);
-          stringBuilder.Append("  ");
-        }
-        if (this.replySelected.SsSupplyReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=supply>");
-          stringBuilder.Append(this.replySelected.SsSupplyReward);
-          stringBuilder.Append("  ");
-          PlayerManager.Instance.GainSupply(this.replySelected.SsSupplyReward);
-        }
-        if ((UnityEngine.Object) this.replySelected.SsPerkData != (UnityEngine.Object) null)
-        {
-          stringBuilder.Append("<sprite name=");
-          stringBuilder.Append(this.replySelected.SsPerkData.Icon.name);
-          stringBuilder.Append("><space=-.1>");
-          stringBuilder.Append(this.replySelected.SsPerkData.IconTextValue);
-          stringBuilder.Append("  ");
-        }
-        if ((UnityEngine.Object) this.replySelected.SsPerkData1 != (UnityEngine.Object) null)
-        {
-          stringBuilder.Append("<sprite name=");
-          stringBuilder.Append(this.replySelected.SsPerkData1.Icon.name);
-          stringBuilder.Append("><space=-.1>");
-          stringBuilder.Append(this.replySelected.SsPerkData1.IconTextValue);
-          stringBuilder.Append("  ");
-        }
-        if (flag3)
-          stringBuilder.Append("</color>");
-        if ((UnityEngine.Object) this.replySelected.SsRequirementUnlock != (UnityEngine.Object) null)
-          AtOManager.Instance.AddPlayerRequirement(this.replySelected.SsRequirementUnlock);
-        if ((UnityEngine.Object) this.replySelected.SsRequirementUnlock2 != (UnityEngine.Object) null)
-          AtOManager.Instance.AddPlayerRequirement(this.replySelected.SsRequirementUnlock2);
-        if ((UnityEngine.Object) this.replySelected.SsAddCard1 != (UnityEngine.Object) null)
-          this.StartCoroutine(this.GenerateRewardCard(true, this.replySelected.SsAddCard1.Id));
-        if ((UnityEngine.Object) this.replySelected.SsRewardTier != (UnityEngine.Object) null)
-          AtOManager.Instance.SetEventRewardTier(this.replySelected.SsRewardTier);
-        if ((bool) (UnityEngine.Object) this.replySelected.SsRequirementLock2)
-          AtOManager.Instance.RemovePlayerRequirement(this.replySelected.SsRequirementLock2);
-        if ((bool) (UnityEngine.Object) this.replySelected.SsRequirementLock)
-          AtOManager.Instance.RemovePlayerRequirement(this.replySelected.SsRequirementLock);
-        if (this.replySelected.SsUpgradeUI)
-        {
-          this.followUpUpgrade = true;
-          this.followUpDiscount = this.replySelected.SsDiscount;
-          this.followUpMaxQuantity = this.replySelected.SsMaxQuantity;
-        }
-        if (this.replySelected.SsHealerUI)
-        {
-          this.followUpHealer = true;
-          this.followUpDiscount = this.replySelected.SsDiscount;
-          this.followUpMaxQuantity = this.replySelected.SsMaxQuantity;
-        }
-        if (this.replySelected.SsHealerUI)
-        {
-          this.followUpHealer = true;
-          this.followUpDiscount = this.replySelected.SsDiscount;
-          this.followUpMaxQuantity = this.replySelected.SsMaxQuantity;
-        }
-        if (this.replySelected.SsCraftUI)
-        {
-          this.followUpCraft = true;
-          this.followUpDiscount = this.replySelected.SsDiscount;
-          this.followUpMaxQuantity = this.replySelected.SsMaxQuantity;
-          this.followUpMaxCraftRarity = this.replySelected.SsCraftUIMaxType;
-        }
-        if (this.replySelected.SsCorruptionUI)
-        {
-          this.followUpCorruption = true;
-          this.followUpDiscount = this.replySelected.SsDiscount;
-          this.followUpMaxQuantity = this.replySelected.SsMaxQuantity;
-        }
-        if (this.replySelected.SsItemCorruptionUI)
-        {
-          this.followUpItemCorruption = true;
-          this.followUpDiscount = this.replySelected.SsDiscount;
-          this.followUpMaxQuantity = this.replySelected.SsMaxQuantity;
-        }
-        if ((UnityEngine.Object) this.replySelected.SsShopList != (UnityEngine.Object) null)
-        {
-          this.followUpShopListId = this.replySelected.SsShopList.Id;
-          this.followUpDiscount = this.replySelected.SsDiscount;
-        }
-        if ((UnityEngine.Object) this.replySelected.SsLootList != (UnityEngine.Object) null)
-          this.followUpLootListId = this.replySelected.SsLootList.Id;
-        if (this.replySelected.SsCardPlayerGame)
-        {
-          this.followUpCardPlayerGame = true;
-          this.followUpCardPlayerGamePack = this.replySelected.SsCardPlayerGamePackData;
-        }
-        if (this.replySelected.SsCardPlayerPairsGame)
-        {
-          this.followUpCardPlayerPairsGame = true;
-          this.followUpCardPlayerPairsGamePack = this.replySelected.SsCardPlayerPairsGamePackData;
-        }
-        if ((bool) (UnityEngine.Object) this.replySelected.SsUnlockClass)
-          AtOManager.Instance.characterUnlockData = this.replySelected.SsUnlockClass;
-        if ((bool) (UnityEngine.Object) this.replySelected.SsUnlockSkin)
-          AtOManager.Instance.skinUnlockData = this.replySelected.SsUnlockSkin;
-        if (this.replySelected.SsUnlockSteamAchievement != "")
-          PlayerManager.Instance.AchievementUnlock(this.replySelected.SsUnlockSteamAchievement);
-        if (this.replySelected.SsFinishEarlyAccess)
-        {
-          AtOManager.Instance.FinishGame();
-          return;
-        }
-        if (this.replySelected.SsFinishGame)
-        {
-          AtOManager.Instance.FinishRun();
-          return;
-        }
-        if (this.replySelected.SsFinishObeliskMap)
-        {
-          ZoneData zoneData = Globals.Instance.ZoneDataSource[AtOManager.Instance.GetTownZoneId().ToLower()];
-          if ((UnityEngine.Object) zoneData != (UnityEngine.Object) null && zoneData.ObeliskLow)
-          {
-            this.destinationNode = MapManager.Instance.GetNodeFromId(AtOManager.Instance.obeliskHigh + "_0").nodeData;
-            AtOManager.Instance.UpgradeTownTier();
-          }
-          else if ((UnityEngine.Object) zoneData != (UnityEngine.Object) null && zoneData.ObeliskHigh)
-          {
-            this.destinationNode = MapManager.Instance.GetNodeFromId(AtOManager.Instance.obeliskFinal + "_0").nodeData;
-            AtOManager.Instance.UpgradeTownTier();
-          }
-          else
-          {
-            AtOManager.Instance.FinishObeliskChallenge();
-            return;
-          }
-        }
-        if ((UnityEngine.Object) this.replySelected.SsCharacterReplacement != (UnityEngine.Object) null && this.replySelected.SsCharacterReplacementPosition > -1 && this.replySelected.SsCharacterReplacementPosition < 4)
-          AtOManager.Instance.SwapCharacter(this.replySelected.SsCharacterReplacement, this.replySelected.SsCharacterReplacementPosition);
-      }
-      else
-      {
-        if ((UnityEngine.Object) this.replySelected.SscNodeTravel != (UnityEngine.Object) null)
-          this.destinationNode = this.replySelected.SscNodeTravel;
-        else if ((UnityEngine.Object) this.replySelected.SsNodeTravel != (UnityEngine.Object) null)
-          this.destinationNode = this.replySelected.SscNodeTravel;
-        this.followUpCombatData = this.replySelected.SscCombat;
-        this.followUpEventData = this.replySelected.SscEvent;
-        if (!this.isGroup)
-        {
-          stringBuilder.Append("<color=#098C20><u>");
-          stringBuilder.Append(Texts.Instance.GetText("success"));
-          stringBuilder.Append("</u></color>\n\n");
-        }
-        string text = Texts.Instance.GetText(this.currentEvent.EventId + "_rp" + this.replySelected.IndexForAnswerTranslation.ToString() + "_sc", "events");
-        if (text != "")
-        {
-          stringBuilder.Append(text);
-        }
-        else
-        {
-          Debug.LogError((object) (this.currentEvent.EventId + " <" + this.optionSelected.ToString() + "-> successCrit> missing translation"));
-          stringBuilder.Append(this.replySelected.SscRewardText);
-        }
-        bool flag4 = false;
-        if (this.replySelected.SscGoldReward != 0 || this.replySelected.SscDustReward != 0 || num3 > 0 || this.replySelected.SscSupplyReward != 0)
-        {
-          stringBuilder.Append("\n\n<color=#202020>");
-          stringBuilder.Append(Texts.Instance.GetText("eventYouGet"));
-          stringBuilder.Append(" ");
-          flag4 = true;
-        }
-        if (this.replySelected.SscGoldReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=gold>");
-          stringBuilder.Append(this.goldQuantity * num1);
-          stringBuilder.Append("  ");
-        }
-        if (this.replySelected.SscDustReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=dust>");
-          stringBuilder.Append(this.dustQuantity * num1);
-          stringBuilder.Append("  ");
-        }
-        if (num3 > 0)
-        {
-          stringBuilder.Append(" <sprite name=experience>");
-          stringBuilder.Append(num3);
-          stringBuilder.Append("  ");
-        }
-        if (this.replySelected.SscSupplyReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=supply>");
-          stringBuilder.Append(this.replySelected.SscSupplyReward);
-          stringBuilder.Append("  ");
-          PlayerManager.Instance.GainSupply(this.replySelected.SscSupplyReward);
-        }
-        if (flag4)
-          stringBuilder.Append("</color>");
-        if ((UnityEngine.Object) this.replySelected.SscRequirementUnlock != (UnityEngine.Object) null)
-          AtOManager.Instance.AddPlayerRequirement(this.replySelected.SscRequirementUnlock);
-        if ((UnityEngine.Object) this.replySelected.SscRequirementUnlock2 != (UnityEngine.Object) null)
-          AtOManager.Instance.AddPlayerRequirement(this.replySelected.SscRequirementUnlock2);
-        if ((UnityEngine.Object) this.replySelected.SscAddCard1 != (UnityEngine.Object) null)
-          this.StartCoroutine(this.GenerateRewardCard(true, this.replySelected.SscAddCard1.Id));
-        if ((UnityEngine.Object) this.replySelected.SscRewardTier != (UnityEngine.Object) null)
-          AtOManager.Instance.SetEventRewardTier(this.replySelected.SscRewardTier);
-        if ((bool) (UnityEngine.Object) this.replySelected.SscRequirementLock)
-          AtOManager.Instance.RemovePlayerRequirement(this.replySelected.SscRequirementLock);
-        if (this.replySelected.SscUpgradeUI)
-        {
-          this.followUpUpgrade = true;
-          this.followUpDiscount = this.replySelected.SscDiscount;
-          this.followUpMaxQuantity = this.replySelected.SscMaxQuantity;
-        }
-        if (this.replySelected.SscHealerUI)
-        {
-          this.followUpHealer = true;
-          this.followUpDiscount = this.replySelected.SscDiscount;
-          this.followUpMaxQuantity = this.replySelected.SscMaxQuantity;
-        }
-        if (this.replySelected.SscHealerUI)
-        {
-          this.followUpHealer = true;
-          this.followUpDiscount = this.replySelected.SscDiscount;
-          this.followUpMaxQuantity = this.replySelected.SscMaxQuantity;
-        }
-        if (this.replySelected.SscCraftUI)
-        {
-          this.followUpCraft = true;
-          this.followUpDiscount = this.replySelected.SscDiscount;
-          this.followUpMaxQuantity = this.replySelected.SscMaxQuantity;
-          this.followUpMaxCraftRarity = this.replySelected.SscCraftUIMaxType;
-        }
-        if (this.replySelected.SscCorruptionUI)
-        {
-          this.followUpCorruption = true;
-          this.followUpDiscount = this.replySelected.SscDiscount;
-          this.followUpMaxQuantity = this.replySelected.SscMaxQuantity;
-        }
-        if (this.replySelected.SscItemCorruptionUI)
-        {
-          this.followUpItemCorruption = true;
-          this.followUpDiscount = this.replySelected.SscDiscount;
-          this.followUpMaxQuantity = this.replySelected.SscMaxQuantity;
-        }
-        if ((UnityEngine.Object) this.replySelected.SscShopList != (UnityEngine.Object) null)
-        {
-          this.followUpShopListId = this.replySelected.SscShopList.Id;
-          this.followUpDiscount = this.replySelected.SscDiscount;
-        }
-        if ((UnityEngine.Object) this.replySelected.SscLootList != (UnityEngine.Object) null)
-          this.followUpLootListId = this.replySelected.SscLootList.Id;
-        if (this.replySelected.SscCardPlayerGame)
-        {
-          this.followUpCardPlayerGame = true;
-          this.followUpCardPlayerGamePack = this.replySelected.SscCardPlayerGamePackData;
-        }
-        if (this.replySelected.SscCardPlayerPairsGame)
-        {
-          this.followUpCardPlayerPairsGame = true;
-          this.followUpCardPlayerPairsGamePack = this.replySelected.SscCardPlayerPairsGamePackData;
-        }
-        if ((bool) (UnityEngine.Object) this.replySelected.SscUnlockClass)
-          AtOManager.Instance.characterUnlockData = this.replySelected.SscUnlockClass;
-        if (this.replySelected.SscUnlockSteamAchievement != "")
-          PlayerManager.Instance.AchievementUnlock(this.replySelected.SscUnlockSteamAchievement);
-        if (this.replySelected.SscFinishEarlyAccess)
-        {
-          AtOManager.Instance.FinishGame();
-          return;
-        }
-        if (this.replySelected.SscFinishGame)
-        {
-          AtOManager.Instance.FinishRun();
-          return;
-        }
-      }
-    }
-    if (flag2)
-    {
-      if (!this.criticalFail)
-      {
-        this.destinationNode = this.replySelected.FlNodeTravel;
-        this.followUpCombatData = this.replySelected.FlCombat;
-        this.followUpEventData = this.replySelected.FlEvent;
-        if (flag1)
-          stringBuilder.Append("\n\n\n");
-        if (!this.isGroup)
-        {
-          stringBuilder.Append("<color=#980B06><u>");
-          stringBuilder.Append(Texts.Instance.GetText("fail"));
-          stringBuilder.Append("</u></color>\n\n");
-        }
-        string text = Texts.Instance.GetText(this.currentEvent.EventId + "_rp" + this.replySelected.IndexForAnswerTranslation.ToString() + "_f", "events");
-        if (text != "")
-        {
-          stringBuilder.Append(text);
-        }
-        else
-        {
-          Debug.LogError((object) (this.currentEvent.EventId + " <" + this.optionSelected.ToString() + "-> fail> missing translation"));
-          stringBuilder.Append(this.replySelected.FlRewardText);
-        }
-        if (this.replySelected.FlGoldReward != 0 || this.replySelected.FlDustReward != 0 || num4 > 0 || this.replySelected.FlSupplyReward != 0)
-        {
-          stringBuilder.Append("\n\n<color=#202020>");
-          stringBuilder.Append(Texts.Instance.GetText("eventYouGet"));
-          stringBuilder.Append(" ");
-        }
-        if (this.replySelected.FlGoldReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=gold>");
-          stringBuilder.Append(this.goldQuantity * num2);
-          stringBuilder.Append("  ");
-        }
-        if (this.replySelected.FlDustReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=dust>");
-          stringBuilder.Append(this.dustQuantity * num2);
-          stringBuilder.Append("  ");
-        }
-        if (num4 > 0)
-        {
-          stringBuilder.Append(" <sprite name=experience>");
-          stringBuilder.Append(num4);
-          stringBuilder.Append("  ");
-        }
-        if (this.replySelected.FlSupplyReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=supply>");
-          stringBuilder.Append(this.replySelected.FlSupplyReward);
-          stringBuilder.Append("  ");
-          PlayerManager.Instance.GainSupply(this.replySelected.FlSupplyReward);
-        }
-        stringBuilder.Append("\n");
-        if ((UnityEngine.Object) this.replySelected.FlRequirementUnlock != (UnityEngine.Object) null)
-          AtOManager.Instance.AddPlayerRequirement(this.replySelected.FlRequirementUnlock);
-        if ((UnityEngine.Object) this.replySelected.FlRequirementUnlock2 != (UnityEngine.Object) null)
-          AtOManager.Instance.AddPlayerRequirement(this.replySelected.FlRequirementUnlock2);
-        if ((UnityEngine.Object) this.replySelected.FlAddCard1 != (UnityEngine.Object) null)
-          this.StartCoroutine(this.GenerateRewardCard(false, this.replySelected.FlAddCard1.Id));
-        if ((UnityEngine.Object) this.replySelected.FlRewardTier != (UnityEngine.Object) null)
-          AtOManager.Instance.SetEventRewardTier(this.replySelected.FlRewardTier);
-        if ((bool) (UnityEngine.Object) this.replySelected.FlRequirementLock)
-          AtOManager.Instance.RemovePlayerRequirement(this.replySelected.FlRequirementLock);
-        if (this.replySelected.FlUpgradeUI)
-        {
-          this.followUpUpgrade = true;
-          this.followUpDiscount = this.replySelected.FlDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlMaxQuantity;
-        }
-        if (this.replySelected.FlHealerUI)
-        {
-          this.followUpHealer = true;
-          this.followUpDiscount = this.replySelected.FlDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlMaxQuantity;
-        }
-        if (this.replySelected.FlCraftUI)
-        {
-          this.followUpCraft = true;
-          this.followUpDiscount = this.replySelected.FlDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlMaxQuantity;
-          this.followUpMaxCraftRarity = this.replySelected.FlCraftUIMaxType;
-        }
-        if (this.replySelected.FlCorruptionUI)
-        {
-          this.followUpCorruption = true;
-          this.followUpDiscount = this.replySelected.FlDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlMaxQuantity;
-        }
-        if (this.replySelected.FlItemCorruptionUI)
-        {
-          this.followUpItemCorruption = true;
-          this.followUpDiscount = this.replySelected.FlDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlMaxQuantity;
-        }
-        if ((UnityEngine.Object) this.replySelected.FlShopList != (UnityEngine.Object) null)
-        {
-          this.followUpShopListId = this.replySelected.FlShopList.Id;
-          this.followUpDiscount = this.replySelected.FlDiscount;
-        }
-        if ((UnityEngine.Object) this.replySelected.FlLootList != (UnityEngine.Object) null)
-          this.followUpLootListId = this.replySelected.FlLootList.Id;
-        if (this.replySelected.FlCardPlayerGame)
-        {
-          this.followUpCardPlayerGame = true;
-          this.followUpCardPlayerGamePack = this.replySelected.FlCardPlayerGamePackData;
-        }
-        if (this.replySelected.FlCardPlayerPairsGame)
-        {
-          this.followUpCardPlayerPairsGame = true;
-          this.followUpCardPlayerPairsGamePack = this.replySelected.FlCardPlayerPairsGamePackData;
-        }
-        if ((bool) (UnityEngine.Object) this.replySelected.FlUnlockClass)
-          AtOManager.Instance.characterUnlockData = this.replySelected.FlUnlockClass;
-        if (this.replySelected.FlUnlockSteamAchievement != "")
-          PlayerManager.Instance.AchievementUnlock(this.replySelected.FlUnlockSteamAchievement);
-      }
-      else
-      {
-        if ((UnityEngine.Object) this.replySelected.FlcNodeTravel != (UnityEngine.Object) null)
-          this.destinationNode = this.replySelected.FlcNodeTravel;
-        else if ((UnityEngine.Object) this.replySelected.FlNodeTravel != (UnityEngine.Object) null)
-          this.destinationNode = this.replySelected.FlNodeTravel;
-        this.followUpCombatData = this.replySelected.FlcCombat;
-        this.followUpEventData = this.replySelected.FlcEvent;
-        if (flag1)
-          stringBuilder.Append("\n\n\n");
-        if (!this.isGroup)
-        {
-          stringBuilder.Append("<color=#980B06><u>");
-          stringBuilder.Append(Texts.Instance.GetText("failCritical"));
-          stringBuilder.Append("</u></color>\n\n");
-        }
-        string text = Texts.Instance.GetText(this.currentEvent.EventId + "_rp" + this.replySelected.IndexForAnswerTranslation.ToString() + "_fc", "events");
-        if (text != "")
-        {
-          stringBuilder.Append(text);
-        }
-        else
-        {
-          Debug.LogError((object) (this.currentEvent.EventId + " <" + this.optionSelected.ToString() + "-> failCrit> missing translation"));
-          stringBuilder.Append(this.replySelected.FlcRewardText);
-        }
-        if (this.replySelected.FlcGoldReward != 0 || this.replySelected.FlcDustReward != 0 || num4 > 0 || this.replySelected.FlcSupplyReward != 0)
-        {
-          stringBuilder.Append("\n\n<color=#202020>");
-          stringBuilder.Append(Texts.Instance.GetText("eventYouGet"));
-          stringBuilder.Append(" ");
-        }
-        if (this.replySelected.FlcGoldReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=gold>");
-          stringBuilder.Append(this.goldQuantity * num2);
-          stringBuilder.Append("  ");
-        }
-        if (this.replySelected.FlcDustReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=dust>");
-          stringBuilder.Append(this.dustQuantity * num2);
-          stringBuilder.Append("  ");
-        }
-        if (num4 > 0)
-        {
-          stringBuilder.Append(" <sprite name=experience>");
-          stringBuilder.Append(num4);
-          stringBuilder.Append("  ");
-        }
-        if (this.replySelected.FlcSupplyReward != 0)
-        {
-          stringBuilder.Append(" <sprite name=supply>");
-          stringBuilder.Append(this.replySelected.FlcSupplyReward);
-          stringBuilder.Append("  ");
-          PlayerManager.Instance.GainSupply(this.replySelected.FlcSupplyReward);
-        }
-        stringBuilder.Append("\n");
-        if ((UnityEngine.Object) this.replySelected.FlcRequirementUnlock != (UnityEngine.Object) null)
-          AtOManager.Instance.AddPlayerRequirement(this.replySelected.FlcRequirementUnlock);
-        if ((UnityEngine.Object) this.replySelected.FlcRequirementUnlock2 != (UnityEngine.Object) null)
-          AtOManager.Instance.AddPlayerRequirement(this.replySelected.FlcRequirementUnlock2);
-        if ((UnityEngine.Object) this.replySelected.FlcAddCard1 != (UnityEngine.Object) null)
-          this.StartCoroutine(this.GenerateRewardCard(false, this.replySelected.FlcAddCard1.Id));
-        if ((UnityEngine.Object) this.replySelected.FlcRewardTier != (UnityEngine.Object) null)
-          AtOManager.Instance.SetEventRewardTier(this.replySelected.FlcRewardTier);
-        if ((bool) (UnityEngine.Object) this.replySelected.FlcRequirementLock)
-          AtOManager.Instance.RemovePlayerRequirement(this.replySelected.FlcRequirementLock);
-        if (this.replySelected.FlcUpgradeUI)
-        {
-          this.followUpUpgrade = true;
-          this.followUpDiscount = this.replySelected.FlcDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlcMaxQuantity;
-        }
-        if (this.replySelected.FlcHealerUI)
-        {
-          this.followUpHealer = true;
-          this.followUpDiscount = this.replySelected.FlcDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlcMaxQuantity;
-        }
-        if (this.replySelected.FlcCraftUI)
-        {
-          this.followUpCraft = true;
-          this.followUpDiscount = this.replySelected.FlcDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlcMaxQuantity;
-          this.followUpMaxCraftRarity = this.replySelected.FlcCraftUIMaxType;
-        }
-        if (this.replySelected.FlcCorruptionUI)
-        {
-          this.followUpCorruption = true;
-          this.followUpDiscount = this.replySelected.FlcDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlcMaxQuantity;
-        }
-        if (this.replySelected.FlcItemCorruptionUI)
-        {
-          this.followUpItemCorruption = true;
-          this.followUpDiscount = this.replySelected.FlcDiscount;
-          this.followUpMaxQuantity = this.replySelected.FlcMaxQuantity;
-        }
-        if ((UnityEngine.Object) this.replySelected.FlcShopList != (UnityEngine.Object) null)
-        {
-          this.followUpShopListId = this.replySelected.FlcShopList.Id;
-          this.followUpDiscount = this.replySelected.FlcDiscount;
-        }
-        if ((UnityEngine.Object) this.replySelected.FlcLootList != (UnityEngine.Object) null)
-          this.followUpLootListId = this.replySelected.FlcLootList.Id;
-        if (this.replySelected.FlcCardPlayerGame)
-        {
-          this.followUpCardPlayerGame = true;
-          this.followUpCardPlayerGamePack = this.replySelected.FlcCardPlayerGamePackData;
-        }
-        if (this.replySelected.FlcCardPlayerPairsGame)
-        {
-          this.followUpCardPlayerPairsGame = true;
-          this.followUpCardPlayerPairsGamePack = this.replySelected.FlcCardPlayerPairsGamePackData;
-        }
-        if ((bool) (UnityEngine.Object) this.replySelected.FlcUnlockClass)
-          AtOManager.Instance.characterUnlockData = this.replySelected.FlcUnlockClass;
-        if (this.replySelected.FlcUnlockSteamAchievement != "")
-          PlayerManager.Instance.AchievementUnlock(this.replySelected.FlcUnlockSteamAchievement);
-      }
-    }
-    if (!this.replySelected.SsRoll)
-    {
-      RectTransform component = this.result.GetComponent<RectTransform>();
-      component.localPosition = (Vector3) new Vector2(component.localPosition.x, 1.2f);
-      this.result.fontSizeMin = 2.4f;
-      this.result.transform.position = new Vector3(this.result.transform.position.x, 1.4f, this.result.transform.position.z);
-    }
-    stringBuilder.Replace("(", "<color=#333><size=-.2><voffset=.2>(");
-    stringBuilder.Replace(")", ")</voffset></size></color>");
-    this.result.text = stringBuilder.ToString();
-    this.result.gameObject.SetActive(true);
-    if ((UnityEngine.Object) MapManager.Instance != (UnityEngine.Object) null)
-      MapManager.Instance.sideCharacters.Refresh();
-    this.continueButton.gameObject.SetActive(true);
-  }
+	[SerializeField]
+	private float topReply = 3.3f;
 
-  private IEnumerator GenerateRewardCard(bool ok, string cardName)
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.2f);
-    CardData cardData = Globals.Instance.GetCardData(cardName);
-    if ((UnityEngine.Object) cardData != (UnityEngine.Object) null && cardData.CardClass == Enums.CardClass.Injury)
-    {
-      int ngPlus = AtOManager.Instance.GetNgPlus();
-      if (ngPlus > 0)
-      {
-        if (ngPlus >= 3 && ngPlus <= 4 && cardData.UpgradesTo1 != "")
-        {
-          cardName = cardData.UpgradesTo1;
-          cardData = Globals.Instance.GetCardData(cardName);
-        }
-        else if (ngPlus >= 5 && cardData.UpgradesTo2 != "")
-        {
-          cardName = cardData.UpgradesTo2;
-          cardData = Globals.Instance.GetCardData(cardName);
-        }
-      }
-    }
-    if (!((UnityEngine.Object) cardData == (UnityEngine.Object) null))
-    {
-      StringBuilder stringBuilder = new StringBuilder();
-      for (int index = 0; index < this.cardCharacters.Count; ++index)
-      {
-        if (index > 0)
-          stringBuilder.Append(", ");
-        stringBuilder.Append(this.cardCharacters[index]);
-      }
-      stringBuilder.Append("\n");
-      string str = this.cardCharacters.Count <= 1 ? Texts.Instance.GetText("charReceive").Replace("<char>", stringBuilder.ToString()) : Texts.Instance.GetText("charsReceives").Replace("<chars>", stringBuilder.ToString());
-      GameObject gameObject;
-      if (cardData.CardClass == Enums.CardClass.Injury)
-      {
-        this.cardKO.gameObject.SetActive(true);
-        this.cardKOText.text = str;
-        gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, new Vector3(-2.5f, 0.0f, 0.0f), Quaternion.identity, this.cardKOCards);
-      }
-      else
-      {
-        this.cardOK.gameObject.SetActive(true);
-        this.cardOKText.text = str;
-        gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, new Vector3(-2.5f, 0.0f, 0.0f), Quaternion.identity, this.cardOKCards);
-      }
-      CardItem component = gameObject.GetComponent<CardItem>();
-      component.SetCard(cardName, false);
-      gameObject.transform.localScale = new Vector3(0.0f, 0.0f, 0.0f);
-      component.SetDestinationScaleRotation(new Vector3(3.3f, 1.1f, -1f), 1.4f, Quaternion.Euler(0.0f, 0.0f, 0.0f));
-      component.cardrevealed = true;
-      component.TopLayeringOrder("Book", 20000);
-      component.CreateColliderAdjusted();
-      if (cardData.CardType != Enums.CardType.Pet || cardData.CardRarity != Enums.CardRarity.Rare)
-        PlayerManager.Instance.CardUnlock(cardName, true, component);
-    }
-  }
+	[SerializeField]
+	private float distanceReply = 1.2f;
 
-  private IEnumerator ShowResultTitle(bool success, int heroIndex = -1)
-  {
-    if (AtOManager.Instance.Sandbox_alwaysPassEventRoll)
-      success = true;
-    TMP_Text textObj;
-    if (success)
-    {
-      if (heroIndex == -1)
-      {
-        textObj = this.resultOK;
-        if (this.criticalSuccess)
-          textObj = this.resultOKc;
-      }
-      else
-        textObj = this.charTresultOK[heroIndex];
-    }
-    else if (heroIndex == -1)
-    {
-      textObj = this.resultKO;
-      if (this.criticalFail)
-        textObj = this.resultKOc;
-    }
-    else
-      textObj = this.charTresultKO[heroIndex];
-    Color colorOri = textObj.color;
-    textObj.gameObject.SetActive(true);
-    float alpha = colorOri.a;
-    while ((double) alpha < 1.0)
-    {
-      alpha += 0.1f;
-      textObj.color = new Color(colorOri.r, colorOri.g, colorOri.b, alpha);
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-    }
-  }
+	public int optionSelected = -1;
 
-  private void TurnOffCharacter(int heroIndex)
-  {
-    this.characterSPR[heroIndex].color = new Color(0.3f, 0.3f, 0.3f, 1f);
-  }
+	private Hero[] heroes = new Hero[4];
 
-  public void SetWaitingPlayersText(string msg)
-  {
-    if (msg != "")
-    {
-      this.waitingMsg.gameObject.SetActive(true);
-      this.waitingMsgText.text = msg;
-    }
-    else
-      this.waitingMsg.gameObject.SetActive(false);
-    if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster() || !AtOManager.Instance.followingTheLeader)
-      return;
-    if (NetworkManager.Instance.IsMasterReady())
-    {
-      if (this.statusReady)
-        return;
-      this.Ready(true);
-    }
-    else
-    {
-      if (!this.statusReady)
-        return;
-      this.Ready(true);
-    }
-  }
+	private Hero[] heroesSource = new Hero[4];
 
-  public void Ready(bool forceIt = false)
-  {
-    if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster() && AtOManager.Instance.followingTheLeader && !forceIt)
-      return;
-    if (!GameManager.Instance.IsMultiplayer() || (UnityEngine.Object) TownManager.Instance != (UnityEngine.Object) null)
-    {
-      this.CloseEvent();
-    }
-    else
-    {
-      if (this.manualReadyCo != null)
-        this.StopCoroutine(this.manualReadyCo);
-      this.statusReady = !this.statusReady;
-      NetworkManager.Instance.SetManualReady(this.statusReady);
-      if (this.statusReady)
-      {
-        this.continueButton.GetComponent<BotonGeneric>().SetBackgroundColor(Functions.HexToColor(Globals.Instance.ClassColor["scout"]));
-        this.continueButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("waitingForPlayers"));
-        if (!NetworkManager.Instance.IsMaster())
-          return;
-        this.manualReadyCo = this.StartCoroutine(this.CheckForAllManualReady());
-      }
-      else
-      {
-        this.continueButton.GetComponent<BotonGeneric>().SetBackgroundColor(Functions.HexToColor(Globals.Instance.ClassColor["warrior"]));
-        this.continueButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("continueAction"));
-      }
-    }
-  }
+	private bool[] charRoll;
 
-  private IEnumerator CheckForAllManualReady()
-  {
-    bool check = true;
-    while (check)
-    {
-      if (!NetworkManager.Instance.AllPlayersManualReady())
-        yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      else
-        check = false;
-    }
-    this.photonView.RPC("NET_CloseEvent", RpcTarget.Others);
-    this.CloseEvent();
-  }
+	private int[] charRollIterations;
 
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    int absolutePosition = -1)
-  {
-    this._controllerList.Clear();
-    if (Functions.TransformIsVisible(this.continueButton))
-      this._controllerList.Add(this.continueButton);
-    else if (this.replysGOs.Length != 0)
-    {
-      for (int index = 0; index < this.replysGOs.Length; ++index)
-      {
-        if ((UnityEngine.Object) this.replysGOs[index] != (UnityEngine.Object) null)
-        {
-          this._controllerList.Add(this.replysGOs[index].transform);
-          if (Functions.TransformIsVisible(this.replys[index].probDice))
-            this._controllerList.Add(this.replys[index].probDice);
-        }
-      }
-    }
-    this._controllerList.Add(MapManager.Instance.eventShowHideButton);
-    for (int index = 0; index < 4; ++index)
-    {
-      if (Functions.TransformIsVisible(MapManager.Instance.sideCharacters.charArray[index].transform))
-        this._controllerList.Add(MapManager.Instance.sideCharacters.charArray[index].transform.GetChild(0).transform);
-    }
-    if (Functions.TransformIsVisible(PlayerUIManager.Instance.giveGold))
-      this._controllerList.Add(PlayerUIManager.Instance.giveGold);
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((UnityEngine.Object) this._controllerList[this.controllerHorizontalIndex] != (UnityEngine.Object) null))
-      return;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
+	private int[] charRollResult;
+
+	private CardData[] charRollType;
+
+	private bool criticalSuccess;
+
+	private bool criticalFail;
+
+	private bool[] charWinner = new bool[4];
+
+	private bool groupWinner;
+
+	private int cardOrder;
+
+	private bool isGroup;
+
+	private CombatData followUpCombatData;
+
+	private EventData followUpEventData;
+
+	private int followUpDiscount;
+
+	private int followUpMaxQuantity;
+
+	private Enums.CardRarity followUpMaxCraftRarity;
+
+	private bool followUpUpgrade;
+
+	private bool followUpHealer;
+
+	private bool followUpCraft;
+
+	private bool followUpCorruption;
+
+	private bool followUpItemCorruption;
+
+	private bool followUpCardPlayerGame;
+
+	private CardPlayerPackData followUpCardPlayerGamePack;
+
+	private bool followUpCardPlayerPairsGame;
+
+	private CardPlayerPairsPackData followUpCardPlayerPairsGamePack;
+
+	private string followUpShopListId;
+
+	private string followUpLootListId;
+
+	private NodeData destinationNode;
+
+	private List<string> cardCharacters;
+
+	public Dictionary<string, int> MultiplayerPlayerSelection = new Dictionary<string, int>();
+
+	private List<int> probability;
+
+	private bool statusReady;
+
+	public Transform waitingMsg;
+
+	public TMP_Text waitingMsgText;
+
+	private Coroutine manualReadyCo;
+
+	private PhotonView photonView;
+
+	private int modRollMadness;
+
+	private int dustQuantity;
+
+	private int goldQuantity;
+
+	private bool[] characterPassRoll = new bool[4];
+
+	public int controllerHorizontalIndex = -1;
+
+	private Vector2 warpPosition = Vector2.zero;
+
+	private List<Transform> _controllerList = new List<Transform>();
+
+	public List<GameObject> DisableWhenConflictResolution;
+
+	public static EventManager Instance { get; private set; }
+
+	public Hero[] Heroes
+	{
+		get
+		{
+			return heroes;
+		}
+		set
+		{
+			heroes = value;
+		}
+	}
+
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(base.gameObject);
+		}
+		photonView = MapManager.Instance.GetPhotonView();
+		for (int i = 0; i < 4; i++)
+		{
+			characterSPR[i] = characterT[i].GetComponent<SpriteRenderer>();
+			characterTcards[i] = characterT[i].GetChild(0).transform;
+			characterTnum[i] = characterT[i].GetChild(1).transform.GetComponent<TMP_Text>();
+			charTresultKO[i] = characterT[i].GetChild(2).transform.GetComponent<TMP_Text>();
+			charTresultOK[i] = characterT[i].GetChild(3).transform.GetComponent<TMP_Text>();
+			characterPassRoll[i] = false;
+		}
+		waitingMsg.gameObject.SetActive(value: false);
+	}
+
+	private void Update()
+	{
+		if (GameManager.Instance.GetDeveloperMode() && Input.GetKeyDown(KeyCode.F1))
+		{
+			MapManager.Instance.ShowHideEvent();
+		}
+	}
+
+	private void Start()
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			statusReady = false;
+			continueButton.GetComponent<BotonGeneric>().SetBackgroundColor(Functions.HexToColor(Globals.Instance.ClassColor["warrior"]));
+			if (NetworkManager.Instance.IsMaster())
+			{
+				NetworkManager.Instance.ClearAllPlayerManualReady();
+			}
+		}
+		continueButton.gameObject.SetActive(value: false);
+	}
+
+	public void SetListGameObjectsState(bool state)
+	{
+		foreach (GameObject item in DisableWhenConflictResolution)
+		{
+			if (item != null)
+			{
+				item.SetActive(state);
+			}
+		}
+	}
+
+	public void Show()
+	{
+		AudioManager.Instance.DoBSO("Event");
+		base.gameObject.SetActive(value: true);
+		GameManager.Instance.CleanTempContainer();
+		PopupManager.Instance.ClosePopup();
+		MapManager.Instance.HidePopup();
+		MapManager.Instance.sideCharacters.InCharacterScreen(state: true);
+		MapManager.Instance.sideCharacters.ResetCharacters();
+		AlertManager.Instance.HideAlert();
+		SettingsManager.Instance.ShowSettings(_state: false);
+		DamageMeterManager.Instance.Hide();
+		MapManager.Instance.characterWindow.HideAllWindows();
+	}
+
+	public void CloseEvent()
+	{
+		Functions.DebugLogGD("EVENT CloseEvent", "trace");
+		foreach (Transform item in replysT)
+		{
+			Object.Destroy(item.gameObject);
+		}
+		MapManager.Instance.sideCharacters.InCharacterScreen(state: false);
+		PopupManager.Instance.ClosePopup();
+		AudioManager.Instance.DoBSO("Map");
+		SaveManager.SavePlayerData();
+		MapManager.Instance.CloseEventFromEvent(destinationNode, followUpCombatData, followUpEventData, followUpUpgrade, followUpDiscount, followUpMaxQuantity, followUpHealer, followUpCraft, followUpShopListId, followUpLootListId, followUpMaxCraftRarity, followUpCardPlayerGame, followUpCardPlayerGamePack, followUpCardPlayerPairsGame, followUpCardPlayerPairsGamePack, followUpCorruption, followUpItemCorruption);
+	}
+
+	public void SetEvent(EventData _eventData)
+	{
+		destinationNode = null;
+		followUpCombatData = null;
+		followUpEventData = null;
+		followUpDiscount = 0;
+		followUpMaxQuantity = -1;
+		followUpMaxCraftRarity = Enums.CardRarity.Common;
+		followUpUpgrade = false;
+		followUpHealer = false;
+		followUpCraft = false;
+		followUpCardPlayerGame = false;
+		followUpCardPlayerGamePack = null;
+		followUpShopListId = "";
+		followUpLootListId = "";
+		currentEvent = Globals.Instance.GetEventData(_eventData.EventId);
+		optionSelected = -1;
+		cardOrder = 1000;
+		if (AtOManager.Instance.GetNgPlus() >= 4 || AtOManager.Instance.IsChallengeTraitActive("unlucky"))
+		{
+			modRollMadness = 1;
+		}
+		else if (AtOManager.Instance.IsChallengeTraitActive("lucky"))
+		{
+			modRollMadness = -1;
+		}
+		if (!(currentEvent == null))
+		{
+			cardCharacters = new List<string>();
+			string text = Texts.Instance.GetText(_eventData.EventId + "_nm", "events");
+			if (text != "")
+			{
+				title.text = text;
+			}
+			else
+			{
+				Debug.LogError(_eventData.EventId + " <EventName> missing translation");
+				title.text = currentEvent.EventName;
+			}
+			StringBuilder stringBuilder = new StringBuilder();
+			text = Texts.Instance.GetText(_eventData.EventId + "_dsc", "events");
+			if (text != "")
+			{
+				stringBuilder.Append(text);
+			}
+			else
+			{
+				Debug.LogError(_eventData.EventId + " <Description> missing translation");
+				stringBuilder.Append(currentEvent.Description);
+			}
+			stringBuilder.Append("\n\n<color=#333>");
+			text = Texts.Instance.GetText(_eventData.EventId + "_dsca", "events");
+			if (text != "")
+			{
+				stringBuilder.Append(text);
+			}
+			else
+			{
+				stringBuilder.Append(currentEvent.DescriptionAction);
+			}
+			description.text = stringBuilder.ToString();
+			stringBuilder.Clear();
+			stringBuilder.Append("<color=#FFF>");
+			stringBuilder.Append(Texts.Instance.GetText("eventRolls"));
+			stringBuilder.Append("</color><br><br>");
+			stringBuilder.Append("<u>");
+			stringBuilder.Append(Texts.Instance.GetText("single"));
+			stringBuilder.Append("</u><br>");
+			stringBuilder.Append(Texts.Instance.GetText("singleDesc"));
+			stringBuilder.Append("<br><br>");
+			stringBuilder.Append("<u>");
+			stringBuilder.Append(Texts.Instance.GetText("competition"));
+			stringBuilder.Append("</u><br>");
+			stringBuilder.Append(Texts.Instance.GetText("competitionDesc"));
+			stringBuilder.Append("<br><br>");
+			stringBuilder.Append("<u>");
+			stringBuilder.Append(Texts.Instance.GetText("group"));
+			stringBuilder.Append("</u><br>");
+			stringBuilder.Append(Texts.Instance.GetText("groupDesc"));
+			descriptionRolls.text = stringBuilder.ToString();
+			if (currentEvent.EventSpriteBook != null)
+			{
+				image.sprite = currentEvent.EventSpriteBook;
+			}
+			numReplys = currentEvent.Replys.Length;
+			replysGOs = new GameObject[numReplys];
+			replys = new Reply[numReplys];
+			heroes = AtOManager.Instance.GetTeam();
+			for (int i = 0; i < 4; i++)
+			{
+				charWinner[i] = true;
+			}
+			Show();
+			SetProbability();
+		}
+	}
+
+	private void EndProbability()
+	{
+		StartCoroutine(SetReplys());
+	}
+
+	private void SetProbability()
+	{
+		bool flag = false;
+		for (int i = 0; i < numReplys; i++)
+		{
+			if (currentEvent.Replys[i].SsRoll)
+			{
+				flag = true;
+				break;
+			}
+		}
+		if (!flag)
+		{
+			EndProbability();
+			return;
+		}
+		if (probability == null)
+		{
+			probability = new List<int>();
+		}
+		else
+		{
+			probability.Clear();
+		}
+		string text = "";
+		Dictionary<int, List<string>> dictionary = new Dictionary<int, List<string>>();
+		for (int j = 0; j < 4; j++)
+		{
+			dictionary[j] = new List<string>();
+			if (heroes[j] == null || !(heroes[j].HeroData != null) || heroes[j].Cards == null)
+			{
+				continue;
+			}
+			for (int k = 0; k < heroes[j].Cards.Count; k++)
+			{
+				text = heroes[j].Cards[k].ToLower();
+				if (!Globals.Instance.CardListByClass[Enums.CardClass.Boon].Contains(text) && !Globals.Instance.CardListByClass[Enums.CardClass.Injury].Contains(text))
+				{
+					dictionary[j].Add(text);
+				}
+			}
+		}
+		int num = 50;
+		int[] array = new int[4];
+		for (int l = 0; l < 4; l++)
+		{
+			array[l] = dictionary[l].Count;
+			if (array[l] > num)
+			{
+				array[l] = num;
+			}
+		}
+		int num2 = array[0];
+		int num3 = array[1];
+		int num4 = array[2];
+		int num5 = array[3];
+		if (num2 > dictionary[0].Count)
+		{
+			num2 = dictionary[0].Count;
+		}
+		if (num3 > dictionary[1].Count)
+		{
+			num3 = dictionary[1].Count;
+		}
+		if (num4 > dictionary[2].Count)
+		{
+			num4 = dictionary[2].Count;
+		}
+		if (num5 > dictionary[3].Count)
+		{
+			num5 = dictionary[3].Count;
+		}
+		for (int m = 0; m < num2; m++)
+		{
+			text = dictionary[0][m];
+			int num6 = (Globals.Instance.CardEnergyCost.ContainsKey(text) ? Globals.Instance.CardEnergyCost[text] : 0);
+			if (num3 > 0)
+			{
+				for (int n = 0; n < num3; n++)
+				{
+					text = dictionary[1][n];
+					int num7 = ((!Globals.Instance.CardEnergyCost.ContainsKey(text)) ? num6 : (num6 + Globals.Instance.CardEnergyCost[text]));
+					if (num4 > 0)
+					{
+						for (int num8 = 0; num8 < num4; num8++)
+						{
+							text = dictionary[2][num8];
+							int num9 = ((!Globals.Instance.CardEnergyCost.ContainsKey(text)) ? num7 : (num7 + Globals.Instance.CardEnergyCost[text]));
+							if (num5 > 0)
+							{
+								for (int num10 = 0; num10 < num5; num10++)
+								{
+									text = dictionary[3][num10];
+									int item = ((!Globals.Instance.CardEnergyCost.ContainsKey(text)) ? num9 : (num9 + Globals.Instance.CardEnergyCost[text]));
+									probability.Add(item);
+								}
+							}
+							else
+							{
+								probability.Add(num9);
+							}
+						}
+					}
+					else
+					{
+						probability.Add(num7);
+					}
+				}
+			}
+			else
+			{
+				probability.Add(num6);
+			}
+		}
+		EndProbability();
+	}
+
+	public int GetProbability(int result, bool higherOrEqual)
+	{
+		int num = 0;
+		for (int i = 0; i < probability.Count; i++)
+		{
+			if (result == probability[i])
+			{
+				num++;
+			}
+			else if (probability[i] > result && higherOrEqual)
+			{
+				num++;
+			}
+			else if (probability[i] < result && !higherOrEqual)
+			{
+				num++;
+			}
+		}
+		if (AtOManager.Instance.currentMapNode == "tutorial_2")
+		{
+			return 100;
+		}
+		return ProbabilityResult(num, probability.Count);
+	}
+
+	private int ProbabilityResult(int _times, int _total)
+	{
+		int num = Mathf.CeilToInt((float)_times / (float)_total * 100f);
+		if (num > 100)
+		{
+			num = 100;
+		}
+		else if (num < 0)
+		{
+			num = 0;
+		}
+		return num;
+	}
+
+	public int GetProbabilityType(Enums.CardType cType, string cClassId)
+	{
+		int num = 0;
+		int num2 = -1;
+		for (int i = 0; i < heroes.Length; i++)
+		{
+			if (heroes[i].HeroData.HeroSubClass.Id == cClassId)
+			{
+				num2 = i;
+				break;
+			}
+		}
+		if (heroes[num2].GetItemToPassEventRoll() != "")
+		{
+			return 100;
+		}
+		int num3 = 0;
+		for (int j = 0; j < heroes[num2].Cards.Count; j++)
+		{
+			string item = heroes[num2].Cards[j].ToLower();
+			if (!Globals.Instance.CardListByClass[Enums.CardClass.Boon].Contains(item) && !Globals.Instance.CardListByClass[Enums.CardClass.Injury].Contains(item))
+			{
+				if (Globals.Instance.CardListByType[cType].Contains(item))
+				{
+					num++;
+				}
+				num3++;
+			}
+		}
+		return ProbabilityResult(num, num3);
+	}
+
+	public int GetProbabilitySingle(int result, bool higherOrEqual, int heroId)
+	{
+		if (heroes[heroId].GetItemToPassEventRoll() != "")
+		{
+			return 100;
+		}
+		string text = "";
+		int num = 0;
+		int num2 = 0;
+		if (heroes[heroId].Cards != null)
+		{
+			for (int i = 0; i < heroes[heroId].Cards.Count; i++)
+			{
+				text = heroes[heroId].Cards[i].ToLower();
+				if (!Globals.Instance.CardListByClass[Enums.CardClass.Boon].Contains(text) && !Globals.Instance.CardListByClass[Enums.CardClass.Injury].Contains(text))
+				{
+					if (!Globals.Instance.CardEnergyCost.ContainsKey(text))
+					{
+						Globals.Instance.CardEnergyCost.Add(text, Globals.Instance.GetCardData(text, instantiate: false).EnergyCost);
+					}
+					int num3 = Globals.Instance.CardEnergyCost[text];
+					if (result == num3)
+					{
+						num++;
+					}
+					else if (num3 > result && higherOrEqual)
+					{
+						num++;
+					}
+					else if (num3 < result && !higherOrEqual)
+					{
+						num++;
+					}
+					num2++;
+				}
+			}
+		}
+		return ProbabilityResult(num, num2);
+	}
+
+	private IEnumerator SetReplys()
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+			if (NetworkManager.Instance.IsMaster())
+			{
+				while (!NetworkManager.Instance.AllPlayersReady("eventreply"))
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				Functions.DebugLogGD("Game ready, Everybody checked eventreply");
+				NetworkManager.Instance.PlayersNetworkContinue("eventreply");
+				yield return Globals.Instance.WaitForSeconds(0.1f);
+			}
+			else
+			{
+				NetworkManager.Instance.SetWaitingSyncro("eventreply", status: true);
+				NetworkManager.Instance.SetStatusReady("eventreply");
+				while (NetworkManager.Instance.WaitingSyncro["eventreply"])
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				Functions.DebugLogGD("eventreply, we can continue!");
+			}
+		}
+		GameManager.Instance.PlayLibraryAudio("ui_book_page");
+		GameManager.Instance.PlayLibraryAudio("ui_book_write");
+		int num = 0;
+		replysInvalid = 0;
+		int totalPlayersGold = AtOManager.Instance.GetTotalPlayersGold();
+		int totalPlayersDust = AtOManager.Instance.GetTotalPlayersDust();
+		for (int i = 0; i < numReplys; i++)
+		{
+			if (optionSelected > -1)
+			{
+				break;
+			}
+			EventReplyData eventReplyData = currentEvent.Replys[i];
+			bool flag = true;
+			if (!GameManager.Instance.IsMultiplayer() && eventReplyData.RequirementMultiplayer)
+			{
+				flag = false;
+			}
+			if (flag && eventReplyData.RequiredClass != null && !AtOManager.Instance.PlayerHasRequirementClass(eventReplyData.RequiredClass.Id))
+			{
+				flag = false;
+			}
+			if (flag && eventReplyData.Requirement != null && !AtOManager.Instance.PlayerHasRequirement(eventReplyData.Requirement))
+			{
+				flag = false;
+			}
+			if (flag && eventReplyData.RequirementBlocked != null && AtOManager.Instance.PlayerHasRequirement(eventReplyData.RequirementBlocked))
+			{
+				flag = false;
+			}
+			if (flag && eventReplyData.RequirementItems != null && eventReplyData.RequirementItems.Count > 0)
+			{
+				foreach (CardData requirementItem in eventReplyData.RequirementItems)
+				{
+					if (!(requirementItem == null))
+					{
+						if (AtOManager.Instance.PlayerHasRequirementItem(requirementItem, eventReplyData.RequiredClass) != -1)
+						{
+							flag = true;
+							break;
+						}
+						flag = false;
+					}
+				}
+			}
+			if (flag && eventReplyData.RequirementItem != null && AtOManager.Instance.PlayerHasRequirementItem(eventReplyData.RequirementItem, eventReplyData.RequiredClass) == -1)
+			{
+				flag = false;
+			}
+			if (flag)
+			{
+				if (eventReplyData.SsRemoveItemSlot != Enums.ItemSlot.None && !AtOManager.Instance.SubClassDataHaveAnythingInSlot(eventReplyData.SsRemoveItemSlot, eventReplyData.RequiredClass))
+				{
+					flag = false;
+				}
+				if (flag && eventReplyData.SsCorruptItemSlot != Enums.ItemSlot.None && !AtOManager.Instance.SubClassDataHaveAnythingInSlot(eventReplyData.SsCorruptItemSlot, eventReplyData.RequiredClass))
+				{
+					flag = false;
+				}
+			}
+			if (flag && eventReplyData.RequirementCard != null && eventReplyData.RequirementCard.Count > 0)
+			{
+				flag = false;
+				for (int j = 0; j < eventReplyData.RequirementCard.Count; j++)
+				{
+					if (eventReplyData.RequirementCard[j] != null && AtOManager.Instance.PlayerHasRequirementCard(eventReplyData.RequirementCard[j], eventReplyData.RequiredClass))
+					{
+						flag = true;
+						break;
+					}
+				}
+			}
+			bool flag2 = false;
+			bool flag3 = false;
+			bool flag4 = false;
+			if (flag)
+			{
+				if (eventReplyData.RequirementSku != "")
+				{
+					if (!GameManager.Instance.IsMultiplayer())
+					{
+						if (!SteamManager.Instance.PlayerHaveDLC(eventReplyData.RequirementSku))
+						{
+							flag4 = true;
+						}
+					}
+					else if (!NetworkManager.Instance.AnyPlayersHaveSku(eventReplyData.RequirementSku))
+					{
+						flag4 = true;
+					}
+				}
+				if (eventReplyData.GoldCost > 0 && totalPlayersGold < eventReplyData.GoldCost)
+				{
+					flag2 = true;
+				}
+				if (eventReplyData.DustCost > 0 && totalPlayersDust < eventReplyData.DustCost)
+				{
+					flag3 = true;
+				}
+			}
+			if (flag)
+			{
+				GameObject gameObject = Object.Instantiate(replyPrefab, replysT);
+				gameObject.name = "reply_" + i;
+				replysGOs[i] = gameObject;
+				replys[i] = gameObject.transform.GetComponent<Reply>();
+				if (eventReplyData.Requirement != null && eventReplyData.Requirement.ItemSprite != null)
+				{
+					replys[i].SetImage(eventReplyData.Requirement.ItemSprite);
+				}
+				if (flag4)
+				{
+					replys[i].Block(_showRedLayer: true, _showGoldShardMessage: false);
+				}
+				else if (flag2 || flag3)
+				{
+					replys[i].Block();
+				}
+				num++;
+			}
+			else
+			{
+				replysInvalid++;
+				replysGOs[i] = null;
+				replys[i] = null;
+			}
+		}
+		if (currentEvent.ReplyRandom > 0)
+		{
+			while (TotalValidGoInReplys() > currentEvent.ReplyRandom)
+			{
+				int randomIntRange = MapManager.Instance.GetRandomIntRange(0, replysGOs.Length);
+				if (replysGOs[randomIntRange] != null)
+				{
+					Object.Destroy(replysGOs[randomIntRange]);
+					replysGOs[randomIntRange] = null;
+				}
+			}
+			replysInvalid = replysGOs.Length - TotalValidGoInReplys();
+		}
+		num = 0;
+		int replyIndexForAutomaticSelection = -1;
+		for (int k = 0; k < replysGOs.Length; k++)
+		{
+			if (replysGOs[k] != null)
+			{
+				replysGOs[k].transform.localPosition = new Vector3(0f, topReply - distanceReply * (float)num, -1f);
+				replys[k].Init(currentEvent.EventId, k, num);
+				num++;
+				replyIndexForAutomaticSelection = k;
+			}
+		}
+		notMeeted.gameObject.SetActive(value: false);
+		if (replysInvalid > 0)
+		{
+			StringBuilder stringBuilder = new StringBuilder();
+			stringBuilder.Append(Texts.Instance.GetText("eventMissingOptions"));
+			stringBuilder.Append(" (");
+			stringBuilder.Append(replysInvalid);
+			stringBuilder.Append(")");
+			notMeeted.text = stringBuilder.ToString();
+			notMeeted.gameObject.SetActive(value: true);
+		}
+		if (!GameManager.Instance.IsMultiplayer() && num == 1 && AtOManager.Instance.currentMapNode != "tutorial_2" && currentEvent != null && currentEvent.EventId != "e_challenge_finish" && !notMeeted.gameObject.activeSelf)
+		{
+			yield return new WaitForSeconds(0.5f);
+			replys[replyIndexForAutomaticSelection].SelectThisOption();
+		}
+	}
+
+	private int TotalValidGoInReplys()
+	{
+		int num = 0;
+		for (int i = 0; i < replysGOs.Length; i++)
+		{
+			if (replysGOs[i] != null)
+			{
+				num++;
+			}
+		}
+		return num;
+	}
+
+	public void SelectOption(int _index)
+	{
+		if (optionSelected > -1)
+		{
+			return;
+		}
+		optionSelected = _index;
+		for (int i = 0; i < replys.Length; i++)
+		{
+			if (replys[i] != null)
+			{
+				replys[i].DisableOption();
+			}
+		}
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			photonView.RPC("NET_Event_OptionSelected", RpcTarget.All, NetworkManager.Instance.GetPlayerNick(), _index);
+		}
+		else
+		{
+			StartCoroutine(SelectOptionCo());
+		}
+	}
+
+	public void NET_OptionSelected(string _playerNick, int _option)
+	{
+		SelectOptionMP(_playerNick, _option);
+		GameManager.Instance.PlayLibraryAudio("ui_eventoptionselection");
+		if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster() && AtOManager.Instance.followingTheLeader && NetworkManager.Instance.PlayerIsMaster(_playerNick))
+		{
+			StartCoroutine(AutoSelectClient(_option));
+		}
+	}
+
+	private IEnumerator AutoSelectClient(int _option)
+	{
+		if (_option < 0)
+		{
+			AtOManager.Instance.followingTheLeader = false;
+			yield break;
+		}
+		while (replys == null || _option > replys.Length || replys[_option] == null)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.01f);
+		}
+		replys[_option].SelectThisOption();
+	}
+
+	private void SelectOptionMP(string _playerNick, int _option)
+	{
+		if (!MultiplayerPlayerSelection.ContainsKey(_playerNick))
+		{
+			MultiplayerPlayerSelection.Add(_playerNick, _option);
+		}
+		for (int i = 0; i < replys.Length; i++)
+		{
+			if (replys[i] != null && replys[i].GetOptionIndex() == _option)
+			{
+				replys[i].SelectedByMultiplayer(_playerNick);
+			}
+		}
+		if (NetworkManager.Instance.IsMaster() && MultiplayerPlayerSelection.Count == NetworkManager.Instance.GetNumPlayers())
+		{
+			SelectMultiplayerAnswer();
+		}
+	}
+
+	private void SelectMultiplayerAnswer()
+	{
+		int value = MultiplayerPlayerSelection.ElementAt(0).Value;
+		bool flag = false;
+		for (int i = 1; i < MultiplayerPlayerSelection.Count; i++)
+		{
+			if (MultiplayerPlayerSelection.ElementAt(i).Value != value)
+			{
+				flag = true;
+				break;
+			}
+		}
+		if (!flag)
+		{
+			int value2 = MultiplayerPlayerSelection.ElementAt(0).Value;
+			photonView.RPC("NET_Event_SelectAnswer", RpcTarget.All, value2);
+		}
+		else
+		{
+			photonView.RPC("NET_DoConflict", RpcTarget.All);
+		}
+	}
+
+	public void NET_SelectAnswer(int _answerId)
+	{
+		optionSelected = _answerId;
+		StartCoroutine(SelectOptionCo());
+	}
+
+	private IEnumerator SelectOptionCo()
+	{
+		PopupManager.Instance.ClosePopup();
+		GameObject selectedGO = null;
+		for (int i = 0; i < replys.Length; i++)
+		{
+			if (replys[i] != null)
+			{
+				if (replys[i].GetOptionIndex() != optionSelected)
+				{
+					replysGOs[i].gameObject.SetActive(value: false);
+				}
+				else
+				{
+					selectedGO = replysGOs[i];
+				}
+			}
+		}
+		float speed = (topReply - selectedGO.transform.localPosition.y) * 0.2f;
+		yield return Globals.Instance.WaitForSeconds(0.05f);
+		while (selectedGO.transform.localPosition.y < topReply)
+		{
+			selectedGO.transform.localPosition += new Vector3(0f, speed, 0f);
+			if (speed > 0.1f)
+			{
+				speed *= 0.8f;
+			}
+			yield return null;
+		}
+		selectedGO.transform.localPosition = new Vector3(selectedGO.transform.localPosition.x, topReply, selectedGO.transform.localPosition.z);
+		SelectOptionResult();
+	}
+
+	private void SelectOptionResult()
+	{
+		replySelected = currentEvent.Replys[optionSelected];
+		if (replySelected.GoldCost > 0)
+		{
+			AtOManager.Instance.PayGold(replySelected.GoldCost, paySingle: false);
+		}
+		if (replySelected.DustCost > 0)
+		{
+			AtOManager.Instance.PayDust(replySelected.DustCost, paySingle: false);
+		}
+		if (replySelected.SsRoll)
+		{
+			StartCoroutine(ShowCharactersRoll());
+			return;
+		}
+		groupWinner = true;
+		FinalResolution();
+	}
+
+	private IEnumerator ShowCharactersRoll()
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		if (replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
+		{
+			stringBuilder.Append(">=");
+			stringBuilder.Append(replySelected.SsRollNumber + modRollMadness);
+		}
+		else if (replySelected.SsRollMode == Enums.RollMode.LowerOrEqual)
+		{
+			stringBuilder.Append("<=");
+			stringBuilder.Append(replySelected.SsRollNumber - modRollMadness);
+		}
+		else if (replySelected.SsRollMode == Enums.RollMode.Highest)
+		{
+			stringBuilder.Append(">>");
+		}
+		else if (replySelected.SsRollMode == Enums.RollMode.Lowest)
+		{
+			stringBuilder.Append("<<");
+		}
+		else
+		{
+			stringBuilder.Append("~");
+			stringBuilder.Append(replySelected.SsRollNumber);
+		}
+		replys[optionSelected].SetRollBox(stringBuilder.ToString());
+		charRoll = new bool[4];
+		charRollIterations = new int[4];
+		charRollResult = new int[4];
+		charRollType = new CardData[4];
+		for (int i = 0; i < 4; i++)
+		{
+			if (heroes[i] != null && !(heroes[i].HeroData == null))
+			{
+				bool flag = true;
+				charRollIterations[i] = -1;
+				characterSPR[i].sprite = heroes[i].SpritePortrait;
+				if (replySelected.SsRollTarget == Enums.RollTarget.Character && replySelected.RequiredClass.SubClassName != heroes[i].HeroData.HeroSubClass.SubClassName)
+				{
+					flag = false;
+				}
+				charRoll[i] = flag;
+				if (!flag)
+				{
+					TurnOffCharacter(i);
+				}
+				characterT[i].gameObject.SetActive(value: true);
+				yield return Globals.Instance.WaitForSeconds(0.1f);
+			}
+		}
+		if ((bool)MapManager.Instance)
+		{
+			int deterministicHashCode = (AtOManager.Instance.GetGameId() + "_" + AtOManager.Instance.currentMapNode + "_" + AtOManager.Instance.GetTeamTotalHp() + "_" + AtOManager.Instance.GetTeamTotalExperience()).GetDeterministicHashCode();
+			MapManager.Instance.GenerateRandomStringBatch(100, deterministicHashCode);
+		}
+		StartCoroutine(RollCards());
+	}
+
+	private IEnumerator RollCards()
+	{
+		int rolls = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			if (charRoll[i])
+			{
+				yield return Globals.Instance.WaitForSeconds(0.25f);
+				DoCard(i);
+				rolls++;
+			}
+		}
+		yield return Globals.Instance.WaitForSeconds(2.3f + (float)rolls * 0.1f);
+		StartCoroutine(EventResult());
+	}
+
+	private void DoCard(int heroIndex)
+	{
+		if (heroes[heroIndex] == null || heroes[heroIndex].Cards == null)
+		{
+			return;
+		}
+		charRollIterations[heroIndex]++;
+		if (charRollIterations[heroIndex] > 3)
+		{
+			charRollIterations[heroIndex] = 3;
+		}
+		charRollResult[heroIndex] = -1;
+		charRollType[heroIndex] = null;
+		List<string> list = new List<string>();
+		for (int i = 0; i < heroes[heroIndex].Cards.Count; i++)
+		{
+			list.Add(heroes[heroIndex].Cards[i]);
+		}
+		bool flag = false;
+		string id = "";
+		string itemToPassEventRoll = heroes[heroIndex].GetItemToPassEventRoll();
+		if (itemToPassEventRoll != "" && (replySelected.SsRollTarget == Enums.RollTarget.Character || replySelected.SsRollTarget == Enums.RollTarget.Single))
+		{
+			id = itemToPassEventRoll;
+			characterPassRoll[heroIndex] = true;
+		}
+		else
+		{
+			while (!flag)
+			{
+				id = list[MapManager.Instance.GetRandomIntRange(0, list.Count)];
+				CardData cardData = Globals.Instance.GetCardData(id, instantiate: false);
+				if (cardData.CardClass != Enums.CardClass.Injury && cardData.CardClass != Enums.CardClass.Boon)
+				{
+					flag = true;
+				}
+			}
+		}
+		GameObject gameObject = Object.Instantiate(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, characterTcards[heroIndex]);
+		CardItem component = gameObject.GetComponent<CardItem>();
+		component.gameObject.name = "EventRollCard";
+		component.SetCard(id, deckScale: false);
+		component.SetCardback(heroes[heroIndex]);
+		gameObject.transform.localPosition = new Vector3(0f, -0.75f - 0.1f * (float)charRollIterations[heroIndex], 0f);
+		component.DoReward(fromReward: false, fromEvent: true, fromLoot: false, selectable: false);
+		component.SetDestinationLocalScale(0.9f);
+		component.TopLayeringOrder("Book", cardOrder);
+		cardOrder += 50;
+		component.DisableCollider();
+		charRollResult[heroIndex] = Globals.Instance.GetCardData(id, instantiate: false).EnergyCost;
+		charRollType[heroIndex] = Globals.Instance.GetCardData(id, instantiate: false);
+		if (replySelected.SsRollCard == Enums.CardType.None)
+		{
+			StartCoroutine(ShowNumRoll(heroIndex));
+		}
+	}
+
+	private void ClearNumRoll(int heroIndex)
+	{
+		characterTnum[heroIndex].text = "";
+	}
+
+	private IEnumerator ShowNumRoll(int heroIndex)
+	{
+		if (!charRoll[heroIndex])
+		{
+			characterTnum[heroIndex].text = "";
+			yield break;
+		}
+		yield return Globals.Instance.WaitForSeconds(2.2f);
+		characterTcards[heroIndex].GetChild(0).GetComponent<CardItem>().active = true;
+		characterTnum[heroIndex].text = charRollResult[heroIndex].ToString();
+	}
+
+	private IEnumerator EventResult()
+	{
+		bool flag = false;
+		int num = 0;
+		while (!flag)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+			num = 0;
+			flag = true;
+			for (int i = 0; i < 4; i++)
+			{
+				if (charRoll[i] && charRollResult[i] == -1)
+				{
+					flag = false;
+					break;
+				}
+				if (charRoll[i])
+				{
+					num += charRollResult[i];
+				}
+			}
+		}
+		isGroup = true;
+		bool success = false;
+		int ssRollNumber = replySelected.SsRollNumber;
+		int ssRollNumberCritical = replySelected.SsRollNumberCritical;
+		int ssRollNumberCriticalFail = replySelected.SsRollNumberCriticalFail;
+		if (replySelected.SsRollTarget == Enums.RollTarget.Group)
+		{
+			success = false;
+			if (replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
+			{
+				if (num >= ssRollNumber + modRollMadness)
+				{
+					success = true;
+				}
+				if (ssRollNumberCritical > -1 && num >= ssRollNumberCritical + modRollMadness)
+				{
+					criticalSuccess = true;
+				}
+				else if (ssRollNumberCritical > -1 && num <= ssRollNumberCriticalFail + modRollMadness)
+				{
+					criticalFail = true;
+				}
+			}
+			else if (replySelected.SsRollMode == Enums.RollMode.LowerOrEqual)
+			{
+				if (num <= ssRollNumber - modRollMadness)
+				{
+					success = true;
+				}
+				if (ssRollNumberCritical > -1 && num <= ssRollNumberCritical - modRollMadness)
+				{
+					criticalSuccess = true;
+				}
+				else if (ssRollNumberCritical > -1 && num >= ssRollNumberCriticalFail - modRollMadness)
+				{
+					criticalFail = true;
+				}
+			}
+			for (int j = 0; j < 4; j++)
+			{
+				charWinner[j] = success;
+			}
+			groupWinner = success;
+			StartCoroutine(ShowResultTitle(success));
+		}
+		else if (replySelected.SsRollTarget == Enums.RollTarget.Character)
+		{
+			for (int k = 0; k < 4; k++)
+			{
+				if (!charRoll[k])
+				{
+					continue;
+				}
+				success = false;
+				if (characterPassRoll[k])
+				{
+					success = true;
+					if (replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
+					{
+						charRollResult[k] = ssRollNumber + modRollMadness;
+					}
+					else if (replySelected.SsRollMode == Enums.RollMode.LowerOrEqual)
+					{
+						charRollResult[k] = ssRollNumber - modRollMadness;
+					}
+				}
+				else if (replySelected.SsRollCard != Enums.CardType.None)
+				{
+					if (charRollType[k].HasCardType(replySelected.SsRollCard))
+					{
+						success = true;
+					}
+				}
+				else if (replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
+				{
+					if (charRollResult[k] >= ssRollNumber + modRollMadness)
+					{
+						success = true;
+					}
+				}
+				else if (replySelected.SsRollMode == Enums.RollMode.LowerOrEqual && charRollResult[k] <= ssRollNumber - modRollMadness)
+				{
+					success = true;
+				}
+				groupWinner = success;
+			}
+			for (int l = 0; l < 4; l++)
+			{
+				charWinner[l] = groupWinner;
+			}
+			StartCoroutine(ShowResultTitle(success));
+		}
+		else if (replySelected.SsRollTarget == Enums.RollTarget.Single)
+		{
+			isGroup = false;
+			for (int m = 0; m < 4; m++)
+			{
+				if (characterPassRoll[m])
+				{
+					success = true;
+					if (replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
+					{
+						charRollResult[m] = ssRollNumber + modRollMadness;
+					}
+					else if (replySelected.SsRollMode == Enums.RollMode.LowerOrEqual)
+					{
+						charRollResult[m] = ssRollNumber - modRollMadness;
+					}
+				}
+				else
+				{
+					success = false;
+					if (replySelected.SsRollMode == Enums.RollMode.HigherOrEqual)
+					{
+						if (charRollResult[m] >= ssRollNumber + modRollMadness)
+						{
+							success = true;
+						}
+					}
+					else if (replySelected.SsRollMode == Enums.RollMode.LowerOrEqual && charRollResult[m] <= ssRollNumber - modRollMadness)
+					{
+						success = true;
+					}
+				}
+				charWinner[m] = success;
+				StartCoroutine(ShowResultTitle(success, m));
+			}
+		}
+		else if (replySelected.SsRollTarget == Enums.RollTarget.Competition)
+		{
+			isGroup = false;
+			Dictionary<int, int> dictionary = new Dictionary<int, int>();
+			for (int n = 0; n < 4; n++)
+			{
+				charWinner[n] = false;
+				if (charRoll[n])
+				{
+					dictionary.Add(n, charRollResult[n]);
+				}
+			}
+			dictionary = dictionary.OrderBy((KeyValuePair<int, int> x) => x.Value).ToDictionary((KeyValuePair<int, int> x) => x.Key, (KeyValuePair<int, int> x) => x.Value);
+			int num2 = -1;
+			int num3 = -1;
+			int num4 = dictionary.Count - 1;
+			if (num4 == 0)
+			{
+				num3 = dictionary.ElementAt(0).Key;
+			}
+			else if (replySelected.SsRollMode == Enums.RollMode.Highest)
+			{
+				if (dictionary.ElementAt(num4).Value == dictionary.ElementAt(num4 - 1).Value)
+				{
+					num2 = dictionary.ElementAt(num4).Value;
+				}
+				else
+				{
+					num3 = dictionary.ElementAt(num4).Key;
+				}
+			}
+			else if (replySelected.SsRollMode == Enums.RollMode.Lowest)
+			{
+				if (dictionary.ElementAt(0).Value == dictionary.ElementAt(1).Value)
+				{
+					num2 = dictionary.ElementAt(0).Value;
+				}
+				else
+				{
+					num3 = dictionary.ElementAt(0).Key;
+				}
+			}
+			if (num2 > -1)
+			{
+				for (int num5 = 0; num5 < dictionary.Count; num5++)
+				{
+					int key = dictionary.ElementAt(num5).Key;
+					if (charRoll[key] && dictionary.ElementAt(num5).Value == num2)
+					{
+						charRoll[key] = true;
+					}
+					else
+					{
+						charRoll[key] = false;
+						StartCoroutine(ShowResultTitle(success: false, key));
+						TurnOffCharacter(key);
+					}
+					ClearNumRoll(key);
+				}
+				StartCoroutine(RollCards());
+				yield break;
+			}
+			StartCoroutine(ShowResultTitle(success: true, num3));
+			charWinner[num3] = true;
+			for (int num6 = 0; num6 < dictionary.Count; num6++)
+			{
+				int key2 = dictionary.ElementAt(num6).Key;
+				if (key2 != num3)
+				{
+					if (charRoll[key2])
+					{
+						StartCoroutine(ShowResultTitle(success: false, key2));
+					}
+					TurnOffCharacter(key2);
+				}
+			}
+		}
+		FinalResolution();
+	}
+
+	private void FinalResolution()
+	{
+		GameManager.Instance.PlayLibraryAudio("ui_book_write");
+		bool flag = false;
+		bool flag2 = false;
+		if (replySelected.SsRoll)
+		{
+			if (isGroup)
+			{
+				if (groupWinner)
+				{
+					flag = true;
+				}
+				else
+				{
+					flag2 = true;
+				}
+			}
+			else
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					if (charWinner[i])
+					{
+						flag = true;
+					}
+					else
+					{
+						flag2 = true;
+					}
+				}
+			}
+		}
+		else
+		{
+			flag = true;
+			isGroup = true;
+		}
+		replys[optionSelected].HideRollBox();
+		if (AtOManager.Instance.Sandbox_alwaysPassEventRoll)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				charWinner[j] = true;
+			}
+			criticalFail = false;
+			flag = true;
+			flag2 = false;
+		}
+		int num = 0;
+		int num2 = 0;
+		int num3 = 0;
+		int num4 = 0;
+		for (int k = 0; k < 4; k++)
+		{
+			if (heroes[k] == null || heroes[k].HeroData == null)
+			{
+				continue;
+			}
+			if ((replySelected.ReplyActionText != Enums.EventAction.CharacterName || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName) && charWinner[k])
+			{
+				if (!criticalSuccess)
+				{
+					if (replySelected.SsAddCard1 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.SsAddCard1.Id);
+						cardCharacters.Add(AtOManager.Instance.GetHero(k).SourceName);
+					}
+					if (replySelected.SsAddCard2 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.SsAddCard2.Id);
+					}
+					if (replySelected.SsAddCard3 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.SsAddCard3.Id);
+					}
+				}
+				else
+				{
+					if (replySelected.SscAddCard1 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.SscAddCard1.Id);
+						cardCharacters.Add(AtOManager.Instance.GetHero(k).SourceName);
+					}
+					if (replySelected.SscAddCard2 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.SscAddCard2.Id);
+					}
+					if (replySelected.SscAddCard3 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.SscAddCard3.Id);
+					}
+				}
+				if (replySelected.SsPerkData != null)
+				{
+					AtOManager.Instance.AddPerkToHero(k, replySelected.SsPerkData.Id);
+				}
+				if (replySelected.SsPerkData1 != null)
+				{
+					AtOManager.Instance.AddPerkToHero(k, replySelected.SsPerkData1.Id);
+				}
+			}
+			if ((replySelected.ReplyActionText != Enums.EventAction.CharacterName || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName) && !charWinner[k])
+			{
+				if (!criticalFail)
+				{
+					if (replySelected.FlAddCard1 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.FlAddCard1.Id);
+						cardCharacters.Add(AtOManager.Instance.GetHero(k).SourceName);
+					}
+					if (replySelected.FlAddCard2 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.FlAddCard2.Id);
+					}
+					if (replySelected.FlAddCard3 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.FlAddCard3.Id);
+					}
+				}
+				else
+				{
+					if (replySelected.FlcAddCard1 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.FlcAddCard1.Id);
+						cardCharacters.Add(AtOManager.Instance.GetHero(k).SourceName);
+					}
+					if (replySelected.FlcAddCard2 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.FlcAddCard2.Id);
+					}
+					if (replySelected.FlcAddCard3 != null)
+					{
+						AtOManager.Instance.AddCardToHero(k, replySelected.FlcAddCard3.Id);
+					}
+				}
+			}
+			if (charWinner[k])
+			{
+				if (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick())
+				{
+					num++;
+					if (!criticalSuccess)
+					{
+						if (replySelected.SsUpgradeRandomCard)
+						{
+							AtOManager.Instance.UpgradeRandomCardToHero(k, replySelected.SsMaxQuantity);
+						}
+						if ((bool)replySelected.SsAddItem && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+						{
+							string id = replySelected.SsAddItem.Id;
+							cardCharacters.Add(AtOManager.Instance.GetHero(k).SourceName);
+							StartCoroutine(GenerateRewardCard(ok: true, id));
+							if (!GameManager.Instance.IsMultiplayer())
+							{
+								AtOManager.Instance.AddItemToHero(k, id);
+							}
+							else
+							{
+								AtOManager.Instance.AddItemToHeroMP(k, id);
+							}
+						}
+						if (replySelected.SsRemoveItemSlot != Enums.ItemSlot.None && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+						{
+							List<string> list = new List<string>();
+							if (replySelected.SsRemoveItemSlot == Enums.ItemSlot.AllWithoutPet)
+							{
+								list.Add("weapon");
+								list.Add("armor");
+								list.Add("jewelry");
+								list.Add("accesory");
+							}
+							else if (replySelected.SsRemoveItemSlot == Enums.ItemSlot.AllIncludedPet)
+							{
+								list.Add("weapon");
+								list.Add("armor");
+								list.Add("jewelry");
+								list.Add("accesory");
+								list.Add("pet");
+							}
+							else
+							{
+								list.Add(replySelected.SsRemoveItemSlot.ToString().ToLower());
+							}
+							for (int l = 0; l < list.Count; l++)
+							{
+								AtOManager.Instance.RemoveItemFromHeroFromEvent(_isHero: true, k, list[l]);
+							}
+						}
+						if (replySelected.SsCorruptItemSlot != Enums.ItemSlot.None && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+						{
+							List<string> list2 = new List<string>();
+							if (replySelected.SsCorruptItemSlot == Enums.ItemSlot.AllWithoutPet)
+							{
+								list2.Add("weapon");
+								list2.Add("armor");
+								list2.Add("jewelry");
+								list2.Add("accesory");
+							}
+							else if (replySelected.SsCorruptItemSlot == Enums.ItemSlot.AllIncludedPet)
+							{
+								list2.Add("weapon");
+								list2.Add("armor");
+								list2.Add("jewelry");
+								list2.Add("accesory");
+								list2.Add("pet");
+							}
+							else
+							{
+								list2.Add(replySelected.SsCorruptItemSlot.ToString().ToLower());
+							}
+							for (int m = 0; m < list2.Count; m++)
+							{
+								AtOManager.Instance.CorruptItemSlot(k, list2[m]);
+							}
+							if (list2.Count == 1 && list2[0] == "pet")
+							{
+								StartCoroutine(GenerateRewardCard(ok: true, AtOManager.Instance.GetHero(k).Pet, AtOManager.Instance.GetHero(k).SubclassName));
+							}
+						}
+					}
+					else
+					{
+						if (replySelected.SscUpgradeRandomCard)
+						{
+							AtOManager.Instance.UpgradeRandomCardToHero(k, replySelected.SscMaxQuantity);
+						}
+						if ((bool)replySelected.SscAddItem && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+						{
+							string id2 = replySelected.SscAddItem.Id;
+							cardCharacters.Add(AtOManager.Instance.GetHero(k).SourceName);
+							StartCoroutine(GenerateRewardCard(ok: true, id2));
+							if (!GameManager.Instance.IsMultiplayer())
+							{
+								AtOManager.Instance.AddItemToHero(k, id2);
+							}
+							else
+							{
+								AtOManager.Instance.AddItemToHeroMP(k, id2);
+							}
+						}
+						if (replySelected.SscRemoveItemSlot != Enums.ItemSlot.None && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+						{
+							List<string> list3 = new List<string>();
+							if (replySelected.SscRemoveItemSlot == Enums.ItemSlot.AllWithoutPet)
+							{
+								list3.Add("weapon");
+								list3.Add("armor");
+								list3.Add("jewelry");
+								list3.Add("accesory");
+							}
+							else if (replySelected.SscRemoveItemSlot == Enums.ItemSlot.AllIncludedPet)
+							{
+								list3.Add("weapon");
+								list3.Add("armor");
+								list3.Add("jewelry");
+								list3.Add("accesory");
+								list3.Add("pet");
+							}
+							else
+							{
+								list3.Add(replySelected.SscRemoveItemSlot.ToString().ToLower());
+							}
+							for (int n = 0; n < list3.Count; n++)
+							{
+								AtOManager.Instance.RemoveItemFromHeroFromEvent(_isHero: true, k, list3[n]);
+							}
+						}
+						if (replySelected.SscCorruptItemSlot != Enums.ItemSlot.None && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+						{
+							List<string> list4 = new List<string>();
+							if (replySelected.SscCorruptItemSlot == Enums.ItemSlot.AllWithoutPet)
+							{
+								list4.Add("weapon");
+								list4.Add("armor");
+								list4.Add("jewelry");
+								list4.Add("accesory");
+							}
+							else if (replySelected.SscCorruptItemSlot == Enums.ItemSlot.AllIncludedPet)
+							{
+								list4.Add("weapon");
+								list4.Add("armor");
+								list4.Add("jewelry");
+								list4.Add("accesory");
+								list4.Add("pet");
+							}
+							else
+							{
+								list4.Add(replySelected.SscCorruptItemSlot.ToString().ToLower());
+							}
+							for (int num5 = 0; num5 < list4.Count; num5++)
+							{
+								AtOManager.Instance.CorruptItemSlot(k, list4[num5]);
+							}
+						}
+					}
+				}
+				if (!criticalSuccess)
+				{
+					AtOManager.Instance.ModifyHeroLife(k, replySelected.SsRewardHealthFlat, replySelected.SsRewardHealthPercent);
+					if (replySelected.SsExperienceReward != 0)
+					{
+						int num6 = heroes[k].CalculateRewardForCharacter(replySelected.SsExperienceReward);
+						num3 += num6;
+						heroes[k].GrantExperience(num6);
+					}
+					if (replySelected.SsGoldReward != 0)
+					{
+						goldQuantity = replySelected.SsGoldReward;
+						if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+						{
+							if (!GameManager.Instance.IsObeliskChallenge())
+							{
+								goldQuantity -= Functions.FuncRoundToInt((float)goldQuantity * 0.5f);
+							}
+							else
+							{
+								goldQuantity -= Functions.FuncRoundToInt((float)goldQuantity * 0.3f);
+							}
+							if (goldQuantity < 0)
+							{
+								goldQuantity = 0;
+							}
+						}
+						if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+						{
+							goldQuantity += Functions.FuncRoundToInt((float)goldQuantity * 0.5f);
+						}
+						AtOManager.Instance.GivePlayer(0, goldQuantity, heroes[k].Owner);
+						if (goldQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick()))
+						{
+							PlayerManager.Instance.GoldGainedSum(goldQuantity, save: false);
+						}
+					}
+					if (replySelected.SsDustReward == 0)
+					{
+						continue;
+					}
+					dustQuantity = replySelected.SsDustReward;
+					if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+					{
+						if (!GameManager.Instance.IsObeliskChallenge())
+						{
+							dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+						}
+						else
+						{
+							dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.3f);
+						}
+						if (dustQuantity < 0)
+						{
+							dustQuantity = 0;
+						}
+					}
+					if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+					{
+						dustQuantity += Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+					}
+					AtOManager.Instance.GivePlayer(1, dustQuantity, heroes[k].Owner);
+					if (dustQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick()))
+					{
+						PlayerManager.Instance.DustGainedSum(dustQuantity, save: false);
+					}
+					continue;
+				}
+				AtOManager.Instance.ModifyHeroLife(k, replySelected.SscRewardHealthFlat, replySelected.SscRewardHealthPercent);
+				if (replySelected.SscExperienceReward != 0)
+				{
+					int num7 = heroes[k].CalculateRewardForCharacter(replySelected.SscExperienceReward);
+					num3 += num7;
+					heroes[k].GrantExperience(num7);
+				}
+				if (replySelected.SscGoldReward != 0)
+				{
+					goldQuantity = replySelected.SscGoldReward;
+					if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+					{
+						if (!GameManager.Instance.IsObeliskChallenge())
+						{
+							goldQuantity -= Functions.FuncRoundToInt((float)goldQuantity * 0.5f);
+						}
+						else
+						{
+							goldQuantity -= Functions.FuncRoundToInt((float)goldQuantity * 0.3f);
+						}
+						if (goldQuantity < 0)
+						{
+							goldQuantity = 0;
+						}
+					}
+					if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+					{
+						goldQuantity += Functions.FuncRoundToInt((float)goldQuantity * 0.5f);
+					}
+					AtOManager.Instance.GivePlayer(0, goldQuantity, heroes[k].Owner);
+					if (goldQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick()))
+					{
+						PlayerManager.Instance.GoldGainedSum(goldQuantity, save: false);
+					}
+				}
+				if (replySelected.SscDustReward == 0)
+				{
+					continue;
+				}
+				dustQuantity = replySelected.SscDustReward;
+				if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+				{
+					if (!GameManager.Instance.IsObeliskChallenge())
+					{
+						dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+					}
+					else
+					{
+						dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.3f);
+					}
+					if (dustQuantity < 0)
+					{
+						dustQuantity = 0;
+					}
+				}
+				if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+				{
+					dustQuantity += Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+				}
+				AtOManager.Instance.GivePlayer(1, dustQuantity, heroes[k].Owner);
+				if (dustQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick()))
+				{
+					PlayerManager.Instance.DustGainedSum(dustQuantity, save: false);
+				}
+				continue;
+			}
+			if (!criticalFail)
+			{
+				if (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick())
+				{
+					num2++;
+					if (replySelected.FlUpgradeRandomCard)
+					{
+						AtOManager.Instance.UpgradeRandomCardToHero(k, replySelected.FlMaxQuantity);
+					}
+					if ((bool)replySelected.FlAddItem && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+					{
+						string id3 = replySelected.FlAddItem.Id;
+						cardCharacters.Add(AtOManager.Instance.GetHero(k).SourceName);
+						StartCoroutine(GenerateRewardCard(ok: false, id3));
+						if (!GameManager.Instance.IsMultiplayer())
+						{
+							AtOManager.Instance.AddItemToHero(k, id3);
+						}
+						else
+						{
+							AtOManager.Instance.AddItemToHeroMP(k, id3);
+						}
+					}
+					if (replySelected.FlRemoveItemSlot != Enums.ItemSlot.None && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+					{
+						List<string> list5 = new List<string>();
+						if (replySelected.FlRemoveItemSlot == Enums.ItemSlot.AllWithoutPet)
+						{
+							list5.Add("weapon");
+							list5.Add("armor");
+							list5.Add("jewelry");
+							list5.Add("accesory");
+						}
+						else if (replySelected.FlRemoveItemSlot == Enums.ItemSlot.AllIncludedPet)
+						{
+							list5.Add("weapon");
+							list5.Add("armor");
+							list5.Add("jewelry");
+							list5.Add("accesory");
+							list5.Add("pet");
+						}
+						else
+						{
+							list5.Add(replySelected.FlRemoveItemSlot.ToString().ToLower());
+						}
+						for (int num8 = 0; num8 < list5.Count; num8++)
+						{
+							AtOManager.Instance.RemoveItemFromHeroFromEvent(_isHero: true, k, list5[num8]);
+						}
+					}
+					if (replySelected.FlCorruptItemSlot != Enums.ItemSlot.None && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+					{
+						List<string> list6 = new List<string>();
+						if (replySelected.FlCorruptItemSlot == Enums.ItemSlot.AllWithoutPet)
+						{
+							list6.Add("weapon");
+							list6.Add("armor");
+							list6.Add("jewelry");
+							list6.Add("accesory");
+						}
+						else if (replySelected.FlCorruptItemSlot == Enums.ItemSlot.AllIncludedPet)
+						{
+							list6.Add("weapon");
+							list6.Add("armor");
+							list6.Add("jewelry");
+							list6.Add("accesory");
+							list6.Add("pet");
+						}
+						else
+						{
+							list6.Add(replySelected.FlCorruptItemSlot.ToString().ToLower());
+						}
+						for (int num9 = 0; num9 < list6.Count; num9++)
+						{
+							AtOManager.Instance.CorruptItemSlot(k, list6[num9]);
+						}
+					}
+				}
+				AtOManager.Instance.ModifyHeroLife(k, replySelected.FlRewardHealthFlat, replySelected.FlRewardHealthPercent);
+				if (replySelected.FlExperienceReward != 0)
+				{
+					int num10 = heroes[k].CalculateRewardForCharacter(replySelected.FlExperienceReward);
+					num4 += num10;
+					heroes[k].GrantExperience(num10);
+				}
+				if (replySelected.FlGoldReward != 0)
+				{
+					goldQuantity = replySelected.FlGoldReward;
+					if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+					{
+						if (!GameManager.Instance.IsObeliskChallenge())
+						{
+							goldQuantity -= Functions.FuncRoundToInt((float)goldQuantity * 0.5f);
+						}
+						else
+						{
+							goldQuantity -= Functions.FuncRoundToInt((float)goldQuantity * 0.3f);
+						}
+						if (goldQuantity < 0)
+						{
+							goldQuantity = 0;
+						}
+					}
+					if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+					{
+						goldQuantity += Functions.FuncRoundToInt((float)goldQuantity * 0.5f);
+					}
+					AtOManager.Instance.GivePlayer(0, goldQuantity, heroes[k].Owner);
+					if (goldQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick()))
+					{
+						PlayerManager.Instance.GoldGainedSum(goldQuantity, save: false);
+					}
+				}
+				if (replySelected.FlDustReward == 0)
+				{
+					continue;
+				}
+				dustQuantity = replySelected.FlDustReward;
+				if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+				{
+					if (!GameManager.Instance.IsObeliskChallenge())
+					{
+						dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+					}
+					else
+					{
+						dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.3f);
+					}
+					if (dustQuantity < 0)
+					{
+						dustQuantity = 0;
+					}
+				}
+				if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+				{
+					dustQuantity += Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+				}
+				AtOManager.Instance.GivePlayer(1, dustQuantity, heroes[k].Owner);
+				if (dustQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick()))
+				{
+					PlayerManager.Instance.DustGainedSum(dustQuantity, save: false);
+				}
+				continue;
+			}
+			if (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick())
+			{
+				num2++;
+				if (replySelected.FlcUpgradeRandomCard)
+				{
+					AtOManager.Instance.UpgradeRandomCardToHero(k, replySelected.FlcMaxQuantity);
+				}
+				if ((bool)replySelected.FlcAddItem && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+				{
+					string id4 = replySelected.FlcAddItem.Id;
+					cardCharacters.Add(AtOManager.Instance.GetHero(k).SourceName);
+					StartCoroutine(GenerateRewardCard(ok: false, id4));
+					if (!GameManager.Instance.IsMultiplayer())
+					{
+						AtOManager.Instance.AddItemToHero(k, id4);
+					}
+					else
+					{
+						AtOManager.Instance.AddItemToHeroMP(k, id4);
+					}
+				}
+				if (replySelected.FlcRemoveItemSlot != Enums.ItemSlot.None && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+				{
+					List<string> list7 = new List<string>();
+					if (replySelected.FlcRemoveItemSlot == Enums.ItemSlot.AllWithoutPet)
+					{
+						list7.Add("weapon");
+						list7.Add("armor");
+						list7.Add("jewelry");
+						list7.Add("accesory");
+					}
+					else if (replySelected.FlcRemoveItemSlot == Enums.ItemSlot.AllIncludedPet)
+					{
+						list7.Add("weapon");
+						list7.Add("armor");
+						list7.Add("jewelry");
+						list7.Add("accesory");
+						list7.Add("pet");
+					}
+					else
+					{
+						list7.Add(replySelected.FlcRemoveItemSlot.ToString().ToLower());
+					}
+					for (int num11 = 0; num11 < list7.Count; num11++)
+					{
+						AtOManager.Instance.RemoveItemFromHeroFromEvent(_isHero: true, k, list7[num11]);
+					}
+				}
+				if (replySelected.FlcCorruptItemSlot != Enums.ItemSlot.None && (replySelected.RequiredClass == null || replySelected.RequiredClass.SubClassName == heroes[k].HeroData.HeroSubClass.SubClassName))
+				{
+					List<string> list8 = new List<string>();
+					if (replySelected.FlcCorruptItemSlot == Enums.ItemSlot.AllWithoutPet)
+					{
+						list8.Add("weapon");
+						list8.Add("armor");
+						list8.Add("jewelry");
+						list8.Add("accesory");
+					}
+					else if (replySelected.FlcCorruptItemSlot == Enums.ItemSlot.AllIncludedPet)
+					{
+						list8.Add("weapon");
+						list8.Add("armor");
+						list8.Add("jewelry");
+						list8.Add("accesory");
+						list8.Add("pet");
+					}
+					else
+					{
+						list8.Add(replySelected.FlcCorruptItemSlot.ToString().ToLower());
+					}
+					for (int num12 = 0; num12 < list8.Count; num12++)
+					{
+						AtOManager.Instance.CorruptItemSlot(k, list8[num12]);
+					}
+				}
+			}
+			AtOManager.Instance.ModifyHeroLife(k, replySelected.FlcRewardHealthFlat, replySelected.FlcRewardHealthPercent);
+			if (replySelected.FlcExperienceReward != 0)
+			{
+				int num13 = heroes[k].CalculateRewardForCharacter(replySelected.FlcExperienceReward);
+				num4 += num13;
+				heroes[k].GrantExperience(num13);
+			}
+			if (replySelected.FlcGoldReward != 0)
+			{
+				goldQuantity = replySelected.FlcGoldReward;
+				if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+				{
+					if (!GameManager.Instance.IsObeliskChallenge())
+					{
+						goldQuantity -= Functions.FuncRoundToInt((float)goldQuantity * 0.5f);
+					}
+					else
+					{
+						goldQuantity -= Functions.FuncRoundToInt((float)goldQuantity * 0.3f);
+					}
+					if (goldQuantity < 0)
+					{
+						goldQuantity = 0;
+					}
+				}
+				if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+				{
+					goldQuantity += Functions.FuncRoundToInt((float)goldQuantity * 0.5f);
+				}
+				AtOManager.Instance.GivePlayer(0, goldQuantity, heroes[k].Owner);
+				if (goldQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick()))
+				{
+					PlayerManager.Instance.GoldGainedSum(goldQuantity, save: false);
+				}
+			}
+			if (replySelected.FlcDustReward == 0)
+			{
+				continue;
+			}
+			dustQuantity = replySelected.FlcDustReward;
+			if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+			{
+				if (!GameManager.Instance.IsObeliskChallenge())
+				{
+					dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+				}
+				else
+				{
+					dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.3f);
+				}
+				if (dustQuantity < 0)
+				{
+					dustQuantity = 0;
+				}
+			}
+			if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+			{
+				dustQuantity += Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+			}
+			AtOManager.Instance.GivePlayer(1, dustQuantity, heroes[k].Owner);
+			if (dustQuantity > 0 && (!GameManager.Instance.IsMultiplayer() || heroes[k].Owner == NetworkManager.Instance.GetPlayerNick()))
+			{
+				PlayerManager.Instance.DustGainedSum(dustQuantity, save: false);
+			}
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		string text = "";
+		if (flag)
+		{
+			if (!criticalSuccess)
+			{
+				destinationNode = replySelected.SsNodeTravel;
+				followUpCombatData = replySelected.SsCombat;
+				followUpEventData = replySelected.SsEvent;
+				if (!isGroup)
+				{
+					stringBuilder.Append("<color=#098C20><u>");
+					stringBuilder.Append(Texts.Instance.GetText("success"));
+					stringBuilder.Append("</u></color>\n\n");
+				}
+				text = Texts.Instance.GetText(currentEvent.EventId + "_rp" + replySelected.IndexForAnswerTranslation + "_s", "events");
+				if (text != "")
+				{
+					stringBuilder.Append(text);
+				}
+				else
+				{
+					Debug.LogError(currentEvent.EventId + " <" + optionSelected + "-> success> missing translation");
+					stringBuilder.Append(replySelected.SsRewardText);
+				}
+				bool flag3 = false;
+				if (replySelected.SsGoldReward != 0 || replySelected.SsDustReward != 0 || num3 > 0 || replySelected.SsSupplyReward != 0)
+				{
+					stringBuilder.Append("\n\n<color=#202020>");
+					stringBuilder.Append(Texts.Instance.GetText("eventYouGet"));
+					stringBuilder.Append(" ");
+					flag3 = true;
+				}
+				if (replySelected.SsGoldReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=gold>");
+					stringBuilder.Append(goldQuantity * num);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.SsDustReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=dust>");
+					stringBuilder.Append(dustQuantity * num);
+					stringBuilder.Append("  ");
+				}
+				if (num3 > 0)
+				{
+					stringBuilder.Append(" <sprite name=experience>");
+					stringBuilder.Append(num3);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.SsSupplyReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=supply>");
+					stringBuilder.Append(replySelected.SsSupplyReward);
+					stringBuilder.Append("  ");
+					PlayerManager.Instance.GainSupply(replySelected.SsSupplyReward);
+				}
+				if (replySelected.SsPerkData != null)
+				{
+					stringBuilder.Append("<sprite name=");
+					stringBuilder.Append(replySelected.SsPerkData.Icon.name);
+					stringBuilder.Append("><space=-.1>");
+					stringBuilder.Append(replySelected.SsPerkData.IconTextValue);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.SsPerkData1 != null)
+				{
+					stringBuilder.Append("<sprite name=");
+					stringBuilder.Append(replySelected.SsPerkData1.Icon.name);
+					stringBuilder.Append("><space=-.1>");
+					stringBuilder.Append(replySelected.SsPerkData1.IconTextValue);
+					stringBuilder.Append("  ");
+				}
+				if (flag3)
+				{
+					stringBuilder.Append("</color>");
+				}
+				if (replySelected.SsRequirementUnlock != null)
+				{
+					AtOManager.Instance.AddPlayerRequirement(replySelected.SsRequirementUnlock);
+				}
+				if (replySelected.SsRequirementUnlock2 != null)
+				{
+					AtOManager.Instance.AddPlayerRequirement(replySelected.SsRequirementUnlock2);
+				}
+				if (replySelected.SsAddCard1 != null)
+				{
+					StartCoroutine(GenerateRewardCard(ok: true, replySelected.SsAddCard1.Id));
+				}
+				if (replySelected.SsRewardTier != null)
+				{
+					AtOManager.Instance.SetEventRewardTier(replySelected.SsRewardTier);
+				}
+				if ((bool)replySelected.SsRequirementLock2)
+				{
+					AtOManager.Instance.RemovePlayerRequirement(replySelected.SsRequirementLock2);
+				}
+				if ((bool)replySelected.SsRequirementLock)
+				{
+					AtOManager.Instance.RemovePlayerRequirement(replySelected.SsRequirementLock);
+				}
+				if (replySelected.SsUpgradeUI)
+				{
+					followUpUpgrade = true;
+					followUpDiscount = replySelected.SsDiscount;
+					followUpMaxQuantity = replySelected.SsMaxQuantity;
+				}
+				if (replySelected.SsHealerUI)
+				{
+					followUpHealer = true;
+					followUpDiscount = replySelected.SsDiscount;
+					followUpMaxQuantity = replySelected.SsMaxQuantity;
+				}
+				if (replySelected.SsHealerUI)
+				{
+					followUpHealer = true;
+					followUpDiscount = replySelected.SsDiscount;
+					followUpMaxQuantity = replySelected.SsMaxQuantity;
+				}
+				if (replySelected.SsCraftUI)
+				{
+					followUpCraft = true;
+					followUpDiscount = replySelected.SsDiscount;
+					followUpMaxQuantity = replySelected.SsMaxQuantity;
+					followUpMaxCraftRarity = replySelected.SsCraftUIMaxType;
+				}
+				if (replySelected.SsCorruptionUI)
+				{
+					followUpCorruption = true;
+					followUpDiscount = replySelected.SsDiscount;
+					followUpMaxQuantity = replySelected.SsMaxQuantity;
+				}
+				if (replySelected.SsItemCorruptionUI)
+				{
+					followUpItemCorruption = true;
+					followUpDiscount = replySelected.SsDiscount;
+					followUpMaxQuantity = replySelected.SsMaxQuantity;
+				}
+				if (replySelected.SsShopList != null)
+				{
+					followUpShopListId = replySelected.SsShopList.Id;
+					followUpDiscount = replySelected.SsDiscount;
+				}
+				if (replySelected.SsLootList != null)
+				{
+					followUpLootListId = replySelected.SsLootList.Id;
+				}
+				if (replySelected.SsCardPlayerGame)
+				{
+					followUpCardPlayerGame = true;
+					followUpCardPlayerGamePack = replySelected.SsCardPlayerGamePackData;
+				}
+				if (replySelected.SsCardPlayerPairsGame)
+				{
+					followUpCardPlayerPairsGame = true;
+					followUpCardPlayerPairsGamePack = replySelected.SsCardPlayerPairsGamePackData;
+				}
+				if ((bool)replySelected.SsUnlockClass)
+				{
+					AtOManager.Instance.characterUnlockData = replySelected.SsUnlockClass;
+				}
+				if ((bool)replySelected.SsUnlockSkin)
+				{
+					AtOManager.Instance.skinUnlockData = replySelected.SsUnlockSkin;
+				}
+				if (replySelected.SsUnlockSteamAchievement != "")
+				{
+					PlayerManager.Instance.AchievementUnlock(replySelected.SsUnlockSteamAchievement);
+				}
+				if (replySelected.SsFinishEarlyAccess)
+				{
+					AtOManager.Instance.FinishGame();
+					return;
+				}
+				if (replySelected.SsFinishGame)
+				{
+					AtOManager.Instance.FinishRun();
+					return;
+				}
+				if (replySelected.SsFinishObeliskMap)
+				{
+					ZoneData zoneData = Globals.Instance.ZoneDataSource[AtOManager.Instance.GetTownZoneId().ToLower()];
+					if (zoneData != null && zoneData.ObeliskLow)
+					{
+						destinationNode = MapManager.Instance.GetNodeFromId(AtOManager.Instance.obeliskHigh + "_0").nodeData;
+						AtOManager.Instance.UpgradeTownTier();
+					}
+					else
+					{
+						if (!(zoneData != null) || !zoneData.ObeliskHigh)
+						{
+							AtOManager.Instance.FinishObeliskChallenge();
+							return;
+						}
+						destinationNode = MapManager.Instance.GetNodeFromId(AtOManager.Instance.obeliskFinal + "_0").nodeData;
+						AtOManager.Instance.UpgradeTownTier();
+					}
+				}
+				if (replySelected.SsCharacterReplacement != null && replySelected.SsCharacterReplacementPosition > -1 && replySelected.SsCharacterReplacementPosition < 4)
+				{
+					AtOManager.Instance.SwapCharacter(replySelected.SsCharacterReplacement, replySelected.SsCharacterReplacementPosition);
+				}
+			}
+			else
+			{
+				if (replySelected.SscNodeTravel != null)
+				{
+					destinationNode = replySelected.SscNodeTravel;
+				}
+				else if (replySelected.SsNodeTravel != null)
+				{
+					destinationNode = replySelected.SscNodeTravel;
+				}
+				followUpCombatData = replySelected.SscCombat;
+				followUpEventData = replySelected.SscEvent;
+				if (!isGroup)
+				{
+					stringBuilder.Append("<color=#098C20><u>");
+					stringBuilder.Append(Texts.Instance.GetText("success"));
+					stringBuilder.Append("</u></color>\n\n");
+				}
+				text = Texts.Instance.GetText(currentEvent.EventId + "_rp" + replySelected.IndexForAnswerTranslation + "_sc", "events");
+				if (text != "")
+				{
+					stringBuilder.Append(text);
+				}
+				else
+				{
+					Debug.LogError(currentEvent.EventId + " <" + optionSelected + "-> successCrit> missing translation");
+					stringBuilder.Append(replySelected.SscRewardText);
+				}
+				bool flag4 = false;
+				if (replySelected.SscGoldReward != 0 || replySelected.SscDustReward != 0 || num3 > 0 || replySelected.SscSupplyReward != 0)
+				{
+					stringBuilder.Append("\n\n<color=#202020>");
+					stringBuilder.Append(Texts.Instance.GetText("eventYouGet"));
+					stringBuilder.Append(" ");
+					flag4 = true;
+				}
+				if (replySelected.SscGoldReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=gold>");
+					stringBuilder.Append(goldQuantity * num);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.SscDustReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=dust>");
+					stringBuilder.Append(dustQuantity * num);
+					stringBuilder.Append("  ");
+				}
+				if (num3 > 0)
+				{
+					stringBuilder.Append(" <sprite name=experience>");
+					stringBuilder.Append(num3);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.SscSupplyReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=supply>");
+					stringBuilder.Append(replySelected.SscSupplyReward);
+					stringBuilder.Append("  ");
+					PlayerManager.Instance.GainSupply(replySelected.SscSupplyReward);
+				}
+				if (flag4)
+				{
+					stringBuilder.Append("</color>");
+				}
+				if (replySelected.SscRequirementUnlock != null)
+				{
+					AtOManager.Instance.AddPlayerRequirement(replySelected.SscRequirementUnlock);
+				}
+				if (replySelected.SscRequirementUnlock2 != null)
+				{
+					AtOManager.Instance.AddPlayerRequirement(replySelected.SscRequirementUnlock2);
+				}
+				if (replySelected.SscAddCard1 != null)
+				{
+					StartCoroutine(GenerateRewardCard(ok: true, replySelected.SscAddCard1.Id));
+				}
+				if (replySelected.SscRewardTier != null)
+				{
+					AtOManager.Instance.SetEventRewardTier(replySelected.SscRewardTier);
+				}
+				if ((bool)replySelected.SscRequirementLock)
+				{
+					AtOManager.Instance.RemovePlayerRequirement(replySelected.SscRequirementLock);
+				}
+				if (replySelected.SscUpgradeUI)
+				{
+					followUpUpgrade = true;
+					followUpDiscount = replySelected.SscDiscount;
+					followUpMaxQuantity = replySelected.SscMaxQuantity;
+				}
+				if (replySelected.SscHealerUI)
+				{
+					followUpHealer = true;
+					followUpDiscount = replySelected.SscDiscount;
+					followUpMaxQuantity = replySelected.SscMaxQuantity;
+				}
+				if (replySelected.SscHealerUI)
+				{
+					followUpHealer = true;
+					followUpDiscount = replySelected.SscDiscount;
+					followUpMaxQuantity = replySelected.SscMaxQuantity;
+				}
+				if (replySelected.SscCraftUI)
+				{
+					followUpCraft = true;
+					followUpDiscount = replySelected.SscDiscount;
+					followUpMaxQuantity = replySelected.SscMaxQuantity;
+					followUpMaxCraftRarity = replySelected.SscCraftUIMaxType;
+				}
+				if (replySelected.SscCorruptionUI)
+				{
+					followUpCorruption = true;
+					followUpDiscount = replySelected.SscDiscount;
+					followUpMaxQuantity = replySelected.SscMaxQuantity;
+				}
+				if (replySelected.SscItemCorruptionUI)
+				{
+					followUpItemCorruption = true;
+					followUpDiscount = replySelected.SscDiscount;
+					followUpMaxQuantity = replySelected.SscMaxQuantity;
+				}
+				if (replySelected.SscShopList != null)
+				{
+					followUpShopListId = replySelected.SscShopList.Id;
+					followUpDiscount = replySelected.SscDiscount;
+				}
+				if (replySelected.SscLootList != null)
+				{
+					followUpLootListId = replySelected.SscLootList.Id;
+				}
+				if (replySelected.SscCardPlayerGame)
+				{
+					followUpCardPlayerGame = true;
+					followUpCardPlayerGamePack = replySelected.SscCardPlayerGamePackData;
+				}
+				if (replySelected.SscCardPlayerPairsGame)
+				{
+					followUpCardPlayerPairsGame = true;
+					followUpCardPlayerPairsGamePack = replySelected.SscCardPlayerPairsGamePackData;
+				}
+				if ((bool)replySelected.SscUnlockClass)
+				{
+					AtOManager.Instance.characterUnlockData = replySelected.SscUnlockClass;
+				}
+				if (replySelected.SscUnlockSteamAchievement != "")
+				{
+					PlayerManager.Instance.AchievementUnlock(replySelected.SscUnlockSteamAchievement);
+				}
+				if (replySelected.SscFinishEarlyAccess)
+				{
+					AtOManager.Instance.FinishGame();
+					return;
+				}
+				if (replySelected.SscFinishGame)
+				{
+					AtOManager.Instance.FinishRun();
+					return;
+				}
+			}
+		}
+		if (flag2)
+		{
+			if (!criticalFail)
+			{
+				destinationNode = replySelected.FlNodeTravel;
+				followUpCombatData = replySelected.FlCombat;
+				followUpEventData = replySelected.FlEvent;
+				if (flag)
+				{
+					stringBuilder.Append("\n\n\n");
+				}
+				if (!isGroup)
+				{
+					stringBuilder.Append("<color=#980B06><u>");
+					stringBuilder.Append(Texts.Instance.GetText("fail"));
+					stringBuilder.Append("</u></color>\n\n");
+				}
+				text = Texts.Instance.GetText(currentEvent.EventId + "_rp" + replySelected.IndexForAnswerTranslation + "_f", "events");
+				if (text != "")
+				{
+					stringBuilder.Append(text);
+				}
+				else
+				{
+					Debug.LogError(currentEvent.EventId + " <" + optionSelected + "-> fail> missing translation");
+					stringBuilder.Append(replySelected.FlRewardText);
+				}
+				if (replySelected.FlGoldReward != 0 || replySelected.FlDustReward != 0 || num4 > 0 || replySelected.FlSupplyReward != 0)
+				{
+					stringBuilder.Append("\n\n<color=#202020>");
+					stringBuilder.Append(Texts.Instance.GetText("eventYouGet"));
+					stringBuilder.Append(" ");
+				}
+				if (replySelected.FlGoldReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=gold>");
+					stringBuilder.Append(goldQuantity * num2);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.FlDustReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=dust>");
+					stringBuilder.Append(dustQuantity * num2);
+					stringBuilder.Append("  ");
+				}
+				if (num4 > 0)
+				{
+					stringBuilder.Append(" <sprite name=experience>");
+					stringBuilder.Append(num4);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.FlSupplyReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=supply>");
+					stringBuilder.Append(replySelected.FlSupplyReward);
+					stringBuilder.Append("  ");
+					PlayerManager.Instance.GainSupply(replySelected.FlSupplyReward);
+				}
+				stringBuilder.Append("\n");
+				if (replySelected.FlRequirementUnlock != null)
+				{
+					AtOManager.Instance.AddPlayerRequirement(replySelected.FlRequirementUnlock);
+				}
+				if (replySelected.FlRequirementUnlock2 != null)
+				{
+					AtOManager.Instance.AddPlayerRequirement(replySelected.FlRequirementUnlock2);
+				}
+				if (replySelected.FlAddCard1 != null)
+				{
+					StartCoroutine(GenerateRewardCard(ok: false, replySelected.FlAddCard1.Id));
+				}
+				if (replySelected.FlRewardTier != null)
+				{
+					AtOManager.Instance.SetEventRewardTier(replySelected.FlRewardTier);
+				}
+				if ((bool)replySelected.FlRequirementLock)
+				{
+					AtOManager.Instance.RemovePlayerRequirement(replySelected.FlRequirementLock);
+				}
+				if (replySelected.FlUpgradeUI)
+				{
+					followUpUpgrade = true;
+					followUpDiscount = replySelected.FlDiscount;
+					followUpMaxQuantity = replySelected.FlMaxQuantity;
+				}
+				if (replySelected.FlHealerUI)
+				{
+					followUpHealer = true;
+					followUpDiscount = replySelected.FlDiscount;
+					followUpMaxQuantity = replySelected.FlMaxQuantity;
+				}
+				if (replySelected.FlCraftUI)
+				{
+					followUpCraft = true;
+					followUpDiscount = replySelected.FlDiscount;
+					followUpMaxQuantity = replySelected.FlMaxQuantity;
+					followUpMaxCraftRarity = replySelected.FlCraftUIMaxType;
+				}
+				if (replySelected.FlCorruptionUI)
+				{
+					followUpCorruption = true;
+					followUpDiscount = replySelected.FlDiscount;
+					followUpMaxQuantity = replySelected.FlMaxQuantity;
+				}
+				if (replySelected.FlItemCorruptionUI)
+				{
+					followUpItemCorruption = true;
+					followUpDiscount = replySelected.FlDiscount;
+					followUpMaxQuantity = replySelected.FlMaxQuantity;
+				}
+				if (replySelected.FlShopList != null)
+				{
+					followUpShopListId = replySelected.FlShopList.Id;
+					followUpDiscount = replySelected.FlDiscount;
+				}
+				if (replySelected.FlLootList != null)
+				{
+					followUpLootListId = replySelected.FlLootList.Id;
+				}
+				if (replySelected.FlCardPlayerGame)
+				{
+					followUpCardPlayerGame = true;
+					followUpCardPlayerGamePack = replySelected.FlCardPlayerGamePackData;
+				}
+				if (replySelected.FlCardPlayerPairsGame)
+				{
+					followUpCardPlayerPairsGame = true;
+					followUpCardPlayerPairsGamePack = replySelected.FlCardPlayerPairsGamePackData;
+				}
+				if ((bool)replySelected.FlUnlockClass)
+				{
+					AtOManager.Instance.characterUnlockData = replySelected.FlUnlockClass;
+				}
+				if (replySelected.FlUnlockSteamAchievement != "")
+				{
+					PlayerManager.Instance.AchievementUnlock(replySelected.FlUnlockSteamAchievement);
+				}
+			}
+			else
+			{
+				if (replySelected.FlcNodeTravel != null)
+				{
+					destinationNode = replySelected.FlcNodeTravel;
+				}
+				else if (replySelected.FlNodeTravel != null)
+				{
+					destinationNode = replySelected.FlNodeTravel;
+				}
+				followUpCombatData = replySelected.FlcCombat;
+				followUpEventData = replySelected.FlcEvent;
+				if (flag)
+				{
+					stringBuilder.Append("\n\n\n");
+				}
+				if (!isGroup)
+				{
+					stringBuilder.Append("<color=#980B06><u>");
+					stringBuilder.Append(Texts.Instance.GetText("failCritical"));
+					stringBuilder.Append("</u></color>\n\n");
+				}
+				text = Texts.Instance.GetText(currentEvent.EventId + "_rp" + replySelected.IndexForAnswerTranslation + "_fc", "events");
+				if (text != "")
+				{
+					stringBuilder.Append(text);
+				}
+				else
+				{
+					Debug.LogError(currentEvent.EventId + " <" + optionSelected + "-> failCrit> missing translation");
+					stringBuilder.Append(replySelected.FlcRewardText);
+				}
+				if (replySelected.FlcGoldReward != 0 || replySelected.FlcDustReward != 0 || num4 > 0 || replySelected.FlcSupplyReward != 0)
+				{
+					stringBuilder.Append("\n\n<color=#202020>");
+					stringBuilder.Append(Texts.Instance.GetText("eventYouGet"));
+					stringBuilder.Append(" ");
+				}
+				if (replySelected.FlcGoldReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=gold>");
+					stringBuilder.Append(goldQuantity * num2);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.FlcDustReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=dust>");
+					stringBuilder.Append(dustQuantity * num2);
+					stringBuilder.Append("  ");
+				}
+				if (num4 > 0)
+				{
+					stringBuilder.Append(" <sprite name=experience>");
+					stringBuilder.Append(num4);
+					stringBuilder.Append("  ");
+				}
+				if (replySelected.FlcSupplyReward != 0)
+				{
+					stringBuilder.Append(" <sprite name=supply>");
+					stringBuilder.Append(replySelected.FlcSupplyReward);
+					stringBuilder.Append("  ");
+					PlayerManager.Instance.GainSupply(replySelected.FlcSupplyReward);
+				}
+				stringBuilder.Append("\n");
+				if (replySelected.FlcRequirementUnlock != null)
+				{
+					AtOManager.Instance.AddPlayerRequirement(replySelected.FlcRequirementUnlock);
+				}
+				if (replySelected.FlcRequirementUnlock2 != null)
+				{
+					AtOManager.Instance.AddPlayerRequirement(replySelected.FlcRequirementUnlock2);
+				}
+				if (replySelected.FlcAddCard1 != null)
+				{
+					StartCoroutine(GenerateRewardCard(ok: false, replySelected.FlcAddCard1.Id));
+				}
+				if (replySelected.FlcRewardTier != null)
+				{
+					AtOManager.Instance.SetEventRewardTier(replySelected.FlcRewardTier);
+				}
+				if ((bool)replySelected.FlcRequirementLock)
+				{
+					AtOManager.Instance.RemovePlayerRequirement(replySelected.FlcRequirementLock);
+				}
+				if (replySelected.FlcUpgradeUI)
+				{
+					followUpUpgrade = true;
+					followUpDiscount = replySelected.FlcDiscount;
+					followUpMaxQuantity = replySelected.FlcMaxQuantity;
+				}
+				if (replySelected.FlcHealerUI)
+				{
+					followUpHealer = true;
+					followUpDiscount = replySelected.FlcDiscount;
+					followUpMaxQuantity = replySelected.FlcMaxQuantity;
+				}
+				if (replySelected.FlcCraftUI)
+				{
+					followUpCraft = true;
+					followUpDiscount = replySelected.FlcDiscount;
+					followUpMaxQuantity = replySelected.FlcMaxQuantity;
+					followUpMaxCraftRarity = replySelected.FlcCraftUIMaxType;
+				}
+				if (replySelected.FlcCorruptionUI)
+				{
+					followUpCorruption = true;
+					followUpDiscount = replySelected.FlcDiscount;
+					followUpMaxQuantity = replySelected.FlcMaxQuantity;
+				}
+				if (replySelected.FlcItemCorruptionUI)
+				{
+					followUpItemCorruption = true;
+					followUpDiscount = replySelected.FlcDiscount;
+					followUpMaxQuantity = replySelected.FlcMaxQuantity;
+				}
+				if (replySelected.FlcShopList != null)
+				{
+					followUpShopListId = replySelected.FlcShopList.Id;
+					followUpDiscount = replySelected.FlcDiscount;
+				}
+				if (replySelected.FlcLootList != null)
+				{
+					followUpLootListId = replySelected.FlcLootList.Id;
+				}
+				if (replySelected.FlcCardPlayerGame)
+				{
+					followUpCardPlayerGame = true;
+					followUpCardPlayerGamePack = replySelected.FlcCardPlayerGamePackData;
+				}
+				if (replySelected.FlcCardPlayerPairsGame)
+				{
+					followUpCardPlayerPairsGame = true;
+					followUpCardPlayerPairsGamePack = replySelected.FlcCardPlayerPairsGamePackData;
+				}
+				if ((bool)replySelected.FlcUnlockClass)
+				{
+					AtOManager.Instance.characterUnlockData = replySelected.FlcUnlockClass;
+				}
+				if (replySelected.FlcUnlockSteamAchievement != "")
+				{
+					PlayerManager.Instance.AchievementUnlock(replySelected.FlcUnlockSteamAchievement);
+				}
+			}
+		}
+		if (!replySelected.SsRoll)
+		{
+			RectTransform component = result.GetComponent<RectTransform>();
+			component.localPosition = new Vector2(component.localPosition.x, 1.2f);
+			result.fontSizeMin = 2.4f;
+			result.transform.position = new Vector3(result.transform.position.x, 1.4f, result.transform.position.z);
+		}
+		stringBuilder.Replace("(", "<color=#333><size=-.2><voffset=.2>(");
+		stringBuilder.Replace(")", ")</voffset></size></color>");
+		result.text = stringBuilder.ToString();
+		result.gameObject.SetActive(value: true);
+		if (MapManager.Instance != null)
+		{
+			MapManager.Instance.sideCharacters.Refresh();
+		}
+		continueButton.gameObject.SetActive(value: true);
+	}
+
+	private IEnumerator GenerateRewardCard(bool ok, string cardName, string subclassName = "")
+	{
+		yield return Globals.Instance.WaitForSeconds(0.2f);
+		CardData cardData = Globals.Instance.GetCardData(cardName);
+		if (cardData != null && cardData.CardClass == Enums.CardClass.Injury)
+		{
+			int ngPlus = AtOManager.Instance.GetNgPlus();
+			if (ngPlus > 0)
+			{
+				if (ngPlus >= 3 && ngPlus <= 4 && cardData.UpgradesTo1 != "")
+				{
+					cardName = cardData.UpgradesTo1;
+					cardData = Globals.Instance.GetCardData(cardName);
+				}
+				else if (ngPlus >= 5 && cardData.UpgradesTo2 != "")
+				{
+					cardName = cardData.UpgradesTo2;
+					cardData = Globals.Instance.GetCardData(cardName);
+				}
+			}
+		}
+		if (cardData == null)
+		{
+			yield break;
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < cardCharacters.Count; i++)
+		{
+			if (i > 0)
+			{
+				stringBuilder.Append(", ");
+			}
+			stringBuilder.Append(cardCharacters[i]);
+		}
+		if (cardCharacters.Count == 0 && !subclassName.IsNullOrEmpty())
+		{
+			stringBuilder.Append(Texts.Instance.GetText(subclassName.ToLower().Replace(" ", "") + "_name", "class"));
+		}
+		stringBuilder.Append("\n");
+		string text;
+		if (cardCharacters.Count > 1)
+		{
+			text = Texts.Instance.GetText("charsReceives");
+			text = text.Replace("<chars>", stringBuilder.ToString());
+		}
+		else
+		{
+			text = Texts.Instance.GetText("charReceive");
+			text = text.Replace("<char>", stringBuilder.ToString());
+		}
+		GameObject gameObject;
+		if (cardData.CardClass == Enums.CardClass.Injury)
+		{
+			cardKO.gameObject.SetActive(value: true);
+			cardKOText.text = text;
+			gameObject = Object.Instantiate(GameManager.Instance.CardPrefab, new Vector3(-2.5f, 0f, 0f), Quaternion.identity, cardKOCards);
+		}
+		else
+		{
+			cardOK.gameObject.SetActive(value: true);
+			cardOKText.text = text;
+			gameObject = Object.Instantiate(GameManager.Instance.CardPrefab, new Vector3(-2.5f, 0f, 0f), Quaternion.identity, cardOKCards);
+		}
+		CardItem component = gameObject.GetComponent<CardItem>();
+		component.SetCard(cardName, deckScale: false);
+		gameObject.transform.localScale = new Vector3(0f, 0f, 0f);
+		component.SetDestinationScaleRotation(new Vector3(3.3f, 1.1f, -1f), 1.4f, Quaternion.Euler(0f, 0f, 0f));
+		component.cardrevealed = true;
+		component.TopLayeringOrder("Book", 20000);
+		component.CreateColliderAdjusted();
+		if (cardData.CardType != Enums.CardType.Pet || cardData.CardRarity != Enums.CardRarity.Rare)
+		{
+			PlayerManager.Instance.CardUnlock(cardName, save: true, component);
+		}
+	}
+
+	private IEnumerator ShowResultTitle(bool success, int heroIndex = -1)
+	{
+		if (AtOManager.Instance.Sandbox_alwaysPassEventRoll)
+		{
+			success = true;
+		}
+		TMP_Text textObj;
+		if (success)
+		{
+			if (heroIndex == -1)
+			{
+				textObj = resultOK;
+				if (criticalSuccess)
+				{
+					textObj = resultOKc;
+				}
+			}
+			else
+			{
+				textObj = charTresultOK[heroIndex];
+			}
+		}
+		else if (heroIndex == -1)
+		{
+			textObj = resultKO;
+			if (criticalFail)
+			{
+				textObj = resultKOc;
+			}
+		}
+		else
+		{
+			textObj = charTresultKO[heroIndex];
+		}
+		Color colorOri = textObj.color;
+		textObj.gameObject.SetActive(value: true);
+		float alpha = colorOri.a;
+		while (alpha < 1f)
+		{
+			alpha += 0.1f;
+			textObj.color = new Color(colorOri.r, colorOri.g, colorOri.b, alpha);
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+		}
+	}
+
+	private void TurnOffCharacter(int heroIndex)
+	{
+		characterSPR[heroIndex].color = new Color(0.3f, 0.3f, 0.3f, 1f);
+	}
+
+	public void SetWaitingPlayersText(string msg)
+	{
+		if (msg != "")
+		{
+			waitingMsg.gameObject.SetActive(value: true);
+			waitingMsgText.text = msg;
+		}
+		else
+		{
+			waitingMsg.gameObject.SetActive(value: false);
+		}
+		if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster() || !AtOManager.Instance.followingTheLeader)
+		{
+			return;
+		}
+		if (NetworkManager.Instance.IsMasterReady())
+		{
+			if (!statusReady)
+			{
+				Ready(forceIt: true);
+			}
+		}
+		else if (statusReady)
+		{
+			Ready(forceIt: true);
+		}
+	}
+
+	public void Ready(bool forceIt = false)
+	{
+		if (GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster() && AtOManager.Instance.followingTheLeader && !forceIt)
+		{
+			return;
+		}
+		if (!GameManager.Instance.IsMultiplayer() || TownManager.Instance != null)
+		{
+			CloseEvent();
+			return;
+		}
+		if (manualReadyCo != null)
+		{
+			StopCoroutine(manualReadyCo);
+		}
+		statusReady = !statusReady;
+		NetworkManager.Instance.SetManualReady(statusReady);
+		if (statusReady)
+		{
+			continueButton.GetComponent<BotonGeneric>().SetBackgroundColor(Functions.HexToColor(Globals.Instance.ClassColor["scout"]));
+			continueButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("waitingForPlayers"));
+			if (NetworkManager.Instance.IsMaster())
+			{
+				manualReadyCo = StartCoroutine(CheckForAllManualReady());
+			}
+		}
+		else
+		{
+			continueButton.GetComponent<BotonGeneric>().SetBackgroundColor(Functions.HexToColor(Globals.Instance.ClassColor["warrior"]));
+			continueButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("continueAction"));
+		}
+	}
+
+	private IEnumerator CheckForAllManualReady()
+	{
+		bool check = true;
+		while (check)
+		{
+			if (!NetworkManager.Instance.AllPlayersManualReady())
+			{
+				yield return Globals.Instance.WaitForSeconds(0.1f);
+			}
+			else
+			{
+				check = false;
+			}
+		}
+		photonView.RPC("NET_CloseEvent", RpcTarget.Others);
+		CloseEvent();
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, int absolutePosition = -1)
+	{
+		_controllerList.Clear();
+		if (Functions.TransformIsVisible(continueButton))
+		{
+			_controllerList.Add(continueButton);
+		}
+		else if (replysGOs.Length != 0)
+		{
+			for (int i = 0; i < replysGOs.Length; i++)
+			{
+				if (replysGOs[i] != null)
+				{
+					_controllerList.Add(replysGOs[i].transform);
+					if (Functions.TransformIsVisible(replys[i].probDice))
+					{
+						_controllerList.Add(replys[i].probDice);
+					}
+				}
+			}
+		}
+		_controllerList.Add(MapManager.Instance.eventShowHideButton);
+		for (int j = 0; j < 4; j++)
+		{
+			if (Functions.TransformIsVisible(MapManager.Instance.sideCharacters.charArray[j].transform))
+			{
+				_controllerList.Add(MapManager.Instance.sideCharacters.charArray[j].transform.GetChild(0).transform);
+			}
+		}
+		if (Functions.TransformIsVisible(PlayerUIManager.Instance.giveGold))
+		{
+			_controllerList.Add(PlayerUIManager.Instance.giveGold);
+		}
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
 }

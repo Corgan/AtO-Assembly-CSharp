@@ -1,204 +1,259 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EmoteManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class EmoteManager : MonoBehaviour
 {
-  public EmoteSmall[] emotes;
-  public Sprite[] emotesSprite;
-  private CircleCollider2D collider;
-  private Coroutine hideCo;
-  public SpriteRenderer characterPortrait;
-  public SpriteRenderer characterPortraitBlocked;
-  public Transform emoteText;
-  public int heroActive = -1;
-  public Transform blockedT;
-  public TMP_Text blockedCounter;
-  private bool blocked;
-  private int counter;
-  private int blockedTimeout = 3;
-  private Vector3 posIni;
-  private Vector3 posIniBlocked;
-  private Coroutine blockedCo;
-  private bool initiated;
+	public EmoteSmall[] emotes;
 
-  private void Awake()
-  {
-    this.collider = this.GetComponent<CircleCollider2D>();
-    this.posIni = this.characterPortrait.transform.localPosition;
-    this.posIniBlocked = this.characterPortraitBlocked.transform.parent.transform.localPosition;
-  }
+	public Sprite[] emotesSprite;
 
-  private void Start()
-  {
-    for (int _action = 0; _action < this.emotes.Length; ++_action)
-      this.emotes[_action].SetAction(_action);
-    this.HideEmotes();
-  }
+	private CircleCollider2D collider;
 
-  public void Init()
-  {
-    if (this.initiated)
-      return;
-    this.SelectNextCharacter();
-    this.initiated = true;
-  }
+	private Coroutine hideCo;
 
-  public void SetBlocked(bool _state)
-  {
-    this.blocked = _state;
-    if (!((Object) this.blockedT != (Object) null))
-      return;
-    if (_state)
-    {
-      this.emoteText.gameObject.SetActive(false);
-      this.blockedT.gameObject.SetActive(true);
-      this.SetCounter();
-    }
-    else
-    {
-      this.emoteText.gameObject.SetActive(true);
-      this.blockedT.gameObject.SetActive(false);
-    }
-  }
+	public SpriteRenderer characterPortrait;
 
-  public bool IsBlocked() => this.blocked;
+	public SpriteRenderer characterPortraitBlocked;
 
-  private void SetCounter()
-  {
-    if (this.blockedCo != null)
-      this.StopCoroutine(this.blockedCo);
-    this.counter = this.blockedTimeout;
-    this.blockedCo = this.StartCoroutine(this.SetCounterCo());
-  }
+	public Transform emoteText;
 
-  private IEnumerator SetCounterCo()
-  {
-    for (; this.counter > 0; --this.counter)
-    {
-      if ((Object) this.blockedCounter != (Object) null)
-        this.blockedCounter.text = this.counter.ToString();
-      yield return (object) Globals.Instance.WaitForSeconds(1f);
-    }
-    this.SetBlocked(false);
-  }
+	public int heroActive = -1;
 
-  private void SelectNextCharacter()
-  {
-    Hero[] teamHero = MatchManager.Instance.GetTeamHero();
-    if (teamHero != null)
-    {
-      bool flag = false;
-      int num = 0;
-      while (!flag && num < 100)
-      {
-        ++num;
-        ++this.heroActive;
-        if (this.heroActive > 3)
-          this.heroActive = 0;
-        if (teamHero[this.heroActive] != null && (teamHero[this.heroActive].Owner == NetworkManager.Instance.GetPlayerNick() || teamHero[this.heroActive].Owner == "") || !GameManager.Instance.IsMultiplayer())
-          flag = true;
-      }
-      if (flag && teamHero[this.heroActive] != null && (Object) teamHero[this.heroActive].HeroData != (Object) null)
-      {
-        this.characterPortrait.sprite = this.characterPortraitBlocked.sprite = teamHero[this.heroActive].HeroData.HeroSubClass.StickerBase;
-        this.characterPortrait.transform.localPosition = this.posIni + new Vector3(teamHero[this.heroActive].HeroData.HeroSubClass.StickerOffsetX, 0.0f, 0.0f);
-        this.characterPortraitBlocked.transform.parent.transform.localPosition = this.posIniBlocked + new Vector3(teamHero[this.heroActive].HeroData.HeroSubClass.StickerOffsetX, 0.0f, 0.0f);
-      }
-    }
-    if (teamHero[this.heroActive] == null || !((Object) teamHero[this.heroActive].HeroData != (Object) null))
-      return;
-    if (teamHero[this.heroActive].Alive)
-    {
-      for (int index = 0; index < this.emotes.Length; ++index)
-        this.emotes[index].SetBlocked(false);
-    }
-    else
-    {
-      for (int _action = 0; _action < this.emotes.Length; ++_action)
-      {
-        if (!this.EmoteNeedsTarget(_action))
-          this.emotes[_action].SetBlocked(true);
-      }
-    }
-  }
+	public Transform blockedT;
 
-  private void SetEmotesForThisCharacter()
-  {
-    for (int _action = 0; _action < this.emotes.Length; ++_action)
-      this.emotes[_action].SetAction(_action);
-  }
+	public TMP_Text blockedCounter;
 
-  public bool EmoteNeedsTarget(int _action) => _action == 2 || _action == 3;
+	private bool blocked;
 
-  private void OnMouseEnter() => this.OnMouseEnterF();
+	private int counter;
 
-  private void OnMouseOver()
-  {
-    if (this.blocked || this.emotes[0].gameObject.activeSelf)
-      return;
-    this.ShowEmotes();
-  }
+	private int blockedTimeout = 3;
 
-  private void OnMouseEnterF()
-  {
-    if (this.blocked || MatchManager.Instance.waitingDeathScreen || MatchManager.Instance.WaitingForActionScreen())
-      return;
-    this.ShowEmotes();
-  }
+	private Vector3 posIni;
 
-  private void OnMouseExit()
-  {
-    if (this.blocked)
-      return;
-    this.HideEmotesCo();
-  }
+	private Vector3 posIniBlocked;
 
-  private void OnMouseUp()
-  {
-    if (this.blocked)
-      return;
-    this.SelectNextCharacter();
-  }
+	private Coroutine blockedCo;
 
-  public void HideEmotesCo()
-  {
-    if (this.hideCo != null)
-      this.StopCoroutine(this.hideCo);
-    this.hideCo = this.StartCoroutine(this.HideEmotesCoAction());
-  }
+	private bool initiated;
 
-  private IEnumerator HideEmotesCoAction()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.2f);
-    this.HideEmotes();
-  }
+	private void Awake()
+	{
+		collider = GetComponent<CircleCollider2D>();
+		posIni = characterPortrait.transform.localPosition;
+		posIniBlocked = characterPortraitBlocked.transform.parent.transform.localPosition;
+	}
 
-  public void HideEmotes()
-  {
-    for (int index = 0; index < this.emotes.Length; ++index)
-      this.emotes[index].Hide();
-    this.collider.radius = 0.48f;
-    this.emoteText.gameObject.SetActive(true);
-  }
+	private void Start()
+	{
+		for (int i = 0; i < emotes.Length; i++)
+		{
+			emotes[i].SetAction(i);
+		}
+		HideEmotes();
+	}
 
-  public void ShowEmotes()
-  {
-    if (this.hideCo != null)
-      this.StopCoroutine(this.hideCo);
-    if (!this.emotes[0].gameObject.activeSelf)
-    {
-      for (int index = 0; index < this.emotes.Length; ++index)
-        this.emotes[index].Show();
-    }
-    this.collider.radius = 1.4f;
-    this.emoteText.gameObject.SetActive(false);
-  }
+	public void Init()
+	{
+		if (!initiated)
+		{
+			SelectNextCharacter();
+			initiated = true;
+		}
+	}
+
+	public void SetBlocked(bool _state)
+	{
+		blocked = _state;
+		if (blockedT != null)
+		{
+			if (_state)
+			{
+				emoteText.gameObject.SetActive(value: false);
+				blockedT.gameObject.SetActive(value: true);
+				SetCounter();
+			}
+			else
+			{
+				emoteText.gameObject.SetActive(value: true);
+				blockedT.gameObject.SetActive(value: false);
+			}
+		}
+	}
+
+	public bool IsBlocked()
+	{
+		return blocked;
+	}
+
+	private void SetCounter()
+	{
+		if (blockedCo != null)
+		{
+			StopCoroutine(blockedCo);
+		}
+		counter = blockedTimeout;
+		blockedCo = StartCoroutine(SetCounterCo());
+	}
+
+	private IEnumerator SetCounterCo()
+	{
+		while (counter > 0)
+		{
+			if (blockedCounter != null)
+			{
+				blockedCounter.text = counter.ToString();
+			}
+			yield return Globals.Instance.WaitForSeconds(1f);
+			counter--;
+		}
+		SetBlocked(_state: false);
+	}
+
+	private void SelectNextCharacter()
+	{
+		Hero[] teamHero = MatchManager.Instance.GetTeamHero();
+		if (teamHero != null)
+		{
+			bool flag = false;
+			int num = 0;
+			while (!flag && num < 100)
+			{
+				num++;
+				heroActive++;
+				if (heroActive > 3)
+				{
+					heroActive = 0;
+				}
+				if ((teamHero[heroActive] != null && (teamHero[heroActive].Owner == NetworkManager.Instance.GetPlayerNick() || teamHero[heroActive].Owner == "")) || !GameManager.Instance.IsMultiplayer())
+				{
+					flag = true;
+				}
+			}
+			if (flag && teamHero[heroActive] != null && teamHero[heroActive].HeroData != null)
+			{
+				SpriteRenderer spriteRenderer = characterPortrait;
+				Sprite sprite = (characterPortraitBlocked.sprite = teamHero[heroActive].HeroData.HeroSubClass.StickerBase);
+				spriteRenderer.sprite = sprite;
+				characterPortrait.transform.localPosition = posIni + new Vector3(teamHero[heroActive].HeroData.HeroSubClass.StickerOffsetX, 0f, 0f);
+				characterPortraitBlocked.transform.parent.transform.localPosition = posIniBlocked + new Vector3(teamHero[heroActive].HeroData.HeroSubClass.StickerOffsetX, 0f, 0f);
+			}
+		}
+		if (teamHero[heroActive] == null || !(teamHero[heroActive].HeroData != null))
+		{
+			return;
+		}
+		if (teamHero[heroActive].Alive)
+		{
+			for (int i = 0; i < emotes.Length; i++)
+			{
+				emotes[i].SetBlocked(_state: false);
+			}
+			return;
+		}
+		for (int j = 0; j < emotes.Length; j++)
+		{
+			if (!EmoteNeedsTarget(j))
+			{
+				emotes[j].SetBlocked(_state: true);
+			}
+		}
+	}
+
+	private void SetEmotesForThisCharacter()
+	{
+		for (int i = 0; i < emotes.Length; i++)
+		{
+			emotes[i].SetAction(i);
+		}
+	}
+
+	public bool EmoteNeedsTarget(int _action)
+	{
+		if (_action == 2 || _action == 3)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	private void OnMouseEnter()
+	{
+		OnMouseEnterF();
+	}
+
+	private void OnMouseOver()
+	{
+		if (!blocked && !emotes[0].gameObject.activeSelf)
+		{
+			ShowEmotes();
+		}
+	}
+
+	private void OnMouseEnterF()
+	{
+		if (!blocked && !MatchManager.Instance.waitingDeathScreen && !MatchManager.Instance.WaitingForActionScreen())
+		{
+			ShowEmotes();
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!blocked)
+		{
+			HideEmotesCo();
+		}
+	}
+
+	private void OnMouseUp()
+	{
+		if (!blocked)
+		{
+			SelectNextCharacter();
+		}
+	}
+
+	public void HideEmotesCo()
+	{
+		if (hideCo != null)
+		{
+			StopCoroutine(hideCo);
+		}
+		hideCo = StartCoroutine(HideEmotesCoAction());
+	}
+
+	private IEnumerator HideEmotesCoAction()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.2f);
+		HideEmotes();
+	}
+
+	public void HideEmotes()
+	{
+		for (int i = 0; i < emotes.Length; i++)
+		{
+			emotes[i].Hide();
+		}
+		collider.radius = 0.48f;
+		emoteText.gameObject.SetActive(value: true);
+	}
+
+	public void ShowEmotes()
+	{
+		if (hideCo != null)
+		{
+			StopCoroutine(hideCo);
+		}
+		if (!emotes[0].gameObject.activeSelf)
+		{
+			for (int i = 0; i < emotes.Length; i++)
+			{
+				emotes[i].Show();
+			}
+		}
+		collider.radius = 1.4f;
+		emoteText.gameObject.SetActive(value: false);
+	}
 }

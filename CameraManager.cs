@@ -1,151 +1,157 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CameraManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using UnityEngine;
 
-#nullable disable
 [ExecuteInEditMode]
 public class CameraManager : MonoBehaviour
 {
-  public float horizontalResolution = 1920f;
-  public float verticalResolution = 1080f;
-  public bool resize = true;
-  private float ortoDestine;
-  private float ortoInit;
-  private CameraShake cameraShake;
-  private float lastScreenWidth;
-  private float lastScreenHeight;
-  private Coroutine zoomCoroutine;
+	public float horizontalResolution = 1920f;
 
-  private void Awake()
-  {
-    this.cameraShake = this.GetComponent<CameraShake>();
-    this.ortoInit = Camera.main.orthographicSize;
-    Camera.main.orthographicSize = 5.4f;
-  }
+	public float verticalResolution = 1080f;
 
-  private void Update()
-  {
-    if (Time.frameCount % 24 != 0 || (double) this.lastScreenWidth == (double) Screen.width && (double) this.lastScreenHeight == (double) Screen.height)
-      return;
-    this.lastScreenWidth = (float) Screen.width;
-    this.lastScreenHeight = (float) Screen.height;
-    this.resize = true;
-    if (!this.resize)
-      return;
-    float num1 = (float) Screen.width / (float) Screen.height / 1.77777779f;
-    Camera component = this.GetComponent<Camera>();
-    if ((double) num1 < 1.0)
-    {
-      Rect rect = component.rect with
-      {
-        width = 1f,
-        height = num1,
-        x = 0.0f,
-        y = (float) ((1.0 - (double) num1) / 2.0)
-      };
-      component.rect = rect;
-    }
-    else
-    {
-      float num2 = 1f / num1;
-      Rect rect = component.rect with
-      {
-        width = num2,
-        height = 1f,
-        x = (float) ((1.0 - (double) num2) / 2.0),
-        y = 0.0f
-      };
-      component.rect = rect;
-    }
-    if ((Object) GameManager.Instance != (Object) null)
-      GameManager.Instance.Resize();
-    this.resize = false;
-  }
+	public bool resize = true;
 
-  public void Shake()
-  {
-    if (!GameManager.Instance.ConfigScreenShakeOption)
-      return;
-    this.cameraShake.Shake();
-  }
+	private float ortoDestine;
 
-  public void Zoom()
-  {
-    this.ortoDestine = Camera.main.orthographicSize - 0.15f;
-    if (this.zoomCoroutine != null)
-      this.StopCoroutine(this.zoomCoroutine);
-    this.zoomCoroutine = this.StartCoroutine(this.ZoomCo(this.ortoInit, this.ortoDestine));
-  }
+	private float ortoInit;
 
-  private IEnumerator ZoomCo(float source, float destine)
-  {
-    float step = Mathf.Abs(source - destine) / 10f;
-    float index = source;
-    float end = destine;
-    if ((double) source > (double) destine)
-    {
-      while ((double) index > (double) end)
-      {
-        index -= step;
-        Camera.main.orthographicSize = index;
-        yield return (object) Globals.Instance.WaitForSeconds(0.005f);
-      }
-    }
-    else
-    {
-      step = (float) (((double) destine - (double) source) / 10.0);
-      while ((double) index < (double) end)
-      {
-        index += step;
-        Camera.main.orthographicSize = index;
-        yield return (object) Globals.Instance.WaitForSeconds(0.005f);
-      }
-    }
-    Camera.main.orthographicSize = destine;
-  }
+	private CameraShake cameraShake;
 
-  public void ZoomBack()
-  {
-    if (this.zoomCoroutine != null)
-      this.StopCoroutine(this.zoomCoroutine);
-    this.zoomCoroutine = this.StartCoroutine(this.ZoomCo(this.ortoDestine, this.ortoInit));
-  }
+	private float lastScreenWidth;
 
-  public void ZoomToTransform(Transform transformPosition)
-  {
-    this.ortoInit = Camera.main.orthographicSize;
-    this.ortoDestine = Camera.main.orthographicSize - 2f;
-    this.StartCoroutine(this.ZoomToTransformCO(transformPosition));
-  }
+	private float lastScreenHeight;
 
-  private IEnumerator ZoomToTransformCO(Transform transformPosition)
-  {
-    CameraManager cameraManager = this;
-    cameraManager.resize = false;
-    float index = Camera.main.orthographicSize;
-    while ((double) index > (double) cameraManager.ortoDestine)
-    {
-      index -= 0.2f;
-      cameraManager.transform.localRotation = Quaternion.Slerp(cameraManager.transform.localRotation, Quaternion.Euler(0.0f, 0.0f, -15f), Time.deltaTime * 5f);
-      Camera.main.orthographicSize = index;
-      yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-    }
-    yield return (object) Globals.Instance.WaitForSeconds(1.5f);
-    cameraManager.ortoDestine = cameraManager.ortoInit;
-    index = Camera.main.orthographicSize;
-    Debug.Log((object) (index.ToString() + "<" + cameraManager.ortoDestine.ToString()));
-    while ((double) index < (double) cameraManager.ortoDestine)
-    {
-      index += 0.2f;
-      cameraManager.transform.localRotation = Quaternion.Slerp(cameraManager.transform.localRotation, Quaternion.Euler(0.0f, 0.0f, 0.0f), Time.deltaTime * 5f);
-      Camera.main.orthographicSize = index;
-      yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-    }
-    cameraManager.transform.localRotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
-  }
+	private Coroutine zoomCoroutine;
+
+	private void Awake()
+	{
+		cameraShake = GetComponent<CameraShake>();
+		ortoInit = Camera.main.orthographicSize;
+		Camera.main.orthographicSize = 5.4f;
+	}
+
+	private void Update()
+	{
+		if (Time.frameCount % 24 != 0 || (lastScreenWidth == (float)Screen.width && lastScreenHeight == (float)Screen.height))
+		{
+			return;
+		}
+		lastScreenWidth = Screen.width;
+		lastScreenHeight = Screen.height;
+		resize = true;
+		if (resize)
+		{
+			float num = 1.7777778f;
+			float num2 = (float)Screen.width / (float)Screen.height / num;
+			Camera component = GetComponent<Camera>();
+			if (num2 < 1f)
+			{
+				Rect rect = component.rect;
+				rect.width = 1f;
+				rect.height = num2;
+				rect.x = 0f;
+				rect.y = (1f - num2) / 2f;
+				component.rect = rect;
+			}
+			else
+			{
+				float num3 = 1f / num2;
+				Rect rect2 = component.rect;
+				rect2.width = num3;
+				rect2.height = 1f;
+				rect2.x = (1f - num3) / 2f;
+				rect2.y = 0f;
+				component.rect = rect2;
+			}
+			if (GameManager.Instance != null)
+			{
+				GameManager.Instance.Resize();
+			}
+			resize = false;
+		}
+	}
+
+	public void Shake()
+	{
+		if (GameManager.Instance.ConfigScreenShakeOption)
+		{
+			cameraShake.Shake();
+		}
+	}
+
+	public void Zoom()
+	{
+		ortoDestine = Camera.main.orthographicSize - 0.15f;
+		if (zoomCoroutine != null)
+		{
+			StopCoroutine(zoomCoroutine);
+		}
+		zoomCoroutine = StartCoroutine(ZoomCo(ortoInit, ortoDestine));
+	}
+
+	private IEnumerator ZoomCo(float source, float destine)
+	{
+		float step = Mathf.Abs(source - destine) / 10f;
+		float index = source;
+		if (source > destine)
+		{
+			while (index > destine)
+			{
+				index -= step;
+				Camera.main.orthographicSize = index;
+				yield return Globals.Instance.WaitForSeconds(0.005f);
+			}
+		}
+		else
+		{
+			step = (destine - source) / 10f;
+			while (index < destine)
+			{
+				index += step;
+				Camera.main.orthographicSize = index;
+				yield return Globals.Instance.WaitForSeconds(0.005f);
+			}
+		}
+		Camera.main.orthographicSize = destine;
+	}
+
+	public void ZoomBack()
+	{
+		if (zoomCoroutine != null)
+		{
+			StopCoroutine(zoomCoroutine);
+		}
+		zoomCoroutine = StartCoroutine(ZoomCo(ortoDestine, ortoInit));
+	}
+
+	public void ZoomToTransform(Transform transformPosition)
+	{
+		ortoInit = Camera.main.orthographicSize;
+		ortoDestine = Camera.main.orthographicSize - 2f;
+		StartCoroutine(ZoomToTransformCO(transformPosition));
+	}
+
+	private IEnumerator ZoomToTransformCO(Transform transformPosition)
+	{
+		resize = false;
+		float index = Camera.main.orthographicSize;
+		while (index > ortoDestine)
+		{
+			index -= 0.2f;
+			base.transform.localRotation = Quaternion.Slerp(base.transform.localRotation, Quaternion.Euler(0f, 0f, -15f), Time.deltaTime * 5f);
+			Camera.main.orthographicSize = index;
+			yield return Globals.Instance.WaitForSeconds(0.01f);
+		}
+		yield return Globals.Instance.WaitForSeconds(1.5f);
+		ortoDestine = ortoInit;
+		index = Camera.main.orthographicSize;
+		Debug.Log(index + "<" + ortoDestine);
+		while (index < ortoDestine)
+		{
+			index += 0.2f;
+			base.transform.localRotation = Quaternion.Slerp(base.transform.localRotation, Quaternion.Euler(0f, 0f, 0f), Time.deltaTime * 5f);
+			Camera.main.orthographicSize = index;
+			yield return Globals.Instance.WaitForSeconds(0.01f);
+		}
+		base.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+	}
 }

@@ -1,59 +1,64 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Score
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class Score : MonoBehaviour
 {
-  public Transform icon;
-  public TMP_Text index;
-  public TMP_Text name;
-  public TMP_Text score;
-  public Transform sep;
-  private Color indexColor;
-  private Color nameColor;
+	public Transform icon;
 
-  private void Awake()
-  {
-    this.indexColor = this.index.color;
-    this.nameColor = this.name.color;
-  }
+	public TMP_Text index;
 
-  public void SetScore(int _index, string _name, int _score = -1, ulong _userId = 999999999999999)
-  {
-    if (_index > 0)
-    {
-      this.index.text = _index.ToString();
-      this.name.text = _name;
-      this.score.text = Functions.ScoreFormat(_score);
-      this.sep.gameObject.SetActive(true);
-      if ((long) _userId != (long) (ulong) SteamManager.Instance.steamId)
-      {
-        this.icon.gameObject.SetActive(false);
-        this.name.color = this.nameColor;
-      }
-      else
-      {
-        this.icon.gameObject.SetActive(true);
-        this.name.color = this.indexColor;
-        TomeManager.Instance.playerOnScoreboard = true;
-      }
-    }
-    else
-    {
-      this.index.text = "";
-      this.name.text = _name;
-      this.score.text = "";
-      this.sep.gameObject.SetActive(false);
-    }
-  }
+	public new TMP_Text name;
 
-  public void Show() => this.gameObject.SetActive(true);
+	public TMP_Text score;
 
-  public void Hide() => this.gameObject.SetActive(false);
+	public Transform sep;
+
+	private Color indexColor;
+
+	private Color nameColor;
+
+	private void Awake()
+	{
+		indexColor = index.color;
+		nameColor = name.color;
+	}
+
+	public void SetScore(int _index, string _name, int _score = -1, ulong _userId = 999999999999999uL)
+	{
+		if (_index > 0)
+		{
+			index.text = _index.ToString();
+			name.text = _name;
+			score.text = Functions.ScoreFormat(_score);
+			sep.gameObject.SetActive(value: true);
+			if (_userId != (ulong)SteamManager.Instance.steamId)
+			{
+				icon.gameObject.SetActive(value: false);
+				name.color = nameColor;
+			}
+			else
+			{
+				icon.gameObject.SetActive(value: true);
+				name.color = indexColor;
+				TomeManager.Instance.playerOnScoreboard = true;
+			}
+		}
+		else
+		{
+			index.text = "";
+			name.text = _name;
+			score.text = "";
+			sep.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void Show()
+	{
+		base.gameObject.SetActive(value: true);
+	}
+
+	public void Hide()
+	{
+		base.gameObject.SetActive(value: false);
+	}
 }

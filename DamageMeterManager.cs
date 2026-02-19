@@ -1,149 +1,195 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: DamageMeterManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class DamageMeterManager : MonoBehaviour
 {
-  public Transform panel;
-  public CharacterMeter[] characterMeter;
-  public TMP_Text[] statsTotal;
-  public Transform panelElements;
-  public Transform detailedData;
-  public Transform buttonClose;
-  public Transform banners;
-  private bool opened = true;
-  public int[,] combatStatsOld;
-  public int[,] combatStatsCurrentOld;
+	public Transform panel;
 
-  public static DamageMeterManager Instance { get; private set; }
+	public CharacterMeter[] characterMeter;
 
-  private void Awake()
-  {
-    if ((Object) DamageMeterManager.Instance == (Object) null)
-      DamageMeterManager.Instance = this;
-    else if ((Object) DamageMeterManager.Instance != (Object) this)
-      Object.Destroy((Object) this.gameObject);
-    Object.DontDestroyOnLoad((Object) this.gameObject);
-  }
+	public TMP_Text[] statsTotal;
 
-  private void Start() => this.Hide();
+	public Transform panelElements;
 
-  public bool IsActive() => this.panel.gameObject.activeSelf;
+	public Transform detailedData;
 
-  public void ShowHide()
-  {
-    if (this.opened)
-      this.Hide();
-    else
-      this.Show();
-  }
+	public Transform buttonClose;
 
-  public void SaveATOStats()
-  {
-    if (AtOManager.Instance.combatStats != null)
-    {
-      this.combatStatsOld = new int[AtOManager.Instance.combatStats.GetLength(0), AtOManager.Instance.combatStats.GetLength(1)];
-      for (int index1 = 0; index1 < AtOManager.Instance.combatStats.GetLength(0); ++index1)
-      {
-        for (int index2 = 0; index2 < AtOManager.Instance.combatStats.GetLength(1); ++index2)
-          this.combatStatsOld[index1, index2] = AtOManager.Instance.combatStats[index1, index2];
-      }
-    }
-    if (AtOManager.Instance.combatStatsCurrent == null)
-      return;
-    this.combatStatsCurrentOld = new int[AtOManager.Instance.combatStatsCurrent.GetLength(0), AtOManager.Instance.combatStatsCurrent.GetLength(1)];
-    for (int index3 = 0; index3 < AtOManager.Instance.combatStatsCurrent.GetLength(0); ++index3)
-    {
-      for (int index4 = 0; index4 < AtOManager.Instance.combatStatsCurrent.GetLength(1); ++index4)
-        this.combatStatsCurrentOld[index3, index4] = AtOManager.Instance.combatStatsCurrent[index3, index4];
-    }
-  }
+	public Transform banners;
 
-  public void RestoreATOStats()
-  {
-    if (this.combatStatsOld != null)
-    {
-      AtOManager.Instance.combatStats = new int[this.combatStatsOld.GetLength(0), this.combatStatsOld.GetLength(1)];
-      for (int index1 = 0; index1 < this.combatStatsOld.GetLength(0); ++index1)
-      {
-        for (int index2 = 0; index2 < this.combatStatsOld.GetLength(1); ++index2)
-          AtOManager.Instance.combatStats[index1, index2] = this.combatStatsOld[index1, index2];
-      }
-    }
-    if (this.combatStatsCurrentOld == null)
-      return;
-    AtOManager.Instance.combatStatsCurrent = new int[this.combatStatsCurrentOld.GetLength(0), this.combatStatsCurrentOld.GetLength(1)];
-    for (int index3 = 0; index3 < this.combatStatsCurrentOld.GetLength(0); ++index3)
-    {
-      for (int index4 = 0; index4 < this.combatStatsCurrentOld.GetLength(1); ++index4)
-        AtOManager.Instance.combatStatsCurrent[index3, index4] = this.combatStatsCurrentOld[index3, index4];
-    }
-  }
+	private bool opened = true;
 
-  public void Show(int[,] _combatStats = null)
-  {
-    this.opened = true;
-    this.panel.gameObject.SetActive(true);
-    if (AtOManager.Instance.combatStats != null && AtOManager.Instance.combatStats.GetLength(1) == 10)
-    {
-      this.detailedData.gameObject.SetActive(false);
-      for (int index = 5; index < 12; ++index)
-        this.statsTotal[index].gameObject.SetActive(false);
-    }
-    else
-    {
-      this.detailedData.gameObject.SetActive(true);
-      for (int index = 5; index < 12; ++index)
-        this.statsTotal[index].gameObject.SetActive(true);
-    }
-    if (AtOManager.Instance.combatStats.GetLength(1) > 10)
-    {
-      for (int index1 = 0; index1 < AtOManager.Instance.combatStats.GetLength(0); ++index1)
-      {
-        AtOManager.Instance.combatStats[index1, 5] = AtOManager.Instance.combatStats[index1, 0];
-        if (AtOManager.Instance.combatStatsCurrent != null)
-          AtOManager.Instance.combatStatsCurrent[index1, 5] = AtOManager.Instance.combatStatsCurrent[index1, 0];
-        for (int index2 = 6; index2 < AtOManager.Instance.combatStats.GetLength(1); ++index2)
-        {
-          AtOManager.Instance.combatStats[index1, 5] -= AtOManager.Instance.combatStats[index1, index2];
-          if (AtOManager.Instance.combatStatsCurrent != null && AtOManager.Instance.combatStatsCurrent.GetLength(1) > 10)
-            AtOManager.Instance.combatStatsCurrent[index1, 5] -= AtOManager.Instance.combatStatsCurrent[index1, index2];
-        }
-      }
-    }
-    this.DoStats();
-  }
+	public int[,] combatStatsOld;
 
-  public void Hide() => this.StartCoroutine(this.HideCo());
+	public int[,] combatStatsCurrentOld;
 
-  private IEnumerator HideCo()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-    this.opened = false;
-    this.panel.gameObject.SetActive(false);
-  }
+	public static DamageMeterManager Instance { get; private set; }
 
-  public void DoStats()
-  {
-    for (int _index = 0; _index < this.characterMeter.Length; ++_index)
-      this.characterMeter[_index].DoStats(_index);
-    if (!TomeManager.Instance.IsActive())
-      return;
-    this.RestoreATOStats();
-  }
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(base.gameObject);
+		}
+		Object.DontDestroyOnLoad(base.gameObject);
+	}
 
-  public void SetTotal(int index, int total) => this.statsTotal[index].text = total.ToString();
+	private void Start()
+	{
+		Hide();
+	}
 
-  public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false)
-  {
-    Mouse.current.WarpCursorPosition((Vector2) (this.buttonClose.position + new Vector3(0.0f, 70f, 0.0f)));
-  }
+	public bool IsActive()
+	{
+		return panel.gameObject.activeSelf;
+	}
+
+	public void ShowHide()
+	{
+		if (opened)
+		{
+			Hide();
+		}
+		else
+		{
+			Show();
+		}
+	}
+
+	public void SaveATOStats()
+	{
+		if (AtOManager.Instance.combatStats != null)
+		{
+			combatStatsOld = new int[AtOManager.Instance.combatStats.GetLength(0), AtOManager.Instance.combatStats.GetLength(1)];
+			for (int i = 0; i < AtOManager.Instance.combatStats.GetLength(0); i++)
+			{
+				for (int j = 0; j < AtOManager.Instance.combatStats.GetLength(1); j++)
+				{
+					combatStatsOld[i, j] = AtOManager.Instance.combatStats[i, j];
+				}
+			}
+		}
+		if (AtOManager.Instance.combatStatsCurrent == null)
+		{
+			return;
+		}
+		combatStatsCurrentOld = new int[AtOManager.Instance.combatStatsCurrent.GetLength(0), AtOManager.Instance.combatStatsCurrent.GetLength(1)];
+		for (int k = 0; k < AtOManager.Instance.combatStatsCurrent.GetLength(0); k++)
+		{
+			for (int l = 0; l < AtOManager.Instance.combatStatsCurrent.GetLength(1); l++)
+			{
+				combatStatsCurrentOld[k, l] = AtOManager.Instance.combatStatsCurrent[k, l];
+			}
+		}
+	}
+
+	public void RestoreATOStats()
+	{
+		if (combatStatsOld != null)
+		{
+			AtOManager.Instance.combatStats = new int[combatStatsOld.GetLength(0), combatStatsOld.GetLength(1)];
+			for (int i = 0; i < combatStatsOld.GetLength(0); i++)
+			{
+				for (int j = 0; j < combatStatsOld.GetLength(1); j++)
+				{
+					AtOManager.Instance.combatStats[i, j] = combatStatsOld[i, j];
+				}
+			}
+		}
+		if (combatStatsCurrentOld == null)
+		{
+			return;
+		}
+		AtOManager.Instance.combatStatsCurrent = new int[combatStatsCurrentOld.GetLength(0), combatStatsCurrentOld.GetLength(1)];
+		for (int k = 0; k < combatStatsCurrentOld.GetLength(0); k++)
+		{
+			for (int l = 0; l < combatStatsCurrentOld.GetLength(1); l++)
+			{
+				AtOManager.Instance.combatStatsCurrent[k, l] = combatStatsCurrentOld[k, l];
+			}
+		}
+	}
+
+	public void Show(int[,] _combatStats = null)
+	{
+		opened = true;
+		panel.gameObject.SetActive(value: true);
+		if (AtOManager.Instance.combatStats != null && AtOManager.Instance.combatStats.GetLength(1) == 10)
+		{
+			detailedData.gameObject.SetActive(value: false);
+			for (int i = 5; i < 12; i++)
+			{
+				statsTotal[i].gameObject.SetActive(value: false);
+			}
+		}
+		else
+		{
+			detailedData.gameObject.SetActive(value: true);
+			for (int j = 5; j < 12; j++)
+			{
+				statsTotal[j].gameObject.SetActive(value: true);
+			}
+		}
+		if (AtOManager.Instance.combatStats.GetLength(1) > 10)
+		{
+			for (int k = 0; k < AtOManager.Instance.combatStats.GetLength(0); k++)
+			{
+				AtOManager.Instance.combatStats[k, 5] = AtOManager.Instance.combatStats[k, 0];
+				if (AtOManager.Instance.combatStatsCurrent != null)
+				{
+					AtOManager.Instance.combatStatsCurrent[k, 5] = AtOManager.Instance.combatStatsCurrent[k, 0];
+				}
+				for (int l = 6; l < AtOManager.Instance.combatStats.GetLength(1); l++)
+				{
+					AtOManager.Instance.combatStats[k, 5] -= AtOManager.Instance.combatStats[k, l];
+					if (AtOManager.Instance.combatStatsCurrent != null && AtOManager.Instance.combatStatsCurrent.GetLength(1) > 10)
+					{
+						AtOManager.Instance.combatStatsCurrent[k, 5] -= AtOManager.Instance.combatStatsCurrent[k, l];
+					}
+				}
+			}
+		}
+		DoStats();
+	}
+
+	public void Hide()
+	{
+		StartCoroutine(HideCo());
+	}
+
+	private IEnumerator HideCo()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.01f);
+		opened = false;
+		panel.gameObject.SetActive(value: false);
+	}
+
+	public void DoStats()
+	{
+		for (int i = 0; i < characterMeter.Length; i++)
+		{
+			characterMeter[i].DoStats(i);
+		}
+		if (TomeManager.Instance.IsActive())
+		{
+			RestoreATOStats();
+		}
+	}
+
+	public void SetTotal(int index, int total)
+	{
+		statsTotal[index].text = total.ToString();
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false)
+	{
+		Vector2 position = buttonClose.position + new Vector3(0f, 70f, 0f);
+		Mouse.current.WarpCursorPosition(position);
+	}
 }

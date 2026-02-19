@@ -1,92 +1,104 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BoxPlayer
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class BoxPlayer : MonoBehaviour
 {
-  public TMP_Text playerName;
-  public Transform border;
-  public SpriteRenderer background;
-  public SpriteRenderer borderSPR;
-  private bool boxEnabled;
-  private bool active;
-  public string playerNick = "";
-  private bool skuDisabled;
+	public TMP_Text playerName;
 
-  private void Awake() => this.HideBorder();
+	public Transform border;
 
-  public void Activate(bool state)
-  {
-    this.active = state;
-    if (state)
-      this.DrawBorder();
-    else
-      this.HideBorder();
-  }
+	public SpriteRenderer background;
 
-  public void SetName(string name)
-  {
-    this.playerNick = name;
-    this.playerName.text = NetworkManager.Instance.GetPlayerNickReal(name);
-    if (name != "")
-    {
-      this.background.color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(name));
-      this.boxEnabled = true;
-    }
-    else
-      this.boxEnabled = false;
-  }
+	public SpriteRenderer borderSPR;
 
-  public void DrawBorder() => this.border.gameObject.SetActive(true);
+	private bool boxEnabled;
 
-  public void HideBorder() => this.border.gameObject.SetActive(false);
+	private bool active;
 
-  public void DisableSKU(string _sku)
-  {
-    this.skuDisabled = true;
-    this.background.color = Functions.HexToColor("#666666");
-    this.borderSPR.color = Functions.HexToColor("#300000");
-    this.GetComponent<PopupText>().text = string.Format(Texts.Instance.GetText("playerDontHaveDLC"), (object) SteamManager.Instance.GetDLCName(_sku));
-  }
+	public string playerNick = "";
 
-  private void OnMouseEnter()
-  {
-    if (this.skuDisabled)
-    {
-      this.DrawBorder();
-    }
-    else
-    {
-      if (!this.boxEnabled)
-        return;
-      this.DrawBorder();
-    }
-  }
+	private bool skuDisabled;
 
-  private void OnMouseExit()
-  {
-    if (this.skuDisabled)
-    {
-      this.HideBorder();
-    }
-    else
-    {
-      if (!this.boxEnabled || this.active)
-        return;
-      this.HideBorder();
-    }
-  }
+	private void Awake()
+	{
+		HideBorder();
+	}
 
-  private void OnMouseUp()
-  {
-    if (this.skuDisabled)
-      return;
-    HeroSelectionManager.Instance.AssignPlayerToBox(this.playerNick, this.transform.parent.transform.parent.GetComponent<BoxSelection>().GetId());
-  }
+	public void Activate(bool state)
+	{
+		active = state;
+		if (state)
+		{
+			DrawBorder();
+		}
+		else
+		{
+			HideBorder();
+		}
+	}
+
+	public void SetName(string name)
+	{
+		playerNick = name;
+		playerName.text = NetworkManager.Instance.GetPlayerNickReal(name);
+		if (name != "")
+		{
+			background.color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(name));
+			boxEnabled = true;
+		}
+		else
+		{
+			boxEnabled = false;
+		}
+	}
+
+	public void DrawBorder()
+	{
+		border.gameObject.SetActive(value: true);
+	}
+
+	public void HideBorder()
+	{
+		border.gameObject.SetActive(value: false);
+	}
+
+	public void DisableSKU(string _sku)
+	{
+		skuDisabled = true;
+		background.color = Functions.HexToColor("#666666");
+		borderSPR.color = Functions.HexToColor("#300000");
+		GetComponent<PopupText>().text = string.Format(Texts.Instance.GetText("playerDontHaveDLC"), SteamManager.Instance.GetDLCName(_sku));
+	}
+
+	private void OnMouseEnter()
+	{
+		if (skuDisabled)
+		{
+			DrawBorder();
+		}
+		else if (boxEnabled)
+		{
+			DrawBorder();
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (skuDisabled)
+		{
+			HideBorder();
+		}
+		else if (boxEnabled && !active)
+		{
+			HideBorder();
+		}
+	}
+
+	private void OnMouseUp()
+	{
+		if (!skuDisabled)
+		{
+			HeroSelectionManager.Instance.AssignPlayerToBox(playerNick, base.transform.parent.transform.parent.GetComponent<BoxSelection>().GetId());
+		}
+	}
 }

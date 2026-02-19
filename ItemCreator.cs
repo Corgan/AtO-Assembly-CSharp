@@ -1,94 +1,98 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ItemCreator
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 public class ItemCreator : MonoBehaviour
 {
-  public Dropdown[] dropElements;
-  private List<string> cardList = new List<string>();
-  private bool created;
+	public Dropdown[] dropElements;
 
-  public void Draw()
-  {
-    if (this.gameObject.activeSelf)
-    {
-      this.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.gameObject.SetActive(true);
-      if (this.created)
-        return;
-      this.GenerateItems();
-      foreach (Dropdown dropElement in this.dropElements)
-        dropElement.options.Clear();
-      this.dropElements[0].AddOptions(this.cardList);
-      this.dropElements[1].AddOptions(new List<string>()
-      {
-        "Hero1",
-        "Hero2",
-        "Hero3",
-        "Hero4"
-      });
-      this.created = true;
-    }
-  }
+	private List<string> cardList = new List<string>();
 
-  public void SelectByName(string value)
-  {
-    int num = -1;
-    for (int index = 0; index < this.cardList.Count; ++index)
-    {
-      if (this.cardList[index].StartsWith(value))
-      {
-        num = index;
-        break;
-      }
-    }
-    if (num <= -1)
-      return;
-    this.dropElements[0].value = num;
-  }
+	private bool created;
 
-  private void GenerateItems() => this.StartCoroutine(this.GenerateItemsWait());
+	public void Draw()
+	{
+		if (base.gameObject.activeSelf)
+		{
+			base.gameObject.SetActive(value: false);
+			return;
+		}
+		base.gameObject.SetActive(value: true);
+		if (!created)
+		{
+			GenerateItems();
+			Dropdown[] array = dropElements;
+			for (int i = 0; i < array.Length; i++)
+			{
+				array[i].options.Clear();
+			}
+			dropElements[0].AddOptions(cardList);
+			List<string> list = new List<string>();
+			list.Add("Hero1");
+			list.Add("Hero2");
+			list.Add("Hero3");
+			list.Add("Hero4");
+			dropElements[1].AddOptions(list);
+			created = true;
+		}
+	}
 
-  private IEnumerator GenerateItemsWait()
-  {
-    while (Globals.Instance.Cards == null)
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-    for (int index = 0; index < Globals.Instance.CardListByClass[Enums.CardClass.Item].Count; ++index)
-      this.cardList.Add(Globals.Instance.CardListByClass[Enums.CardClass.Item][index]);
-    this.cardList.Sort();
-  }
+	public void SelectByName(string value)
+	{
+		int num = -1;
+		for (int i = 0; i < cardList.Count; i++)
+		{
+			if (cardList[i].StartsWith(value))
+			{
+				num = i;
+				break;
+			}
+		}
+		if (num > -1)
+		{
+			dropElements[0].value = num;
+		}
+	}
 
-  public void GenerateAction()
-  {
-    string text1 = this.dropElements[0].options[this.dropElements[0].value].text;
-    string text2 = this.dropElements[1].options[this.dropElements[1].value].text;
-    int _heroIndex = 0;
-    switch (text2)
-    {
-      case "Hero1":
-        _heroIndex = 0;
-        break;
-      case "Hero2":
-        _heroIndex = 1;
-        break;
-      case "Hero3":
-        _heroIndex = 2;
-        break;
-      case "Hero4":
-        _heroIndex = 3;
-        break;
-    }
-    AtOManager.Instance.AddItemToHero(_heroIndex, text1);
-  }
+	private void GenerateItems()
+	{
+		StartCoroutine(GenerateItemsWait());
+	}
+
+	private IEnumerator GenerateItemsWait()
+	{
+		while (Globals.Instance.Cards == null)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+		}
+		for (int i = 0; i < Globals.Instance.CardListByClass[Enums.CardClass.Item].Count; i++)
+		{
+			cardList.Add(Globals.Instance.CardListByClass[Enums.CardClass.Item][i]);
+		}
+		cardList.Sort();
+	}
+
+	public void GenerateAction()
+	{
+		string text = dropElements[0].options[dropElements[0].value].text;
+		string text2 = dropElements[1].options[dropElements[1].value].text;
+		int heroIndex = 0;
+		switch (text2)
+		{
+		case "Hero1":
+			heroIndex = 0;
+			break;
+		case "Hero2":
+			heroIndex = 1;
+			break;
+		case "Hero3":
+			heroIndex = 2;
+			break;
+		case "Hero4":
+			heroIndex = 3;
+			break;
+		}
+		AtOManager.Instance.AddItemToHero(heroIndex, text);
+	}
 }

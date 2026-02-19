@@ -1,88 +1,89 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BotonSupply
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
+using System;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class BotonSupply : MonoBehaviour
 {
-  public int column;
-  public int row;
-  private BotonGeneric bGeneric;
-  private TMP_Text textBoton;
-  public string supplyId = "";
-  public bool available;
+	public int column;
 
-  private void Awake()
-  {
-    this.bGeneric = this.GetComponent<BotonGeneric>();
-    this.textBoton = this.transform.GetChild(0).GetComponent<TMP_Text>();
-  }
+	public int row;
 
-  private void Start()
-  {
-    this.SetId();
-    this.SetText();
-  }
+	private BotonGeneric bGeneric;
 
-  private void SetId()
-  {
-    this.supplyId = TownManager.Instance.GetUpgradeButtonId(this.column, this.row);
-  }
+	private TMP_Text textBoton;
 
-  public void ShowAvailable()
-  {
-    this.bGeneric.Enable();
-    this.bGeneric.color = Functions.HexToColor("#426C41");
-    this.bGeneric.SetColor();
-    this.bGeneric.SetTextColor(Functions.HexToColor("#FFFFFF"));
-    this.available = true;
-  }
+	public string supplyId = "";
 
-  public void ShowSelected()
-  {
-    this.bGeneric.Disable();
-    this.bGeneric.color = Functions.HexToColor("#967443");
-    this.bGeneric.SetColor();
-    this.bGeneric.ShowDisableMask(false);
-    this.bGeneric.SetTextColor(Functions.HexToColor("#FFFFFF"));
-    this.available = false;
-  }
+	public bool available;
 
-  public void ShowLocked()
-  {
-    this.bGeneric.Disable();
-    this.bGeneric.color = Functions.HexToColor("#9C9C9C");
-    this.bGeneric.SetColor();
-    this.bGeneric.SetTextColor(Functions.HexToColor("#999999"));
-    this.available = false;
-  }
+	private void Awake()
+	{
+		bGeneric = GetComponent<BotonGeneric>();
+		textBoton = base.transform.GetChild(0).GetComponent<TMP_Text>();
+	}
 
-  private void SetText()
-  {
-    this.textBoton.text = Texts.Instance.GetText(this.supplyId).Replace("<c>", "<color=#E0A44E>").Replace("</c>", "</color>");
-  }
+	private void Start()
+	{
+		SetId();
+		SetText();
+	}
 
-  public void BuySupply()
-  {
-    int num = AlertManager.Instance.GetConfirmAnswer() ? 1 : 0;
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.BuySupply);
-    if (num == 0)
-      return;
-    PlayerManager.Instance.PlayerBuySupply(this.supplyId);
-    TownManager.Instance.RefreshTownUpgrades();
-  }
+	private void SetId()
+	{
+		supplyId = TownManager.Instance.GetUpgradeButtonId(column, row);
+	}
 
-  private void OnMouseUp()
-  {
-    if (!Functions.ClickedThisTransform(this.transform) || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || !this.available)
-      return;
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.BuySupply);
-    AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("townAssignWarning"));
-    this.bGeneric.HideBorderNow();
-  }
+	public void ShowAvailable()
+	{
+		bGeneric.Enable();
+		bGeneric.color = Functions.HexToColor("#426C41");
+		bGeneric.SetColor();
+		bGeneric.SetTextColor(Functions.HexToColor("#FFFFFF"));
+		available = true;
+	}
+
+	public void ShowSelected()
+	{
+		bGeneric.Disable();
+		bGeneric.color = Functions.HexToColor("#967443");
+		bGeneric.SetColor();
+		bGeneric.ShowDisableMask(state: false);
+		bGeneric.SetTextColor(Functions.HexToColor("#FFFFFF"));
+		available = false;
+	}
+
+	public void ShowLocked()
+	{
+		bGeneric.Disable();
+		bGeneric.color = Functions.HexToColor("#9C9C9C");
+		bGeneric.SetColor();
+		bGeneric.SetTextColor(Functions.HexToColor("#999999"));
+		available = false;
+	}
+
+	private void SetText()
+	{
+		textBoton.text = Texts.Instance.GetText(supplyId).Replace("<c>", "<color=#E0A44E>").Replace("</c>", "</color>");
+	}
+
+	public void BuySupply()
+	{
+		bool confirmAnswer = AlertManager.Instance.GetConfirmAnswer();
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(BuySupply));
+		if (confirmAnswer)
+		{
+			PlayerManager.Instance.PlayerBuySupply(supplyId);
+			TownManager.Instance.RefreshTownUpgrades();
+		}
+	}
+
+	private void OnMouseUp()
+	{
+		if (Functions.ClickedThisTransform(base.transform) && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && available)
+		{
+			AlertManager.buttonClickDelegate = BuySupply;
+			AlertManager.Instance.AlertConfirmDouble(Texts.Instance.GetText("townAssignWarning"));
+			bGeneric.HideBorderNow();
+		}
+	}
 }

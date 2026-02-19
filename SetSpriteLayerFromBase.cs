@@ -1,32 +1,27 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: SetSpriteLayerFromBase
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class SetSpriteLayerFromBase : MonoBehaviour
 {
-  public SpriteRenderer sprBase;
+	public SpriteRenderer sprBase;
 
-  public void ReOrderLayer()
-  {
-    if ((Object) this.sprBase == (Object) null)
-      return;
-    if ((Object) this.GetComponent<SpriteRenderer>() != (Object) null)
-    {
-      SpriteRenderer component = this.GetComponent<SpriteRenderer>();
-      component.sortingOrder = this.sprBase.sortingOrder + 1;
-      this.transform.localPosition = new Vector3(this.transform.localPosition.x, this.transform.localPosition.y, this.sprBase.transform.localPosition.z - 1f);
-      component.sortingLayerName = this.sprBase.sortingLayerName;
-    }
-    if (!((Object) this.GetComponent<ParticleSystemRenderer>() != (Object) null))
-      return;
-    ParticleSystemRenderer component1 = this.GetComponent<ParticleSystemRenderer>();
-    component1.sortingOrder = this.sprBase.sortingOrder + 1;
-    this.transform.localPosition = new Vector3(this.transform.localPosition.x, this.transform.localPosition.y, this.sprBase.transform.localPosition.z - 1f);
-    component1.sortingLayerName = this.sprBase.sortingLayerName;
-  }
+	public void ReOrderLayer()
+	{
+		if (!(sprBase == null))
+		{
+			if (GetComponent<SpriteRenderer>() != null)
+			{
+				SpriteRenderer component = GetComponent<SpriteRenderer>();
+				component.sortingOrder = sprBase.sortingOrder + 1;
+				base.transform.localPosition = new Vector3(base.transform.localPosition.x, base.transform.localPosition.y, sprBase.transform.localPosition.z - 1f);
+				component.sortingLayerName = sprBase.sortingLayerName;
+			}
+			if (GetComponent<ParticleSystemRenderer>() != null)
+			{
+				ParticleSystemRenderer component2 = GetComponent<ParticleSystemRenderer>();
+				component2.sortingOrder = sprBase.sortingOrder + 1;
+				base.transform.localPosition = new Vector3(base.transform.localPosition.x, base.transform.localPosition.y, sprBase.transform.localPosition.z - 1f);
+				component2.sortingLayerName = sprBase.sortingLayerName;
+			}
+		}
+	}
 }

@@ -1,69 +1,81 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BotonScore
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class BotonScore : MonoBehaviour
 {
-  public SpriteRenderer background;
-  public TMP_Text text;
-  public Color textColorOver;
-  public Color textColorOff;
-  public Color bgColorOver;
-  public Color bgColorOff;
-  public string idTranslate = "";
-  public int auxInt = -1000;
+	public SpriteRenderer background;
 
-  private void Awake()
-  {
-    if (this.idTranslate != "" && (Object) Texts.Instance != (Object) null)
-      this.SetText(Texts.Instance.GetText(this.idTranslate));
-    if (this.text.transform.childCount <= 0)
-      return;
-    for (int index = 0; index < this.text.transform.childCount; ++index)
-    {
-      MeshRenderer component = this.text.transform.GetChild(index).GetComponent<MeshRenderer>();
-      component.sortingLayerName = this.text.GetComponent<MeshRenderer>().sortingLayerName;
-      component.sortingOrder = this.text.GetComponent<MeshRenderer>().sortingOrder;
-    }
-  }
+	public TMP_Text text;
 
-  private void Start() => this.SetPlainColors();
+	public Color textColorOver;
 
-  private void SetPlainColors()
-  {
-    this.background.color = this.bgColorOff;
-    this.text.color = this.textColorOff;
-  }
+	public Color textColorOff;
 
-  public void SetText(string _text) => this.text.text = _text;
+	public Color bgColorOver;
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
-      return;
-    this.background.color = this.bgColorOver;
-    this.text.color = this.textColorOver;
-    GameManager.Instance.SetCursorHover();
-  }
+	public Color bgColorOff;
 
-  private void OnMouseExit()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
-      return;
-    this.SetPlainColors();
-    GameManager.Instance.SetCursorPlain();
-  }
+	public string idTranslate = "";
 
-  public void OnMouseUp()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
-      return;
-    TomeManager.Instance.ShowScoreboard(this.auxInt);
-  }
+	public int auxInt = -1000;
+
+	private void Awake()
+	{
+		if (idTranslate != "" && Texts.Instance != null)
+		{
+			SetText(Texts.Instance.GetText(idTranslate));
+		}
+		if (text.transform.childCount > 0)
+		{
+			for (int i = 0; i < text.transform.childCount; i++)
+			{
+				MeshRenderer component = text.transform.GetChild(i).GetComponent<MeshRenderer>();
+				component.sortingLayerName = text.GetComponent<MeshRenderer>().sortingLayerName;
+				component.sortingOrder = text.GetComponent<MeshRenderer>().sortingOrder;
+			}
+		}
+	}
+
+	private void Start()
+	{
+		SetPlainColors();
+	}
+
+	private void SetPlainColors()
+	{
+		background.color = bgColorOff;
+		text.color = textColorOff;
+	}
+
+	public void SetText(string _text)
+	{
+		text.text = _text;
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive())
+		{
+			background.color = bgColorOver;
+			text.color = textColorOver;
+			GameManager.Instance.SetCursorHover();
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive())
+		{
+			SetPlainColors();
+			GameManager.Instance.SetCursorPlain();
+		}
+	}
+
+	public void OnMouseUp()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive())
+		{
+			TomeManager.Instance.ShowScoreboard(auxInt);
+		}
+	}
 }

@@ -1,2343 +1,3235 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: HeroSelectionManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using Photon.Pun;
-using Photon.Realtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Photon.Pun;
+using Photon.Realtime;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using WebSocketSharp;
 
-#nullable disable
 public class HeroSelectionManager : MonoBehaviour
 {
-  public Transform sceneCamera;
-  private GameObject box;
-  public GameObject[] boxGO;
-  private BoxSelection[] boxSelection;
-  public Dictionary<string, HeroSelection> heroSelectionDictionary = new Dictionary<string, HeroSelection>();
-  private Dictionary<GameObject, bool> boxFilled = new Dictionary<GameObject, bool>();
-  private Dictionary<GameObject, HeroSelection> boxHero = new Dictionary<GameObject, HeroSelection>();
-  public GameObject heroSelectionPrefab;
-  public GameObject cursorDragPrefab;
-  public bool dragging;
-  public TitleMovement titleMovement;
-  public Transform titleGroupDefault;
-  public Transform titleWeeklyDefault;
-  public Transform boxCharacters;
-  public GameObject charPopupPrefab;
-  public GameObject charPopupGO;
-  public CharPopup charPopup;
-  public CharPopupMini charPopupMini;
-  public Transform charContainerBg;
-  public GameObject charContainerGO;
-  public GameObject allGO;
-  public GameObject warriorsGO;
-  public GameObject healersGO;
-  public GameObject magesGO;
-  public GameObject scoutsGO;
-  public GameObject dlcsGO;
-  public GameObject lockedGO;
-  public TMP_Text _ClassWarriors;
-  public TMP_Text _ClassHealers;
-  public TMP_Text _ClassMages;
-  public TMP_Text _ClassScouts;
-  public TMP_Text _ClassMagicKnights;
-  public Transform masterDescription;
-  public Transform gameSeed;
-  public Transform gameSeedModify;
-  public TMP_Text gameSeedTxt;
-  public BotonGeneric botonBegin;
-  public BotonGeneric botonFollow;
-  public Transform popupMask;
-  public Transform ngTransform;
-  public BotonGeneric ngButton;
-  public Transform ngSelectionX;
-  public Transform ngLock;
-  public Transform separator;
-  public TMP_Text madnessLevel;
-  public Transform madnessParticle;
-  public Transform madnessButton;
-  public Transform weeklyModifiersButton;
-  public Transform sandboxButton;
-  public Transform sandboxButtonCircleOn;
-  public Transform sandboxButtonCircleOff;
-  public Transform weeklyT;
-  public TMP_Text weeklyNumber;
-  public TMP_Text weeklyLeft;
-  private bool setWeekly;
-  private int ngValue;
-  private int ngValueMaster;
-  private string ngCorruptors = "";
-  private int obeliskMadnessValue;
-  private int obeliskMadnessValueMaster;
-  private int singularityMadnessValue;
-  private int singularityMadnessValueMaster;
-  private Dictionary<string, SubClassData[]> subclassDictionary = new Dictionary<string, SubClassData[]>();
-  private Dictionary<string, SubClassData> nonHistorySubclassDictionary = new Dictionary<string, SubClassData>();
-  private PhotonView photonView;
-  private Dictionary<string, string> SubclassByName = new Dictionary<string, string>();
-  private Dictionary<string, List<string>> playerHeroPerksDict;
-  public Dictionary<string, string> playerHeroSkinsDict;
-  public Dictionary<string, string> playerHeroCardbackDict;
-  public Transform beginAdventureButton;
-  public Transform readyButtonText;
-  public Transform readyButton;
-  private bool statusReady;
-  private Coroutine manualReadyCo;
-  public Transform weeklySelector;
-  private int controllerCurrentOption = -1;
-  private int controllerCurrentBlock;
-  public List<Transform> menuController;
-  public List<Transform> positionsController;
-  public HeroSelection controllerCurrentHS;
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
-  private List<Transform> _controllerVerticalList = new List<Transform>();
-  private Coroutine coroutineMask;
-  private GameObject currentSelectionTab;
-  public GameObject CardBacksPopUp;
-  [SerializeField]
-  private GameObject charPageLeftButton;
-  [SerializeField]
-  private GameObject charPageRightButton;
-  public string CurrentFilter;
-
-  public static HeroSelectionManager Instance { get; private set; }
-
-  public string NgCorruptors
-  {
-    get => this.ngCorruptors;
-    set => this.ngCorruptors = value;
-  }
-
-  public int NgValue
-  {
-    get => this.ngValue;
-    set => this.ngValue = value;
-  }
-
-  public int NgValueMaster
-  {
-    get => this.ngValueMaster;
-    set => this.ngValueMaster = value;
-  }
-
-  public int ObeliskMadnessValueMaster
-  {
-    get => this.obeliskMadnessValueMaster;
-    set => this.obeliskMadnessValueMaster = value;
-  }
-
-  public int ObeliskMadnessValue
-  {
-    get => this.obeliskMadnessValue;
-    set => this.obeliskMadnessValue = value;
-  }
-
-  public int SingularityMadnessValueMaster
-  {
-    get => this.singularityMadnessValueMaster;
-    set => this.singularityMadnessValueMaster = value;
-  }
-
-  public int SingularityMadnessValue
-  {
-    get => this.singularityMadnessValue;
-    set => this.singularityMadnessValue = value;
-  }
-
-  public Dictionary<string, List<string>> PlayerHeroPerksDict
-  {
-    get => this.playerHeroPerksDict;
-    set => this.playerHeroPerksDict = value;
-  }
-
-  private void Awake()
-  {
-    if ((UnityEngine.Object) GameManager.Instance == (UnityEngine.Object) null)
-    {
-      SceneStatic.LoadByName("MainMenu");
-    }
-    else
-    {
-      if ((UnityEngine.Object) HeroSelectionManager.Instance == (UnityEngine.Object) null)
-        HeroSelectionManager.Instance = this;
-      else if ((UnityEngine.Object) HeroSelectionManager.Instance != (UnityEngine.Object) this)
-        UnityEngine.Object.Destroy((UnityEngine.Object) this);
-      this.photonView = PhotonView.Get((Component) this);
-      this.sceneCamera.gameObject.SetActive(false);
-      NetworkManager.Instance.StartStopQueue(true);
-      this.currentSelectionTab = this.allGO;
-    }
-  }
-
-  private async void Start()
-  {
-    HeroSelectionManager selectionManager = this;
-    selectionManager.StartCoroutine(selectionManager.StartCo());
-    await selectionManager.RefreshSelectedCharPortraits();
-    await selectionManager.SetDefaultMiniPopupHero();
-  }
-
-  public void Refresh() => this.StartCoroutine(this.StartCo());
-
-  private async Task RefreshSelectedCharPortraits()
-  {
-    await Task.Delay(350);
-    foreach (KeyValuePair<string, HeroSelection> heroSelection in this.heroSelectionDictionary)
-    {
-      if ((UnityEngine.Object) heroSelection.Value.gameObject.transform.parent != (UnityEngine.Object) heroSelection.Value.DefaultParent)
-      {
-        heroSelection.Value.gameObject.SetActive(true);
-        heroSelection.Value.spriteSR.enabled = true;
-        heroSelection.Value.nameOver.gameObject.SetActive(true);
-        heroSelection.Value.rankOver.gameObject.SetActive(true);
-      }
-    }
-  }
-
-  private async Task SetDefaultMiniPopupHero()
-  {
-    await Task.Delay(40);
-    HeroSelection heroSelection = new HeroSelection();
-    for (int _index = 0; _index < 4; ++_index)
-      heroSelection = this.GetBoxHeroFromIndex(_index);
-    if ((UnityEngine.Object) heroSelection != (UnityEngine.Object) null)
-      this.charPopupMini.SetSubClassData(heroSelection.subClassData);
-    else
-      this.charPopupMini.SetSubClassData(Globals.Instance.GetSubClassData("mercenary"));
-  }
-
-  private IEnumerator StartCo()
-  {
-    HeroSelectionManager selectionManager = this;
-    selectionManager.ngValueMaster = selectionManager.ngValue = 0;
-    selectionManager.ngCorruptors = "";
-    selectionManager.obeliskMadnessValue = selectionManager.obeliskMadnessValueMaster = 0;
-    selectionManager.singularityMadnessValue = selectionManager.singularityMadnessValueMaster = 0;
-    selectionManager.madnessLevel.text = string.Format(Texts.Instance.GetText("madnessNumber"), (object) 0);
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      if (NetworkManager.Instance.IsMaster())
-      {
-        NetworkManager.Instance.PlayerSkuList.Clear();
-        while (!NetworkManager.Instance.AllPlayersReady("heroSelection"))
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("Game ready, Everybody checked heroSelection");
-        if (GameManager.Instance.IsLoadingGame())
-          selectionManager.photonView.RPC("NET_SetLoadingGame", RpcTarget.Others);
-        NetworkManager.Instance.PlayersNetworkContinue("heroSelection", AtOManager.Instance.GetWeekly().ToString());
-        yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      }
-      else
-      {
-        GameManager.Instance.SetGameStatus(Enums.GameStatus.NewGame);
-        NetworkManager.Instance.SetWaitingSyncro("heroSelection", true);
-        NetworkManager.Instance.SetStatusReady("heroSelection");
-        while (NetworkManager.Instance.WaitingSyncro["heroSelection"])
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        if (NetworkManager.Instance.netAuxValue != "")
-          AtOManager.Instance.SetWeekly(int.Parse(NetworkManager.Instance.netAuxValue));
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("heroSelection, we can continue!");
-      }
-    }
-    selectionManager.StartCoroutine(selectionManager.StartCoContinue());
-  }
-
-  private IEnumerator StartCoContinue()
-  {
-    MadnessManager.Instance.ShowMadness();
-    MadnessManager.Instance.RefreshValues();
-    MadnessManager.Instance.ShowMadness();
-    this.playerHeroSkinsDict = new Dictionary<string, string>();
-    this.playerHeroCardbackDict = new Dictionary<string, string>();
-    this.boxSelection = new BoxSelection[this.boxGO.Length];
-    for (int index = 0; index < this.boxGO.Length; ++index)
-    {
-      this.boxHero[this.boxGO[index]] = (HeroSelection) null;
-      this.boxFilled[this.boxGO[index]] = false;
-      this.boxSelection[index] = this.boxGO[index].GetComponent<BoxSelection>();
-    }
-    this.ShowDrag(false, Vector3.zero);
-    int length = 7;
-    int num1 = 5;
-    foreach (KeyValuePair<string, SubClassData> keyValuePair in Globals.Instance.SubClass)
-    {
-      if (!keyValuePair.Value.MainCharacter)
-      {
-        if (!this.nonHistorySubclassDictionary.ContainsKey(keyValuePair.Key))
-          this.nonHistorySubclassDictionary.Add(keyValuePair.Key, Globals.Instance.SubClass[keyValuePair.Key]);
-      }
-      else if (keyValuePair.Value.IsMultiClass())
-      {
-        string key = "dlc";
-        if (!this.subclassDictionary.ContainsKey(key))
-          this.subclassDictionary.Add(key, new SubClassData[length]);
-        this.subclassDictionary[key][Globals.Instance.SubClass[keyValuePair.Key].OrderInList] = Globals.Instance.SubClass[keyValuePair.Key];
-      }
-      else
-      {
-        string key = Enum.GetName(typeof (Enums.HeroClass), (object) Globals.Instance.SubClass[keyValuePair.Key].HeroClass).ToLower().Replace(" ", "");
-        if (!this.subclassDictionary.ContainsKey(key))
-          this.subclassDictionary.Add(key, new SubClassData[length]);
-        this.subclassDictionary[key][Globals.Instance.SubClass[keyValuePair.Key].OrderInList] = Globals.Instance.SubClass[keyValuePair.Key];
-      }
-    }
-    this._ClassWarriors.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
-    this._ClassHealers.color = Functions.HexToColor(Globals.Instance.ClassColor["healer"]);
-    this._ClassMages.color = Functions.HexToColor(Globals.Instance.ClassColor["mage"]);
-    this._ClassScouts.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
-    this._ClassMagicKnights.color = Functions.HexToColor(Globals.Instance.ClassColor["magicknight"]);
-    float num2 = 1f;
-    float num3 = 0.55f;
-    float num4 = 1.75f;
-    float y = -0.65f;
-    for (int index1 = 0; index1 < num1; ++index1)
-    {
-      for (int index2 = 0; index2 < length; ++index2)
-      {
-        SubClassData _subclassdata = (SubClassData) null;
-        GameObject gameObject1 = (GameObject) null;
-        switch (index1)
-        {
-          case 0:
-            _subclassdata = this.subclassDictionary["warrior"][index2];
-            gameObject1 = this.warriorsGO;
-            break;
-          case 1:
-            _subclassdata = this.subclassDictionary["scout"][index2];
-            gameObject1 = this.scoutsGO;
-            break;
-          case 2:
-            _subclassdata = this.subclassDictionary["mage"][index2];
-            gameObject1 = this.magesGO;
-            break;
-          case 3:
-            _subclassdata = this.subclassDictionary["healer"][index2];
-            gameObject1 = this.healersGO;
-            break;
-          case 4:
-          case 5:
-            if (this.subclassDictionary.ContainsKey("dlc"))
-            {
-              _subclassdata = this.subclassDictionary["dlc"][index2];
-              gameObject1 = this.dlcsGO;
-              break;
-            }
-            break;
-        }
-        if (!((UnityEngine.Object) _subclassdata == (UnityEngine.Object) null))
-        {
-          GameObject gameObject2 = UnityEngine.Object.Instantiate<GameObject>(this.heroSelectionPrefab, Vector3.zero, Quaternion.identity, gameObject1.transform);
-          gameObject2.transform.localPosition = new Vector3(num3 + num4 * (float) index2, y, 0.0f);
-          gameObject2.transform.localScale = new Vector3(num2, num2, 1f);
-          gameObject2.name = _subclassdata.Id;
-          HeroSelection component = gameObject2.transform.Find("Portrait").transform.GetComponent<HeroSelection>();
-          this.heroSelectionDictionary.Add(gameObject2.name, component);
-          component.blocked = !PlayerManager.Instance.IsHeroUnlocked(_subclassdata.Id);
-          if (component.blocked && GameManager.Instance.IsObeliskChallenge() && !GameManager.Instance.IsWeeklyChallenge())
-            component.blocked = false;
-          if (component.blocked && GameManager.Instance.IsWeeklyChallenge())
-          {
-            ChallengeData weeklyData = Globals.Instance.GetWeeklyData(Functions.GetCurrentWeeklyWeek());
-            if ((UnityEngine.Object) weeklyData != (UnityEngine.Object) null && (_subclassdata.Id == weeklyData.Hero1.Id || _subclassdata.Id == weeklyData.Hero2.Id || _subclassdata.Id == weeklyData.Hero3.Id || _subclassdata.Id == weeklyData.Hero4.Id))
-              component.blocked = false;
-          }
-          component.SetSubclass(_subclassdata);
-          string str = PlayerManager.Instance.GetActiveSkin(_subclassdata.Id);
-          if (str != "")
-          {
-            SkinData skinData = Globals.Instance.GetSkinData(str);
-            if ((UnityEngine.Object) skinData == (UnityEngine.Object) null)
-            {
-              str = Globals.Instance.GetSkinBaseIdBySubclass(_subclassdata.Id);
-              skinData = Globals.Instance.GetSkinData(str);
-            }
-            this.AddToPlayerHeroSkin(_subclassdata.Id, str);
-            component.SetSprite(skinData.SpritePortrait, skinData.SpriteSilueta, _subclassdata.SpriteBorderLocked);
-          }
-          else
-            component.SetSprite(_subclassdata.SpriteSpeed, _subclassdata.SpriteBorderSmall, _subclassdata.SpriteBorderLocked);
-          component.SetName(_subclassdata.CharacterName);
-          component.Init();
-          if ((UnityEngine.Object) _subclassdata.SpriteBorderLocked != (UnityEngine.Object) null && _subclassdata.SpriteBorderLocked.name == "regularBorderSmall")
-            component.ShowComingSoon();
-          this.SubclassByName.Add(_subclassdata.Id, _subclassdata.SubClassName);
-          if (GameManager.Instance.IsWeeklyChallenge())
-            component.blocked = true;
-          this.menuController.Add(component.transform);
-        }
-      }
-    }
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      List<string> stringList = new List<string>();
-      for (int index = 0; index < Globals.Instance.SkuAvailable.Count; ++index)
-      {
-        if (SteamManager.Instance.PlayerHaveDLC(Globals.Instance.SkuAvailable[index]))
-          stringList.Add(Globals.Instance.SkuAvailable[index]);
-      }
-      string str = "";
-      if (stringList.Count > 0)
-        str = JsonHelper.ToJson<string>(stringList.ToArray());
-      if (NetworkManager.Instance.IsMaster())
-      {
-        this.photonView.RPC("NET_SetSku", RpcTarget.All, (object) NetworkManager.Instance.GetPlayerNick(), (object) str);
-      }
-      else
-      {
-        string roomName = NetworkManager.Instance.GetRoomName();
-        if (roomName != "")
-        {
-          SaveManager.SaveIntoPrefsString("coopRoomId", roomName);
-          SaveManager.SavePrefs();
-        }
-        NetworkManager.Instance.SetWaitingSyncro("skuWait", true);
-        this.photonView.RPC("NET_SetSku", RpcTarget.All, (object) NetworkManager.Instance.GetPlayerNick(), (object) str);
-      }
-      if (NetworkManager.Instance.IsMaster())
-      {
-        while (!NetworkManager.Instance.AllPlayersHaveSkuList())
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("Game ready, Everybody checked skuWait");
-        NetworkManager.Instance.PlayersNetworkContinue("skuWait");
-        yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      }
-      else
-      {
-        while (NetworkManager.Instance.WaitingSyncro["skuWait"])
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("skuWait, we can continue!");
-      }
-    }
-    if (GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame())
-    {
-      foreach (KeyValuePair<string, SubClassData> nonHistorySubclass in this.nonHistorySubclassDictionary)
-      {
-        SubClassData _subclassdata = nonHistorySubclass.Value;
-        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.heroSelectionPrefab, Vector3.zero, Quaternion.identity);
-        gameObject.transform.localPosition = new Vector3(-10f, -10f, 100f);
-        gameObject.name = _subclassdata.Id;
-        HeroSelection component = gameObject.transform.Find("Portrait").transform.GetComponent<HeroSelection>();
-        this.heroSelectionDictionary.Add(gameObject.name, component);
-        component.blocked = true;
-        component.SetSubclass(_subclassdata);
-        component.SetSprite(_subclassdata.SpriteSpeed, _subclassdata.SpriteBorderSmall, _subclassdata.SpriteBorderLocked);
-        component.SetName(_subclassdata.CharacterName);
-        component.Init();
-        this.SubclassByName.Add(_subclassdata.Id, _subclassdata.SubClassName);
-      }
-    }
-    if (GameManager.Instance.IsGameAdventure() && AtOManager.Instance.IsFirstGame() && !GameManager.Instance.IsMultiplayer())
-    {
-      AtOManager.Instance.SetGameId("tuto");
-      this.heroSelectionDictionary["mercenary"].AssignHeroToBox(this.boxGO[0]);
-      this.heroSelectionDictionary["ranger"].AssignHeroToBox(this.boxGO[1]);
-      this.heroSelectionDictionary["elementalist"].AssignHeroToBox(this.boxGO[2]);
-      this.heroSelectionDictionary["cleric"].AssignHeroToBox(this.boxGO[3]);
-      SandboxManager.Instance.DisableSandbox();
-      yield return (object) Globals.Instance.WaitForSeconds(1f);
-      this.BeginAdventure();
-    }
-    else
-    {
-      this.charPopupGO = this.charPopup.gameObject;
-      this.charPopup = this.charPopupGO.GetComponent<CharPopup>();
-      this.charPopup.HideNow();
-      if (!GameManager.Instance.IsWeeklyChallenge())
-      {
-        this.titleGroupDefault.gameObject.SetActive(true);
-        this.titleWeeklyDefault.gameObject.SetActive(false);
-        this.weeklyModifiersButton.gameObject.SetActive(false);
-        this.weeklyT.gameObject.SetActive(false);
-      }
-      else
-      {
-        this.titleGroupDefault.gameObject.SetActive(false);
-        this.titleWeeklyDefault.gameObject.SetActive(true);
-        this.weeklyModifiersButton.gameObject.SetActive(true);
-        this.weeklyT.gameObject.SetActive(true);
-        this.setWeekly = true;
-        if (!GameManager.Instance.IsLoadingGame())
-          AtOManager.Instance.SetWeekly(Functions.GetCurrentWeeklyWeek());
-        this.weeklyNumber.text = AtOManager.Instance.GetWeeklyName(AtOManager.Instance.GetWeekly());
-      }
-      if (GameManager.Instance.IsGameAdventure())
-      {
-        this.titleMovement.SetText(Texts.Instance.GetText("modeAdventure"));
-        this.madnessButton.gameObject.SetActive(true);
-        if (GameManager.Instance.IsMultiplayer())
-        {
-          if (NetworkManager.Instance.IsMaster())
-          {
-            if (GameManager.Instance.IsLoadingGame())
-            {
-              this.ngValueMaster = this.ngValue = AtOManager.Instance.GetNgPlus();
-              this.ngCorruptors = AtOManager.Instance.GetMadnessCorruptors();
-              this.SetMadnessLevel();
-            }
-            else if (SaveManager.PrefsHasKey("madnessLevelCoop") && SaveManager.PrefsHasKey("madnessCorruptorsCoop"))
-            {
-              int num5 = SaveManager.LoadPrefsInt("madnessLevelCoop");
-              string str = SaveManager.LoadPrefsString("madnessCorruptorsCoop");
-              if (PlayerManager.Instance.NgLevel >= num5)
-              {
-                this.ngValueMaster = this.ngValue = num5;
-                if (str != "")
-                  this.ngCorruptors = str;
-              }
-              else
-              {
-                this.ngValueMaster = this.ngValue = 0;
-                this.ngCorruptors = "";
-              }
-              this.SetMadnessLevel();
-            }
-          }
-        }
-        else if (SaveManager.PrefsHasKey("madnessLevel") && SaveManager.PrefsHasKey("madnessCorruptors"))
-        {
-          int num6 = SaveManager.LoadPrefsInt("madnessLevel");
-          string str = SaveManager.LoadPrefsString("madnessCorruptors");
-          if (PlayerManager.Instance.NgLevel >= num6)
-          {
-            this.ngValueMaster = this.ngValue = num6;
-            if (str != "")
-              this.ngCorruptors = str;
-          }
-          else
-          {
-            this.ngValueMaster = this.ngValue = 0;
-            this.ngCorruptors = "";
-          }
-          this.SetMadnessLevel();
-        }
-      }
-      else if (GameManager.Instance.IsSingularity())
-      {
-        this.titleMovement.SetText(Texts.Instance.GetText("singularity"));
-        this.madnessButton.gameObject.SetActive(true);
-        if (GameManager.Instance.IsMultiplayer())
-        {
-          if (NetworkManager.Instance.IsMaster())
-          {
-            if (GameManager.Instance.IsLoadingGame())
-            {
-              this.singularityMadnessValue = this.singularityMadnessValueMaster = AtOManager.Instance.GetSingularityMadness();
-              this.SetSingularityMadnessLevel();
-            }
-            else if (SaveManager.PrefsHasKey("singularityMadnessCoop"))
-            {
-              int num7 = SaveManager.LoadPrefsInt("singularityMadnessCoop");
-              this.singularityMadnessValue = PlayerManager.Instance.ObeliskMadnessLevel < num7 ? (this.singularityMadnessValueMaster = 0) : (this.singularityMadnessValueMaster = num7);
-              this.SetSingularityMadnessLevel();
-            }
-          }
-        }
-        else if (SaveManager.PrefsHasKey("singularityMadness"))
-        {
-          int num8 = SaveManager.LoadPrefsInt("singularityMadness");
-          this.singularityMadnessValue = PlayerManager.Instance.SingularityMadnessLevel < num8 ? (this.singularityMadnessValueMaster = 0) : (this.singularityMadnessValueMaster = num8);
-          this.SetSingularityMadnessLevel();
-        }
-      }
-      else if (!GameManager.Instance.IsWeeklyChallenge())
-      {
-        this.titleMovement.SetText(Texts.Instance.GetText("modeObelisk"));
-        this.madnessButton.gameObject.SetActive(true);
-        if (GameManager.Instance.IsMultiplayer())
-        {
-          if (NetworkManager.Instance.IsMaster())
-          {
-            if (GameManager.Instance.IsLoadingGame())
-            {
-              this.obeliskMadnessValue = this.obeliskMadnessValueMaster = AtOManager.Instance.GetObeliskMadness();
-              this.SetObeliskMadnessLevel();
-            }
-            else if (SaveManager.PrefsHasKey("obeliskMadnessCoop"))
-            {
-              int num9 = SaveManager.LoadPrefsInt("obeliskMadnessCoop");
-              this.obeliskMadnessValue = PlayerManager.Instance.ObeliskMadnessLevel < num9 ? (this.obeliskMadnessValueMaster = 0) : (this.obeliskMadnessValueMaster = num9);
-              this.SetObeliskMadnessLevel();
-            }
-          }
-        }
-        else if (SaveManager.PrefsHasKey("obeliskMadness"))
-        {
-          int num10 = SaveManager.LoadPrefsInt("obeliskMadness");
-          this.obeliskMadnessValue = PlayerManager.Instance.ObeliskMadnessLevel < num10 ? (this.obeliskMadnessValueMaster = 0) : (this.obeliskMadnessValueMaster = num10);
-          this.SetObeliskMadnessLevel();
-        }
-      }
-      else
-      {
-        this.titleMovement.SetText(Texts.Instance.GetText("modeWeekly"));
-        this.madnessButton.gameObject.SetActive(false);
-      }
-      this.Resize();
-      if (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.IsLoadingGame())
-      {
-        this.gameSeedModify.gameObject.SetActive(false);
-        ChallengeData weeklyData = Globals.Instance.GetWeeklyData(Functions.GetCurrentWeeklyWeek());
-        if ((UnityEngine.Object) weeklyData != (UnityEngine.Object) null)
-        {
-          this.heroSelectionDictionary[weeklyData.Hero1.Id].AssignHeroToBox(this.boxGO[0]);
-          this.heroSelectionDictionary[weeklyData.Hero2.Id].AssignHeroToBox(this.boxGO[1]);
-          this.heroSelectionDictionary[weeklyData.Hero3.Id].AssignHeroToBox(this.boxGO[2]);
-          this.heroSelectionDictionary[weeklyData.Hero4.Id].AssignHeroToBox(this.boxGO[3]);
-        }
-        if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
-        {
-          if ((UnityEngine.Object) weeklyData != (UnityEngine.Object) null)
-            AtOManager.Instance.SetGameId(weeklyData.Seed);
-          else
-            AtOManager.Instance.SetGameId();
-        }
-        GameManager.Instance.SceneLoaded();
-      }
-      else if (GameManager.Instance.IsLoadingGame() || AtOManager.Instance.IsFirstGame() && !GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsGameAdventure())
-      {
-        this.gameSeedModify.gameObject.SetActive(false);
-        if (AtOManager.Instance.IsFirstGame())
-          AtOManager.Instance.SetGameId("tuto");
-      }
-      else
-      {
-        if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
-          AtOManager.Instance.SetGameId();
-        this.gameSeed.gameObject.SetActive(true);
-      }
-      if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
-        this.SetSeed(AtOManager.Instance.GetGameId());
-      if (GameManager.Instance.IsWeeklyChallenge() || GameManager.Instance.IsObeliskChallenge() && this.obeliskMadnessValue > 7)
-        this.gameSeed.gameObject.SetActive(false);
-      this.playerHeroPerksDict = new Dictionary<string, List<string>>();
-      if (GameManager.Instance.IsMultiplayer())
-      {
-        this.masterDescription.gameObject.SetActive(true);
-        if (NetworkManager.Instance.IsMaster())
-        {
-          this.DrawBoxSelectionNames();
-          this.botonBegin.gameObject.SetActive(true);
-          this.botonBegin.Disable();
-          this.botonFollow.transform.parent.gameObject.SetActive(false);
-        }
-        else
-        {
-          this.gameSeedModify.gameObject.SetActive(false);
-          this.botonBegin.gameObject.SetActive(false);
-          this.botonFollow.transform.parent.gameObject.SetActive(true);
-          this.ShowFollowStatus();
-        }
-        if (NetworkManager.Instance.IsMaster() && GameManager.Instance.IsLoadingGame())
-        {
-          StringBuilder stringBuilder = new StringBuilder();
-          for (int index = 0; index < 4; ++index)
-          {
-            Hero hero = AtOManager.Instance.GetHero(index);
-            if (hero != null && !((UnityEngine.Object) hero.HeroData == (UnityEngine.Object) null))
-            {
-              string subclassName = hero.SubclassName;
-              int perkRank = hero.PerkRank;
-              string skinUsed = hero.SkinUsed;
-              string cardbackUsed = hero.CardbackUsed;
-              this.AddToPlayerHeroSkin(subclassName, skinUsed);
-              this.AddToPlayerHeroCardback(subclassName, cardbackUsed);
-              if (this.heroSelectionDictionary.ContainsKey(subclassName))
-              {
-                this.heroSelectionDictionary[subclassName].AssignHeroToBox(this.boxGO[index]);
-                if (hero.HeroData.HeroSubClass.MainCharacter)
-                {
-                  this.heroSelectionDictionary[subclassName].SetRankBox(perkRank);
-                  this.heroSelectionDictionary[subclassName].SetSkin(skinUsed);
-                }
-              }
-              stringBuilder.Append(hero.SubclassName.ToLower());
-              stringBuilder.Append("#");
-              stringBuilder.Append(index);
-              stringBuilder.Append("#");
-              stringBuilder.Append(perkRank);
-              stringBuilder.Append("#");
-              stringBuilder.Append(skinUsed);
-              stringBuilder.Append("#");
-              stringBuilder.Append(cardbackUsed);
-              stringBuilder.Append("&");
-            }
-          }
-          this.photonView.RPC("NET_AssignAllHeroToBox", RpcTarget.Others, (object) stringBuilder.ToString());
-        }
-      }
-      else
-      {
-        this.masterDescription.gameObject.SetActive(false);
-        this.botonFollow.transform.parent.gameObject.SetActive(false);
-        this.botonBegin.gameObject.SetActive(true);
-        this.botonBegin.Disable();
-        if (!GameManager.Instance.IsWeeklyChallenge())
-          this.PreAssign();
-      }
-      this.RearrangeHerosData();
-      this.ShowHeroesByFilterAsync("all");
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      this.RefreshSandboxButton();
-      if (!GameManager.Instance.IsWeeklyChallenge())
-      {
-        this.sandboxButton.gameObject.SetActive(true);
-        if (!GameManager.Instance.IsMultiplayer() || GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-        {
-          string sandboxMods;
-          if (GameManager.Instance.GameStatus != Enums.GameStatus.LoadGame)
-          {
-            if ((!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()) && PlayerManager.Instance.NgLevel == 0)
-            {
-              SandboxManager.Instance.DisableSandbox();
-              AtOManager.Instance.ClearSandbox();
-            }
-            else
-              AtOManager.Instance.SetSandboxMods(GameManager.Instance.IsObeliskChallenge() ? SaveManager.LoadPrefsString("sandboxSettingsObelisk") : SaveManager.LoadPrefsString("sandboxSettings"));
-            SandboxManager.Instance.LoadValuesFromAtOManager();
-            SandboxManager.Instance.AdjustTotalHeroesBoxToCoop();
-            SandboxManager.Instance.SaveValuesToAtOManager();
-            sandboxMods = AtOManager.Instance.GetSandboxMods();
-          }
-          else
-          {
-            sandboxMods = AtOManager.Instance.GetSandboxMods();
-            SandboxManager.Instance.LoadValuesFromAtOManager();
-          }
-          if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-            this.photonView.RPC("NET_ShareSandbox", RpcTarget.Others, (object) Functions.CompressString(sandboxMods));
-          this.RefreshCharBoxesBySandboxHeroes();
-        }
-      }
-      else
-      {
-        this.sandboxButton.gameObject.SetActive(false);
-        this.madnessButton.localPosition = new Vector3(3.8f, this.madnessButton.localPosition.y, this.madnessButton.localPosition.z);
-        SandboxManager.Instance.DisableSandbox();
-      }
-      this.readyButtonText.gameObject.SetActive(false);
-      this.readyButton.gameObject.SetActive(false);
-      if (GameManager.Instance.IsMultiplayer())
-      {
-        if (NetworkManager.Instance.IsMaster())
-        {
-          NetworkManager.Instance.ClearAllPlayerManualReady();
-          NetworkManager.Instance.SetManualReady(true);
-        }
-        else
-        {
-          this.readyButtonText.gameObject.SetActive(true);
-          this.readyButton.gameObject.SetActive(true);
-        }
-      }
-      GameManager.Instance.SceneLoaded();
-      if (!GameManager.Instance.TutorialWatched("characterPerks"))
-      {
-        foreach (KeyValuePair<string, HeroSelection> heroSelection in this.heroSelectionDictionary)
-        {
-          if (heroSelection.Value.perkPointsT.gameObject.activeSelf)
-          {
-            GameManager.Instance.ShowTutorialPopup("characterPerks", heroSelection.Value.perkPointsT.gameObject.transform.position, Vector3.zero);
-            break;
-          }
-        }
-      }
-      if (GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame() && NetworkManager.Instance.IsMaster())
-      {
-        bool flag = true;
-        List<string> stringList1 = new List<string>();
-        List<string> stringList2 = new List<string>();
-        for (int index = 0; index < 4; ++index)
-        {
-          Hero hero = AtOManager.Instance.GetHero(index);
-          if (hero != null && !((UnityEngine.Object) hero.HeroData == (UnityEngine.Object) null))
-          {
-            if (hero.OwnerOriginal != null)
-            {
-              string lower = hero.OwnerOriginal.ToLower();
-              if (!stringList1.Contains(lower))
-                stringList1.Add(lower);
-            }
-            else
-              break;
-          }
-        }
-        foreach (Player player in NetworkManager.Instance.PlayerList)
-        {
-          string lower = NetworkManager.Instance.GetPlayerNickReal(player.NickName).ToLower();
-          if (!stringList2.Contains(lower))
-            stringList2.Add(lower);
-        }
-        if (stringList1.Count != stringList2.Count)
-        {
-          flag = false;
-        }
-        else
-        {
-          for (int index = 0; index < stringList2.Count; ++index)
-          {
-            if (!stringList1.Contains(stringList2[index]))
-            {
-              flag = false;
-              break;
-            }
-          }
-        }
-        if (!flag)
-          this.photonView.RPC("NET_SetNotOriginal", RpcTarget.All);
-      }
-    }
-  }
-
-  private void Update()
-  {
-    if (!this.setWeekly || Time.frameCount % 24 != 0)
-      return;
-    this.SetWeeklyLeft();
-  }
-
-  public void ForceWeekly(string _weekly)
-  {
-    AtOManager.Instance.weeklyForcedId = _weekly;
-    if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-      this.photonView.RPC("NET_ForceWeekly", RpcTarget.Others, (object) _weekly);
-    SceneStatic.LoadByName("HeroSelection");
-  }
-
-  [PunRPC]
-  private void NET_ForceWeekly(string _weekly) => this.ForceWeekly(_weekly);
-
-  public void IncreaseHeroProgressDev(int _slot)
-  {
-    if (PerkTree.Instance.IsActive() || !((UnityEngine.Object) this.boxHero[this.boxGO[_slot]] != (UnityEngine.Object) null))
-      return;
-    PlayerManager.Instance.ModifyProgress(this.boxHero[this.boxGO[_slot]].Id, 5000, _slot);
-    PlayerManager.Instance.ModifyPlayerRankProgress(5000);
-    this.RefreshPerkPoints(this.boxHero[this.boxGO[_slot]].Id);
-    SaveManager.SavePlayerData();
-  }
-
-  public void IncreaseHeroProgressSupplies(string _scdId)
-  {
-    int _quantity = 400;
-    PlayerManager.Instance.ModifyProgress(_scdId, _quantity);
-    PlayerManager.Instance.ModifyPlayerRankProgress(_quantity);
-    this.RefreshPerkPoints(_scdId);
-    SaveManager.SavePlayerData();
-  }
-
-  [PunRPC]
-  private void NET_SetSku(string _nick, string _playerSkuList)
-  {
-    List<string> _list = new List<string>();
-    if (_playerSkuList != "")
-      _list = ((IEnumerable<string>) JsonHelper.FromJson<string>(_playerSkuList)).ToList<string>();
-    if (GameManager.Instance.GetDeveloperMode())
-      Debug.Log((object) ("Got list from " + _nick + " --> " + _playerSkuList));
-    NetworkManager.Instance.AddPlayerSkuList(_nick, _list);
-  }
-
-  [PunRPC]
-  private void NET_SetNotOriginal()
-  {
-    this.masterDescription.GetComponent<TMP_Text>().text = Texts.Instance.GetText("notOriginalPlayers");
-  }
-
-  private void SetWeeklyLeft()
-  {
-    if (AtOManager.Instance.weeklyForcedId == "")
-    {
-      TimeSpan timeSpan = Functions.TimeSpanLeftWeekly();
-      this.weeklyLeft.text = string.Format("{0:D2}h. {1:D2}m. {2:D2}s.", (object) (int) timeSpan.TotalHours, (object) timeSpan.Minutes, (object) timeSpan.Seconds);
-    }
-    else
-      this.weeklyLeft.text = "-- [test] --";
-  }
-
-  [PunRPC]
-  private void NET_SetLoadingGame()
-  {
-    GameManager.Instance.SetGameStatus(Enums.GameStatus.LoadGame);
-  }
-
-  public void AssignHeroCardback(string _subclass, string _cardbackId)
-  {
-    if (GameManager.Instance.IsMultiplayer())
-      this.SendHeroCardbackMP(_subclass, _cardbackId);
-    else
-      this.AddToPlayerHeroCardback(_subclass, _cardbackId);
-  }
-
-  public void SendHeroCardbackMP(string _subclass, string _cardbackId)
-  {
-    Debug.Log((object) ("SendHeroCardback for " + _subclass + " => " + _cardbackId));
-    if (!GameManager.Instance.IsMultiplayer())
-      return;
-    this.photonView.RPC("NET_SetHeroCardback", RpcTarget.All, (object) NetworkManager.Instance.GetPlayerNick(), (object) _subclass, (object) _cardbackId);
-  }
-
-  [PunRPC]
-  private void NET_SetHeroCardback(string _nick, string _subclass, string _cardbackId)
-  {
-    Debug.Log((object) ("NET_SetHeroCardback " + _nick + " " + _subclass + " " + _cardbackId));
-    this.SetHeroCardbackToBoxOwner(_nick, _subclass, _cardbackId);
-  }
-
-  private void SetHeroCardbackToBoxOwner(string _nick, string _subclass, string _cardbackId)
-  {
-    for (int index = 0; index < this.boxHero.Count; ++index)
-    {
-      if (this.boxSelection[index].GetOwner() == _nick && (UnityEngine.Object) this.boxHero[this.boxGO[index]] != (UnityEngine.Object) null && this.boxHero[this.boxGO[index]].GetSubclassName().ToLower() == _subclass.ToLower())
-        this.AddToPlayerHeroCardback(_subclass, _cardbackId);
-    }
-  }
-
-  private void AddToPlayerHeroCardback(string _subclass, string _cardbackId)
-  {
-    string key = Functions.RemoveWhitespace(_subclass, true);
-    if (!this.playerHeroCardbackDict.ContainsKey(key))
-      this.playerHeroCardbackDict.Add(key, _cardbackId);
-    else
-      this.playerHeroCardbackDict[key] = _cardbackId;
-  }
-
-  public void SendHeroSkinMP(string _subclass, string _skinId)
-  {
-    Debug.Log((object) ("SendHeroSkinMP for " + _subclass + " => " + _skinId));
-    if (!GameManager.Instance.IsMultiplayer())
-      return;
-    this.photonView.RPC("NET_SetHeroSkin", RpcTarget.All, (object) NetworkManager.Instance.GetPlayerNick(), (object) _subclass, (object) _skinId);
-  }
-
-  [PunRPC]
-  private void NET_SetHeroSkin(string _nick, string _subclass, string _skinId)
-  {
-    Debug.Log((object) ("NET_SetHeroSkin " + _nick + " " + _subclass + " " + _skinId));
-    this.SetHeroSkinToBoxOwner(_nick, _subclass, _skinId);
-  }
-
-  private void AddToPlayerHeroSkin(string _subclass, string _skinId)
-  {
-    string lower = _subclass.ToLower();
-    if (!this.playerHeroSkinsDict.ContainsKey(lower))
-      this.playerHeroSkinsDict.Add(lower, _skinId);
-    else
-      this.playerHeroSkinsDict[lower] = _skinId;
-  }
-
-  private void SetHeroSkinToBoxOwner(string _nick, string _subclass, string _skinId)
-  {
-    for (int index = 0; index < this.boxHero.Count; ++index)
-    {
-      if (this.boxSelection[index].GetOwner() == _nick && (UnityEngine.Object) this.boxHero[this.boxGO[index]] != (UnityEngine.Object) null && this.boxHero[this.boxGO[index]].GetSubclassName().ToLower() == _subclass.ToLower())
-      {
-        this.boxHero[this.boxGO[index]].SetSkin(_skinId);
-        this.AddToPlayerHeroSkin(_subclass, _skinId);
-      }
-    }
-  }
-
-  public void SendHeroPerksMP(string _hero)
-  {
-    if (!GameManager.Instance.IsMultiplayer())
-      return;
-    List<string> heroPerks = PlayerManager.Instance.GetHeroPerks(_hero);
-    if (heroPerks != null)
-    {
-      string json = JsonHelper.ToJson<string>(heroPerks.ToArray());
-      this.photonView.RPC("NET_SetHeroPerk", RpcTarget.All, (object) NetworkManager.Instance.GetPlayerNick(), (object) _hero, (object) json);
-    }
-    else
-      this.photonView.RPC("NET_SetHeroPerk", RpcTarget.All, (object) NetworkManager.Instance.GetPlayerNick(), (object) _hero, (object) "");
-  }
-
-  [PunRPC]
-  private void NET_SetHeroPerk(string _nick, string _hero, string _perkListStr)
-  {
-    List<string> stringList = new List<string>();
-    if (_perkListStr != "")
-      stringList = ((IEnumerable<string>) JsonHelper.FromJson<string>(_perkListStr)).ToList<string>();
-    string lower = (_nick + "_" + _hero).ToLower();
-    if (!this.playerHeroPerksDict.ContainsKey(lower))
-      this.playerHeroPerksDict.Add(lower, stringList);
-    else
-      this.playerHeroPerksDict[lower] = stringList;
-    if (!PerkTree.Instance.IsActive())
-      return;
-    PerkTree.Instance.DoTeamPerks();
-  }
-
-  private void PreAssign()
-  {
-    if (PlayerManager.Instance.LastUsedTeam == null || PlayerManager.Instance.LastUsedTeam.Length != 4)
-      return;
-    for (int index = 0; index < 4; ++index)
-    {
-      if (this.heroSelectionDictionary.ContainsKey(PlayerManager.Instance.LastUsedTeam[index]) && (GameManager.Instance.IsObeliskChallenge() || PlayerManager.Instance.IsHeroUnlocked(PlayerManager.Instance.LastUsedTeam[index]) && !this.heroSelectionDictionary[PlayerManager.Instance.LastUsedTeam[index]].DlcBlocked))
-        this.heroSelectionDictionary[PlayerManager.Instance.LastUsedTeam[index]].AssignHeroToBox(this.boxGO[index]);
-    }
-  }
-
-  private void AlfaPreAssign()
-  {
-    if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-    {
-      int index = 0;
-      for (int boxId = 0; boxId < 4; ++boxId)
-      {
-        this.AssignPlayerToBox(NetworkManager.Instance.PlayerList[index].NickName, boxId);
-        ++index;
-        if (index >= NetworkManager.Instance.PlayerList.Length)
-          index = 0;
-      }
-    }
-    this.heroSelectionDictionary["mercenary"].AssignHeroToBox(this.boxGO[0]);
-    this.heroSelectionDictionary["ranger"].AssignHeroToBox(this.boxGO[1]);
-    this.heroSelectionDictionary["elementalist"].AssignHeroToBox(this.boxGO[2]);
-    this.heroSelectionDictionary["cleric"].AssignHeroToBox(this.boxGO[3]);
-  }
-
-  private void DrawBoxSelectionNames()
-  {
-    int num = 0;
-    foreach (Player player in NetworkManager.Instance.PlayerList)
-    {
-      for (int index = 0; index < 4; ++index)
-      {
-        this.boxSelection[index].ShowPlayer(num);
-        this.boxSelection[index].SetPlayerPosition(num, player.NickName);
-      }
-      ++num;
-    }
-    for (int position = num; position < 4; ++position)
-    {
-      for (int index = 0; index < 4; ++index)
-        this.boxSelection[index].SetPlayerPosition(position, "");
-    }
-    foreach (Player player in NetworkManager.Instance.PlayerList)
-    {
-      string playerNickReal = NetworkManager.Instance.GetPlayerNickReal(player.NickName);
-      if (playerNickReal == NetworkManager.Instance.Owner0)
-        this.AssignPlayerToBox(player.NickName, 0);
-      if (playerNickReal == NetworkManager.Instance.Owner1)
-        this.AssignPlayerToBox(player.NickName, 1);
-      if (playerNickReal == NetworkManager.Instance.Owner2)
-        this.AssignPlayerToBox(player.NickName, 2);
-      if (playerNickReal == NetworkManager.Instance.Owner3)
-        this.AssignPlayerToBox(player.NickName, 3);
-    }
-  }
-
-  public void AssignPlayerToBox(string playerNick, int boxId)
-  {
-    if (!GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.IsLoadingGame())
-      this.ClearBox(boxId);
-    this.boxSelection[boxId].SetOwner(playerNick);
-    if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-    {
-      this.photonView.RPC("NET_AssignPlayerToBox", RpcTarget.Others, (object) playerNick, (object) boxId);
-      NetworkManager.Instance.AssignHeroPlayerPositionOwner(boxId, playerNick);
-    }
-    if (GameManager.Instance.IsWeeklyChallenge() && playerNick == NetworkManager.Instance.GetPlayerNick())
-    {
-      ChallengeData weeklyData = Globals.Instance.GetWeeklyData(AtOManager.Instance.GetWeekly());
-      if ((UnityEngine.Object) weeklyData != (UnityEngine.Object) null)
-      {
-        string id;
-        switch (boxId)
-        {
-          case 0:
-            this.AssignHeroToBox(weeklyData.Hero1.Id, 0);
-            id = weeklyData.Hero1.Id;
-            break;
-          case 1:
-            this.AssignHeroToBox(weeklyData.Hero2.Id, 1);
-            id = weeklyData.Hero2.Id;
-            break;
-          case 2:
-            this.AssignHeroToBox(weeklyData.Hero3.Id, 2);
-            id = weeklyData.Hero3.Id;
-            break;
-          default:
-            this.AssignHeroToBox(weeklyData.Hero4.Id, 3);
-            id = weeklyData.Hero4.Id;
-            break;
-        }
-        if (!GameManager.Instance.IsLoadingGame())
-        {
-          string activeSkin = PlayerManager.Instance.GetActiveSkin(Globals.Instance.GetSubClassData(id).Id);
-          this.heroSelectionDictionary[id].SetSkin(activeSkin);
-        }
-      }
-    }
-    this.CheckButtonEnabled();
-    this.SetPlayersReady();
-  }
-
-  [PunRPC]
-  private void NET_AssignPlayerToBox(string playerNick, int boxId)
-  {
-    this.AssignPlayerToBox(playerNick, boxId);
-  }
-
-  public void ResetHero(string _heroId)
-  {
-    this.photonView.RPC("NET_ResetHero", RpcTarget.Others, (object) _heroId);
-  }
-
-  [PunRPC]
-  private void NET_ResetHero(string _heroId)
-  {
-    for (int id = 0; id < this.boxHero.Count; ++id)
-    {
-      if ((UnityEngine.Object) this.boxHero[this.boxGO[id]] != (UnityEngine.Object) null && this.boxHero[this.boxGO[id]].Id == _heroId)
-      {
-        this.ClearBox(id);
-        break;
-      }
-    }
-  }
-
-  public bool IsYourBox(string boxName)
-  {
-    return !GameManager.Instance.IsMultiplayer() || this.boxSelection[int.Parse(boxName.Split('_', StringSplitOptions.None)[1])].GetOwner() == NetworkManager.Instance.GetPlayerNick();
-  }
-
-  public void PopupTrait(string traitId)
-  {
-    PopupManager.Instance.SetTrait(Globals.Instance.GetTraitData(traitId));
-  }
-
-  public void Resize() => this.charPopup.RepositionResolution();
-
-  public void ShowMask(bool state)
-  {
-    if (this.coroutineMask != null)
-      this.StopCoroutine(this.coroutineMask);
-    this.coroutineMask = this.StartCoroutine(this.ShowMaskCo(state));
-  }
-
-  private IEnumerator ShowMaskCo(bool state)
-  {
-    Color colorBg = new Color(0.0f, 0.0f, 0.0f, 0.0f);
-    SpriteRenderer imageBg = this.popupMask.GetComponent<SpriteRenderer>();
-    float index = imageBg.color.a;
-    float maxAlplha = 0.5f;
-    float increment = 0.01f;
-    if (!state)
-    {
-      while ((double) index > 0.0)
-      {
-        colorBg.a = index;
-        imageBg.color = colorBg;
-        index -= increment;
-        yield return (object) null;
-      }
-      colorBg.a = 0.0f;
-      this.popupMask.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.popupMask.gameObject.SetActive(true);
-      while ((double) index < (double) maxAlplha)
-      {
-        colorBg.a = index;
-        imageBg.color = colorBg;
-        index += increment;
-        yield return (object) null;
-      }
-      colorBg.a = maxAlplha;
-    }
-    imageBg.color = colorBg;
-  }
-
-  public bool IsBoxFilled(GameObject _box)
-  {
-    if (this.boxFilled.ContainsKey(_box))
-      return this.boxFilled[_box];
-    this.boxFilled[_box] = false;
-    return false;
-  }
-
-  private bool AllBoxWithHeroes()
-  {
-    if (!GameManager.Instance.IsWeeklyChallenge() && SandboxManager.Instance.IsEnabled())
-    {
-      switch (SandboxManager.Instance.GetSandboxBoxValue("sbTotalHeroes"))
-      {
-        case 1:
-          return this.boxFilled[this.boxGO[0]];
-        case 2:
-          return this.boxFilled[this.boxGO[0]] && this.boxFilled[this.boxGO[1]];
-        case 3:
-          return this.boxFilled[this.boxGO[0]] && this.boxFilled[this.boxGO[1]] && this.boxFilled[this.boxGO[2]];
-      }
-    }
-    if (this.boxFilled.Count <= 0)
-      return false;
-    int num = 0;
-    foreach (GameObject key in this.boxFilled.Keys)
-    {
-      if (this.boxFilled[key])
-        ++num;
-    }
-    return num == 4;
-  }
-
-  private bool AllBoxWithOwners()
-  {
-    if (!GameManager.Instance.IsMultiplayer())
-      return true;
-    int num1 = 4;
-    if (!GameManager.Instance.IsObeliskChallenge() && SandboxManager.Instance.IsEnabled() && SandboxManager.Instance.GetSandboxBoxValue("sbTotalHeroes") > 0)
-      num1 = SandboxManager.Instance.GetSandboxBoxValue("sbTotalHeroes");
-    int num2 = 0;
-    for (int index = 0; index < 4; ++index)
-    {
-      if (this.boxSelection[index].gameObject.activeSelf && this.boxSelection[index].GetOwner() != null && this.boxSelection[index].GetOwner() != "")
-        ++num2;
-    }
-    return num2 == num1;
-  }
-
-  public void ShowDrag(bool state, Vector3 position)
-  {
-    this.cursorDragPrefab.gameObject.SetActive(state);
-    if (!state)
-      return;
-    this.cursorDragPrefab.transform.position = position;
-    GameManager.Instance.PlayLibraryAudio("castnpccardfast", 0.1f);
-  }
-
-  public void FillBox(GameObject _box, HeroSelection _heroSelection, bool _state)
-  {
-    this.boxFilled[_box] = _state;
-    this.boxHero[_box] = _heroSelection;
-    int num = int.Parse(_box.name.Split('_', StringSplitOptions.None)[1]);
-    if ((UnityEngine.Object) _heroSelection != (UnityEngine.Object) null)
-    {
-      string str = this.SubclassByName[_heroSelection.Id];
-      SubClassData subClassData = Globals.Instance.GetSubClassData(str);
-      if (this.IsYourBox("Box_" + int.Parse(_box.name.Split('_', StringSplitOptions.None)[1]).ToString()))
-        this.AddToPlayerHeroCardback(str, PlayerManager.Instance.GetActiveCardback(subClassData.Id));
-      if (GameManager.Instance.IsMultiplayer())
-        this.AssignHeroToBox(str, num);
-    }
-    else if (GameManager.Instance.IsMultiplayer())
-    {
-      this.ClearBox(num, false);
-      this.photonView.RPC("NET_ClearBox", RpcTarget.Others, (object) num, (object) false);
-    }
-    this.CheckButtonEnabled();
-  }
-
-  private void CheckButtonEnabled()
-  {
-    bool flag = true;
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      flag = false;
-      List<string> stringList = new List<string>();
-      for (int index = 0; index < 4; ++index)
-      {
-        if (this.boxSelection[index].gameObject.activeSelf)
-        {
-          string owner = this.boxSelection[index].GetOwner();
-          if (owner == "")
-          {
-            flag = false;
-            break;
-          }
-          if (!stringList.Contains(owner))
-            stringList.Add(owner);
-        }
-      }
-      if (stringList.Count == NetworkManager.Instance.PlayerList.Length)
-        flag = true;
-      if (flag && !NetworkManager.Instance.AllPlayersManualReady())
-        flag = false;
-    }
-    if (flag && this.AllBoxWithOwners() && this.AllBoxWithHeroes())
-      this.botonBegin.Enable();
-    else
-      this.botonBegin.Disable();
-  }
-
-  private void AssignHeroToBox(string _hero, int _boxId)
-  {
-    if (this.IsYourBox("Box_" + _boxId.ToString()) && !GameManager.Instance.IsLoadingGame())
-    {
-      SubClassData subClassData = Globals.Instance.GetSubClassData(_hero);
-      subClassData.CharacterName.ToLower();
-      string lower = subClassData.Id.ToLower();
-      if (this.SubclassByName.ContainsKey(lower))
-        lower = this.SubclassByName[lower];
-      string key = lower.ToLower().Replace(" ", "");
-      int perkRank = PlayerManager.Instance.GetPerkRank(subClassData.Id);
-      this.heroSelectionDictionary[key].SetRankBox(perkRank);
-      this.AddToPlayerHeroCardback(_hero, PlayerManager.Instance.GetActiveCardback(subClassData.Id));
-      if (GameManager.Instance.IsMultiplayer())
-      {
-        this.photonView.RPC("NET_AssignHeroToBox", RpcTarget.Others, (object) _hero, (object) _boxId, (object) perkRank, (object) PlayerManager.Instance.GetActiveSkin(subClassData.Id), (object) PlayerManager.Instance.GetActiveCardback(subClassData.Id));
-        this.SendHeroPerksMP(subClassData.Id);
-      }
-    }
-    if (PerkTree.Instance.IsActive())
-      PerkTree.Instance.DoTeamPerks();
-    if (!GameManager.Instance.IsMultiplayer() || !GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsObeliskChallenge() || !NetworkManager.Instance.IsMaster())
-      return;
-    for (int index = 0; index < this.boxSelection.Length; ++index)
-      this.boxSelection[index].CheckSkuForHero();
-  }
-
-  [PunRPC]
-  private void NET_AssignAllHeroToBox(string _str)
-  {
-    string[] strArray1 = _str.Split('&', StringSplitOptions.None);
-    for (int index = 0; index < strArray1.Length; ++index)
-    {
-      if (!strArray1[index].IsNullOrEmpty())
-      {
-        string[] strArray2 = strArray1[index].Split("#", StringSplitOptions.None);
-        if (strArray2.Length == 5)
-          this.NET_AssignHeroToBox(strArray2[0], int.Parse(strArray2[1]), int.Parse(strArray2[2]), strArray2[3], strArray2[4]);
-      }
-    }
-  }
-
-  [PunRPC]
-  private void NET_AssignHeroToBox(
-    string _hero,
-    int _boxId,
-    int _perkRank,
-    string _skinId,
-    string _cardbackId)
-  {
-    _hero = _hero.ToLower();
-    if (this.SubclassByName.ContainsKey(_hero))
-      _hero = this.SubclassByName[_hero];
-    _hero = _hero.ToLower().Replace(" ", "");
-    GameObject key = this.boxGO[_boxId];
-    if (this.heroSelectionDictionary[_hero].selected)
-      this.heroSelectionDictionary[_hero].Reset();
-    if (!this.boxHero.ContainsKey(key) || (UnityEngine.Object) this.boxHero[key] == (UnityEngine.Object) null)
-    {
-      this.heroSelectionDictionary[_hero].AssignHeroToBox(this.boxGO[_boxId]);
-      this.heroSelectionDictionary[_hero].SetRankBox(_perkRank);
-      this.heroSelectionDictionary[_hero].SetSkin(_skinId);
-      this.AddToPlayerHeroSkin(_hero, _skinId);
-      this.AddToPlayerHeroCardback(_hero, _cardbackId);
-    }
-    else
-    {
-      if (!(this.boxHero[key].nameTM.text != _hero))
-        return;
-      this.boxHero[key].GoBackToOri();
-      this.heroSelectionDictionary[_hero].AssignHeroToBox(this.boxGO[_boxId]);
-      this.heroSelectionDictionary[_hero].SetRankBox(_perkRank);
-      this.heroSelectionDictionary[_hero].SetSkin(_skinId);
-      this.AddToPlayerHeroSkin(_hero, _skinId);
-      this.AddToPlayerHeroCardback(_hero, _cardbackId);
-    }
-  }
-
-  public void RearrangeHerosData()
-  {
-    this.heroSelectionDictionary = this.heroSelectionDictionary.OrderBy<KeyValuePair<string, HeroSelection>, bool>((Func<KeyValuePair<string, HeroSelection>, bool>) (kv => kv.Value.lockIcon.gameObject.activeSelf)).ThenByDescending<KeyValuePair<string, HeroSelection>, bool>((Func<KeyValuePair<string, HeroSelection>, bool>) (kv => kv.Value.HeroPicked)).ThenBy<KeyValuePair<string, HeroSelection>, string>((Func<KeyValuePair<string, HeroSelection>, string>) (kv => kv.Value.subClassData.CharacterName)).ToDictionary<KeyValuePair<string, HeroSelection>, string, HeroSelection>((Func<KeyValuePair<string, HeroSelection>, string>) (kv => kv.Key), (Func<KeyValuePair<string, HeroSelection>, HeroSelection>) (kv => kv.Value));
-  }
-
-  public async void ShowHeroesByFilterAsync(string type)
-  {
-    if (type == null)
-      return;
-    this.CurrentFilter = type;
-    this.RearrangeHerosData();
-    this.DisableCharacterSelectionParents();
-    HeroSelectionTabsManager.Instance.EnableTab(type);
-    GameObject selectionParentGo = this.GetHeroSelectionParentGO(type);
-    Func<HeroSelection, bool> heroSelectionFilter = this.GetHeroSelectionFilter(type);
-    this.ArrangeHeroSelections(selectionParentGo, heroSelectionFilter);
-    this.currentSelectionTab = selectionParentGo;
-    selectionParentGo.SetActive(true);
-    await this.UpdateCharSelectArrowStates(100);
-  }
-
-  public async Task UpdateCharSelectArrowStates(int delay = 0)
-  {
-    await Task.Delay(delay);
-    GameObject heroSelectionTab = this.GetActiveHeroSelectionTab();
-    BotonGeneric component1 = this.charPageLeftButton.GetComponent<BotonGeneric>();
-    BotonGeneric component2 = this.charPageRightButton.GetComponent<BotonGeneric>();
-    Color color1 = Functions.HexToColor("#FFBB00");
-    Color color2 = Functions.HexToColor("#9D9D9D");
-    int childCount = heroSelectionTab.transform.childCount;
-    if (childCount == 1)
-    {
-      component1.SetBackgroundColor(color2);
-      component2.SetBackgroundColor(color2);
-      component1.buttonEnabled = false;
-      component2.buttonEnabled = false;
-    }
-    else
-    {
-      if (childCount <= 1)
-        return;
-      if (heroSelectionTab.transform.GetChild(0).gameObject.activeSelf)
-      {
-        component1.SetBackgroundColor(color2);
-        component2.SetBackgroundColor(color1);
-        component1.buttonEnabled = false;
-        component2.buttonEnabled = true;
-      }
-      else if (heroSelectionTab.transform.GetChild(childCount - 1).gameObject.activeSelf)
-      {
-        component1.SetBackgroundColor(color1);
-        component2.SetBackgroundColor(color2);
-        component1.buttonEnabled = true;
-        component2.buttonEnabled = false;
-      }
-      else
-      {
-        component1.SetBackgroundColor(color1);
-        component2.SetBackgroundColor(color1);
-        component1.buttonEnabled = true;
-        component2.buttonEnabled = true;
-      }
-    }
-  }
-
-  private GameObject GetActiveHeroSelectionTab()
-  {
-    if (this.dlcsGO.activeSelf)
-      return this.dlcsGO;
-    if (this.lockedGO.activeSelf)
-      return this.lockedGO;
-    if (this.warriorsGO.activeSelf)
-      return this.warriorsGO;
-    if (this.scoutsGO.activeSelf)
-      return this.scoutsGO;
-    if (this.magesGO.activeSelf)
-      return this.magesGO;
-    return this.healersGO.activeSelf ? this.healersGO : this.allGO;
-  }
-
-  private GameObject GetHeroSelectionParentGO(string type)
-  {
-    switch (type.ToLower())
-    {
-      case "dlc":
-        return this.dlcsGO;
-      case "healer":
-        return this.healersGO;
-      case "locked":
-        return this.lockedGO;
-      case "mage":
-        return this.magesGO;
-      case "scout":
-        return this.scoutsGO;
-      case "warrior":
-        return this.warriorsGO;
-      default:
-        return this.allGO;
-    }
-  }
-
-  private void ArrangeHeroSelections(GameObject parent, Func<HeroSelection, bool> filter)
-  {
-    Vector3 vector3_1 = new Vector3(2f, 0.0f, 0.0f);
-    Vector3 vector3_2 = new Vector3(-0.45f, 0.09f, 0.0f);
-    int num = 0;
-    int index = 0;
-    bool flag = false;
-    if (parent.transform.childCount == 0)
-      flag = true;
-    if (flag)
-      this.CreateChildInTransform(parent.transform, "Page" + index.ToString());
-    foreach (KeyValuePair<string, HeroSelection> heroSelection1 in this.heroSelectionDictionary)
-    {
-      HeroSelection heroSelection2 = heroSelection1.Value;
-      if (filter(heroSelection2))
-      {
-        Transform defaultParent = heroSelection2.DefaultParent;
-        defaultParent.parent = parent.transform.GetChild(index);
-        defaultParent.gameObject.SetActive(true);
-        defaultParent.localPosition = Vector3.zero + vector3_2;
-        ++num;
-        vector3_2 += vector3_1;
-        if (num % 8 == 0)
-          vector3_2 = new Vector3(-0.45f, -1.52f, 0.0f);
-        if (num % 16 == 0)
-        {
-          vector3_2 = new Vector3(-0.45f, 0.09f, 0.0f);
-          ++index;
-          if (flag)
-            this.CreateChildInTransform(parent.transform, "Page" + index.ToString(), false);
-        }
-      }
-    }
-  }
-
-  private Func<HeroSelection, bool> GetHeroSelectionFilter(string type)
-  {
-    string typeLower = type.ToLower();
-    if (typeLower == "all")
-      return (Func<HeroSelection, bool>) (_ => true);
-    if (typeLower == "dlc")
-      return (Func<HeroSelection, bool>) (hero => hero.GetHeroClass().ToLower() != "none" && hero.GetHeroClassSecondary().ToLower() != "none");
-    return typeLower == "locked" ? (Func<HeroSelection, bool>) (hero => hero.blocked) : (Func<HeroSelection, bool>) (hero => hero.GetHeroClass().ToLower() == typeLower && hero.GetHeroClassSecondary().ToLower() == "none");
-  }
-
-  private void DisableCharacterSelectionParents()
-  {
-    this.allGO.SetActive(false);
-    this.warriorsGO.SetActive(false);
-    this.scoutsGO.SetActive(false);
-    this.magesGO.SetActive(false);
-    this.healersGO.SetActive(false);
-    this.dlcsGO.SetActive(false);
-    this.lockedGO.SetActive(false);
-  }
-
-  private void CreateChildInTransform(Transform _transform, string name, bool enable = true)
-  {
-    new GameObject(name)
-    {
-      transform = {
-        parent = _transform,
-        localPosition = Vector3.zero,
-        localScale = Vector3.one,
-        localRotation = Quaternion.identity
-      }
-    }.SetActive(enable);
-  }
-
-  public void moveHeroPageLeft()
-  {
-    int childCount = this.currentSelectionTab.transform.childCount;
-    if (this.currentSelectionTab.transform.childCount <= 1)
-      return;
-    for (int index = 1; index < childCount; ++index)
-    {
-      if (this.currentSelectionTab.transform.GetChild(index).gameObject.activeSelf)
-      {
-        this.currentSelectionTab.transform.GetChild(index).gameObject.SetActive(false);
-        this.currentSelectionTab.transform.GetChild(index - 1).gameObject.SetActive(true);
-      }
-    }
-  }
-
-  public void moveHeroPageRight()
-  {
-    int childCount = this.currentSelectionTab.transform.childCount;
-    if (this.currentSelectionTab.transform.childCount <= 1)
-      return;
-    for (int index = 0; index < childCount - 1; ++index)
-    {
-      if (this.currentSelectionTab.transform.GetChild(index).gameObject.activeSelf)
-      {
-        this.currentSelectionTab.transform.GetChild(index).gameObject.SetActive(false);
-        this.currentSelectionTab.transform.GetChild(index + 1).gameObject.SetActive(true);
-      }
-    }
-  }
-
-  [PunRPC]
-  private void NET_ClearBox(int _boxId, bool _moveBackHero)
-  {
-    this.ClearBox(_boxId, _moveBackHero);
-    if (!PerkTree.Instance.IsActive())
-      return;
-    PerkTree.Instance.DoTeamPerks();
-  }
-
-  public void ClearBox(int id, bool moveBackHero = true)
-  {
-    if (!this.IsBoxFilled(this.boxGO[id]))
-      return;
-    HeroSelection boxHero = this.GetBoxHero(this.boxGO[id]);
-    if ((UnityEngine.Object) boxHero != (UnityEngine.Object) null)
-      boxHero.GoBackToOri();
-    this.FillBox(this.boxGO[id], (HeroSelection) null, false);
-  }
-
-  public bool IsHeroSelected(string heroName)
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      HeroSelection boxHero = this.GetBoxHero(this.boxGO[index]);
-      if ((UnityEngine.Object) boxHero != (UnityEngine.Object) null && boxHero.nameTM.text == heroName)
-        return true;
-    }
-    return false;
-  }
-
-  public string GetBoxOwnerFromIndex(int _index)
-  {
-    return (UnityEngine.Object) this.boxSelection[_index] != (UnityEngine.Object) null ? this.boxSelection[_index].GetOwner() : "";
-  }
-
-  public HeroSelection GetBoxHeroFromIndex(int _index)
-  {
-    return (UnityEngine.Object) this.boxGO[_index] != (UnityEngine.Object) null && this.boxHero.ContainsKey(this.boxGO[_index]) ? this.boxHero[this.boxGO[_index]] : (HeroSelection) null;
-  }
-
-  public HeroSelection GetBoxHero(GameObject _box)
-  {
-    return this.boxHero.ContainsKey(_box) ? this.boxHero[_box] : (HeroSelection) null;
-  }
-
-  public void MouseOverBox(GameObject _box) => this.box = _box;
-
-  public GameObject GetOverBox() => this.box;
-
-  public void BeginAdventure()
-  {
-    this.botonBegin.gameObject.SetActive(false);
-    if (GameManager.Instance.IsMultiplayer() && (!GameManager.Instance.IsMultiplayer() || !NetworkManager.Instance.IsMaster()))
-      return;
-    if (GameManager.Instance.GameStatus == Enums.GameStatus.LoadGame)
-    {
-      if (!AtOManager.Instance.CheckLoadGameUserHaveAllContent())
-        this.botonBegin.gameObject.SetActive(true);
-      else
-        AtOManager.Instance.DoLoadGameFromMP();
-    }
-    else
-    {
-      string[] strArray = new string[4];
-      for (int index = 0; index < this.boxHero.Count; ++index)
-        strArray[index] = !((UnityEngine.Object) this.boxHero[this.boxGO[index]] != (UnityEngine.Object) null) ? "" : Functions.RemoveWhitespace(this.boxHero[this.boxGO[index]].GetSubclassName(), true);
-      if (!GameManager.Instance.IsMultiplayer() && !GameManager.Instance.IsWeeklyChallenge())
-      {
-        PlayerManager.Instance.LastUsedTeam = new string[4];
-        for (int index = 0; index < 4; ++index)
-          PlayerManager.Instance.LastUsedTeam[index] = strArray[index].ToLower();
-        SaveManager.SavePlayerData();
-      }
-      if (GameManager.Instance.IsGameAdventure())
-      {
-        AtOManager.Instance.SetPlayerPerks(this.playerHeroPerksDict, strArray);
-        AtOManager.Instance.SetNgPlus(this.ngValue);
-        AtOManager.Instance.SetMadnessCorruptors(this.ngCorruptors);
-      }
-      else if (GameManager.Instance.IsSingularity())
-      {
-        AtOManager.Instance.SetPlayerPerks(this.playerHeroPerksDict, strArray);
-        AtOManager.Instance.SetSingularityMadness(this.singularityMadnessValue);
-      }
-      else if (!GameManager.Instance.IsWeeklyChallenge())
-        AtOManager.Instance.SetObeliskMadness(this.obeliskMadnessValue);
-      AtOManager.Instance.SetTeamFromArray(strArray);
-      AtOManager.Instance.BeginAdventure();
-    }
-  }
-
-  public void ChangeSeed()
-  {
-    if (GameManager.Instance.IsLoadingGame() || AtOManager.Instance.IsFirstGame() || GameManager.Instance.IsMultiplayer() && !NetworkManager.Instance.IsMaster())
-      return;
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.SetSeedId);
-    AlertManager.Instance.AlertInput(Texts.Instance.GetText("gameSeedInput"), Texts.Instance.GetText("accept").ToUpper());
-  }
-
-  public void SetSeedId()
-  {
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.SetSeedId);
-    if (AlertManager.Instance.GetInputValue() == null)
-      return;
-    string upper = AlertManager.Instance.GetInputValue().ToUpper();
-    if (!(upper.Trim() != ""))
-      return;
-    this.SetSeed(upper, true);
-  }
-
-  private void SetSeed(string _seed, bool stablishGameId = false)
-  {
-    this.gameSeedTxt.text = _seed;
-    if (stablishGameId)
-      AtOManager.Instance.SetGameId(_seed);
-    if (!GameManager.Instance.IsMultiplayer() || !NetworkManager.Instance.IsMaster())
-      return;
-    this.photonView.RPC("NET_SetSeed", RpcTarget.Others, (object) _seed);
-  }
-
-  [PunRPC]
-  private void NET_SetSeed(string _seed)
-  {
-    if (GameManager.Instance.GetDeveloperMode())
-      Debug.Log((object) ("Net_SeetSeed " + _seed));
-    this.gameSeedTxt.text = _seed;
-  }
-
-  public void RefreshPerkPoints(string _hero)
-  {
-    this.heroSelectionDictionary[_hero].SetPerkPoints();
-    if (!((UnityEngine.Object) this.charPopup != (UnityEngine.Object) null) || !PerkTree.Instance.IsActive())
-      return;
-    this.charPopup.RefreshBecauseOfPerks();
-  }
-
-  public void DoCharPopMenu(string type)
-  {
-    switch (type)
-    {
-      case "stats":
-        this.charPopup.ShowStats();
-        break;
-      case "perks":
-        this.charPopup.ShowPerks();
-        break;
-      case "skins":
-        this.charPopup.ShowSkins();
-        break;
-      case "rank":
-        this.charPopup.ShowRank();
-        break;
-      case "cardbacks":
-        this.charPopup.ShowCardbacks();
-        break;
-      case "singularityCards":
-        this.charPopup.ShowSingularityCards();
-        break;
-    }
-    this.charPopup.Show();
-  }
-
-  public void NGBox(int value = -1)
-  {
-  }
-
-  [PunRPC]
-  private void NET_SetNGBox(int _value) => this.NGBox(_value);
-
-  public void SetMadnessLevel()
-  {
-    int madnessTotal = MadnessManager.Instance.CalculateMadnessTotal(this.ngValue, this.ngCorruptors);
-    this.madnessLevel.text = string.Format(Texts.Instance.GetText("madnessNumber"), (object) madnessTotal);
-    if (madnessTotal == 0)
-    {
-      this.madnessParticle.gameObject.SetActive(false);
-      this.madnessButton.GetComponent<BotonGeneric>().ShowBackgroundDisable(true);
-    }
-    else
-    {
-      this.madnessParticle.gameObject.SetActive(true);
-      this.madnessButton.GetComponent<BotonGeneric>().ShowBackgroundDisable(false);
-    }
-    MadnessManager.Instance.RefreshValues(this.ngCorruptors);
-    if (!GameManager.Instance.IsMultiplayer() || !NetworkManager.Instance.IsMaster())
-      return;
-    this.photonView.RPC("NET_SetMadness", RpcTarget.Others, (object) this.ngValue, (object) this.ngCorruptors);
-  }
-
-  [PunRPC]
-  private void NET_SetMadness(int mLevel, string mCorruptors)
-  {
-    this.ngValue = this.ngValueMaster = mLevel;
-    this.ngCorruptors = mCorruptors;
-    this.SetMadnessLevel();
-  }
-
-  public void RefreshSandboxButton()
-  {
-    if (!this.sandboxButton.gameObject.activeSelf)
-      return;
-    if (SandboxManager.Instance.IsEnabled())
-    {
-      this.sandboxButton.GetComponent<BotonGeneric>().ShowBackgroundDisable(false);
-      this.sandboxButtonCircleOn.gameObject.SetActive(true);
-      this.sandboxButtonCircleOff.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.sandboxButton.GetComponent<BotonGeneric>().ShowBackgroundDisable(true);
-      this.sandboxButtonCircleOn.gameObject.SetActive(false);
-      this.sandboxButtonCircleOff.gameObject.SetActive(true);
-    }
-  }
-
-  public void RefreshCharBoxesBySandboxHeroes()
-  {
-    if (SandboxManager.Instance.IsEnabled())
-    {
-      switch (SandboxManager.Instance.GetSandboxBoxValue("sbTotalHeroes"))
-      {
-        case 1:
-          this.ClearBox(1, false);
-          this.ClearBox(2, false);
-          this.ClearBox(3, false);
-          this.boxSelection[1].gameObject.SetActive(false);
-          this.boxSelection[2].gameObject.SetActive(false);
-          this.boxSelection[3].gameObject.SetActive(false);
-          this.CheckButtonEnabled();
-          return;
-        case 2:
-          this.ClearBox(2, false);
-          this.ClearBox(3, false);
-          this.boxSelection[1].gameObject.SetActive(true);
-          this.boxSelection[2].gameObject.SetActive(false);
-          this.boxSelection[3].gameObject.SetActive(false);
-          this.CheckButtonEnabled();
-          return;
-        case 3:
-          this.ClearBox(3, false);
-          this.boxSelection[1].gameObject.SetActive(true);
-          this.boxSelection[2].gameObject.SetActive(true);
-          this.boxSelection[3].gameObject.SetActive(false);
-          this.CheckButtonEnabled();
-          return;
-      }
-    }
-    this.boxSelection[1].gameObject.SetActive(true);
-    this.boxSelection[2].gameObject.SetActive(true);
-    this.boxSelection[3].gameObject.SetActive(true);
-    this.CheckButtonEnabled();
-  }
-
-  public void ShareResetSandbox() => this.photonView.RPC("NET_ShareResetSandbox", RpcTarget.Others);
-
-  [PunRPC]
-  private void NET_ShareResetSandbox() => SandboxManager.Instance.SbReset();
-
-  [PunRPC]
-  private void NET_ShareSandbox(string json)
-  {
-    AtOManager.Instance.SetSandboxMods(Functions.DecompressString(json));
-    SandboxManager.Instance.LoadValuesFromAtOManager();
-    this.RefreshCharBoxesBySandboxHeroes();
-  }
-
-  public void ShareSandboxCombo(string key, int value)
-  {
-    this.photonView.RPC("NET_ShareSandboxCombo", RpcTarget.Others, (object) key, (object) value);
-  }
-
-  [PunRPC]
-  private void NET_ShareSandboxCombo(string key, int value)
-  {
-    SandboxManager.Instance.SetComboValueByVal(key, value);
-  }
-
-  public void ShareSandboxBox(string key, int value)
-  {
-    this.photonView.RPC("NET_ShareSandboxBox", RpcTarget.Others, (object) key, (object) value);
-  }
-
-  [PunRPC]
-  private void NET_ShareSandboxBox(string key, int value)
-  {
-    SandboxManager.Instance.SetBoxValueByVal(key, value);
-    this.RefreshCharBoxesBySandboxHeroes();
-  }
-
-  public void ShareSandboxEnabledState(bool state)
-  {
-    this.photonView.RPC("NET_ShareSandboxEnabledState", RpcTarget.Others, (object) state);
-  }
-
-  [PunRPC]
-  private void NET_ShareSandboxEnabledState(bool state)
-  {
-    if (state)
-      SandboxManager.Instance.EnableSandbox();
-    else
-      SandboxManager.Instance.DisableSandbox();
-    this.RefreshSandboxButton();
-  }
-
-  public void SetObeliskMadnessLevel()
-  {
-    int obeliskMadnessValue = this.obeliskMadnessValue;
-    this.madnessLevel.text = string.Format(Texts.Instance.GetText("madnessNumber"), (object) obeliskMadnessValue);
-    if (obeliskMadnessValue == 0)
-      this.madnessParticle.gameObject.SetActive(false);
-    else
-      this.madnessParticle.gameObject.SetActive(true);
-    MadnessManager.Instance.RefreshValues();
-    if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-      this.photonView.RPC("NET_SetObeliskMadness", RpcTarget.Others, (object) obeliskMadnessValue);
-    if (this.obeliskMadnessValue > 7)
-      this.gameSeed.gameObject.SetActive(false);
-    else
-      this.gameSeed.gameObject.SetActive(true);
-  }
-
-  [PunRPC]
-  private void NET_SetObeliskMadness(int mLevel)
-  {
-    this.obeliskMadnessValue = this.obeliskMadnessValueMaster = mLevel;
-    this.SetObeliskMadnessLevel();
-  }
-
-  public void SetSingularityMadnessLevel()
-  {
-    int singularityMadnessValue = this.singularityMadnessValue;
-    this.madnessLevel.text = string.Format(Texts.Instance.GetText("madnessNumber"), (object) singularityMadnessValue);
-    if (singularityMadnessValue == 0)
-      this.madnessParticle.gameObject.SetActive(false);
-    else
-      this.madnessParticle.gameObject.SetActive(true);
-    MadnessManager.Instance.RefreshValues();
-    if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-      this.photonView.RPC("NET_SetSingularityMadness", RpcTarget.Others, (object) singularityMadnessValue);
-    if (this.singularityMadnessValue > 7)
-      this.gameSeed.gameObject.SetActive(false);
-    else
-      this.gameSeed.gameObject.SetActive(true);
-  }
-
-  [PunRPC]
-  private void NET_SetSingularityMadness(int mLevel)
-  {
-    this.singularityMadnessValue = this.singularityMadnessValueMaster = mLevel;
-    this.SetSingularityMadnessLevel();
-  }
-
-  public void SetSkinIntoSubclassData(string _subclass, string _skinId)
-  {
-    SubClassData subClassData = Globals.Instance.GetSubClassData(_subclass);
-    SkinData skinData = Globals.Instance.GetSkinData(_skinId);
-    foreach (KeyValuePair<string, HeroSelection> heroSelection in this.heroSelectionDictionary)
-    {
-      if (heroSelection.Key == subClassData.Id)
-      {
-        if (!GameManager.Instance.IsMultiplayer())
-        {
-          heroSelection.Value.SetSprite(skinData.SpritePortrait, skinData.SpriteSilueta, subClassData.SpriteBorderLocked);
-          this.AddToPlayerHeroSkin(_subclass, _skinId);
-          break;
-        }
-        heroSelection.Value.SetSpriteSilueta(skinData.SpriteSilueta);
-        this.SendHeroSkinMP(_subclass, _skinId);
-        break;
-      }
-    }
-  }
-
-  public void FollowTheLeader()
-  {
-    AtOManager.Instance.followingTheLeader = !AtOManager.Instance.followingTheLeader;
-    SaveManager.SaveIntoPrefsBool("followLeader", AtOManager.Instance.followingTheLeader);
-    SaveManager.SavePrefs();
-    this.ShowFollowStatus();
-  }
-
-  public void ShowFollowStatus()
-  {
-    if (AtOManager.Instance.followingTheLeader)
-      this.botonFollow.SetText("X");
-    else
-      this.botonFollow.SetText("");
-  }
-
-  public void Ready()
-  {
-    if (!GameManager.Instance.IsMultiplayer())
-      return;
-    if (this.manualReadyCo != null)
-      this.StopCoroutine(this.manualReadyCo);
-    this.statusReady = !this.statusReady;
-    NetworkManager.Instance.SetManualReady(this.statusReady);
-    if (this.statusReady)
-      this.ReadySetButton(true);
-    else
-      this.ReadySetButton(false);
-  }
-
-  public void SetPlayersReady()
-  {
-    for (int index = 0; index < 4; ++index)
-      this.boxSelection[index].SetReady(NetworkManager.Instance.IsPlayerReady(this.boxSelection[index].GetOwner()));
-    if (!NetworkManager.Instance.IsMaster())
-      return;
-    this.CheckButtonEnabled();
-  }
-
-  public void ReadySetButton(bool state)
-  {
-    if (state)
-    {
-      this.readyButtonText.gameObject.SetActive(false);
-      this.readyButton.GetComponent<BotonGeneric>().SetColorAbsolute(Functions.HexToColor("#15A42E"));
-      if (GameManager.Instance.IsMultiplayer())
-        this.readyButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("waitingForPlayers"));
-      else
-        this.readyButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("ready"));
-    }
-    else
-    {
-      this.readyButtonText.gameObject.SetActive(true);
-      this.readyButton.GetComponent<BotonGeneric>().SetColorAbsolute(Functions.HexToColor(Globals.Instance.ClassColor["warrior"]));
-      this.readyButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("ready"));
-    }
-  }
-
-  public void SetSkinFromNetPlayer(string _nick, string _subclass, string _skinId)
-  {
-  }
-
-  public void SetRandomHero(int _boxId)
-  {
-    int num1 = 0;
-    foreach (KeyValuePair<string, HeroSelection> heroSelection in this.heroSelectionDictionary)
-    {
-      if (heroSelection.Value.RandomAvailable())
-        ++num1;
-    }
-    int num2 = 0;
-    for (int index = 0; index < 4; ++index)
-    {
-      if ((UnityEngine.Object) this.boxHero[this.boxGO[index]] != (UnityEngine.Object) null && this.boxHero[this.boxGO[index]].GetSubclassName() != "")
-        ++num2;
-    }
-    if (num1 <= 4 && num2 == 4)
-      return;
-    int count = this.heroSelectionDictionary.Count;
-    HeroSelection heroSelection1 = (HeroSelection) null;
-    bool flag;
-    do
-    {
-      do
-      {
-        int num3 = UnityEngine.Random.Range(0, count);
-        int num4 = 0;
-        foreach (KeyValuePair<string, HeroSelection> heroSelection2 in this.heroSelectionDictionary)
-        {
-          if (num4 == num3)
-          {
-            heroSelection1 = heroSelection2.Value;
-            break;
-          }
-          ++num4;
-        }
-        if (!((UnityEngine.Object) heroSelection1 != (UnityEngine.Object) null))
-          goto label_12;
-      }
-      while (!heroSelection1.RandomAvailable());
-      flag = true;
-      for (int index = 0; index < this.boxGO.Length; ++index)
-      {
-        if ((UnityEngine.Object) this.boxHero[this.boxGO[index]] != (UnityEngine.Object) null && this.boxHero[this.boxGO[index]].GetSubclassName().ToLower() == heroSelection1.Id)
-        {
-          flag = false;
-          break;
-        }
-      }
-    }
-    while (!flag);
-    goto label_30;
-label_12:
-    return;
-label_30:
-    heroSelection1.PickHero(true);
-    heroSelection1.PickStop(_boxId);
-  }
-
-  public void LevelWithSupplies(string _scdId)
-  {
-    PlayerManager.Instance.SpendSupply(1);
-    this.IncreaseHeroProgressSupplies(_scdId);
-    this.UpdateSubclassRank(_scdId);
-    this.charPopup.DoRank();
-  }
-
-  private void UpdateSubclassRank(string _scdId)
-  {
-    SubClassData subClassData = Globals.Instance.GetSubClassData(_scdId);
-    foreach (KeyValuePair<string, HeroSelection> heroSelection in this.heroSelectionDictionary)
-    {
-      if (heroSelection.Key == subClassData.Id)
-      {
-        if (!GameManager.Instance.IsMultiplayer())
-          heroSelection.Value.SetRank();
-        else
-          heroSelection.Value.SetRank();
-      }
-    }
-  }
-
-  public void ControllerMoveBlock(bool _isRight)
-  {
-  }
-
-  public void ResetController()
-  {
-    Debug.Log((object) nameof (ResetController));
-    this.controllerCurrentBlock = -1;
-    this.controllerCurrentOption = -1;
-    this.HideCharacterArrowController();
-  }
-
-  public void BackToControllerCharacterSelection()
-  {
-    Debug.Log((object) nameof (BackToControllerCharacterSelection));
-    this.controllerCurrentBlock = 0;
-    this.HideCharacterArrowController();
-    this.ControllerMovement();
-  }
-
-  public void MoveAbsoluteToCharactersAfterClick()
-  {
-    Debug.Log((object) nameof (MoveAbsoluteToCharactersAfterClick));
-    this.controllerHorizontalIndex = 0;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.boxSelection[0].transform.position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
-
-  private void HideCharacterArrowController()
-  {
-    for (int index = 0; index < 4; ++index)
-      this.boxSelection[index].ShowHideArrowController(false);
-  }
-
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    int absolutePosition = -1)
-  {
-    this._controllerList.Clear();
-    if (!this.dragging)
-    {
-      for (int index = 0; index < this.menuController.Count; ++index)
-        this._controllerList.Add(this.menuController[index]);
-      if (Functions.TransformIsVisible(this.botonFollow.transform))
-        this._controllerList.Add(this.botonFollow.transform);
-      if (Functions.TransformIsVisible(this.beginAdventureButton))
-        this._controllerList.Add(this.beginAdventureButton.transform);
-      if (Functions.TransformIsVisible(this.readyButton))
-        this._controllerList.Add(this.readyButton.transform);
-      if (Functions.TransformIsVisible(this.madnessButton))
-        this._controllerList.Add(this.madnessButton);
-      if (Functions.TransformIsVisible(this.sandboxButton))
-        this._controllerList.Add(this.sandboxButton);
-      if (Functions.TransformIsVisible(this.gameSeed))
-        this._controllerList.Add(this.gameSeed);
-      if (Functions.TransformIsVisible(this.weeklyModifiersButton))
-        this._controllerList.Add(this.weeklyModifiersButton);
-    }
-    for (int index1 = 0; index1 < 4; ++index1)
-    {
-      if (Functions.TransformIsVisible(this.boxSelection[index1].transform))
-      {
-        this._controllerList.Add(this.boxSelection[index1].transform);
-        if (!this.dragging)
-        {
-          if (Functions.TransformIsVisible(this.boxSelection[index1].dice))
-            this._controllerList.Add(this.boxSelection[index1].dice);
-          for (int index2 = 0; index2 < 4; ++index2)
-          {
-            if (Functions.TransformIsVisible(this.boxSelection[index1].boxPlayer[index2].transform))
-              this._controllerList.Add(this.boxSelection[index1].boxPlayer[index2].transform);
-          }
-        }
-      }
-    }
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((UnityEngine.Object) this._controllerList[this.controllerHorizontalIndex] != (UnityEngine.Object) null))
-      return;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
-
-  public void ControllerMovementOLD(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    int absolutePosition = -1)
-  {
-    if (absolutePosition != -1)
-      this.controllerCurrentOption = absolutePosition;
-    if (this.controllerCurrentBlock == 0)
-    {
-      bool flag = false;
-      List<Transform> menuController = this.menuController;
-      while (!flag)
-      {
-        if (menuController != null)
-        {
-          if (goingLeft)
-            --this.controllerCurrentOption;
-          else if (goingUp)
-            this.controllerCurrentOption -= 4;
-          else if (goingDown)
-          {
-            this.controllerCurrentOption += 4;
-          }
-          else
-          {
-            ++this.controllerCurrentOption;
-            if (this.controllerCurrentOption % 4 == 0 || this.controllerCurrentOption == menuController.Count - 1)
-            {
-              this.controllerCurrentBlock = 1;
-              this.controllerCurrentOption = -1;
-              this.ControllerMovement(goingRight: true);
-              break;
-            }
-          }
-          if (this.controllerCurrentOption < 0)
-            this.controllerCurrentOption = menuController.Count - 1;
-          if (this.controllerCurrentOption > menuController.Count - 1)
-            this.controllerCurrentOption = 0;
-          Transform transform = menuController[this.controllerCurrentOption];
-          if ((UnityEngine.Object) transform != (UnityEngine.Object) null && Functions.TransformIsVisible(transform) && !((UnityEngine.Object) transform.parent == (UnityEngine.Object) this.boxCharacters))
-          {
-            this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(transform.position);
-            Mouse.current.WarpCursorPosition(this.warpPosition);
-            flag = true;
-          }
-        }
-        else
-          flag = true;
-      }
-    }
-    else if (this.controllerCurrentBlock == 1)
-    {
-      bool flag = false;
-      int num = 0;
-      if (absolutePosition != -1)
-      {
-        --absolutePosition;
-        goingLeft = true;
-      }
-      while (!flag)
-      {
-        if (goingRight)
-        {
-          --this.controllerCurrentOption;
-          if (this.controllerCurrentOption < 0)
-            this.controllerCurrentOption = 3;
-        }
-        else if (goingLeft)
-        {
-          ++this.controllerCurrentOption;
-          if (this.controllerCurrentOption > 3)
-            this.controllerCurrentOption = 0;
-        }
-        else if (goingUp)
-        {
-          if (this.boxSelection[this.controllerCurrentOption].dice.gameObject.activeSelf)
-          {
-            this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.boxSelection[this.controllerCurrentOption].dice.position);
-            Mouse.current.WarpCursorPosition(this.warpPosition);
-            return;
-          }
-        }
-        else
-        {
-          this.controllerCurrentBlock = 4;
-          this.ControllerMovement(true);
-          return;
-        }
-        flag = Functions.TransformIsVisible(this.boxSelection[this.controllerCurrentOption].transform);
-        ++num;
-        if (num > 10)
-          break;
-      }
-      this.HideCharacterArrowController();
-      this.boxSelection[this.controllerCurrentOption].ShowHideArrowController(true);
-      this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.boxSelection[this.controllerCurrentOption].transform.position);
-      Mouse.current.WarpCursorPosition(this.warpPosition);
-    }
-    else if (this.controllerCurrentBlock == 2)
-    {
-      if (goingUp)
-      {
-        this.controllerCurrentBlock = 1;
-        this.controllerCurrentOption = -1;
-        this.ControllerMovement(goingRight: true);
-      }
-      else if (goingDown)
-      {
-        this.controllerCurrentBlock = 4;
-        this.ControllerMovement(goingRight: true);
-      }
-      else
-      {
-        this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.beginAdventureButton.position);
-        Mouse.current.WarpCursorPosition(this.warpPosition);
-      }
-    }
-    else if (this.controllerCurrentBlock == 3)
-    {
-      if (goingUp)
-      {
-        this.controllerCurrentBlock = 1;
-        this.controllerCurrentOption = -1;
-        this.ControllerMovement(goingRight: true);
-      }
-      else if (goingDown)
-      {
-        this.controllerCurrentBlock = 4;
-        this.ControllerMovement(goingRight: true);
-      }
-      else
-      {
-        this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.botonFollow.transform.parent.position);
-        Mouse.current.WarpCursorPosition(this.warpPosition);
-      }
-    }
-    else if (this.controllerCurrentBlock == 4)
-    {
-      if (goingUp)
-      {
-        if (Functions.TransformIsVisible(this.botonFollow.transform))
-        {
-          this.controllerCurrentBlock = 3;
-          this.ControllerMovement(goingRight: true);
-        }
-        else
-        {
-          this.controllerCurrentBlock = 2;
-          this.ControllerMovement(goingRight: true);
-        }
-      }
-      else if (goingDown)
-      {
-        this.controllerCurrentBlock = 5;
-        this.ControllerMovement(goingRight: true);
-      }
-      else
-      {
-        this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.madnessButton.position);
-        Mouse.current.WarpCursorPosition(this.warpPosition);
-      }
-    }
-    else if (this.controllerCurrentBlock == 5)
-    {
-      this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.sandboxButton.position);
-      Mouse.current.WarpCursorPosition(this.warpPosition);
-    }
-    else
-    {
-      if (this.controllerCurrentBlock != 6)
-        return;
-      if (this.gameSeed.gameObject.activeSelf)
-      {
-        this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.gameSeed.position);
-        Mouse.current.WarpCursorPosition(this.warpPosition);
-      }
-      else
-        this.ControllerMovement(goingUp, goingRight, goingDown, goingLeft, absolutePosition);
-    }
-  }
+	public Transform sceneCamera;
+
+	private GameObject box;
+
+	public GameObject[] boxGO;
+
+	private BoxSelection[] boxSelection;
+
+	public Dictionary<string, HeroSelection> heroSelectionDictionary = new Dictionary<string, HeroSelection>();
+
+	private Dictionary<GameObject, bool> boxFilled = new Dictionary<GameObject, bool>();
+
+	private Dictionary<GameObject, HeroSelection> boxHero = new Dictionary<GameObject, HeroSelection>();
+
+	public GameObject heroSelectionPrefab;
+
+	public GameObject cursorDragPrefab;
+
+	public bool dragging;
+
+	public TitleMovement titleMovement;
+
+	public Transform titleGroupDefault;
+
+	public Transform titleWeeklyDefault;
+
+	public Transform boxCharacters;
+
+	public GameObject charPopupPrefab;
+
+	public GameObject charPopupGO;
+
+	public CharPopup charPopup;
+
+	public CharPopupMini charPopupMini;
+
+	public Transform charContainerBg;
+
+	public GameObject charContainerGO;
+
+	public GameObject allGO;
+
+	public GameObject warriorsGO;
+
+	public GameObject healersGO;
+
+	public GameObject magesGO;
+
+	public GameObject scoutsGO;
+
+	public GameObject dlcsGO;
+
+	public GameObject lockedGO;
+
+	public TMP_Text _ClassWarriors;
+
+	public TMP_Text _ClassHealers;
+
+	public TMP_Text _ClassMages;
+
+	public TMP_Text _ClassScouts;
+
+	public TMP_Text _ClassMagicKnights;
+
+	public Transform masterDescription;
+
+	public Transform gameSeed;
+
+	public Transform gameSeedModify;
+
+	public TMP_Text gameSeedTxt;
+
+	public BotonGeneric botonBegin;
+
+	public BotonGeneric botonFollow;
+
+	public Transform popupMask;
+
+	public Transform ngTransform;
+
+	public BotonGeneric ngButton;
+
+	public Transform ngSelectionX;
+
+	public Transform ngLock;
+
+	public Transform separator;
+
+	public TMP_Text madnessLevel;
+
+	public Transform madnessParticle;
+
+	public Transform madnessButton;
+
+	public Transform weeklyModifiersButton;
+
+	public Transform sandboxButton;
+
+	public Transform sandboxButtonCircleOn;
+
+	public Transform sandboxButtonCircleOff;
+
+	public Transform weeklyT;
+
+	public TMP_Text weeklyNumber;
+
+	public TMP_Text weeklyLeft;
+
+	private bool setWeekly;
+
+	private int ngValue;
+
+	private int ngValueMaster;
+
+	private string ngCorruptors = "";
+
+	private int obeliskMadnessValue;
+
+	private int obeliskMadnessValueMaster;
+
+	private int singularityMadnessValue;
+
+	private int singularityMadnessValueMaster;
+
+	private Dictionary<string, SubClassData[]> subclassDictionary = new Dictionary<string, SubClassData[]>();
+
+	private Dictionary<string, SubClassData> nonHistorySubclassDictionary = new Dictionary<string, SubClassData>();
+
+	private PhotonView photonView;
+
+	private Dictionary<string, string> SubclassByName = new Dictionary<string, string>();
+
+	private Dictionary<string, List<string>> playerHeroPerksDict;
+
+	public Dictionary<string, string> playerHeroSkinsDict;
+
+	public Dictionary<string, string> playerHeroCardbackDict;
+
+	public Transform beginAdventureButton;
+
+	public Transform readyButtonText;
+
+	public Transform readyButton;
+
+	private bool statusReady;
+
+	private Coroutine manualReadyCo;
+
+	public Transform weeklySelector;
+
+	private int controllerCurrentOption = -1;
+
+	private int controllerCurrentBlock;
+
+	public List<Transform> menuController;
+
+	public List<Transform> positionsController;
+
+	public HeroSelection controllerCurrentHS;
+
+	public int controllerHorizontalIndex = -1;
+
+	private Vector2 warpPosition = Vector2.zero;
+
+	private List<Transform> _controllerList = new List<Transform>();
+
+	private List<Transform> _controllerVerticalList = new List<Transform>();
+
+	private Coroutine coroutineMask;
+
+	private GameObject currentSelectionTab;
+
+	public GameObject CardBacksPopUp;
+
+	[SerializeField]
+	private GameObject charPageLeftButton;
+
+	[SerializeField]
+	private GameObject charPageRightButton;
+
+	public GameObject EnemySelectionButton;
+
+	public GameObject MadnessButton;
+
+	public GameObject SandboxButton;
+
+	public GameObject TraitsTab;
+
+	public GameObject CardsandItemsTab;
+
+	public GameObject ResistancesTab;
+
+	public GameObject SingularityCardsTabText;
+
+	public CardItem[] cardsCI = new CardItem[7];
+
+	public TMP_Text _CardN1;
+
+	public TMP_Text _CardN2;
+
+	public TMP_Text _CardN3;
+
+	public TMP_Text _CardN4;
+
+	public TMP_Text _CardN5;
+
+	public TMP_Text _CardN6;
+
+	public TMP_Text _CardN7;
+
+	public TMP_Text _Trait0;
+
+	public TMP_Text _Trait1A;
+
+	public TMP_Text _Trait1B;
+
+	public TMP_Text _Trait2A;
+
+	public TMP_Text _Trait2B;
+
+	public TMP_Text _Trait3A;
+
+	public TMP_Text _Trait3B;
+
+	public TMP_Text _Trait4A;
+
+	public TMP_Text _Trait4B;
+
+	private TraitRollOver _Trait0RO;
+
+	private TraitRollOver _Trait1ARO;
+
+	private TraitRollOver _Trait1BRO;
+
+	private TraitRollOver _Trait2ARO;
+
+	private TraitRollOver _Trait2BRO;
+
+	private TraitRollOver _Trait3ARO;
+
+	private TraitRollOver _Trait3BRO;
+
+	private TraitRollOver _Trait4ARO;
+
+	private TraitRollOver _Trait4BRO;
+
+	public BotonGeneric TraitsTabBtn;
+
+	public BotonGeneric ResistanceTabBtn;
+
+	public BotonGeneric CardsItemsTabBtn;
+
+	public string CurrentFilter;
+
+	private Transform[] cardsNumT = new Transform[7];
+
+	private TMP_Text[] cardsNumText = new TMP_Text[7];
+
+	public static HeroSelectionManager Instance { get; private set; }
+
+	public string NgCorruptors
+	{
+		get
+		{
+			return ngCorruptors;
+		}
+		set
+		{
+			ngCorruptors = value;
+		}
+	}
+
+	public int NgValue
+	{
+		get
+		{
+			return ngValue;
+		}
+		set
+		{
+			ngValue = value;
+		}
+	}
+
+	public int NgValueMaster
+	{
+		get
+		{
+			return ngValueMaster;
+		}
+		set
+		{
+			ngValueMaster = value;
+		}
+	}
+
+	public int ObeliskMadnessValueMaster
+	{
+		get
+		{
+			return obeliskMadnessValueMaster;
+		}
+		set
+		{
+			obeliskMadnessValueMaster = value;
+		}
+	}
+
+	public int ObeliskMadnessValue
+	{
+		get
+		{
+			return obeliskMadnessValue;
+		}
+		set
+		{
+			obeliskMadnessValue = value;
+		}
+	}
+
+	public int SingularityMadnessValueMaster
+	{
+		get
+		{
+			return singularityMadnessValueMaster;
+		}
+		set
+		{
+			singularityMadnessValueMaster = value;
+		}
+	}
+
+	public int SingularityMadnessValue
+	{
+		get
+		{
+			return singularityMadnessValue;
+		}
+		set
+		{
+			singularityMadnessValue = value;
+		}
+	}
+
+	public Dictionary<string, List<string>> PlayerHeroPerksDict
+	{
+		get
+		{
+			return playerHeroPerksDict;
+		}
+		set
+		{
+			playerHeroPerksDict = value;
+		}
+	}
+
+	private void Awake()
+	{
+		if (GameManager.Instance == null)
+		{
+			SceneStatic.LoadByName("MainMenu");
+			return;
+		}
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			UnityEngine.Object.Destroy(this);
+		}
+		photonView = PhotonView.Get(this);
+		sceneCamera.gameObject.SetActive(value: false);
+		NetworkManager.Instance.StartStopQueue(state: true);
+		currentSelectionTab = allGO;
+		if (!AtOManager.Instance.IsCombatTool)
+		{
+			EnemySelectionButton.SetActive(value: false);
+		}
+		else
+		{
+			PlayerManager.Instance.GainSupply(500);
+		}
+	}
+
+	private void Start()
+	{
+		StartCoroutine(StartCo());
+		RefreshSelectedCharPortraits();
+		if (AtOManager.Instance.IsCombatTool)
+		{
+			SetCombatToolUI();
+			return;
+		}
+		MadnessButton.GetComponent<BotonGeneric>().Enable();
+		sandboxButton.GetComponent<BotonGeneric>().Enable();
+		gameSeedModify.gameObject.SetActive(value: true);
+		resetMadnessOriginal();
+	}
+
+	private void resetMadnessOriginal()
+	{
+		string text = "";
+		if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+		{
+			text = "Coop";
+		}
+		if (!GameManager.Instance.IsGameAdventure() || !SaveManager.PrefsHasKey("madnessLevel" + text) || !SaveManager.PrefsHasKey("madnessCorruptors" + text))
+		{
+			return;
+		}
+		int num = 0;
+		num = SaveManager.LoadPrefsInt("madnessLevel");
+		string text2 = "";
+		text2 = SaveManager.LoadPrefsString("madnessCorruptors");
+		if (PlayerManager.Instance.NgLevel >= num)
+		{
+			ngValueMaster = (ngValue = num);
+			if (text2 != "")
+			{
+				ngCorruptors = text2;
+			}
+		}
+		else
+		{
+			ngValueMaster = (ngValue = 0);
+			ngCorruptors = "";
+		}
+		SetMadnessLevel();
+	}
+
+	public void Refresh()
+	{
+		StartCoroutine(StartCo());
+	}
+
+	private void RefreshSelectedCharPortraits()
+	{
+		foreach (KeyValuePair<string, HeroSelection> item in heroSelectionDictionary)
+		{
+			if (item.Value.gameObject.transform.parent != item.Value.DefaultParent)
+			{
+				item.Value.gameObject.SetActive(value: true);
+				item.Value.spriteSR.enabled = true;
+				item.Value.nameOver.gameObject.SetActive(value: true);
+				item.Value.rankOver.gameObject.SetActive(value: true);
+			}
+		}
+	}
+
+	public void SetDefaultMiniPopupHero(int index = 0)
+	{
+		HeroSelection heroSelection = new HeroSelection();
+		heroSelection = GetBoxHeroFromIndex(index);
+		if (heroSelection != null)
+		{
+			charPopupMini.SetSubClassData(heroSelection.subClassData);
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge() && PlayerManager.Instance.LastUsedTeam != null && PlayerManager.Instance.LastUsedTeam.Count() > 0)
+		{
+			charPopupMini.SetSubClassData(Globals.Instance.GetSubClassData(PlayerManager.Instance.LastUsedTeam[0]));
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			charPopupMini.SetSubClassData(Globals.Instance.GetSubClassData("mercenary"));
+		}
+		SelectTab("TraitsTab");
+	}
+
+	private IEnumerator StartCo()
+	{
+		HeroSelectionManager heroSelectionManager = this;
+		HeroSelectionManager heroSelectionManager2 = this;
+		int num = 0;
+		heroSelectionManager2.ngValue = 0;
+		heroSelectionManager.ngValueMaster = num;
+		ngCorruptors = "";
+		HeroSelectionManager heroSelectionManager3 = this;
+		HeroSelectionManager heroSelectionManager4 = this;
+		num = 0;
+		heroSelectionManager4.obeliskMadnessValueMaster = 0;
+		heroSelectionManager3.obeliskMadnessValue = num;
+		HeroSelectionManager heroSelectionManager5 = this;
+		HeroSelectionManager heroSelectionManager6 = this;
+		num = 0;
+		heroSelectionManager6.singularityMadnessValueMaster = 0;
+		heroSelectionManager5.singularityMadnessValue = num;
+		madnessLevel.text = string.Format(Texts.Instance.GetText("madnessNumber"), 0);
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			if (NetworkManager.Instance.IsMaster())
+			{
+				NetworkManager.Instance.PlayerSkuList.Clear();
+				while (!NetworkManager.Instance.AllPlayersReady("heroSelection"))
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				if (Globals.Instance.ShowDebug)
+				{
+					Functions.DebugLogGD("Game ready, Everybody checked heroSelection");
+				}
+				if (GameManager.Instance.IsLoadingGame())
+				{
+					photonView.RPC("NET_SetLoadingGame", RpcTarget.Others);
+				}
+				NetworkManager.Instance.PlayersNetworkContinue("heroSelection", AtOManager.Instance.GetWeekly().ToString());
+				yield return Globals.Instance.WaitForSeconds(0.1f);
+			}
+			else
+			{
+				GameManager.Instance.SetGameStatus(Enums.GameStatus.NewGame);
+				NetworkManager.Instance.SetWaitingSyncro("heroSelection", status: true);
+				NetworkManager.Instance.SetStatusReady("heroSelection");
+				while (NetworkManager.Instance.WaitingSyncro["heroSelection"])
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				if (NetworkManager.Instance.netAuxValue != "")
+				{
+					AtOManager.Instance.SetWeekly(int.Parse(NetworkManager.Instance.netAuxValue));
+				}
+				if (Globals.Instance.ShowDebug)
+				{
+					Functions.DebugLogGD("heroSelection, we can continue!");
+				}
+			}
+		}
+		StartCoroutine(StartCoContinue());
+	}
+
+	private IEnumerator StartCoContinue()
+	{
+		MadnessManager.Instance.ShowMadness();
+		MadnessManager.Instance.RefreshValues();
+		MadnessManager.Instance.ShowMadness();
+		playerHeroSkinsDict = new Dictionary<string, string>();
+		playerHeroCardbackDict = new Dictionary<string, string>();
+		boxSelection = new BoxSelection[boxGO.Length];
+		for (int i = 0; i < boxGO.Length; i++)
+		{
+			boxHero[boxGO[i]] = null;
+			boxFilled[boxGO[i]] = false;
+			boxSelection[i] = boxGO[i].GetComponent<BoxSelection>();
+		}
+		ShowDrag(state: false, Vector3.zero);
+		int num = 7;
+		int num2 = 5;
+		foreach (KeyValuePair<string, SubClassData> item3 in Globals.Instance.SubClass)
+		{
+			if (!item3.Value.MainCharacter)
+			{
+				if (!nonHistorySubclassDictionary.ContainsKey(item3.Key))
+				{
+					nonHistorySubclassDictionary.Add(item3.Key, Globals.Instance.SubClass[item3.Key]);
+				}
+			}
+			else if (item3.Value.IsMultiClass())
+			{
+				string key = "dlc";
+				if (!subclassDictionary.ContainsKey(key))
+				{
+					subclassDictionary.Add(key, new SubClassData[num]);
+				}
+				subclassDictionary[key][Globals.Instance.SubClass[item3.Key].OrderInList] = Globals.Instance.SubClass[item3.Key];
+			}
+			else
+			{
+				string key2 = Enum.GetName(typeof(Enums.HeroClass), Globals.Instance.SubClass[item3.Key].HeroClass).ToLower().Replace(" ", "");
+				if (!subclassDictionary.ContainsKey(key2))
+				{
+					subclassDictionary.Add(key2, new SubClassData[num]);
+				}
+				subclassDictionary[key2][Globals.Instance.SubClass[item3.Key].OrderInList] = Globals.Instance.SubClass[item3.Key];
+			}
+		}
+		_ClassWarriors.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
+		_ClassHealers.color = Functions.HexToColor(Globals.Instance.ClassColor["healer"]);
+		_ClassMages.color = Functions.HexToColor(Globals.Instance.ClassColor["mage"]);
+		_ClassScouts.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
+		_ClassMagicKnights.color = Functions.HexToColor(Globals.Instance.ClassColor["magicknight"]);
+		float num3 = 1f;
+		float num4 = 0.55f;
+		float num5 = 1.75f;
+		float y = -0.65f;
+		for (int j = 0; j < num2; j++)
+		{
+			for (int k = 0; k < num; k++)
+			{
+				SubClassData subClassData = null;
+				GameObject gameObject = null;
+				switch (j)
+				{
+				case 0:
+					subClassData = subclassDictionary["warrior"][k];
+					gameObject = warriorsGO;
+					break;
+				case 1:
+					subClassData = subclassDictionary["scout"][k];
+					gameObject = scoutsGO;
+					break;
+				case 2:
+					subClassData = subclassDictionary["mage"][k];
+					gameObject = magesGO;
+					break;
+				case 3:
+					subClassData = subclassDictionary["healer"][k];
+					gameObject = healersGO;
+					break;
+				case 4:
+				case 5:
+					if (subclassDictionary.ContainsKey("dlc"))
+					{
+						subClassData = subclassDictionary["dlc"][k];
+						gameObject = dlcsGO;
+					}
+					break;
+				}
+				if (subClassData == null)
+				{
+					continue;
+				}
+				GameObject gameObject2 = UnityEngine.Object.Instantiate(heroSelectionPrefab, Vector3.zero, Quaternion.identity, gameObject.transform);
+				gameObject2.transform.localPosition = new Vector3(num4 + num5 * (float)k, y, 0f);
+				gameObject2.transform.localScale = new Vector3(num3, num3, 1f);
+				gameObject2.name = subClassData.Id;
+				HeroSelection component = gameObject2.transform.Find("Portrait").transform.GetComponent<HeroSelection>();
+				heroSelectionDictionary.Add(gameObject2.name, component);
+				component.blocked = !PlayerManager.Instance.IsHeroUnlocked(subClassData.Id);
+				if (component.blocked && GameManager.Instance.IsObeliskChallenge() && !GameManager.Instance.IsWeeklyChallenge())
+				{
+					component.blocked = false;
+				}
+				if (component.blocked && GameManager.Instance.IsWeeklyChallenge())
+				{
+					ChallengeData weeklyData = Globals.Instance.GetWeeklyData(Functions.GetCurrentWeeklyWeek());
+					if (weeklyData != null && (subClassData.Id == weeklyData.Hero1.Id || subClassData.Id == weeklyData.Hero2.Id || subClassData.Id == weeklyData.Hero3.Id || subClassData.Id == weeklyData.Hero4.Id))
+					{
+						component.blocked = false;
+					}
+				}
+				component.SetSubclass(subClassData);
+				string text = PlayerManager.Instance.GetActiveSkin(subClassData.Id);
+				if (text != "")
+				{
+					SkinData skinData = Globals.Instance.GetSkinData(text);
+					if (skinData == null)
+					{
+						text = Globals.Instance.GetSkinBaseIdBySubclass(subClassData.Id);
+						skinData = Globals.Instance.GetSkinData(text);
+					}
+					AddToPlayerHeroSkin(subClassData.Id, text);
+					component.SetSprite(skinData.SpritePortrait, skinData.SpriteSilueta, subClassData.SpriteBorderLocked);
+				}
+				else
+				{
+					component.SetSprite(subClassData.SpriteSpeed, subClassData.SpriteBorderSmall, subClassData.SpriteBorderLocked);
+				}
+				component.SetName(subClassData.CharacterName);
+				component.Init();
+				if (subClassData.SpriteBorderLocked != null && subClassData.SpriteBorderLocked.name == "regularBorderSmall")
+				{
+					component.ShowComingSoon();
+				}
+				SubclassByName.Add(subClassData.Id, subClassData.SubClassName);
+				if (GameManager.Instance.IsWeeklyChallenge())
+				{
+					component.blocked = true;
+				}
+				menuController.Add(component.transform);
+			}
+		}
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			SetDefaultMiniPopupHero();
+			List<string> list = new List<string>();
+			for (int l = 0; l < Globals.Instance.SkuAvailable.Count; l++)
+			{
+				if (SteamManager.Instance.PlayerHaveDLC(Globals.Instance.SkuAvailable[l]))
+				{
+					list.Add(Globals.Instance.SkuAvailable[l]);
+				}
+			}
+			string text2 = "";
+			if (list.Count > 0)
+			{
+				text2 = JsonHelper.ToJson(list.ToArray());
+			}
+			if (NetworkManager.Instance.IsMaster())
+			{
+				photonView.RPC("NET_SetSku", RpcTarget.All, NetworkManager.Instance.GetPlayerNick(), text2);
+			}
+			else
+			{
+				string roomName = NetworkManager.Instance.GetRoomName();
+				if (roomName != "")
+				{
+					SaveManager.SaveIntoPrefsString("coopRoomId", roomName);
+					SaveManager.SavePrefs();
+				}
+				NetworkManager.Instance.SetWaitingSyncro("skuWait", status: true);
+				photonView.RPC("NET_SetSku", RpcTarget.All, NetworkManager.Instance.GetPlayerNick(), text2);
+			}
+			if (NetworkManager.Instance.IsMaster())
+			{
+				while (!NetworkManager.Instance.AllPlayersHaveSkuList())
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				if (Globals.Instance.ShowDebug)
+				{
+					Functions.DebugLogGD("Game ready, Everybody checked skuWait");
+				}
+				NetworkManager.Instance.PlayersNetworkContinue("skuWait");
+				yield return Globals.Instance.WaitForSeconds(0.1f);
+			}
+			else
+			{
+				while (NetworkManager.Instance.WaitingSyncro["skuWait"])
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				if (Globals.Instance.ShowDebug)
+				{
+					Functions.DebugLogGD("skuWait, we can continue!");
+				}
+			}
+		}
+		RearrangeHerosData();
+		if (GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame())
+		{
+			foreach (KeyValuePair<string, SubClassData> item4 in nonHistorySubclassDictionary)
+			{
+				SubClassData value = item4.Value;
+				GameObject gameObject3 = UnityEngine.Object.Instantiate(heroSelectionPrefab, Vector3.zero, Quaternion.identity);
+				gameObject3.transform.localPosition = new Vector3(-10f, -10f, 100f);
+				gameObject3.name = value.Id;
+				HeroSelection component2 = gameObject3.transform.Find("Portrait").transform.GetComponent<HeroSelection>();
+				heroSelectionDictionary.Add(gameObject3.name, component2);
+				component2.blocked = true;
+				component2.SetSubclass(value);
+				component2.SetSprite(value.SpriteSpeed, value.SpriteBorderSmall, value.SpriteBorderLocked);
+				component2.SetName(value.CharacterName);
+				component2.Init();
+				SubclassByName.Add(value.Id, value.SubClassName);
+			}
+		}
+		if (GameManager.Instance.IsGameAdventure() && AtOManager.Instance.IsFirstGame() && !GameManager.Instance.IsMultiplayer())
+		{
+			AtOManager.Instance.SetGameId("tuto");
+			heroSelectionDictionary["mercenary"].AssignHeroToBox(boxGO[0]);
+			heroSelectionDictionary["ranger"].AssignHeroToBox(boxGO[1]);
+			heroSelectionDictionary["elementalist"].AssignHeroToBox(boxGO[2]);
+			heroSelectionDictionary["cleric"].AssignHeroToBox(boxGO[3]);
+			SandboxManager.Instance.DisableSandbox();
+			yield return Globals.Instance.WaitForSeconds(1f);
+			BeginAdventure();
+			yield break;
+		}
+		charPopupGO = charPopup.gameObject;
+		charPopup = charPopupGO.GetComponent<CharPopup>();
+		charPopup.HideNow();
+		if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			titleGroupDefault.gameObject.SetActive(value: true);
+			titleWeeklyDefault.gameObject.SetActive(value: false);
+			weeklyModifiersButton.gameObject.SetActive(value: false);
+			weeklyT.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			titleGroupDefault.gameObject.SetActive(value: false);
+			titleWeeklyDefault.gameObject.SetActive(value: true);
+			weeklyModifiersButton.gameObject.SetActive(value: true);
+			weeklyT.gameObject.SetActive(value: true);
+			setWeekly = true;
+			if (!GameManager.Instance.IsLoadingGame())
+			{
+				AtOManager.Instance.SetWeekly(Functions.GetCurrentWeeklyWeek());
+			}
+			weeklyNumber.text = AtOManager.Instance.GetWeeklyName(AtOManager.Instance.GetWeekly());
+		}
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			if (AtOManager.Instance.IsCombatTool)
+			{
+				titleMovement.SetText(Texts.Instance.GetText("modePractice"));
+			}
+			else
+			{
+				titleMovement.SetText(Texts.Instance.GetText("modeAdventure"));
+			}
+			madnessButton.gameObject.SetActive(value: true);
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				if (NetworkManager.Instance.IsMaster())
+				{
+					if (GameManager.Instance.IsLoadingGame())
+					{
+						ngValueMaster = (ngValue = AtOManager.Instance.GetNgPlus());
+						ngCorruptors = AtOManager.Instance.GetMadnessCorruptors();
+						SetMadnessLevel();
+					}
+					else if (SaveManager.PrefsHasKey("madnessLevelCoop") && SaveManager.PrefsHasKey("madnessCorruptorsCoop"))
+					{
+						int num6 = SaveManager.LoadPrefsInt("madnessLevelCoop");
+						string text3 = SaveManager.LoadPrefsString("madnessCorruptorsCoop");
+						if (PlayerManager.Instance.NgLevel >= num6)
+						{
+							ngValueMaster = (ngValue = num6);
+							if (text3 != "")
+							{
+								ngCorruptors = text3;
+							}
+						}
+						else
+						{
+							HeroSelectionManager heroSelectionManager = this;
+							HeroSelectionManager heroSelectionManager2 = this;
+							int num7 = 0;
+							heroSelectionManager2.ngValue = 0;
+							heroSelectionManager.ngValueMaster = num7;
+							ngCorruptors = "";
+						}
+						SetMadnessLevel();
+					}
+				}
+			}
+			else if (SaveManager.PrefsHasKey("madnessLevel") && SaveManager.PrefsHasKey("madnessCorruptors"))
+			{
+				int num8 = SaveManager.LoadPrefsInt("madnessLevel");
+				string text4 = SaveManager.LoadPrefsString("madnessCorruptors");
+				if (PlayerManager.Instance.NgLevel >= num8)
+				{
+					ngValueMaster = (ngValue = num8);
+					if (text4 != "")
+					{
+						ngCorruptors = text4;
+					}
+				}
+				else
+				{
+					HeroSelectionManager heroSelectionManager3 = this;
+					HeroSelectionManager heroSelectionManager4 = this;
+					int num7 = 0;
+					heroSelectionManager4.ngValue = 0;
+					heroSelectionManager3.ngValueMaster = num7;
+					ngCorruptors = "";
+				}
+				SetMadnessLevel();
+			}
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			titleMovement.SetText(Texts.Instance.GetText("singularity"));
+			madnessButton.gameObject.SetActive(value: true);
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				if (NetworkManager.Instance.IsMaster())
+				{
+					if (GameManager.Instance.IsLoadingGame())
+					{
+						singularityMadnessValue = (singularityMadnessValueMaster = AtOManager.Instance.GetSingularityMadness());
+						SetSingularityMadnessLevel();
+					}
+					else if (SaveManager.PrefsHasKey("singularityMadnessCoop"))
+					{
+						int num9 = SaveManager.LoadPrefsInt("singularityMadnessCoop");
+						if (PlayerManager.Instance.ObeliskMadnessLevel >= num9)
+						{
+							singularityMadnessValue = (singularityMadnessValueMaster = num9);
+						}
+						else
+						{
+							HeroSelectionManager heroSelectionManager5 = this;
+							HeroSelectionManager heroSelectionManager6 = this;
+							int num7 = 0;
+							heroSelectionManager6.singularityMadnessValueMaster = 0;
+							heroSelectionManager5.singularityMadnessValue = num7;
+						}
+						SetSingularityMadnessLevel();
+					}
+				}
+			}
+			else if (SaveManager.PrefsHasKey("singularityMadness"))
+			{
+				int num10 = SaveManager.LoadPrefsInt("singularityMadness");
+				if (PlayerManager.Instance.SingularityMadnessLevel >= num10)
+				{
+					singularityMadnessValue = (singularityMadnessValueMaster = num10);
+				}
+				else
+				{
+					HeroSelectionManager heroSelectionManager7 = this;
+					HeroSelectionManager heroSelectionManager8 = this;
+					int num7 = 0;
+					heroSelectionManager8.singularityMadnessValueMaster = 0;
+					heroSelectionManager7.singularityMadnessValue = num7;
+				}
+				SetSingularityMadnessLevel();
+			}
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			titleMovement.SetText(Texts.Instance.GetText("modeObelisk"));
+			madnessButton.gameObject.SetActive(value: true);
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				if (NetworkManager.Instance.IsMaster())
+				{
+					if (GameManager.Instance.IsLoadingGame())
+					{
+						obeliskMadnessValue = (obeliskMadnessValueMaster = AtOManager.Instance.GetObeliskMadness());
+						SetObeliskMadnessLevel();
+					}
+					else if (SaveManager.PrefsHasKey("obeliskMadnessCoop"))
+					{
+						int num11 = SaveManager.LoadPrefsInt("obeliskMadnessCoop");
+						if (PlayerManager.Instance.ObeliskMadnessLevel >= num11)
+						{
+							obeliskMadnessValue = (obeliskMadnessValueMaster = num11);
+						}
+						else
+						{
+							HeroSelectionManager heroSelectionManager9 = this;
+							HeroSelectionManager heroSelectionManager10 = this;
+							int num7 = 0;
+							heroSelectionManager10.obeliskMadnessValueMaster = 0;
+							heroSelectionManager9.obeliskMadnessValue = num7;
+						}
+						SetObeliskMadnessLevel();
+					}
+				}
+			}
+			else if (SaveManager.PrefsHasKey("obeliskMadness"))
+			{
+				int num12 = SaveManager.LoadPrefsInt("obeliskMadness");
+				if (PlayerManager.Instance.ObeliskMadnessLevel >= num12)
+				{
+					obeliskMadnessValue = (obeliskMadnessValueMaster = num12);
+				}
+				else
+				{
+					HeroSelectionManager heroSelectionManager11 = this;
+					HeroSelectionManager heroSelectionManager12 = this;
+					int num7 = 0;
+					heroSelectionManager12.obeliskMadnessValueMaster = 0;
+					heroSelectionManager11.obeliskMadnessValue = num7;
+				}
+				SetObeliskMadnessLevel();
+			}
+		}
+		else
+		{
+			titleMovement.SetText(Texts.Instance.GetText("modeWeekly"));
+			madnessButton.gameObject.SetActive(value: false);
+		}
+		Resize();
+		if (GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.IsLoadingGame())
+		{
+			gameSeedModify.gameObject.SetActive(value: false);
+			ChallengeData weeklyData2 = Globals.Instance.GetWeeklyData(Functions.GetCurrentWeeklyWeek());
+			if (weeklyData2 != null)
+			{
+				heroSelectionDictionary[weeklyData2.Hero1.Id].AssignHeroToBox(boxGO[0]);
+				charPopupMini.SetSubClassData(heroSelectionDictionary[weeklyData2.Hero1.Id].subClassData);
+				heroSelectionDictionary[weeklyData2.Hero2.Id].AssignHeroToBox(boxGO[1]);
+				heroSelectionDictionary[weeklyData2.Hero3.Id].AssignHeroToBox(boxGO[2]);
+				heroSelectionDictionary[weeklyData2.Hero4.Id].AssignHeroToBox(boxGO[3]);
+			}
+			if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
+			{
+				if (weeklyData2 != null)
+				{
+					AtOManager.Instance.SetGameId(weeklyData2.Seed);
+				}
+				else
+				{
+					AtOManager.Instance.SetGameId();
+				}
+			}
+			GameManager.Instance.SceneLoaded();
+		}
+		else if (GameManager.Instance.IsLoadingGame() || (AtOManager.Instance.IsFirstGame() && !GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsGameAdventure()))
+		{
+			gameSeedModify.gameObject.SetActive(value: false);
+			if (AtOManager.Instance.IsFirstGame())
+			{
+				AtOManager.Instance.SetGameId("tuto");
+			}
+		}
+		else
+		{
+			if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
+			{
+				AtOManager.Instance.SetGameId();
+			}
+			gameSeed.gameObject.SetActive(value: true);
+		}
+		if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
+		{
+			SetSeed(AtOManager.Instance.GetGameId());
+		}
+		if (GameManager.Instance.IsWeeklyChallenge() || (GameManager.Instance.IsObeliskChallenge() && obeliskMadnessValue > 7) || AtOManager.Instance.IsCombatTool)
+		{
+			gameSeed.gameObject.SetActive(value: false);
+		}
+		playerHeroPerksDict = new Dictionary<string, List<string>>();
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			masterDescription.gameObject.SetActive(value: true);
+			if (NetworkManager.Instance.IsMaster())
+			{
+				DrawBoxSelectionNames();
+				botonBegin.gameObject.SetActive(value: true);
+				botonBegin.Disable();
+				botonFollow.transform.parent.gameObject.SetActive(value: false);
+			}
+			else
+			{
+				gameSeedModify.gameObject.SetActive(value: false);
+				botonBegin.gameObject.SetActive(value: false);
+				botonFollow.transform.parent.gameObject.SetActive(value: true);
+				ShowFollowStatus();
+			}
+			if (NetworkManager.Instance.IsMaster() && GameManager.Instance.IsLoadingGame())
+			{
+				StringBuilder stringBuilder = new StringBuilder();
+				for (int m = 0; m < 4; m++)
+				{
+					Hero hero = AtOManager.Instance.GetHero(m);
+					if (hero == null || hero.HeroData == null)
+					{
+						continue;
+					}
+					string subclassName = hero.SubclassName;
+					int perkRank = hero.PerkRank;
+					string skinUsed = hero.SkinUsed;
+					string cardbackUsed = hero.CardbackUsed;
+					AddToPlayerHeroSkin(subclassName, skinUsed);
+					AddToPlayerHeroCardback(subclassName, cardbackUsed);
+					if (heroSelectionDictionary.ContainsKey(subclassName))
+					{
+						heroSelectionDictionary[subclassName].AssignHeroToBox(boxGO[m]);
+						if (hero.HeroData.HeroSubClass.MainCharacter)
+						{
+							heroSelectionDictionary[subclassName].SetRankBox(perkRank);
+							heroSelectionDictionary[subclassName].SetSkin(skinUsed);
+						}
+					}
+					stringBuilder.Append(hero.SubclassName.ToLower());
+					stringBuilder.Append("#");
+					stringBuilder.Append(m);
+					stringBuilder.Append("#");
+					stringBuilder.Append(perkRank);
+					stringBuilder.Append("#");
+					stringBuilder.Append(skinUsed);
+					stringBuilder.Append("#");
+					stringBuilder.Append(cardbackUsed);
+					stringBuilder.Append("&");
+				}
+				photonView.RPC("NET_AssignAllHeroToBox", RpcTarget.Others, stringBuilder.ToString());
+			}
+		}
+		else
+		{
+			masterDescription.gameObject.SetActive(value: false);
+			botonFollow.transform.parent.gameObject.SetActive(value: false);
+			botonBegin.gameObject.SetActive(value: true);
+			botonBegin.Disable();
+			if (!GameManager.Instance.IsWeeklyChallenge())
+			{
+				PreAssign();
+			}
+		}
+		RearrangeHerosData();
+		ShowHeroesByFilterAsync("all");
+		yield return Globals.Instance.WaitForSeconds(0.1f);
+		RefreshSandboxButton();
+		if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			sandboxButton.gameObject.SetActive(value: true);
+			if (!GameManager.Instance.IsMultiplayer() || (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster()))
+			{
+				string sandboxMods;
+				if (GameManager.Instance.GameStatus != Enums.GameStatus.LoadGame)
+				{
+					if ((!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()) && PlayerManager.Instance.NgLevel == 0)
+					{
+						SandboxManager.Instance.DisableSandbox();
+						AtOManager.Instance.ClearSandbox();
+					}
+					else
+					{
+						sandboxMods = (GameManager.Instance.IsObeliskChallenge() ? SaveManager.LoadPrefsString("sandboxSettingsObelisk") : SaveManager.LoadPrefsString("sandboxSettings"));
+						AtOManager.Instance.SetSandboxMods(sandboxMods);
+					}
+					SandboxManager.Instance.LoadValuesFromAtOManager();
+					SandboxManager.Instance.AdjustTotalHeroesBoxToCoop();
+					SandboxManager.Instance.SaveValuesToAtOManager();
+					sandboxMods = AtOManager.Instance.GetSandboxMods();
+				}
+				else
+				{
+					sandboxMods = AtOManager.Instance.GetSandboxMods();
+					SandboxManager.Instance.LoadValuesFromAtOManager();
+				}
+				if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+				{
+					photonView.RPC("NET_ShareSandbox", RpcTarget.Others, Functions.CompressString(sandboxMods));
+				}
+				RefreshCharBoxesBySandboxHeroes();
+			}
+		}
+		else
+		{
+			sandboxButton.gameObject.SetActive(value: false);
+			madnessButton.localPosition = new Vector3(3.8f, madnessButton.localPosition.y, madnessButton.localPosition.z);
+			SandboxManager.Instance.DisableSandbox();
+		}
+		readyButtonText.gameObject.SetActive(value: false);
+		readyButton.gameObject.SetActive(value: false);
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			if (NetworkManager.Instance.IsMaster())
+			{
+				NetworkManager.Instance.ClearAllPlayerManualReady();
+				NetworkManager.Instance.SetManualReady(status: true);
+			}
+			else
+			{
+				readyButtonText.gameObject.SetActive(value: true);
+				readyButton.gameObject.SetActive(value: true);
+			}
+		}
+		GameManager.Instance.SceneLoaded();
+		if (0 == 0 && !GameManager.Instance.TutorialWatched("characterPerks"))
+		{
+			foreach (KeyValuePair<string, HeroSelection> item5 in heroSelectionDictionary)
+			{
+				if (item5.Value.perkPointsT.gameObject.activeSelf)
+				{
+					GameManager.Instance.ShowTutorialPopup("characterPerks", item5.Value.perkPointsT.gameObject.transform.position, Vector3.zero);
+					break;
+				}
+			}
+		}
+		if (GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame() && NetworkManager.Instance.IsMaster())
+		{
+			bool flag = true;
+			List<string> list2 = new List<string>();
+			List<string> list3 = new List<string>();
+			for (int n = 0; n < 4; n++)
+			{
+				Hero hero2 = AtOManager.Instance.GetHero(n);
+				if (hero2 != null && !(hero2.HeroData == null))
+				{
+					if (hero2.OwnerOriginal == null)
+					{
+						break;
+					}
+					string item = hero2.OwnerOriginal.ToLower();
+					if (!list2.Contains(item))
+					{
+						list2.Add(item);
+					}
+				}
+			}
+			Player[] playerList = NetworkManager.Instance.PlayerList;
+			foreach (Player player in playerList)
+			{
+				string item2 = NetworkManager.Instance.GetPlayerNickReal(player.NickName).ToLower();
+				if (!list3.Contains(item2))
+				{
+					list3.Add(item2);
+				}
+			}
+			if (list2.Count != list3.Count)
+			{
+				flag = false;
+			}
+			else
+			{
+				for (int num13 = 0; num13 < list3.Count; num13++)
+				{
+					if (!list2.Contains(list3[num13]))
+					{
+						flag = false;
+						break;
+					}
+				}
+			}
+			if (!flag)
+			{
+				photonView.RPC("NET_SetNotOriginal", RpcTarget.All);
+			}
+		}
+		SetCombatToolUI();
+		SetCharacterSelectionTabCount();
+	}
+
+	private void SetCombatToolUI()
+	{
+		if (AtOManager.Instance.IsCombatTool)
+		{
+			GameManager.Instance.GameType = Enums.GameType.Adventure;
+			CombatToolManager.Instance.CurrentCombat = null;
+			sandboxButton.GetComponent<BotonGeneric>().Disable();
+			sandboxButton.gameObject.SetActive(value: false);
+			MadnessButton.GetComponent<BotonGeneric>().Disable();
+			MadnessButton.gameObject.SetActive(value: false);
+			gameSeedModify.gameObject.SetActive(value: false);
+			MadnessManager.Instance.SelectMadness(0);
+			ngValue = 0;
+			ngCorruptors = "000000000";
+			SetMadnessLevel();
+			weeklyModifiersButton.gameObject.SetActive(value: false);
+		}
+	}
+
+	private void Update()
+	{
+		if (setWeekly && Time.frameCount % 24 == 0)
+		{
+			SetWeeklyLeft();
+		}
+	}
+
+	public void ForceWeekly(string _weekly)
+	{
+		AtOManager.Instance.weeklyForcedId = _weekly;
+		if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+		{
+			photonView.RPC("NET_ForceWeekly", RpcTarget.Others, _weekly);
+		}
+		SceneStatic.LoadByName("HeroSelection");
+	}
+
+	[PunRPC]
+	private void NET_ForceWeekly(string _weekly)
+	{
+		ForceWeekly(_weekly);
+	}
+
+	public void IncreaseHeroProgressDev(int _slot)
+	{
+		if (!PerkTree.Instance.IsActive() && boxHero[boxGO[_slot]] != null)
+		{
+			PlayerManager.Instance.ModifyProgress(boxHero[boxGO[_slot]].Id, 5000, _slot);
+			PlayerManager.Instance.ModifyPlayerRankProgress(5000);
+			RefreshPerkPoints(boxHero[boxGO[_slot]].Id);
+			SaveManager.SavePlayerData();
+		}
+	}
+
+	public void IncreaseHeroProgressSupplies(string _scdId)
+	{
+		int num = 400;
+		PlayerManager.Instance.ModifyProgress(_scdId, num);
+		PlayerManager.Instance.ModifyPlayerRankProgress(num);
+		RefreshPerkPoints(_scdId);
+		SaveManager.SavePlayerData();
+	}
+
+	[PunRPC]
+	private void NET_SetSku(string _nick, string _playerSkuList)
+	{
+		List<string> list = new List<string>();
+		if (_playerSkuList != "")
+		{
+			list = JsonHelper.FromJson<string>(_playerSkuList).ToList();
+		}
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("Got list from " + _nick + " --> " + _playerSkuList);
+		}
+		NetworkManager.Instance.AddPlayerSkuList(_nick, list);
+	}
+
+	[PunRPC]
+	private void NET_SetNotOriginal()
+	{
+		masterDescription.GetComponent<TMP_Text>().text = Texts.Instance.GetText("notOriginalPlayers");
+	}
+
+	private void SetWeeklyLeft()
+	{
+		if (AtOManager.Instance.weeklyForcedId == "")
+		{
+			TimeSpan timeSpan = Functions.TimeSpanLeftWeekly();
+			string text = $"{(int)timeSpan.TotalHours:D2}h. {timeSpan.Minutes:D2}m. {timeSpan.Seconds:D2}s.";
+			weeklyLeft.text = text;
+		}
+		else
+		{
+			weeklyLeft.text = "-- [test] --";
+		}
+	}
+
+	[PunRPC]
+	private void NET_SetLoadingGame()
+	{
+		GameManager.Instance.SetGameStatus(Enums.GameStatus.LoadGame);
+	}
+
+	public void AssignHeroCardback(string _subclass, string _cardbackId)
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			SendHeroCardbackMP(_subclass, _cardbackId);
+		}
+		else
+		{
+			AddToPlayerHeroCardback(_subclass, _cardbackId);
+		}
+	}
+
+	public void SendHeroCardbackMP(string _subclass, string _cardbackId)
+	{
+		Debug.Log("SendHeroCardback for " + _subclass + " => " + _cardbackId);
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			photonView.RPC("NET_SetHeroCardback", RpcTarget.All, NetworkManager.Instance.GetPlayerNick(), _subclass, _cardbackId);
+		}
+	}
+
+	[PunRPC]
+	private void NET_SetHeroCardback(string _nick, string _subclass, string _cardbackId)
+	{
+		Debug.Log("NET_SetHeroCardback " + _nick + " " + _subclass + " " + _cardbackId);
+		SetHeroCardbackToBoxOwner(_nick, _subclass, _cardbackId);
+	}
+
+	private void SetHeroCardbackToBoxOwner(string _nick, string _subclass, string _cardbackId)
+	{
+		for (int i = 0; i < boxHero.Count; i++)
+		{
+			if (boxSelection[i].GetOwner() == _nick && boxHero[boxGO[i]] != null && boxHero[boxGO[i]].GetSubclassName().ToLower() == _subclass.ToLower())
+			{
+				AddToPlayerHeroCardback(_subclass, _cardbackId);
+			}
+		}
+	}
+
+	private void AddToPlayerHeroCardback(string _subclass, string _cardbackId)
+	{
+		string key = Functions.RemoveWhitespace(_subclass, toLower: true);
+		if (!playerHeroCardbackDict.ContainsKey(key))
+		{
+			playerHeroCardbackDict.Add(key, _cardbackId);
+		}
+		else
+		{
+			playerHeroCardbackDict[key] = _cardbackId;
+		}
+	}
+
+	public void SendHeroSkinMP(string _subclass, string _skinId)
+	{
+		Debug.Log("SendHeroSkinMP for " + _subclass + " => " + _skinId);
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			photonView.RPC("NET_SetHeroSkin", RpcTarget.All, NetworkManager.Instance.GetPlayerNick(), _subclass, _skinId);
+		}
+	}
+
+	[PunRPC]
+	private void NET_SetHeroSkin(string _nick, string _subclass, string _skinId)
+	{
+		Debug.Log("NET_SetHeroSkin " + _nick + " " + _subclass + " " + _skinId);
+		SetHeroSkinToBoxOwner(_nick, _subclass, _skinId);
+	}
+
+	private void AddToPlayerHeroSkin(string _subclass, string _skinId)
+	{
+		string key = _subclass.ToLower();
+		if (!playerHeroSkinsDict.ContainsKey(key))
+		{
+			playerHeroSkinsDict.Add(key, _skinId);
+		}
+		else
+		{
+			playerHeroSkinsDict[key] = _skinId;
+		}
+	}
+
+	private void SetHeroSkinToBoxOwner(string _nick, string _subclass, string _skinId)
+	{
+		for (int i = 0; i < boxHero.Count; i++)
+		{
+			if (boxSelection[i].GetOwner() == _nick && boxHero[boxGO[i]] != null && boxHero[boxGO[i]].GetSubclassName().ToLower() == _subclass.ToLower())
+			{
+				boxHero[boxGO[i]].SetSkin(_skinId);
+				AddToPlayerHeroSkin(_subclass, _skinId);
+			}
+		}
+	}
+
+	public void SendHeroPerksMP(string _hero)
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			List<string> heroPerks = PlayerManager.Instance.GetHeroPerks(_hero);
+			if (heroPerks != null)
+			{
+				string text = JsonHelper.ToJson(heroPerks.ToArray());
+				photonView.RPC("NET_SetHeroPerk", RpcTarget.All, NetworkManager.Instance.GetPlayerNick(), _hero, text);
+			}
+			else
+			{
+				photonView.RPC("NET_SetHeroPerk", RpcTarget.All, NetworkManager.Instance.GetPlayerNick(), _hero, "");
+			}
+		}
+	}
+
+	[PunRPC]
+	private void NET_SetHeroPerk(string _nick, string _hero, string _perkListStr)
+	{
+		List<string> value = new List<string>();
+		if (_perkListStr != "")
+		{
+			value = JsonHelper.FromJson<string>(_perkListStr).ToList();
+		}
+		string key = (_nick + "_" + _hero).ToLower();
+		if (!playerHeroPerksDict.ContainsKey(key))
+		{
+			playerHeroPerksDict.Add(key, value);
+		}
+		else
+		{
+			playerHeroPerksDict[key] = value;
+		}
+		if (PerkTree.Instance.IsActive())
+		{
+			PerkTree.Instance.DoTeamPerks();
+		}
+	}
+
+	private void PreAssign()
+	{
+		if (PlayerManager.Instance.LastUsedTeam == null || PlayerManager.Instance.LastUsedTeam.Length != 4)
+		{
+			return;
+		}
+		for (int i = 0; i < 4; i++)
+		{
+			if (heroSelectionDictionary.ContainsKey(PlayerManager.Instance.LastUsedTeam[i]) && (GameManager.Instance.IsObeliskChallenge() || (PlayerManager.Instance.IsHeroUnlocked(PlayerManager.Instance.LastUsedTeam[i]) && !heroSelectionDictionary[PlayerManager.Instance.LastUsedTeam[i]].DlcBlocked)))
+			{
+				heroSelectionDictionary[PlayerManager.Instance.LastUsedTeam[i]].AssignHeroToBox(boxGO[i]);
+			}
+		}
+	}
+
+	private void AlfaPreAssign()
+	{
+		if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+		{
+			int num = 0;
+			for (int i = 0; i < 4; i++)
+			{
+				AssignPlayerToBox(NetworkManager.Instance.PlayerList[num].NickName, i);
+				num++;
+				if (num >= NetworkManager.Instance.PlayerList.Length)
+				{
+					num = 0;
+				}
+			}
+		}
+		heroSelectionDictionary["mercenary"].AssignHeroToBox(boxGO[0]);
+		heroSelectionDictionary["ranger"].AssignHeroToBox(boxGO[1]);
+		heroSelectionDictionary["elementalist"].AssignHeroToBox(boxGO[2]);
+		heroSelectionDictionary["cleric"].AssignHeroToBox(boxGO[3]);
+	}
+
+	private void DrawBoxSelectionNames()
+	{
+		int num = 0;
+		Player[] playerList = NetworkManager.Instance.PlayerList;
+		foreach (Player player in playerList)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				boxSelection[j].ShowPlayer(num);
+				boxSelection[j].SetPlayerPosition(num, player.NickName);
+			}
+			num++;
+		}
+		for (int k = num; k < 4; k++)
+		{
+			for (int l = 0; l < 4; l++)
+			{
+				boxSelection[l].SetPlayerPosition(k, "");
+			}
+		}
+		playerList = NetworkManager.Instance.PlayerList;
+		foreach (Player player2 in playerList)
+		{
+			string playerNickReal = NetworkManager.Instance.GetPlayerNickReal(player2.NickName);
+			if (playerNickReal == NetworkManager.Instance.Owner0)
+			{
+				AssignPlayerToBox(player2.NickName, 0);
+			}
+			if (playerNickReal == NetworkManager.Instance.Owner1)
+			{
+				AssignPlayerToBox(player2.NickName, 1);
+			}
+			if (playerNickReal == NetworkManager.Instance.Owner2)
+			{
+				AssignPlayerToBox(player2.NickName, 2);
+			}
+			if (playerNickReal == NetworkManager.Instance.Owner3)
+			{
+				AssignPlayerToBox(player2.NickName, 3);
+			}
+		}
+	}
+
+	public void AssignPlayerToBox(string playerNick, int boxId)
+	{
+		if (!GameManager.Instance.IsWeeklyChallenge() && !GameManager.Instance.IsLoadingGame())
+		{
+			ClearBox(boxId);
+		}
+		boxSelection[boxId].SetOwner(playerNick);
+		if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+		{
+			photonView.RPC("NET_AssignPlayerToBox", RpcTarget.Others, playerNick, boxId);
+			NetworkManager.Instance.AssignHeroPlayerPositionOwner(boxId, playerNick);
+		}
+		if (GameManager.Instance.IsWeeklyChallenge() && playerNick == NetworkManager.Instance.GetPlayerNick())
+		{
+			ChallengeData weeklyData = Globals.Instance.GetWeeklyData(AtOManager.Instance.GetWeekly());
+			if (weeklyData != null)
+			{
+				string text = "";
+				switch (boxId)
+				{
+				case 0:
+					AssignHeroToBox(weeklyData.Hero1.Id, 0);
+					text = weeklyData.Hero1.Id;
+					break;
+				case 1:
+					AssignHeroToBox(weeklyData.Hero2.Id, 1);
+					text = weeklyData.Hero2.Id;
+					break;
+				case 2:
+					AssignHeroToBox(weeklyData.Hero3.Id, 2);
+					text = weeklyData.Hero3.Id;
+					break;
+				default:
+					AssignHeroToBox(weeklyData.Hero4.Id, 3);
+					text = weeklyData.Hero4.Id;
+					break;
+				}
+				if (!GameManager.Instance.IsLoadingGame())
+				{
+					SubClassData subClassData = Globals.Instance.GetSubClassData(text);
+					string activeSkin = PlayerManager.Instance.GetActiveSkin(subClassData.Id);
+					heroSelectionDictionary[text].SetSkin(activeSkin);
+				}
+			}
+		}
+		CheckButtonEnabled();
+		SetPlayersReady();
+	}
+
+	[PunRPC]
+	private void NET_AssignPlayerToBox(string playerNick, int boxId)
+	{
+		AssignPlayerToBox(playerNick, boxId);
+	}
+
+	public void ResetHero(string _heroId)
+	{
+		photonView.RPC("NET_ResetHero", RpcTarget.Others, _heroId);
+	}
+
+	[PunRPC]
+	private void NET_ResetHero(string _heroId)
+	{
+		for (int i = 0; i < boxHero.Count; i++)
+		{
+			if (boxHero[boxGO[i]] != null && boxHero[boxGO[i]].Id == _heroId)
+			{
+				ClearBox(i);
+				break;
+			}
+		}
+	}
+
+	public bool IsYourBox(string boxName)
+	{
+		if (!GameManager.Instance.IsMultiplayer())
+		{
+			return true;
+		}
+		int num = int.Parse(boxName.Split('_')[1]);
+		if (boxSelection[num].GetOwner() == NetworkManager.Instance.GetPlayerNick())
+		{
+			return true;
+		}
+		return false;
+	}
+
+	public void PopupTrait(string traitId)
+	{
+		TraitData traitData = Globals.Instance.GetTraitData(traitId);
+		PopupManager.Instance.SetTrait(traitData);
+	}
+
+	public void Resize()
+	{
+		charPopup.RepositionResolution();
+	}
+
+	public void ShowMask(bool state)
+	{
+		if (coroutineMask != null)
+		{
+			StopCoroutine(coroutineMask);
+		}
+		coroutineMask = StartCoroutine(ShowMaskCo(state));
+	}
+
+	private IEnumerator ShowMaskCo(bool state)
+	{
+		Color colorBg = new Color(0f, 0f, 0f, 0f);
+		SpriteRenderer imageBg = popupMask.GetComponent<SpriteRenderer>();
+		float index = imageBg.color.a;
+		float maxAlplha = 0.5f;
+		float increment = 0.01f;
+		if (!state)
+		{
+			while (index > 0f)
+			{
+				colorBg.a = index;
+				imageBg.color = colorBg;
+				index -= increment;
+				yield return null;
+			}
+			colorBg.a = 0f;
+			popupMask.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			popupMask.gameObject.SetActive(value: true);
+			while (index < maxAlplha)
+			{
+				colorBg.a = index;
+				imageBg.color = colorBg;
+				index += increment;
+				yield return null;
+			}
+			colorBg.a = maxAlplha;
+		}
+		imageBg.color = colorBg;
+	}
+
+	public bool IsBoxFilled(GameObject _box)
+	{
+		if (boxFilled.ContainsKey(_box))
+		{
+			return boxFilled[_box];
+		}
+		boxFilled[_box] = false;
+		return false;
+	}
+
+	private bool AllBoxWithHeroes()
+	{
+		if (!GameManager.Instance.IsWeeklyChallenge() && SandboxManager.Instance.IsEnabled())
+		{
+			switch (SandboxManager.Instance.GetSandboxBoxValue("sbTotalHeroes"))
+			{
+			case 3:
+				if (!boxFilled[boxGO[0]] || !boxFilled[boxGO[1]] || !boxFilled[boxGO[2]])
+				{
+					return false;
+				}
+				return true;
+			case 2:
+				if (!boxFilled[boxGO[0]] || !boxFilled[boxGO[1]])
+				{
+					return false;
+				}
+				return true;
+			case 1:
+				if (!boxFilled[boxGO[0]])
+				{
+					return false;
+				}
+				return true;
+			}
+		}
+		if (boxFilled.Count > 0)
+		{
+			int num = 0;
+			foreach (GameObject key in boxFilled.Keys)
+			{
+				if (boxFilled[key])
+				{
+					num++;
+				}
+			}
+			return num == 4;
+		}
+		return false;
+	}
+
+	private bool AllBoxWithOwners()
+	{
+		if (!GameManager.Instance.IsMultiplayer())
+		{
+			return true;
+		}
+		int num = 4;
+		if (!GameManager.Instance.IsObeliskChallenge() && SandboxManager.Instance.IsEnabled() && SandboxManager.Instance.GetSandboxBoxValue("sbTotalHeroes") > 0)
+		{
+			num = SandboxManager.Instance.GetSandboxBoxValue("sbTotalHeroes");
+		}
+		int num2 = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			if (boxSelection[i].gameObject.activeSelf && boxSelection[i].GetOwner() != null && boxSelection[i].GetOwner() != "")
+			{
+				num2++;
+			}
+		}
+		return num2 == num;
+	}
+
+	public void ShowDrag(bool state, Vector3 position)
+	{
+		cursorDragPrefab.gameObject.SetActive(state);
+		if (state)
+		{
+			cursorDragPrefab.transform.position = position;
+			GameManager.Instance.PlayLibraryAudio("castnpccardfast", 0.1f);
+		}
+	}
+
+	public void FillBox(GameObject _box, HeroSelection _heroSelection, bool _state)
+	{
+		boxFilled[_box] = _state;
+		boxHero[_box] = _heroSelection;
+		int num = int.Parse(_box.name.Split('_')[1]);
+		if (_heroSelection != null)
+		{
+			string text = SubclassByName[_heroSelection.Id];
+			SubClassData subClassData = Globals.Instance.GetSubClassData(text);
+			if (IsYourBox("Box_" + int.Parse(_box.name.Split('_')[1])))
+			{
+				AddToPlayerHeroCardback(text, PlayerManager.Instance.GetActiveCardback(subClassData.Id));
+			}
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				AssignHeroToBox(text, num);
+			}
+		}
+		else if (GameManager.Instance.IsMultiplayer())
+		{
+			ClearBox(num, moveBackHero: false);
+			photonView.RPC("NET_ClearBox", RpcTarget.Others, num, false);
+		}
+		CheckButtonEnabled();
+	}
+
+	private void CheckButtonEnabled()
+	{
+		bool flag = true;
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			flag = false;
+			List<string> list = new List<string>();
+			for (int i = 0; i < 4; i++)
+			{
+				if (boxSelection[i].gameObject.activeSelf)
+				{
+					string owner = boxSelection[i].GetOwner();
+					if (owner == "")
+					{
+						flag = false;
+						break;
+					}
+					if (!list.Contains(owner))
+					{
+						list.Add(owner);
+					}
+				}
+			}
+			if (list.Count == NetworkManager.Instance.PlayerList.Length)
+			{
+				flag = true;
+			}
+			if (flag && !NetworkManager.Instance.AllPlayersManualReady())
+			{
+				flag = false;
+			}
+		}
+		if (flag && AllBoxWithOwners() && AllBoxWithHeroes())
+		{
+			botonBegin.Enable();
+		}
+		else
+		{
+			botonBegin.Disable();
+		}
+	}
+
+	private void AssignHeroToBox(string _hero, int _boxId)
+	{
+		if (IsYourBox("Box_" + _boxId) && !GameManager.Instance.IsLoadingGame())
+		{
+			SubClassData subClassData = Globals.Instance.GetSubClassData(_hero);
+			subClassData.CharacterName.ToLower();
+			string text = subClassData.Id.ToLower();
+			if (SubclassByName.ContainsKey(text))
+			{
+				text = SubclassByName[text];
+			}
+			text = text.ToLower().Replace(" ", "");
+			int perkRank = PlayerManager.Instance.GetPerkRank(subClassData.Id);
+			heroSelectionDictionary[text].SetRankBox(perkRank);
+			AddToPlayerHeroCardback(_hero, PlayerManager.Instance.GetActiveCardback(subClassData.Id));
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				photonView.RPC("NET_AssignHeroToBox", RpcTarget.Others, _hero, _boxId, perkRank, PlayerManager.Instance.GetActiveSkin(subClassData.Id), PlayerManager.Instance.GetActiveCardback(subClassData.Id));
+				SendHeroPerksMP(subClassData.Id);
+			}
+		}
+		if (PerkTree.Instance.IsActive())
+		{
+			PerkTree.Instance.DoTeamPerks();
+		}
+		if (GameManager.Instance.IsMultiplayer() && GameManager.Instance.IsLoadingGame() && !GameManager.Instance.IsObeliskChallenge() && NetworkManager.Instance.IsMaster())
+		{
+			for (int i = 0; i < boxSelection.Length; i++)
+			{
+				boxSelection[i].CheckSkuForHero();
+			}
+		}
+	}
+
+	[PunRPC]
+	private void NET_AssignAllHeroToBox(string _str)
+	{
+		string[] array = _str.Split('&');
+		for (int i = 0; i < array.Length; i++)
+		{
+			if (!array[i].IsNullOrEmpty())
+			{
+				string[] array2 = array[i].Split("#");
+				if (array2.Length == 5)
+				{
+					NET_AssignHeroToBox(array2[0], int.Parse(array2[1]), int.Parse(array2[2]), array2[3], array2[4]);
+				}
+			}
+		}
+		RearrangeHerosForMultiplayer();
+		ShowHeroesByFilterAsync(CurrentFilter);
+	}
+
+	[PunRPC]
+	private void NET_AssignHeroToBox(string _hero, int _boxId, int _perkRank, string _skinId, string _cardbackId)
+	{
+		_hero = _hero.ToLower();
+		if (SubclassByName.ContainsKey(_hero))
+		{
+			_hero = SubclassByName[_hero];
+		}
+		_hero = _hero.ToLower().Replace(" ", "");
+		GameObject key = boxGO[_boxId];
+		if (heroSelectionDictionary[_hero].selected)
+		{
+			heroSelectionDictionary[_hero].Reset();
+		}
+		if (!boxHero.ContainsKey(key) || boxHero[key] == null)
+		{
+			heroSelectionDictionary[_hero].AssignHeroToBox(boxGO[_boxId]);
+			heroSelectionDictionary[_hero].SetRankBox(_perkRank);
+			heroSelectionDictionary[_hero].SetSkin(_skinId);
+			AddToPlayerHeroSkin(_hero, _skinId);
+			AddToPlayerHeroCardback(_hero, _cardbackId);
+		}
+		else if (boxHero[key].nameTM.text != _hero)
+		{
+			boxHero[key].GoBackToOri();
+			heroSelectionDictionary[_hero].AssignHeroToBox(boxGO[_boxId]);
+			heroSelectionDictionary[_hero].SetRankBox(_perkRank);
+			heroSelectionDictionary[_hero].SetSkin(_skinId);
+			AddToPlayerHeroSkin(_hero, _skinId);
+			AddToPlayerHeroCardback(_hero, _cardbackId);
+		}
+		RearrangeHerosForMultiplayer();
+		ShowHeroesByFilterAsync(CurrentFilter);
+	}
+
+	public void RearrangeHerosData()
+	{
+		heroSelectionDictionary = (from kv in heroSelectionDictionary
+			orderby kv.Value.lockIcon.gameObject.activeSelf, kv.Value.HeroPicked descending, kv.Value.subClassData.CharacterName
+			select kv).ToDictionary((KeyValuePair<string, HeroSelection> kv) => kv.Key, (KeyValuePair<string, HeroSelection> kv) => kv.Value);
+	}
+
+	public void RearrangeHerosForMultiplayer()
+	{
+		RearrangeHerosData();
+		GetHeroSelectionParentGO(CurrentFilter);
+		GetHeroSelectionFilter(CurrentFilter);
+	}
+
+	public async void ShowHeroesByFilterAsync(string type)
+	{
+		if (type != null)
+		{
+			CurrentFilter = type;
+			RearrangeHerosData();
+			DisableCharacterSelectionParents();
+			HeroSelectionTabsManager.Instance.EnableTab(type);
+			GameObject heroSelectionParentGO = GetHeroSelectionParentGO(type);
+			Func<HeroSelection, bool> heroSelectionFilter = GetHeroSelectionFilter(type);
+			ArrangeHeroSelections(heroSelectionParentGO, heroSelectionFilter);
+			currentSelectionTab = heroSelectionParentGO;
+			heroSelectionParentGO.SetActive(value: true);
+			await UpdateCharSelectArrowStates(100);
+		}
+	}
+
+	public async Task UpdateCharSelectArrowStates(int delay = 0)
+	{
+		await Task.Delay(delay);
+		GameObject activeHeroSelectionTab = GetActiveHeroSelectionTab();
+		BotonGeneric component = charPageLeftButton.GetComponent<BotonGeneric>();
+		BotonGeneric component2 = charPageRightButton.GetComponent<BotonGeneric>();
+		Color backgroundColor = Functions.HexToColor("#FFBB00");
+		Color backgroundColor2 = Functions.HexToColor("#9D9D9D");
+		int childCount = activeHeroSelectionTab.transform.childCount;
+		if (childCount == 1)
+		{
+			component.SetBackgroundColor(backgroundColor2);
+			component2.SetBackgroundColor(backgroundColor2);
+			component.buttonEnabled = false;
+			component2.buttonEnabled = false;
+		}
+		else if (childCount > 1)
+		{
+			if (activeHeroSelectionTab.transform.GetChild(0).gameObject.activeSelf)
+			{
+				component.SetBackgroundColor(backgroundColor2);
+				component2.SetBackgroundColor(backgroundColor);
+				component.buttonEnabled = false;
+				component2.buttonEnabled = true;
+			}
+			else if (activeHeroSelectionTab.transform.GetChild(childCount - 1).gameObject.activeSelf)
+			{
+				component.SetBackgroundColor(backgroundColor);
+				component2.SetBackgroundColor(backgroundColor2);
+				component.buttonEnabled = true;
+				component2.buttonEnabled = false;
+			}
+			else
+			{
+				component.SetBackgroundColor(backgroundColor);
+				component2.SetBackgroundColor(backgroundColor);
+				component.buttonEnabled = true;
+				component2.buttonEnabled = true;
+			}
+		}
+	}
+
+	private GameObject GetActiveHeroSelectionTab()
+	{
+		if (dlcsGO.activeSelf)
+		{
+			return dlcsGO;
+		}
+		if (lockedGO.activeSelf)
+		{
+			return lockedGO;
+		}
+		if (warriorsGO.activeSelf)
+		{
+			return warriorsGO;
+		}
+		if (scoutsGO.activeSelf)
+		{
+			return scoutsGO;
+		}
+		if (magesGO.activeSelf)
+		{
+			return magesGO;
+		}
+		if (healersGO.activeSelf)
+		{
+			return healersGO;
+		}
+		return allGO;
+	}
+
+	private GameObject GetHeroSelectionParentGO(string type)
+	{
+		return type.ToLower() switch
+		{
+			"dlc" => dlcsGO, 
+			"locked" => lockedGO, 
+			"warrior" => warriorsGO, 
+			"scout" => scoutsGO, 
+			"mage" => magesGO, 
+			"healer" => healersGO, 
+			_ => allGO, 
+		};
+	}
+
+	private void ArrangeHeroSelections(GameObject parent, Func<HeroSelection, bool> filter)
+	{
+		Vector3 vector = new Vector3(2f, 0f, 0f);
+		Vector3 vector2 = new Vector3(-0.45f, 0.09f, 0f);
+		int num = 0;
+		int num2 = 0;
+		bool flag = false;
+		if (parent.transform.childCount == 0)
+		{
+			flag = true;
+		}
+		if (flag)
+		{
+			CreateChildInTransform(parent.transform, "Page" + num2);
+		}
+		foreach (KeyValuePair<string, HeroSelection> item in heroSelectionDictionary)
+		{
+			HeroSelection value = item.Value;
+			if (!filter(value))
+			{
+				continue;
+			}
+			Transform defaultParent = value.DefaultParent;
+			defaultParent.parent = parent.transform.GetChild(num2);
+			defaultParent.gameObject.SetActive(value: true);
+			defaultParent.localPosition = Vector3.zero + vector2;
+			num++;
+			vector2 += vector;
+			if (num % 8 == 0)
+			{
+				vector2 = new Vector3(-0.45f, -1.52f, 0f);
+			}
+			if (num % 16 == 0)
+			{
+				vector2 = new Vector3(-0.45f, 0.09f, 0f);
+				num2++;
+				if (flag)
+				{
+					CreateChildInTransform(parent.transform, "Page" + num2, enable: false);
+				}
+			}
+		}
+	}
+
+	private Func<HeroSelection, bool> GetHeroSelectionFilter(string type)
+	{
+		string typeLower = type.ToLower();
+		if (typeLower == "all")
+		{
+			return (HeroSelection _) => true;
+		}
+		if (typeLower == "dlc")
+		{
+			return (HeroSelection hero) => hero.GetHeroClass().ToLower() != "none" && hero.GetHeroClassSecondary().ToLower() != "none";
+		}
+		if (typeLower == "locked")
+		{
+			return (HeroSelection hero) => hero.blocked;
+		}
+		return (HeroSelection hero) => hero.GetHeroClass().ToLower() == typeLower || hero.GetHeroClassSecondary().ToLower() == typeLower;
+	}
+
+	private void DisableCharacterSelectionParents()
+	{
+		allGO.SetActive(value: false);
+		warriorsGO.SetActive(value: false);
+		scoutsGO.SetActive(value: false);
+		magesGO.SetActive(value: false);
+		healersGO.SetActive(value: false);
+		dlcsGO.SetActive(value: false);
+		lockedGO.SetActive(value: false);
+	}
+
+	private void SetCharacterSelectionTabCount()
+	{
+		string[] array = new string[6] { "all", "warrior", "scout", "mage", "healer", "dlc" };
+		for (int i = 0; i < array.Length; i++)
+		{
+			int num = 0;
+			Func<HeroSelection, bool> heroSelectionFilter = GetHeroSelectionFilter(array[i]);
+			foreach (KeyValuePair<string, HeroSelection> item in heroSelectionDictionary)
+			{
+				HeroSelection value = item.Value;
+				if (heroSelectionFilter(value))
+				{
+					num++;
+				}
+			}
+			HeroSelectionTabsManager.Instance.SetTabText(num.ToString(), i);
+		}
+	}
+
+	private void CreateChildInTransform(Transform _transform, string name, bool enable = true)
+	{
+		GameObject obj = new GameObject(name);
+		obj.transform.parent = _transform;
+		obj.transform.localPosition = Vector3.zero;
+		obj.transform.localScale = Vector3.one;
+		obj.transform.localRotation = Quaternion.identity;
+		obj.SetActive(enable);
+	}
+
+	public void moveHeroPageLeft()
+	{
+		int childCount = currentSelectionTab.transform.childCount;
+		if (currentSelectionTab.transform.childCount <= 1)
+		{
+			return;
+		}
+		for (int i = 1; i < childCount; i++)
+		{
+			if (currentSelectionTab.transform.GetChild(i).gameObject.activeSelf)
+			{
+				currentSelectionTab.transform.GetChild(i).gameObject.SetActive(value: false);
+				currentSelectionTab.transform.GetChild(i - 1).gameObject.SetActive(value: true);
+			}
+		}
+	}
+
+	public void moveHeroPageRight()
+	{
+		int childCount = currentSelectionTab.transform.childCount;
+		if (currentSelectionTab.transform.childCount <= 1)
+		{
+			return;
+		}
+		for (int i = 0; i < childCount - 1; i++)
+		{
+			if (currentSelectionTab.transform.GetChild(i).gameObject.activeSelf)
+			{
+				currentSelectionTab.transform.GetChild(i).gameObject.SetActive(value: false);
+				currentSelectionTab.transform.GetChild(i + 1).gameObject.SetActive(value: true);
+			}
+		}
+	}
+
+	[PunRPC]
+	private void NET_ClearBox(int _boxId, bool _moveBackHero)
+	{
+		ClearBox(_boxId, _moveBackHero);
+		if (PerkTree.Instance.IsActive())
+		{
+			PerkTree.Instance.DoTeamPerks();
+		}
+	}
+
+	public void ClearBox(int id, bool moveBackHero = true)
+	{
+		if (IsBoxFilled(boxGO[id]))
+		{
+			HeroSelection heroSelection = GetBoxHero(boxGO[id]);
+			if (heroSelection != null)
+			{
+				heroSelection.GoBackToOri();
+			}
+			FillBox(boxGO[id], null, _state: false);
+		}
+	}
+
+	public bool IsHeroSelected(string heroName)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			HeroSelection heroSelection = GetBoxHero(boxGO[i]);
+			if (heroSelection != null && heroSelection.nameTM.text == heroName)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public string GetBoxOwnerFromIndex(int _index)
+	{
+		if (boxSelection[_index] != null)
+		{
+			return boxSelection[_index].GetOwner();
+		}
+		return "";
+	}
+
+	public HeroSelection GetBoxHeroFromIndex(int _index)
+	{
+		if (boxGO[_index] != null && boxHero.ContainsKey(boxGO[_index]))
+		{
+			return boxHero[boxGO[_index]];
+		}
+		return null;
+	}
+
+	public HeroSelection GetBoxHero(GameObject _box)
+	{
+		if (boxHero.ContainsKey(_box))
+		{
+			return boxHero[_box];
+		}
+		return null;
+	}
+
+	public void MouseOverBox(GameObject _box)
+	{
+		box = _box;
+	}
+
+	public GameObject GetOverBox()
+	{
+		return box;
+	}
+
+	public void BeginAdventure()
+	{
+		botonBegin.gameObject.SetActive(value: false);
+		if (GameManager.Instance.IsMultiplayer() && (!GameManager.Instance.IsMultiplayer() || !NetworkManager.Instance.IsMaster()))
+		{
+			return;
+		}
+		if (GameManager.Instance.GameStatus == Enums.GameStatus.LoadGame)
+		{
+			if (!AtOManager.Instance.CheckLoadGameUserHaveAllContent())
+			{
+				botonBegin.gameObject.SetActive(value: true);
+			}
+			else
+			{
+				AtOManager.Instance.DoLoadGameFromMP();
+			}
+			return;
+		}
+		string[] array = new string[4];
+		for (int i = 0; i < boxHero.Count; i++)
+		{
+			if (boxHero[boxGO[i]] != null)
+			{
+				array[i] = Functions.RemoveWhitespace(boxHero[boxGO[i]].GetSubclassName(), toLower: true);
+			}
+			else
+			{
+				array[i] = "";
+			}
+		}
+		if (!GameManager.Instance.IsMultiplayer() && !GameManager.Instance.IsWeeklyChallenge())
+		{
+			PlayerManager.Instance.LastUsedTeam = new string[4];
+			for (int j = 0; j < 4; j++)
+			{
+				PlayerManager.Instance.LastUsedTeam[j] = array[j].ToLower();
+			}
+			SaveManager.SavePlayerData();
+		}
+		if (GameManager.Instance.IsGameAdventure())
+		{
+			AtOManager.Instance.SetPlayerPerks(playerHeroPerksDict, array);
+			AtOManager.Instance.SetNgPlus(ngValue);
+			AtOManager.Instance.SetMadnessCorruptors(ngCorruptors);
+		}
+		else if (GameManager.Instance.IsSingularity())
+		{
+			AtOManager.Instance.SetPlayerPerks(playerHeroPerksDict, array);
+			AtOManager.Instance.SetSingularityMadness(singularityMadnessValue);
+		}
+		else if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			AtOManager.Instance.SetObeliskMadness(obeliskMadnessValue);
+		}
+		AtOManager.Instance.SetTeamFromArray(array);
+		if (AtOManager.Instance.IsCombatTool)
+		{
+			SceneStatic.LoadByName("Town");
+			CombatToolManager.Instance.SaveCombatToolConfig();
+		}
+		else
+		{
+			AtOManager.Instance.BeginAdventure();
+		}
+	}
+
+	public void ChangeSeed()
+	{
+		if (!GameManager.Instance.IsLoadingGame() && !AtOManager.Instance.IsFirstGame() && (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster()))
+		{
+			AlertManager.buttonClickDelegate = SetSeedId;
+			AlertManager.Instance.AlertInput(Texts.Instance.GetText("gameSeedInput"), Texts.Instance.GetText("accept").ToUpper());
+		}
+	}
+
+	public void SetSeedId()
+	{
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(SetSeedId));
+		if (AlertManager.Instance.GetInputValue() != null)
+		{
+			string text = AlertManager.Instance.GetInputValue().ToUpper();
+			if (text.Trim() != "")
+			{
+				SetSeed(text, stablishGameId: true);
+			}
+		}
+	}
+
+	private void SetSeed(string _seed, bool stablishGameId = false)
+	{
+		gameSeedTxt.text = _seed;
+		if (stablishGameId)
+		{
+			AtOManager.Instance.SetGameId(_seed);
+		}
+		if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+		{
+			photonView.RPC("NET_SetSeed", RpcTarget.Others, _seed);
+		}
+	}
+
+	[PunRPC]
+	private void NET_SetSeed(string _seed)
+	{
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("Net_SeetSeed " + _seed);
+		}
+		gameSeedTxt.text = _seed;
+	}
+
+	public void RefreshPerkPoints(string _hero)
+	{
+		heroSelectionDictionary[_hero].SetPerkPoints();
+		if (charPopup != null && PerkTree.Instance.IsActive())
+		{
+			charPopup.RefreshBecauseOfPerks();
+		}
+	}
+
+	public void DoCharPopMenu(string type)
+	{
+		switch (type)
+		{
+		case "stats":
+			charPopup.ShowStats();
+			break;
+		case "perks":
+			charPopup.ShowPerks();
+			break;
+		case "skins":
+			charPopup.ShowSkins();
+			break;
+		case "rank":
+			charPopup.ShowRank();
+			break;
+		case "cardbacks":
+			charPopup.ShowCardbacks();
+			break;
+		case "singularityCards":
+			charPopup.ShowSingularityCards();
+			break;
+		}
+		charPopup.Show();
+	}
+
+	public void NGBox(int value = -1)
+	{
+	}
+
+	[PunRPC]
+	private void NET_SetNGBox(int _value)
+	{
+		NGBox(_value);
+	}
+
+	public void SetMadnessLevel()
+	{
+		int num = MadnessManager.Instance.CalculateMadnessTotal(ngValue, ngCorruptors);
+		madnessLevel.text = string.Format(Texts.Instance.GetText("madnessNumber"), num);
+		if (num == 0)
+		{
+			madnessParticle.gameObject.SetActive(value: false);
+			madnessButton.GetComponent<BotonGeneric>().ShowBackgroundDisable(state: true);
+		}
+		else
+		{
+			madnessParticle.gameObject.SetActive(value: true);
+			madnessButton.GetComponent<BotonGeneric>().ShowBackgroundDisable(state: false);
+		}
+		MadnessManager.Instance.RefreshValues(ngCorruptors);
+		if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+		{
+			photonView.RPC("NET_SetMadness", RpcTarget.Others, ngValue, ngCorruptors);
+		}
+	}
+
+	[PunRPC]
+	private void NET_SetMadness(int mLevel, string mCorruptors)
+	{
+		ngValue = (ngValueMaster = mLevel);
+		ngCorruptors = mCorruptors;
+		SetMadnessLevel();
+	}
+
+	public void RefreshSandboxButton()
+	{
+		if (sandboxButton.gameObject.activeSelf)
+		{
+			if (SandboxManager.Instance.IsEnabled())
+			{
+				sandboxButton.GetComponent<BotonGeneric>().ShowBackgroundDisable(state: false);
+				sandboxButtonCircleOn.gameObject.SetActive(value: true);
+				sandboxButtonCircleOff.gameObject.SetActive(value: false);
+			}
+			else
+			{
+				sandboxButton.GetComponent<BotonGeneric>().ShowBackgroundDisable(state: true);
+				sandboxButtonCircleOn.gameObject.SetActive(value: false);
+				sandboxButtonCircleOff.gameObject.SetActive(value: true);
+			}
+		}
+	}
+
+	public void RefreshCharBoxesBySandboxHeroes()
+	{
+		if (SandboxManager.Instance.IsEnabled())
+		{
+			switch (SandboxManager.Instance.GetSandboxBoxValue("sbTotalHeroes"))
+			{
+			case 1:
+				ClearBox(1, moveBackHero: false);
+				ClearBox(2, moveBackHero: false);
+				ClearBox(3, moveBackHero: false);
+				boxSelection[1].gameObject.SetActive(value: false);
+				boxSelection[2].gameObject.SetActive(value: false);
+				boxSelection[3].gameObject.SetActive(value: false);
+				CheckButtonEnabled();
+				return;
+			case 2:
+				ClearBox(2, moveBackHero: false);
+				ClearBox(3, moveBackHero: false);
+				boxSelection[1].gameObject.SetActive(value: true);
+				boxSelection[2].gameObject.SetActive(value: false);
+				boxSelection[3].gameObject.SetActive(value: false);
+				CheckButtonEnabled();
+				return;
+			case 3:
+				ClearBox(3, moveBackHero: false);
+				boxSelection[1].gameObject.SetActive(value: true);
+				boxSelection[2].gameObject.SetActive(value: true);
+				boxSelection[3].gameObject.SetActive(value: false);
+				CheckButtonEnabled();
+				return;
+			}
+		}
+		boxSelection[1].gameObject.SetActive(value: true);
+		boxSelection[2].gameObject.SetActive(value: true);
+		boxSelection[3].gameObject.SetActive(value: true);
+		CheckButtonEnabled();
+	}
+
+	public void ShareResetSandbox()
+	{
+		photonView.RPC("NET_ShareResetSandbox", RpcTarget.Others);
+	}
+
+	[PunRPC]
+	private void NET_ShareResetSandbox()
+	{
+		SandboxManager.Instance.SbReset();
+	}
+
+	[PunRPC]
+	private void NET_ShareSandbox(string json)
+	{
+		AtOManager.Instance.SetSandboxMods(Functions.DecompressString(json));
+		SandboxManager.Instance.LoadValuesFromAtOManager();
+		RefreshCharBoxesBySandboxHeroes();
+	}
+
+	public void ShareSandboxCombo(string key, int value)
+	{
+		photonView.RPC("NET_ShareSandboxCombo", RpcTarget.Others, key, value);
+	}
+
+	[PunRPC]
+	private void NET_ShareSandboxCombo(string key, int value)
+	{
+		SandboxManager.Instance.SetComboValueByVal(key, value);
+	}
+
+	public void ShareSandboxBox(string key, int value)
+	{
+		photonView.RPC("NET_ShareSandboxBox", RpcTarget.Others, key, value);
+	}
+
+	[PunRPC]
+	private void NET_ShareSandboxBox(string key, int value)
+	{
+		SandboxManager.Instance.SetBoxValueByVal(key, value);
+		RefreshCharBoxesBySandboxHeroes();
+	}
+
+	public void ShareSandboxEnabledState(bool state)
+	{
+		photonView.RPC("NET_ShareSandboxEnabledState", RpcTarget.Others, state);
+	}
+
+	[PunRPC]
+	private void NET_ShareSandboxEnabledState(bool state)
+	{
+		if (state)
+		{
+			SandboxManager.Instance.EnableSandbox();
+		}
+		else
+		{
+			SandboxManager.Instance.DisableSandbox();
+		}
+		RefreshSandboxButton();
+	}
+
+	public void SetObeliskMadnessLevel()
+	{
+		int num = obeliskMadnessValue;
+		madnessLevel.text = string.Format(Texts.Instance.GetText("madnessNumber"), num);
+		if (num == 0)
+		{
+			madnessParticle.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			madnessParticle.gameObject.SetActive(value: true);
+		}
+		MadnessManager.Instance.RefreshValues();
+		if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+		{
+			photonView.RPC("NET_SetObeliskMadness", RpcTarget.Others, num);
+		}
+		if (obeliskMadnessValue > 7)
+		{
+			gameSeed.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			gameSeed.gameObject.SetActive(value: true);
+		}
+	}
+
+	[PunRPC]
+	private void NET_SetObeliskMadness(int mLevel)
+	{
+		obeliskMadnessValue = (obeliskMadnessValueMaster = mLevel);
+		SetObeliskMadnessLevel();
+	}
+
+	public void SetSingularityMadnessLevel()
+	{
+		int num = singularityMadnessValue;
+		madnessLevel.text = string.Format(Texts.Instance.GetText("madnessNumber"), num);
+		if (num == 0)
+		{
+			madnessParticle.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			madnessParticle.gameObject.SetActive(value: true);
+		}
+		MadnessManager.Instance.RefreshValues();
+		if (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
+		{
+			photonView.RPC("NET_SetSingularityMadness", RpcTarget.Others, num);
+		}
+		if (singularityMadnessValue > 7)
+		{
+			gameSeed.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			gameSeed.gameObject.SetActive(value: true);
+		}
+	}
+
+	[PunRPC]
+	private void NET_SetSingularityMadness(int mLevel)
+	{
+		singularityMadnessValue = (singularityMadnessValueMaster = mLevel);
+		SetSingularityMadnessLevel();
+	}
+
+	public void SetSkinIntoSubclassData(string _subclass, string _skinId)
+	{
+		SubClassData subClassData = Globals.Instance.GetSubClassData(_subclass);
+		SkinData skinData = Globals.Instance.GetSkinData(_skinId);
+		foreach (KeyValuePair<string, HeroSelection> item in heroSelectionDictionary)
+		{
+			if (item.Key == subClassData.Id)
+			{
+				if (!GameManager.Instance.IsMultiplayer())
+				{
+					item.Value.SetSprite(skinData.SpritePortrait, skinData.SpriteSilueta, subClassData.SpriteBorderLocked);
+					AddToPlayerHeroSkin(_subclass, _skinId);
+				}
+				else
+				{
+					item.Value.SetSpriteSilueta(skinData.SpriteSilueta);
+					SendHeroSkinMP(_subclass, _skinId);
+				}
+				break;
+			}
+		}
+	}
+
+	public void FollowTheLeader()
+	{
+		AtOManager.Instance.followingTheLeader = !AtOManager.Instance.followingTheLeader;
+		SaveManager.SaveIntoPrefsBool("followLeader", AtOManager.Instance.followingTheLeader);
+		SaveManager.SavePrefs();
+		ShowFollowStatus();
+	}
+
+	public void ShowFollowStatus()
+	{
+		if (AtOManager.Instance.followingTheLeader)
+		{
+			botonFollow.SetText("X");
+		}
+		else
+		{
+			botonFollow.SetText("");
+		}
+	}
+
+	public void Ready()
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			if (manualReadyCo != null)
+			{
+				StopCoroutine(manualReadyCo);
+			}
+			statusReady = !statusReady;
+			NetworkManager.Instance.SetManualReady(statusReady);
+			if (statusReady)
+			{
+				ReadySetButton(state: true);
+			}
+			else
+			{
+				ReadySetButton(state: false);
+			}
+		}
+	}
+
+	public void SetPlayersReady()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			boxSelection[i].SetReady(NetworkManager.Instance.IsPlayerReady(boxSelection[i].GetOwner()));
+		}
+		if (NetworkManager.Instance.IsMaster())
+		{
+			CheckButtonEnabled();
+		}
+	}
+
+	public void ReadySetButton(bool state)
+	{
+		if (state)
+		{
+			readyButtonText.gameObject.SetActive(value: false);
+			readyButton.GetComponent<BotonGeneric>().SetColorAbsolute(Functions.HexToColor("#15A42E"));
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				readyButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("waitingForPlayers"));
+			}
+			else
+			{
+				readyButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("ready"));
+			}
+		}
+		else
+		{
+			readyButtonText.gameObject.SetActive(value: true);
+			readyButton.GetComponent<BotonGeneric>().SetColorAbsolute(Functions.HexToColor(Globals.Instance.ClassColor["warrior"]));
+			readyButton.GetComponent<BotonGeneric>().SetText(Texts.Instance.GetText("ready"));
+		}
+	}
+
+	public void SelectTab(string TabName)
+	{
+		switch (TabName)
+		{
+		case "TraitsTab":
+			CardsItemsTabBtn.Enable();
+			ResistanceTabBtn.Enable();
+			TraitsTabBtn.Disable();
+			TraitsTab.SetActive(value: true);
+			CardsandItemsTab.SetActive(value: false);
+			ResistancesTab.SetActive(value: false);
+			SingularityCardsTabText.SetActive(value: false);
+			TraitsTabUpdate(charPopupMini.subClassData);
+			break;
+		case "CardsandItemsTab":
+			TraitsTabBtn.Enable();
+			ResistanceTabBtn.Enable();
+			CardsItemsTabBtn.Disable();
+			if (!GameManager.Instance.IsSingularity())
+			{
+				CardsandItemsTab.SetActive(value: true);
+			}
+			else
+			{
+				SingularityCardsTabText.SetActive(value: true);
+			}
+			TraitsTab.SetActive(value: false);
+			ResistancesTab.SetActive(value: false);
+			CardsandItemsTabUpdate(charPopupMini.subClassData);
+			break;
+		case "ResistancesTab":
+			TraitsTabBtn.Enable();
+			CardsItemsTabBtn.Enable();
+			ResistanceTabBtn.Disable();
+			ResistancesTab.SetActive(value: true);
+			TraitsTab.SetActive(value: false);
+			CardsandItemsTab.SetActive(value: false);
+			SingularityCardsTabText.SetActive(value: false);
+			break;
+		}
+	}
+
+	public void TraitsTabUpdate(SubClassData subclass)
+	{
+		if (!(subclass == null))
+		{
+			int characterTier = PlayerManager.Instance.GetCharacterTier(subclass.Id, "trait");
+			_Trait0RO = _Trait0.transform.parent.GetComponent<TraitRollOver>();
+			_Trait1ARO = _Trait1A.transform.parent.GetComponent<TraitRollOver>();
+			_Trait1BRO = _Trait1B.transform.parent.GetComponent<TraitRollOver>();
+			_Trait2ARO = _Trait2A.transform.parent.GetComponent<TraitRollOver>();
+			_Trait2BRO = _Trait2B.transform.parent.GetComponent<TraitRollOver>();
+			_Trait3ARO = _Trait3A.transform.parent.GetComponent<TraitRollOver>();
+			_Trait3BRO = _Trait3B.transform.parent.GetComponent<TraitRollOver>();
+			_Trait4ARO = _Trait4A.transform.parent.GetComponent<TraitRollOver>();
+			_Trait4BRO = _Trait4B.transform.parent.GetComponent<TraitRollOver>();
+			_Trait0RO.SetTrait(subclass.Trait0.Id, characterTier);
+			_Trait1ARO.SetTrait(subclass.Trait1A.Id, characterTier);
+			_Trait1BRO.SetTrait(subclass.Trait1B.Id, characterTier);
+			_Trait2ARO.SetTrait(subclass.Trait2A.Id, characterTier);
+			_Trait2BRO.SetTrait(subclass.Trait2B.Id, characterTier);
+			_Trait3ARO.SetTrait(subclass.Trait3A.Id, characterTier);
+			_Trait3BRO.SetTrait(subclass.Trait3B.Id, characterTier);
+			_Trait4ARO.SetTrait(subclass.Trait4A.Id, characterTier);
+			_Trait4BRO.SetTrait(subclass.Trait4B.Id, characterTier);
+		}
+	}
+
+	public void CardsandItemsTabUpdate(SubClassData subclass)
+	{
+		int characterTier = PlayerManager.Instance.GetCharacterTier(subclass.Id, "card");
+		int characterTier2 = PlayerManager.Instance.GetCharacterTier(subclass.Id, "item");
+		cardsNumT[0] = _CardN1.transform.parent;
+		cardsNumText[0] = _CardN1;
+		cardsNumT[1] = _CardN2.transform.parent;
+		cardsNumText[1] = _CardN2;
+		cardsNumT[2] = _CardN3.transform.parent;
+		cardsNumText[2] = _CardN3;
+		cardsNumT[3] = _CardN4.transform.parent;
+		cardsNumText[3] = _CardN4;
+		cardsNumT[4] = _CardN5.transform.parent;
+		cardsNumText[4] = _CardN5;
+		cardsNumT[5] = _CardN6.transform.parent;
+		cardsNumText[5] = _CardN6;
+		cardsNumT[6] = _CardN7.transform.parent;
+		cardsNumText[6] = _CardN7;
+		for (int i = 0; i < 7; i++)
+		{
+			if (i >= subclass.Cards.Length || subclass.Cards[i] == null)
+			{
+				continue;
+			}
+			string id = subclass.Cards[i].Card.Id;
+			if (subclass.Cards[i].Card.Starter)
+			{
+				switch (characterTier)
+				{
+				case 1:
+					id = Globals.Instance.GetCardData(id, instantiate: false).UpgradesTo1.ToLower();
+					break;
+				case 2:
+					id = Globals.Instance.GetCardData(id, instantiate: false).UpgradesTo2.ToLower();
+					break;
+				}
+			}
+			cardsCI[i].SetCard(id, deckScale: false);
+			cardsCI[i].cardoutsidecombat = true;
+			cardsCI[i].cardoutsideselection = true;
+			cardsCI[i].ChangeLayer();
+			cardsNumText[i].text = subclass.Cards[i].UnitsInDeck.ToString();
+			cardsNumT[i].gameObject.SetActive(value: true);
+		}
+		string id2 = subclass.Item.Id;
+		switch (characterTier2)
+		{
+		case 1:
+			id2 = Globals.Instance.GetCardData(id2, instantiate: false).UpgradesTo1;
+			break;
+		case 2:
+			id2 = Globals.Instance.GetCardData(id2, instantiate: false).UpgradesTo2;
+			break;
+		}
+		cardsCI[7].SetCard(id2);
+		cardsCI[7].cardoutsidecombat = true;
+		cardsCI[7].cardoutsideselection = true;
+		cardsCI[7].ChangeLayer();
+		cardsCI[7].transform.localScale = new Vector3(0.45f, 0.45f, 1f);
+	}
+
+	public void SetSkinFromNetPlayer(string _nick, string _subclass, string _skinId)
+	{
+	}
+
+	public void SetRandomHero(int _boxId)
+	{
+		int num = 0;
+		foreach (KeyValuePair<string, HeroSelection> item in heroSelectionDictionary)
+		{
+			if (item.Value.RandomAvailable())
+			{
+				num++;
+			}
+		}
+		int num2 = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			if (boxHero[boxGO[i]] != null && boxHero[boxGO[i]].GetSubclassName() != "")
+			{
+				num2++;
+			}
+		}
+		if (num <= 4 && num2 == 4)
+		{
+			return;
+		}
+		int count = heroSelectionDictionary.Count;
+		HeroSelection heroSelection = null;
+		while (true)
+		{
+			int num3 = UnityEngine.Random.Range(0, count);
+			int num4 = 0;
+			foreach (KeyValuePair<string, HeroSelection> item2 in heroSelectionDictionary)
+			{
+				if (num4 == num3)
+				{
+					heroSelection = item2.Value;
+					break;
+				}
+				num4++;
+			}
+			if (!(heroSelection != null))
+			{
+				break;
+			}
+			if (!heroSelection.RandomAvailable())
+			{
+				continue;
+			}
+			bool flag = true;
+			for (int j = 0; j < boxGO.Length; j++)
+			{
+				if (boxHero[boxGO[j]] != null && boxHero[boxGO[j]].GetSubclassName().ToLower() == heroSelection.Id)
+				{
+					flag = false;
+					break;
+				}
+			}
+			if (flag)
+			{
+				heroSelection.PickHero(_comingFromRandom: true);
+				heroSelection.PickStop(_boxId);
+				heroSelection.HeroPicked = true;
+				heroSelection.spriteSR.enabled = true;
+				break;
+			}
+		}
+	}
+
+	public void LevelWithSupplies(string _scdId)
+	{
+		PlayerManager.Instance.SpendSupply(1);
+		IncreaseHeroProgressSupplies(_scdId);
+		UpdateSubclassRank(_scdId);
+		charPopup.DoRank();
+	}
+
+	private void UpdateSubclassRank(string _scdId)
+	{
+		SubClassData subClassData = Globals.Instance.GetSubClassData(_scdId);
+		foreach (KeyValuePair<string, HeroSelection> item in heroSelectionDictionary)
+		{
+			if (item.Key == subClassData.Id)
+			{
+				if (!GameManager.Instance.IsMultiplayer())
+				{
+					item.Value.SetRank();
+				}
+				else
+				{
+					item.Value.SetRank();
+				}
+			}
+		}
+	}
+
+	public void ControllerMoveBlock(bool _isRight)
+	{
+	}
+
+	public void ResetController()
+	{
+		Debug.Log("ResetController");
+		controllerCurrentBlock = -1;
+		controllerCurrentOption = -1;
+		HideCharacterArrowController();
+	}
+
+	public void BackToControllerCharacterSelection()
+	{
+		Debug.Log("BackToControllerCharacterSelection");
+		controllerCurrentBlock = 0;
+		HideCharacterArrowController();
+		ControllerMovement();
+	}
+
+	public void MoveAbsoluteToCharactersAfterClick()
+	{
+		Debug.Log("MoveAbsoluteToCharactersAfterClick");
+		controllerHorizontalIndex = 0;
+		warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(boxSelection[0].transform.position);
+		Mouse.current.WarpCursorPosition(warpPosition);
+	}
+
+	private void HideCharacterArrowController()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			boxSelection[i].ShowHideArrowController(_state: false);
+		}
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, int absolutePosition = -1)
+	{
+		_controllerList.Clear();
+		if (!dragging)
+		{
+			for (int i = 0; i < menuController.Count; i++)
+			{
+				_controllerList.Add(menuController[i]);
+			}
+			if (Functions.TransformIsVisible(botonFollow.transform))
+			{
+				_controllerList.Add(botonFollow.transform);
+			}
+			if (Functions.TransformIsVisible(beginAdventureButton))
+			{
+				_controllerList.Add(beginAdventureButton.transform);
+			}
+			if (Functions.TransformIsVisible(readyButton))
+			{
+				_controllerList.Add(readyButton.transform);
+			}
+			if (Functions.TransformIsVisible(madnessButton))
+			{
+				_controllerList.Add(madnessButton);
+			}
+			if (Functions.TransformIsVisible(sandboxButton))
+			{
+				_controllerList.Add(sandboxButton);
+			}
+			if (Functions.TransformIsVisible(gameSeed))
+			{
+				_controllerList.Add(gameSeed);
+			}
+			if (Functions.TransformIsVisible(weeklyModifiersButton))
+			{
+				_controllerList.Add(weeklyModifiersButton);
+			}
+		}
+		for (int j = 0; j < 4; j++)
+		{
+			if (!Functions.TransformIsVisible(boxSelection[j].transform))
+			{
+				continue;
+			}
+			_controllerList.Add(boxSelection[j].transform);
+			if (dragging)
+			{
+				continue;
+			}
+			if (Functions.TransformIsVisible(boxSelection[j].dice))
+			{
+				_controllerList.Add(boxSelection[j].dice);
+			}
+			for (int k = 0; k < 4; k++)
+			{
+				if (Functions.TransformIsVisible(boxSelection[j].boxPlayer[k].transform))
+				{
+					_controllerList.Add(boxSelection[j].boxPlayer[k].transform);
+				}
+			}
+		}
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
+
+	public void ControllerMovementOLD(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, int absolutePosition = -1)
+	{
+		if (absolutePosition != -1)
+		{
+			controllerCurrentOption = absolutePosition;
+		}
+		if (controllerCurrentBlock == 0)
+		{
+			bool flag = false;
+			Transform transform = null;
+			List<Transform> list = menuController;
+			while (!flag)
+			{
+				if (list != null)
+				{
+					if (goingLeft)
+					{
+						controllerCurrentOption--;
+					}
+					else if (goingUp)
+					{
+						controllerCurrentOption -= 4;
+					}
+					else if (goingDown)
+					{
+						controllerCurrentOption += 4;
+					}
+					else
+					{
+						controllerCurrentOption++;
+						if (controllerCurrentOption % 4 == 0 || controllerCurrentOption == list.Count - 1)
+						{
+							controllerCurrentBlock = 1;
+							controllerCurrentOption = -1;
+							ControllerMovement(goingUp: false, goingRight: true);
+							break;
+						}
+					}
+					if (controllerCurrentOption < 0)
+					{
+						controllerCurrentOption = list.Count - 1;
+					}
+					if (controllerCurrentOption > list.Count - 1)
+					{
+						controllerCurrentOption = 0;
+					}
+					transform = list[controllerCurrentOption];
+					if (transform != null && Functions.TransformIsVisible(transform) && !(transform.parent == boxCharacters))
+					{
+						warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(transform.position);
+						Mouse.current.WarpCursorPosition(warpPosition);
+						flag = true;
+					}
+				}
+				else
+				{
+					flag = true;
+				}
+			}
+		}
+		else if (controllerCurrentBlock == 1)
+		{
+			bool flag2 = false;
+			int num = 0;
+			if (absolutePosition != -1)
+			{
+				absolutePosition--;
+				goingLeft = true;
+			}
+			while (!flag2)
+			{
+				if (goingRight)
+				{
+					controllerCurrentOption--;
+					if (controllerCurrentOption < 0)
+					{
+						controllerCurrentOption = 3;
+					}
+				}
+				else if (goingLeft)
+				{
+					controllerCurrentOption++;
+					if (controllerCurrentOption > 3)
+					{
+						controllerCurrentOption = 0;
+					}
+				}
+				else
+				{
+					if (!goingUp)
+					{
+						controllerCurrentBlock = 4;
+						ControllerMovement(goingUp: true);
+						return;
+					}
+					if (boxSelection[controllerCurrentOption].dice.gameObject.activeSelf)
+					{
+						warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(boxSelection[controllerCurrentOption].dice.position);
+						Mouse.current.WarpCursorPosition(warpPosition);
+						return;
+					}
+				}
+				flag2 = (Functions.TransformIsVisible(boxSelection[controllerCurrentOption].transform) ? true : false);
+				num++;
+				if (num > 10)
+				{
+					break;
+				}
+			}
+			HideCharacterArrowController();
+			boxSelection[controllerCurrentOption].ShowHideArrowController(_state: true);
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(boxSelection[controllerCurrentOption].transform.position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+		else if (controllerCurrentBlock == 2)
+		{
+			if (goingUp)
+			{
+				controllerCurrentBlock = 1;
+				controllerCurrentOption = -1;
+				ControllerMovement(goingUp: false, goingRight: true);
+			}
+			else if (goingDown)
+			{
+				controllerCurrentBlock = 4;
+				ControllerMovement(goingUp: false, goingRight: true);
+			}
+			else
+			{
+				warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(beginAdventureButton.position);
+				Mouse.current.WarpCursorPosition(warpPosition);
+			}
+		}
+		else if (controllerCurrentBlock == 3)
+		{
+			if (goingUp)
+			{
+				controllerCurrentBlock = 1;
+				controllerCurrentOption = -1;
+				ControllerMovement(goingUp: false, goingRight: true);
+			}
+			else if (goingDown)
+			{
+				controllerCurrentBlock = 4;
+				ControllerMovement(goingUp: false, goingRight: true);
+			}
+			else
+			{
+				warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(botonFollow.transform.parent.position);
+				Mouse.current.WarpCursorPosition(warpPosition);
+			}
+		}
+		else if (controllerCurrentBlock == 4)
+		{
+			if (goingUp)
+			{
+				if (Functions.TransformIsVisible(botonFollow.transform))
+				{
+					controllerCurrentBlock = 3;
+					ControllerMovement(goingUp: false, goingRight: true);
+				}
+				else
+				{
+					controllerCurrentBlock = 2;
+					ControllerMovement(goingUp: false, goingRight: true);
+				}
+			}
+			else if (goingDown)
+			{
+				controllerCurrentBlock = 5;
+				ControllerMovement(goingUp: false, goingRight: true);
+			}
+			else
+			{
+				warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(madnessButton.position);
+				Mouse.current.WarpCursorPosition(warpPosition);
+			}
+		}
+		else if (controllerCurrentBlock == 5)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(sandboxButton.position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+		else if (controllerCurrentBlock == 6)
+		{
+			if (gameSeed.gameObject.activeSelf)
+			{
+				warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(gameSeed.position);
+				Mouse.current.WarpCursorPosition(warpPosition);
+			}
+			else
+			{
+				ControllerMovement(goingUp, goingRight, goingDown, goingLeft, absolutePosition);
+			}
+		}
+	}
 }

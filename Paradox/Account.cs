@@ -1,139 +1,176 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Paradox.Account
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
+using System;
+using System.Globalization;
+using System.Threading.Tasks;
 using PDX.SDK.Contracts.Credential;
 using PDX.SDK.Contracts.Enums;
 using PDX.SDK.Contracts.Enums.Errors;
 using PDX.SDK.Contracts.Service.Account.Result;
-using System;
-using System.Globalization;
-using System.Threading.Tasks;
 using UnityEngine;
 
-#nullable disable
-namespace Paradox
+namespace Paradox;
+
+public class Account
 {
-  public class Account
-  {
-    public static EmailAndPasswordCredential emailAndPasswordCredential;
-    private static Language lang;
-    private static Country country;
-    private static DateTime birthdate;
-    private static bool marketing;
-    private static string email;
+	public static EmailAndPasswordCredential emailAndPasswordCredential;
 
-    public static string Email => Paradox.Account.email;
+	private static Language lang;
 
-    public static void SetEmailAndPasswordCredential(string _email, string _password)
-    {
-      Paradox.Account.email = _email;
-      Paradox.Account.emailAndPasswordCredential = new EmailAndPasswordCredential(_email, _password);
-    }
+	private static Country country;
 
-    public static void SetLang() => Paradox.Account.lang = Paradox.Startup.GetLangFromGlobalLang();
+	private static DateTime birthdate;
 
-    public static void SetCountry(string _country)
-    {
-      Paradox.Account.country = (Country) Enum.Parse(typeof (Country), _country.Substring(0, 2));
-    }
+	private static bool marketing;
 
-    public static void SetBirthdate(string _date)
-    {
-      Paradox.Account.birthdate = DateTime.ParseExact(_date, "yyyy-MM-dd", (IFormatProvider) CultureInfo.InvariantCulture);
-    }
+	private static string email;
 
-    public static void SetMarketingPermission(bool _marketing) => Paradox.Account.marketing = _marketing;
+	public static string Email => email;
 
-    public static async Task CreateParadoxAccount()
-    {
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) nameof (CreateParadoxAccount));
-      await Paradox.Account.HandleLoginResult((LoginResult) await Paradox.Startup.PDXContext.Account.Create(Paradox.Account.emailAndPasswordCredential, Paradox.Account.lang, Paradox.Account.country, Paradox.Account.birthdate, marketingPermission: Paradox.Account.marketing));
-    }
+	public static void SetEmailAndPasswordCredential(string _email, string _password)
+	{
+		email = _email;
+		emailAndPasswordCredential = new EmailAndPasswordCredential(_email, _password);
+	}
 
-    public static async Task LoginWithEmailAndPassword()
-    {
-      await Paradox.Account.HandleLoginResult(await Paradox.Startup.PDXContext.Account.Login((ICredential) Paradox.Account.emailAndPasswordCredential));
-    }
+	public static void SetLang()
+	{
+		lang = Paradox.Startup.GetLangFromGlobalLang();
+	}
 
-    public static async Task LoginWithSessionToken(string _token = "")
-    {
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) "LoginWithSessionToken()");
-      LoginResult loginResult = await Paradox.Startup.PDXContext.Account.Login((ICredential) new SessionToken(GameManager.Instance.PDXCliToken));
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) ("loginResult=>" + loginResult?.ToString()));
-      await Paradox.Account.HandleLoginResult(loginResult);
-    }
+	public static void SetCountry(string _country)
+	{
+		country = (Country)Enum.Parse(typeof(Country), _country.Substring(0, 2));
+	}
 
-    public static async Task LoginWithRefreshToken()
-    {
-      await Paradox.Account.HandleLoginResult(await Paradox.Startup.PDXContext.Account.Login((ICredential) new RefreshToken()));
-    }
+	public static void SetBirthdate(string _date)
+	{
+		birthdate = DateTime.ParseExact(_date, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+	}
 
-    public static async Task Startup()
-    {
-      StartupResult message = await Paradox.Startup.PDXContext.Account.Startup();
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) message);
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) ("IsLoggedIn=>" + message.IsLoggedIn.ToString()));
-      await Paradox.Account.HandleLoginResult((LoginResult) message);
-    }
+	public static void SetMarketingPermission(bool _marketing)
+	{
+		marketing = _marketing;
+	}
 
-    public static async Task GetEmail()
-    {
-      Paradox.Account.email = (await Paradox.Startup.PDXContext.Account.GetDetails()).Email;
-    }
+	public static async Task CreateParadoxAccount()
+	{
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("CreateParadoxAccount");
+		}
+		await HandleLoginResult(await Paradox.Startup.PDXContext.Account.Create(emailAndPasswordCredential, lang, country, birthdate, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, marketing));
+	}
 
-    public static async Task HandleLoginResult(LoginResult loginResult)
-    {
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) nameof (HandleLoginResult));
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) loginResult);
-      if (loginResult.Success)
-      {
-        if (GameManager.Instance.GetDeveloperMode())
-          Debug.Log((object) "[LoginResult] Success");
-        if (GameManager.Instance.GetDeveloperMode())
-          Debug.Log((object) ("UserId=>" + loginResult.UserId));
-        if (GameManager.Instance.GetDeveloperMode())
-          Debug.Log((object) ("SessionToken=>" + loginResult.SessionToken));
-        Paradox.Startup.userId = loginResult.UserId;
-        Paradox.Startup.userToken = loginResult.SessionToken;
-        await Profile.ProfileGet();
-        await Paradox.Account.GetEmail();
-        Paradox.Startup.isLoggedIn = true;
-        MainMenuManager.Instance.ShowPDXLogged();
-      }
-      else
-      {
-        if (GameManager.Instance.GetDeveloperMode())
-          Debug.Log((object) ("[LoginResult] Error => " + loginResult.Error?.ToString()));
-        if (loginResult.Error == (Enum) NotAuthorized.InvalidAuthentication)
-          MainMenuManager.Instance.ShowPDXError("pdxErrorInvalidAuthentication");
-        else if (loginResult.Error == BaseCategory.InvalidNetworkResponse)
-          MainMenuManager.Instance.ShowPDXError("pdxErrorInvalidAuthentication");
-        else if (loginResult.Error == BaseCategory.NotAuthorized)
-          MainMenuManager.Instance.ShowPDXError("pdxErrorInvalidAuthentication");
-        else
-          MainMenuManager.Instance.ShowPDXError("pdxErrorMiscErrorRetry");
-      }
-      Paradox.Startup.loginFinished = true;
-    }
+	public static async Task LoginWithEmailAndPassword()
+	{
+		await HandleLoginResult(await Paradox.Startup.PDXContext.Account.Login(emailAndPasswordCredential));
+	}
 
-    public static async Task Logout()
-    {
-      if (GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) nameof (Logout));
-      if ((await Paradox.Startup.PDXContext.Account.Logout()).Success && GameManager.Instance.GetDeveloperMode())
-        Debug.Log((object) "User Logout success");
-      Paradox.Startup.isLoggedIn = false;
-      MainMenuManager.Instance.ShowPDXLogin();
-    }
-  }
+	public static async Task LoginWithSessionToken(string _token = "")
+	{
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("LoginWithSessionToken()");
+		}
+		LoginResult loginResult = await Paradox.Startup.PDXContext.Account.Login(new SessionToken(GameManager.Instance.PDXCliToken));
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("loginResult=>" + loginResult);
+		}
+		await HandleLoginResult(loginResult);
+	}
+
+	public static async Task LoginWithRefreshToken()
+	{
+		await HandleLoginResult(await Paradox.Startup.PDXContext.Account.Login(new RefreshToken()));
+	}
+
+	public static async Task Startup()
+	{
+		StartupResult startupResult = await Paradox.Startup.PDXContext.Account.Startup();
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log(startupResult);
+		}
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("IsLoggedIn=>" + startupResult.IsLoggedIn);
+		}
+		await HandleLoginResult(startupResult);
+	}
+
+	public static async Task GetEmail()
+	{
+		email = (await Paradox.Startup.PDXContext.Account.GetDetails()).Email;
+	}
+
+	public static async Task HandleLoginResult(LoginResult loginResult)
+	{
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("HandleLoginResult");
+		}
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log(loginResult);
+		}
+		if (loginResult.Success)
+		{
+			if (GameManager.Instance.GetDeveloperMode())
+			{
+				Debug.Log("[LoginResult] Success");
+			}
+			if (GameManager.Instance.GetDeveloperMode())
+			{
+				Debug.Log("UserId=>" + loginResult.UserId);
+			}
+			if (GameManager.Instance.GetDeveloperMode())
+			{
+				Debug.Log("SessionToken=>" + loginResult.SessionToken);
+			}
+			Paradox.Startup.userId = loginResult.UserId;
+			Paradox.Startup.userToken = loginResult.SessionToken;
+			await Profile.ProfileGet();
+			await GetEmail();
+			Paradox.Startup.isLoggedIn = true;
+			MainMenuManager.Instance.ShowPDXLogged();
+		}
+		else
+		{
+			if (GameManager.Instance.GetDeveloperMode())
+			{
+				Debug.Log("[LoginResult] Error => " + loginResult.Error);
+			}
+			if (loginResult.Error == NotAuthorized.InvalidAuthentication)
+			{
+				MainMenuManager.Instance.ShowPDXError("pdxErrorInvalidAuthentication");
+			}
+			else if (loginResult.Error == BaseCategory.InvalidNetworkResponse)
+			{
+				MainMenuManager.Instance.ShowPDXError("pdxErrorInvalidAuthentication");
+			}
+			else if (loginResult.Error == BaseCategory.NotAuthorized)
+			{
+				MainMenuManager.Instance.ShowPDXError("pdxErrorInvalidAuthentication");
+			}
+			else
+			{
+				MainMenuManager.Instance.ShowPDXError("pdxErrorMiscErrorRetry");
+			}
+		}
+		Paradox.Startup.loginFinished = true;
+	}
+
+	public static async Task Logout()
+	{
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("Logout");
+		}
+		if ((await Paradox.Startup.PDXContext.Account.Logout()).Success && GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("User Logout success");
+		}
+		Paradox.Startup.isLoggedIn = false;
+		MainMenuManager.Instance.ShowPDXLogin();
+	}
 }

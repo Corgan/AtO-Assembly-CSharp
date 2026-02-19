@@ -1,389 +1,712 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: NPCData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections.Generic;
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New NPC", menuName = "NPC Data", order = 54)]
 public class NPCData : ScriptableObject
 {
-  [SerializeField]
-  private string npcName = "";
-  [SerializeField]
-  private string scriptableObjectName = "";
-  [SerializeField]
-  private string id;
-  [SerializeField]
-  private string description;
-  [SerializeField]
-  private bool isBoss;
-  [SerializeField]
-  private bool isNamed;
-  [SerializeField]
-  public bool OnlyKillBossWhenHpZero;
-  [SerializeField]
-  private NPCData baseMonster;
-  [SerializeField]
-  private bool bigModel;
-  [SerializeField]
-  private bool finishCombatOnDead;
-  [SerializeField]
-  private bool female;
-  [Header("Tier and upgrade")]
-  [SerializeField]
-  private Enums.CombatTier tierMob;
-  [SerializeField]
-  private NPCData upgradedMob;
-  [Header("NG+ Id")]
-  [SerializeField]
-  private NPCData ngPlusMob;
-  [Header("Hell/Hard Id")]
-  [SerializeField]
-  private NPCData hellModeMob;
-  [Header("Obelisk Challenge")]
-  [SerializeField]
-  private int difficulty;
-  [SerializeField]
-  private Enums.CardTargetPosition preferredPosition;
-  [Header("Game objects")]
-  [SerializeField]
-  private GameObject gameObjectAnimated;
-  [SerializeField]
-  private Sprite sprite;
-  [SerializeField]
-  private Sprite spriteSpeed;
-  [SerializeField]
-  private Sprite spritePortrait;
-  [SerializeField]
-  private float posBottom;
-  [SerializeField]
-  private float fluffOffsetX;
-  [SerializeField]
-  private float fluffOffsetY;
-  [Header("Alternative Game objects")]
-  [SerializeField]
-  private GameObject gameObjectAnimatedAlternate;
-  [SerializeField]
-  private Sprite spriteSpeedAlternate;
-  [SerializeField]
-  private Sprite spritePortraitAlternate;
-  [Header("Sound")]
-  [SerializeField]
-  private AudioClip hitSound;
-  [Header("Sound (new)")]
-  [SerializeField]
-  private List<AudioClip> hitSoundRework;
-  [Header("Stats")]
-  [SerializeField]
-  private int hp;
-  [SerializeField]
-  private int energy;
-  [SerializeField]
-  private int energyTurn;
-  [SerializeField]
-  private int speed;
-  [Header("Resits")]
-  [SerializeField]
-  private int resistSlashing;
-  [SerializeField]
-  private int resistBlunt;
-  [SerializeField]
-  private int resistPiercing;
-  [SerializeField]
-  private int resistFire;
-  [SerializeField]
-  private int resistCold;
-  [SerializeField]
-  private int resistLightning;
-  [SerializeField]
-  private int resistMind;
-  [SerializeField]
-  private int resistHoly;
-  [SerializeField]
-  private int resistShadow;
-  [Header("Immunities")]
-  [SerializeField]
-  private List<string> auracurseImmune = new List<string>();
-  [Header("Cards")]
-  [SerializeField]
-  private int cardsInHand;
-  [SerializeField]
-  private global::AICards[] aiCards;
-  [Header("Rewards")]
-  [SerializeField]
-  private int experienceReward;
-  [SerializeField]
-  private int goldReward;
-  [SerializeField]
-  private TierRewardData tierReward;
+	[SerializeField]
+	private string npcName = "";
 
-  public AudioClip GetHitSound(int _soundIndex = 0)
-  {
-    if (GameManager.Instance.ConfigUseLegacySoundsSheepOwl && (Object) this.hitSound != (Object) null && (this.hitSound.name == "sheephit" || this.hitSound.name == "owl_hoot_1" || this.hitSound.name == "owl_hoot_2") || GameManager.Instance.ConfigUseLegacySounds || this.hitSoundRework == null || this.hitSoundRework.Count <= 0)
-      return this.hitSound;
-    int index = _soundIndex % this.hitSoundRework.Count;
-    return index < this.hitSoundRework.Count && (Object) this.hitSoundRework[index] != (Object) null ? this.hitSoundRework[index] : this.hitSound;
-  }
+	[SerializeField]
+	private string scriptableObjectName = "";
 
-  public string NPCName
-  {
-    get => this.npcName;
-    set => this.npcName = value;
-  }
+	[SerializeField]
+	private string id;
 
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
+	[SerializeField]
+	private string description;
 
-  public string Description
-  {
-    get => this.description;
-    set => this.description = value;
-  }
+	[SerializeField]
+	private bool isBoss;
 
-  public bool IsBoss
-  {
-    get => this.isBoss;
-    set => this.isBoss = value;
-  }
+	[SerializeField]
+	private bool isNamed;
 
-  public bool BigModel
-  {
-    get => this.bigModel;
-    set => this.bigModel = value;
-  }
+	[SerializeField]
+	public bool OnlyKillBossWhenHpZero;
 
-  public bool FinishCombatOnDead
-  {
-    get => this.finishCombatOnDead;
-    set => this.finishCombatOnDead = value;
-  }
+	[SerializeField]
+	private NPCData baseMonster;
 
-  public int Difficulty
-  {
-    get => this.difficulty;
-    set => this.difficulty = value;
-  }
+	[SerializeField]
+	private bool bigModel;
 
-  public Enums.CardTargetPosition PreferredPosition
-  {
-    get => this.preferredPosition;
-    set => this.preferredPosition = value;
-  }
+	[SerializeField]
+	private bool finishCombatOnDead;
 
-  public GameObject GameObjectAnimated
-  {
-    get => this.gameObjectAnimated;
-    set => this.gameObjectAnimated = value;
-  }
+	[SerializeField]
+	private bool female;
 
-  public GameObject GameObjectAnimatedAlternate
-  {
-    get => this.gameObjectAnimatedAlternate;
-    set => this.gameObjectAnimatedAlternate = value;
-  }
+	[Header("Tier and upgrade")]
+	[SerializeField]
+	private Enums.CombatTier tierMob;
 
-  public Sprite Sprite => this.sprite;
+	[SerializeField]
+	private NPCData upgradedMob;
 
-  public Sprite SpriteSpeed => this.spriteSpeed;
+	[Header("NG+ Id")]
+	[SerializeField]
+	private NPCData ngPlusMob;
 
-  public Sprite SpriteSpeedAlternate => this.spriteSpeedAlternate;
+	[Header("Hell/Hard Id")]
+	[SerializeField]
+	private NPCData hellModeMob;
 
-  public float PosBottom
-  {
-    get => this.posBottom;
-    set => this.posBottom = value;
-  }
+	[Header("Obelisk Challenge")]
+	[SerializeField]
+	private int difficulty;
 
-  public int Hp
-  {
-    get => this.hp;
-    set => this.hp = value;
-  }
+	[SerializeField]
+	private Enums.CardTargetPosition preferredPosition;
 
-  public int Energy
-  {
-    get => this.energy;
-    set => this.energy = value;
-  }
+	[Header("Game objects")]
+	[SerializeField]
+	private GameObject gameObjectAnimated;
 
-  public int EnergyTurn
-  {
-    get => this.energyTurn;
-    set => this.energyTurn = value;
-  }
+	[SerializeField]
+	private Sprite sprite;
 
-  public int Speed
-  {
-    get => this.speed;
-    set => this.speed = value;
-  }
+	[SerializeField]
+	private Sprite spriteSpeed;
 
-  public int ResistSlashing
-  {
-    get => this.resistSlashing;
-    set => this.resistSlashing = value;
-  }
+	[SerializeField]
+	private Sprite spritePortrait;
 
-  public int ResistBlunt
-  {
-    get => this.resistBlunt;
-    set => this.resistBlunt = value;
-  }
+	[SerializeField]
+	private float posBottom;
 
-  public int ResistPiercing
-  {
-    get => this.resistPiercing;
-    set => this.resistPiercing = value;
-  }
+	[SerializeField]
+	private float fluffOffsetX;
 
-  public int ResistFire
-  {
-    get => this.resistFire;
-    set => this.resistFire = value;
-  }
+	[SerializeField]
+	private float fluffOffsetY;
 
-  public int ResistCold
-  {
-    get => this.resistCold;
-    set => this.resistCold = value;
-  }
+	[Header("Alternative Game objects")]
+	[SerializeField]
+	private GameObject gameObjectAnimatedAlternate;
 
-  public int ResistLightning
-  {
-    get => this.resistLightning;
-    set => this.resistLightning = value;
-  }
+	[SerializeField]
+	private Sprite spriteSpeedAlternate;
 
-  public int ResistMind
-  {
-    get => this.resistMind;
-    set => this.resistMind = value;
-  }
+	[SerializeField]
+	private Sprite spritePortraitAlternate;
 
-  public int ResistHoly
-  {
-    get => this.resistHoly;
-    set => this.resistHoly = value;
-  }
+	[Header("Sound")]
+	[SerializeField]
+	private AudioClip hitSound;
 
-  public int ResistShadow
-  {
-    get => this.resistShadow;
-    set => this.resistShadow = value;
-  }
+	[Header("Sound (new)")]
+	[SerializeField]
+	public List<AudioClip> hitSoundRework;
 
-  public global::AICards[] AICards
-  {
-    get => this.aiCards;
-    set => this.aiCards = value;
-  }
+	[Header("Stats")]
+	[SerializeField]
+	private int hp;
 
-  public int CardsInHand
-  {
-    get => this.cardsInHand;
-    set => this.cardsInHand = value;
-  }
+	[SerializeField]
+	private int energy;
 
-  public int ExperienceReward
-  {
-    get => this.experienceReward;
-    set => this.experienceReward = value;
-  }
+	[SerializeField]
+	private int energyTurn;
 
-  public int GoldReward
-  {
-    get => this.goldReward;
-    set => this.goldReward = value;
-  }
+	[SerializeField]
+	private int speed;
 
-  public TierRewardData TierReward
-  {
-    get => this.tierReward;
-    set => this.tierReward = value;
-  }
+	[Header("Resits")]
+	[SerializeField]
+	private int resistSlashing;
 
-  public Sprite SpritePortrait
-  {
-    get => this.spritePortrait;
-    set => this.spritePortrait = value;
-  }
+	[SerializeField]
+	private int resistBlunt;
 
-  public Sprite SpritePortraitAlternate
-  {
-    get => this.spritePortraitAlternate;
-    set => this.spritePortraitAlternate = value;
-  }
+	[SerializeField]
+	private int resistPiercing;
 
-  public List<string> AuracurseImmune
-  {
-    get => this.auracurseImmune;
-    set => this.auracurseImmune = value;
-  }
+	[SerializeField]
+	private int resistFire;
 
-  public float FluffOffsetX
-  {
-    get => this.fluffOffsetX;
-    set => this.fluffOffsetX = value;
-  }
+	[SerializeField]
+	private int resistCold;
 
-  public float FluffOffsetY
-  {
-    get => this.fluffOffsetY;
-    set => this.fluffOffsetY = value;
-  }
+	[SerializeField]
+	private int resistLightning;
 
-  public Enums.CombatTier TierMob
-  {
-    get => this.tierMob;
-    set => this.tierMob = value;
-  }
+	[SerializeField]
+	private int resistMind;
 
-  public NPCData UpgradedMob
-  {
-    get => this.upgradedMob;
-    set => this.upgradedMob = value;
-  }
+	[SerializeField]
+	private int resistHoly;
 
-  public NPCData NgPlusMob
-  {
-    get => this.ngPlusMob;
-    set => this.ngPlusMob = value;
-  }
+	[SerializeField]
+	private int resistShadow;
 
-  public bool IsNamed
-  {
-    get => this.isNamed;
-    set => this.isNamed = value;
-  }
+	[Header("Immunities")]
+	[SerializeField]
+	private List<string> auracurseImmune = new List<string>();
 
-  public NPCData HellModeMob
-  {
-    get => this.hellModeMob;
-    set => this.hellModeMob = value;
-  }
+	[Header("Cards")]
+	[SerializeField]
+	private int cardsInHand;
 
-  public string ScriptableObjectName
-  {
-    get => this.scriptableObjectName;
-    set => this.scriptableObjectName = value;
-  }
+	[SerializeField]
+	private AICards[] aiCards;
 
-  public bool Female
-  {
-    get => this.female;
-    set => this.female = value;
-  }
+	[Header("Rewards")]
+	[SerializeField]
+	private int experienceReward;
 
-  public NPCData BaseMonster
-  {
-    get => this.baseMonster;
-    set => this.baseMonster = value;
-  }
+	[SerializeField]
+	private int goldReward;
+
+	[SerializeField]
+	private TierRewardData tierReward;
+
+	public string NPCName
+	{
+		get
+		{
+			return npcName;
+		}
+		set
+		{
+			npcName = value;
+		}
+	}
+
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
+
+	public string Description
+	{
+		get
+		{
+			return description;
+		}
+		set
+		{
+			description = value;
+		}
+	}
+
+	public bool IsBoss
+	{
+		get
+		{
+			return isBoss;
+		}
+		set
+		{
+			isBoss = value;
+		}
+	}
+
+	public bool BigModel
+	{
+		get
+		{
+			return bigModel;
+		}
+		set
+		{
+			bigModel = value;
+		}
+	}
+
+	public bool FinishCombatOnDead
+	{
+		get
+		{
+			return finishCombatOnDead;
+		}
+		set
+		{
+			finishCombatOnDead = value;
+		}
+	}
+
+	public int Difficulty
+	{
+		get
+		{
+			return difficulty;
+		}
+		set
+		{
+			difficulty = value;
+		}
+	}
+
+	public Enums.CardTargetPosition PreferredPosition
+	{
+		get
+		{
+			return preferredPosition;
+		}
+		set
+		{
+			preferredPosition = value;
+		}
+	}
+
+	public GameObject GameObjectAnimated
+	{
+		get
+		{
+			return gameObjectAnimated;
+		}
+		set
+		{
+			gameObjectAnimated = value;
+		}
+	}
+
+	public GameObject GameObjectAnimatedAlternate
+	{
+		get
+		{
+			return gameObjectAnimatedAlternate;
+		}
+		set
+		{
+			gameObjectAnimatedAlternate = value;
+		}
+	}
+
+	public Sprite Sprite => sprite;
+
+	public Sprite SpriteSpeed
+	{
+		get
+		{
+			return spriteSpeed;
+		}
+		set
+		{
+			spriteSpeed = value;
+		}
+	}
+
+	public Sprite SpriteSpeedAlternate => spriteSpeedAlternate;
+
+	public float PosBottom
+	{
+		get
+		{
+			return posBottom;
+		}
+		set
+		{
+			posBottom = value;
+		}
+	}
+
+	public int Hp
+	{
+		get
+		{
+			return hp;
+		}
+		set
+		{
+			hp = value;
+		}
+	}
+
+	public int Energy
+	{
+		get
+		{
+			return energy;
+		}
+		set
+		{
+			energy = value;
+		}
+	}
+
+	public int EnergyTurn
+	{
+		get
+		{
+			return energyTurn;
+		}
+		set
+		{
+			energyTurn = value;
+		}
+	}
+
+	public int Speed
+	{
+		get
+		{
+			return speed;
+		}
+		set
+		{
+			speed = value;
+		}
+	}
+
+	public int ResistSlashing
+	{
+		get
+		{
+			return resistSlashing;
+		}
+		set
+		{
+			resistSlashing = value;
+		}
+	}
+
+	public int ResistBlunt
+	{
+		get
+		{
+			return resistBlunt;
+		}
+		set
+		{
+			resistBlunt = value;
+		}
+	}
+
+	public int ResistPiercing
+	{
+		get
+		{
+			return resistPiercing;
+		}
+		set
+		{
+			resistPiercing = value;
+		}
+	}
+
+	public int ResistFire
+	{
+		get
+		{
+			return resistFire;
+		}
+		set
+		{
+			resistFire = value;
+		}
+	}
+
+	public int ResistCold
+	{
+		get
+		{
+			return resistCold;
+		}
+		set
+		{
+			resistCold = value;
+		}
+	}
+
+	public int ResistLightning
+	{
+		get
+		{
+			return resistLightning;
+		}
+		set
+		{
+			resistLightning = value;
+		}
+	}
+
+	public int ResistMind
+	{
+		get
+		{
+			return resistMind;
+		}
+		set
+		{
+			resistMind = value;
+		}
+	}
+
+	public int ResistHoly
+	{
+		get
+		{
+			return resistHoly;
+		}
+		set
+		{
+			resistHoly = value;
+		}
+	}
+
+	public int ResistShadow
+	{
+		get
+		{
+			return resistShadow;
+		}
+		set
+		{
+			resistShadow = value;
+		}
+	}
+
+	public AICards[] AICards
+	{
+		get
+		{
+			return aiCards;
+		}
+		set
+		{
+			aiCards = value;
+		}
+	}
+
+	public int CardsInHand
+	{
+		get
+		{
+			return cardsInHand;
+		}
+		set
+		{
+			cardsInHand = value;
+		}
+	}
+
+	public AudioClip HitSound
+	{
+		get
+		{
+			return hitSound;
+		}
+		set
+		{
+			hitSound = value;
+		}
+	}
+
+	public int ExperienceReward
+	{
+		get
+		{
+			return experienceReward;
+		}
+		set
+		{
+			experienceReward = value;
+		}
+	}
+
+	public int GoldReward
+	{
+		get
+		{
+			return goldReward;
+		}
+		set
+		{
+			goldReward = value;
+		}
+	}
+
+	public TierRewardData TierReward
+	{
+		get
+		{
+			return tierReward;
+		}
+		set
+		{
+			tierReward = value;
+		}
+	}
+
+	public Sprite SpritePortrait
+	{
+		get
+		{
+			return spritePortrait;
+		}
+		set
+		{
+			spritePortrait = value;
+		}
+	}
+
+	public Sprite SpritePortraitAlternate
+	{
+		get
+		{
+			return spritePortraitAlternate;
+		}
+		set
+		{
+			spritePortraitAlternate = value;
+		}
+	}
+
+	public List<string> AuracurseImmune
+	{
+		get
+		{
+			return auracurseImmune;
+		}
+		set
+		{
+			auracurseImmune = value;
+		}
+	}
+
+	public float FluffOffsetX
+	{
+		get
+		{
+			return fluffOffsetX;
+		}
+		set
+		{
+			fluffOffsetX = value;
+		}
+	}
+
+	public float FluffOffsetY
+	{
+		get
+		{
+			return fluffOffsetY;
+		}
+		set
+		{
+			fluffOffsetY = value;
+		}
+	}
+
+	public Enums.CombatTier TierMob
+	{
+		get
+		{
+			return tierMob;
+		}
+		set
+		{
+			tierMob = value;
+		}
+	}
+
+	public NPCData UpgradedMob
+	{
+		get
+		{
+			return upgradedMob;
+		}
+		set
+		{
+			upgradedMob = value;
+		}
+	}
+
+	public NPCData NgPlusMob
+	{
+		get
+		{
+			return ngPlusMob;
+		}
+		set
+		{
+			ngPlusMob = value;
+		}
+	}
+
+	public bool IsNamed
+	{
+		get
+		{
+			return isNamed;
+		}
+		set
+		{
+			isNamed = value;
+		}
+	}
+
+	public NPCData HellModeMob
+	{
+		get
+		{
+			return hellModeMob;
+		}
+		set
+		{
+			hellModeMob = value;
+		}
+	}
+
+	public string ScriptableObjectName
+	{
+		get
+		{
+			return scriptableObjectName;
+		}
+		set
+		{
+			scriptableObjectName = value;
+		}
+	}
+
+	public bool Female
+	{
+		get
+		{
+			return female;
+		}
+		set
+		{
+			female = value;
+		}
+	}
+
+	public NPCData BaseMonster
+	{
+		get
+		{
+			return baseMonster;
+		}
+		set
+		{
+			baseMonster = value;
+		}
+	}
+
+	public AudioClip GetHitSound(int _soundIndex = 0)
+	{
+		if (GameManager.Instance.ConfigUseLegacySoundsSheepOwl && hitSound != null && (hitSound.name == "sheephit" || hitSound.name == "owl_hoot_1" || hitSound.name == "owl_hoot_2"))
+		{
+			return hitSound;
+		}
+		if (!GameManager.Instance.ConfigUseLegacySounds && hitSoundRework != null && hitSoundRework.Count > 0)
+		{
+			int num = _soundIndex % hitSoundRework.Count;
+			if (num < hitSoundRework.Count && hitSoundRework[num] != null)
+			{
+				return hitSoundRework[num];
+			}
+		}
+		return hitSound;
+	}
 }

@@ -1,452 +1,597 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: Node
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-#nullable disable
 public class Node : MonoBehaviour
 {
-  public NodeData nodeData;
-  public SpriteRenderer background;
-  public Transform plainT;
-  public Transform currentT;
-  public Transform blockedT;
-  public Transform availableT;
-  public Transform visitedT;
-  public Transform chestT;
-  public Transform requisiteLayer;
-  public Transform requisite;
-  public SpriteRenderer requisiteSprite;
-  public SpriteRenderer requisiteSpriteShadow;
-  public Transform requisite2;
-  public SpriteRenderer requisite2Sprite;
-  public SpriteRenderer requisite2SpriteShadow;
-  public Transform requisite3;
-  public SpriteRenderer requisite3Sprite;
-  public SpriteRenderer requisite3SpriteShadow;
-  public SpriteRenderer nodeImage;
-  public SpriteRenderer nodeDecor;
-  public Sprite nodeImageTown;
-  public Sprite nodeImageCombat;
-  public Sprite nodeImageCombatRare;
-  public Sprite nodeImageFinalBoss;
-  public Sprite nodeImageEvent;
-  public Transform nodeImageParticlesT;
-  private ParticleSystem nodeImageParticlesSystem;
-  private SpriteRenderer availableSR;
-  private SpriteRenderer plainSR;
-  private Animator anim;
-  private bool highlightedNode;
-  private Color colorReset = new Color(1f, 1f, 1f, 1f);
-  private Color colorAvailable = new Color(0.27f, 0.85f, 0.27f);
-  private Color colorAvailableOff = new Color(1f, 0.46f, 0.82f, 0.85f);
-  private int nodeNumeral;
-  public string action;
-  public string actionId;
-  public Transform playersMarkT;
-  public Transform[] playersMark;
-  public SpriteRenderer[] playersMarkSpr;
+	public NodeData nodeData;
 
-  private void Awake()
-  {
-    this.plainSR = this.plainT.GetComponent<SpriteRenderer>();
-    this.availableSR = this.availableT.GetComponent<SpriteRenderer>();
-    this.nodeImageParticlesSystem = this.nodeImageParticlesT.GetComponent<ParticleSystem>();
-    this.anim = this.nodeImage.transform.GetComponent<Animator>();
-    this.requisiteLayer.gameObject.SetActive(false);
-    this.requisite.gameObject.SetActive(false);
-    this.requisite2.gameObject.SetActive(false);
-    this.requisite3.gameObject.SetActive(false);
-  }
+	public SpriteRenderer background;
 
-  private void StartNode()
-  {
-    this.nodeDecor.sprite = (Sprite) null;
-    this.chestT.gameObject.SetActive(false);
-    if (!((UnityEngine.Object) this.plainSR == (UnityEngine.Object) null))
-      return;
-    this.plainSR = this.plainT.GetComponent<SpriteRenderer>();
-    this.availableSR = this.availableT.GetComponent<SpriteRenderer>();
-    this.anim = this.nodeImage.transform.GetComponent<Animator>();
-  }
+	public Transform plainT;
 
-  public void InitNode()
-  {
-    this.StartNode();
-    if (!((UnityEngine.Object) this.nodeData != (UnityEngine.Object) null))
-      return;
-    string lower = this.nodeData.NodeId.ToLower();
-    this.gameObject.name = lower;
-    this.nodeNumeral = int.Parse(lower.Split('_', StringSplitOptions.None)[1]);
-  }
+	public Transform currentT;
 
-  public bool Exists() => !(this.GetNodeAssignedId() == "");
+	public Transform blockedT;
 
-  public string GetNodeAction()
-  {
-    return AtOManager.Instance.gameNodeAssigned.ContainsKey(this.nodeData.NodeId) ? AtOManager.Instance.gameNodeAssigned[this.nodeData.NodeId].Split(':', StringSplitOptions.None)[0] : "";
-  }
+	public Transform availableT;
 
-  public string GetNodeAssignedId()
-  {
-    if (AtOManager.Instance.gameNodeAssigned == null || !((UnityEngine.Object) this.nodeData != (UnityEngine.Object) null) || !AtOManager.Instance.gameNodeAssigned.ContainsKey(this.nodeData.NodeId))
-      return "";
-    string[] strArray = AtOManager.Instance.gameNodeAssigned[this.nodeData.NodeId].Split(':', StringSplitOptions.None);
-    return strArray != null && strArray.Length > 1 ? strArray[1] : "";
-  }
+	public Transform visitedT;
 
-  public void AssignNode()
-  {
-    this.chestT.gameObject.SetActive(false);
-    bool flag1 = false;
-    if (!((UnityEngine.Object) this.nodeData != (UnityEngine.Object) null))
-      return;
-    this.action = this.GetNodeAction();
-    this.actionId = this.GetNodeAssignedId();
-    if (this.actionId == "")
-    {
-      this.SetHidden();
-    }
-    else
-    {
-      if (this.nodeData.NodeId == "of1_10" || this.nodeData.NodeId == "of2_10")
-        flag1 = true;
-      if (this.nodeData.GoToTown)
-        this.nodeImage.sprite = this.nodeImageTown;
-      else if (this.action == "combat")
-      {
-        if (GameManager.Instance.IsObeliskChallenge() && AtOManager.Instance.NodeHaveBossRare(this.nodeData.NodeId) | flag1)
-        {
-          if ((UnityEngine.Object) this.nodeImageParticlesT != (UnityEngine.Object) null)
-          {
-            this.nodeImageParticlesT.gameObject.SetActive(true);
-            if ((UnityEngine.Object) this.nodeImageParticlesSystem == (UnityEngine.Object) null)
-              this.nodeImageParticlesSystem = this.nodeImageParticlesT.GetComponent<ParticleSystem>();
-            if ((UnityEngine.Object) this.nodeImageParticlesSystem != (UnityEngine.Object) null)
-              this.nodeImageParticlesSystem.main.startColor = ((this.nodeData.NodeCombatTier == Enums.CombatTier.T8 ? 1 : (this.nodeData.NodeCombatTier == Enums.CombatTier.T9 ? 1 : 0)) | (flag1 ? 1 : 0)) == 0 ? (ParticleSystem.MinMaxGradient) new Color(0.1f, 0.6f, 1f) : (ParticleSystem.MinMaxGradient) new Color(1f, 0.1f, 0.15f);
-          }
-          if (((this.nodeData.NodeCombatTier == Enums.CombatTier.T8 ? 1 : (this.nodeData.NodeCombatTier == Enums.CombatTier.T9 ? 1 : 0)) | (flag1 ? 1 : 0)) != 0)
-          {
-            this.nodeImage.sprite = this.nodeImageFinalBoss;
-          }
-          else
-          {
-            this.nodeImage.sprite = this.nodeImageCombatRare;
-            this.chestT.gameObject.SetActive(true);
-          }
-        }
-        else
-          this.nodeImage.sprite = this.nodeImageCombat;
-      }
-      else if (this.action == "event")
-      {
-        EventData eventData = Globals.Instance.GetEventData(this.actionId);
-        this.nodeImage.sprite = !((UnityEngine.Object) eventData != (UnityEngine.Object) null) || !((UnityEngine.Object) eventData.EventSpriteMap != (UnityEngine.Object) null) ? this.nodeImageEvent : eventData.EventSpriteMap;
-        if ((UnityEngine.Object) eventData != (UnityEngine.Object) null && (UnityEngine.Object) eventData.EventSpriteDecor != (UnityEngine.Object) null)
-          this.nodeDecor.sprite = eventData.EventSpriteDecor;
-        if ((UnityEngine.Object) eventData != (UnityEngine.Object) null && eventData.EventIconShader != Enums.MapIconShader.None)
-        {
-          int num = (UnityEngine.Object) this.anim != (UnityEngine.Object) null ? 1 : 0;
-          if ((UnityEngine.Object) this.nodeImageParticlesT != (UnityEngine.Object) null)
-          {
-            this.nodeImageParticlesT.gameObject.SetActive(true);
-            if ((UnityEngine.Object) this.nodeImageParticlesSystem == (UnityEngine.Object) null)
-              this.nodeImageParticlesSystem = this.nodeImageParticlesT.GetComponent<ParticleSystem>();
-            if ((UnityEngine.Object) this.nodeImageParticlesSystem != (UnityEngine.Object) null)
-            {
-              ParticleSystem.MainModule main = this.nodeImageParticlesSystem.main;
-              if (eventData.EventIconShader == Enums.MapIconShader.Green)
-                main.startColor = (ParticleSystem.MinMaxGradient) Color.green;
-              else if (eventData.EventIconShader == Enums.MapIconShader.Blue)
-                main.startColor = (ParticleSystem.MinMaxGradient) new Color(0.1f, 0.6f, 1f);
-              else if (eventData.EventIconShader == Enums.MapIconShader.Purple)
-                main.startColor = (ParticleSystem.MinMaxGradient) new Color(0.91f, 0.05f, 0.87f);
-              else if (eventData.EventIconShader == Enums.MapIconShader.Orange)
-                main.startColor = (ParticleSystem.MinMaxGradient) new Color(1f, 0.69f, 0.0f);
-              else if (eventData.EventIconShader == Enums.MapIconShader.Red)
-                main.startColor = (ParticleSystem.MinMaxGradient) Color.red;
-              else if (eventData.EventIconShader == Enums.MapIconShader.Black)
-                main.startColor = (ParticleSystem.MinMaxGradient) Color.black;
-            }
-          }
-        }
-        else if ((UnityEngine.Object) this.nodeImageParticlesT != (UnityEngine.Object) null)
-          this.nodeImageParticlesT.gameObject.SetActive(false);
-        this.requisiteLayer.gameObject.SetActive(false);
-        this.requisite.gameObject.SetActive(false);
-        this.requisite2.gameObject.SetActive(false);
-        this.requisite3.gameObject.SetActive(false);
-        if (!this.currentT.gameObject.activeSelf && !this.blockedT.gameObject.activeSelf && (UnityEngine.Object) eventData != (UnityEngine.Object) null)
-        {
-          bool flag2 = false;
-          bool flag3 = false;
-          for (int index = 0; index < eventData.Replys.Length; ++index)
-          {
-            EventReplyData reply = eventData.Replys[index];
-            if ((UnityEngine.Object) reply.Requirement != (UnityEngine.Object) null && (UnityEngine.Object) reply.Requirement.ItemSprite != (UnityEngine.Object) null && AtOManager.Instance.PlayerHasRequirement(reply.Requirement))
-            {
-              if (!flag2)
-              {
-                this.requisiteSprite.GetComponent<EventItemTrack>().SetItemTrack(Globals.Instance.GetRequirementData(reply.Requirement.RequirementId));
-                this.requisiteSprite.sprite = this.requisiteSpriteShadow.sprite = reply.Requirement.ItemSprite;
-                this.requisite.gameObject.SetActive(true);
-                flag2 = true;
-              }
-              else if (!flag3)
-              {
-                if ((UnityEngine.Object) reply.Requirement.ItemSprite != (UnityEngine.Object) this.requisiteSprite.sprite)
-                {
-                  this.requisite2Sprite.GetComponent<EventItemTrack>().SetItemTrack(Globals.Instance.GetRequirementData(reply.Requirement.RequirementId));
-                  this.requisite2Sprite.sprite = this.requisite2SpriteShadow.sprite = reply.Requirement.ItemSprite;
-                  this.requisite2.gameObject.SetActive(true);
-                  flag3 = true;
-                }
-              }
-              else if ((UnityEngine.Object) reply.Requirement.ItemSprite != (UnityEngine.Object) this.requisiteSprite.sprite && (UnityEngine.Object) reply.Requirement.ItemSprite != (UnityEngine.Object) this.requisite2Sprite.sprite)
-              {
-                this.requisite3Sprite.GetComponent<EventItemTrack>().SetItemTrack(Globals.Instance.GetRequirementData(reply.Requirement.RequirementId));
-                this.requisite3Sprite.sprite = this.requisite3SpriteShadow.sprite = reply.Requirement.ItemSprite;
-                this.requisite3.gameObject.SetActive(true);
-              }
-              if (this.requisite.gameObject.activeSelf || this.requisite2.gameObject.activeSelf || this.requisite3.gameObject.activeSelf)
-                this.requisiteLayer.gameObject.SetActive(true);
-            }
-          }
-        }
-      }
-      this.AssignBackground();
-    }
-  }
+	public Transform chestT;
 
-  public void AssignBackground()
-  {
-    if (!((UnityEngine.Object) this.nodeData.NodeBackgroundImg != (UnityEngine.Object) null))
-      return;
-    this.background.sprite = this.nodeData.NodeBackgroundImg;
-  }
+	public Transform requisiteLayer;
 
-  public IEnumerator ShowNode()
-  {
-    Node node = this;
-    for (int index = 0; index < node.transform.childCount; ++index)
-    {
-      if (node.transform.GetChild(index).gameObject.name.ToLower() == "mappiece")
-        yield break;
-    }
-    node.transform.localScale = Vector3.zero;
-    yield return (object) Globals.Instance.WaitForSeconds(0.2f);
-    float size = 0.0f;
-    float increment = 0.06f;
-    float delay = 0.01f;
-    while ((double) size < 1.2000000476837158)
-    {
-      size += increment;
-      node.transform.localScale = new Vector3(size, size, 1f);
-      yield return (object) Globals.Instance.WaitForSeconds(delay);
-    }
-    while ((double) size > 1.0)
-    {
-      size -= increment;
-      node.transform.localScale = new Vector3(size, size, 1f);
-      yield return (object) Globals.Instance.WaitForSeconds(delay);
-    }
-    node.transform.localScale = new Vector3(1f, 1f, 1f);
-  }
+	public Transform requisite;
 
-  public void SetHidden() => this.gameObject.SetActive(false);
+	public SpriteRenderer requisiteSprite;
 
-  public void SetPlain()
-  {
-    if (this.Exists())
-    {
-      this.HideStates();
-      this.plainT.gameObject.SetActive(true);
-      this.nodeImage.transform.gameObject.SetActive(true);
-      this.plainSR.color = this.colorReset;
-    }
-    else
-      this.SetHidden();
-  }
+	public SpriteRenderer requisiteSpriteShadow;
 
-  public void SetAvailable()
-  {
-    if (this.Exists())
-    {
-      this.plainT.gameObject.SetActive(false);
-      this.HideStates();
-      this.availableT.gameObject.SetActive(true);
-      if ((UnityEngine.Object) this.anim != (UnityEngine.Object) null)
-        this.anim.enabled = true;
-      if (!this.gameObject.activeSelf || !this.transform.parent.transform.parent.gameObject.activeSelf)
-        return;
-      this.StartCoroutine(this.ShowNode());
-    }
-    else
-      this.SetHidden();
-  }
+	public Transform requisite2;
 
-  public void SetActive()
-  {
-    if (this.Exists())
-    {
-      this.plainT.gameObject.SetActive(false);
-      this.nodeImage.transform.gameObject.SetActive(false);
-      this.HideStates();
-      this.currentT.gameObject.SetActive(true);
-      this.requisiteLayer.gameObject.SetActive(false);
-      this.requisite.gameObject.SetActive(false);
-      this.requisite2.gameObject.SetActive(false);
-      this.requisite3.gameObject.SetActive(false);
-    }
-    else
-      this.SetHidden();
-  }
+	public SpriteRenderer requisite2Sprite;
 
-  public void SetVisited()
-  {
-    if (this.Exists())
-    {
-      this.plainT.gameObject.SetActive(false);
-      this.nodeImage.transform.gameObject.SetActive(false);
-      this.HideStates();
-      this.visitedT.gameObject.SetActive(true);
-      this.requisiteLayer.gameObject.SetActive(false);
-      this.requisite.gameObject.SetActive(false);
-      this.requisite2.gameObject.SetActive(false);
-      this.requisite3.gameObject.SetActive(false);
-    }
-    else
-      this.SetHidden();
-  }
+	public SpriteRenderer requisite2SpriteShadow;
 
-  public void SetBlocked()
-  {
-    if (this.Exists())
-    {
-      this.plainT.gameObject.SetActive(false);
-      this.nodeImage.transform.gameObject.SetActive(false);
-      this.HideStates();
-      this.blockedT.gameObject.SetActive(true);
-      this.requisiteLayer.gameObject.SetActive(false);
-      this.requisite.gameObject.SetActive(false);
-      this.requisite2.gameObject.SetActive(false);
-      this.requisite3.gameObject.SetActive(false);
-    }
-    else
-      this.SetHidden();
-  }
+	public Transform requisite3;
 
-  private void HideStates()
-  {
-    this.availableT.gameObject.SetActive(false);
-    this.blockedT.gameObject.SetActive(false);
-    this.currentT.gameObject.SetActive(false);
-    this.visitedT.gameObject.SetActive(false);
-  }
+	public SpriteRenderer requisite3Sprite;
 
-  public void HighlightNode(bool status)
-  {
-    MapManager.Instance.DrawArrow(MapManager.Instance.nodeActive, this, status);
-    this.highlightedNode = status;
-    if (status)
-      this.availableSR.color = this.plainSR.color = this.colorAvailable;
-    else
-      this.availableSR.color = this.plainSR.color = this.colorReset;
-  }
+	public SpriteRenderer requisite3SpriteShadow;
 
-  private void HoverNode(bool status)
-  {
-    if (status)
-    {
-      if (!this.plainT.gameObject.activeSelf)
-        return;
-      this.plainSR.color = this.colorAvailableOff;
-    }
-    else
-    {
-      if (!this.plainT.gameObject.activeSelf)
-        return;
-      this.plainSR.color = this.colorReset;
-    }
-  }
+	public SpriteRenderer nodeImage;
 
-  public void ShowSelectedNode(string _nick)
-  {
-    for (int index = 0; index < this.playersMark.Length; ++index)
-    {
-      if (!this.playersMark[index].gameObject.activeSelf)
-      {
-        this.playersMark[index].gameObject.SetActive(true);
-        this.playersMarkSpr[index].color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(_nick));
-        this.playersMarkT.gameObject.SetActive(true);
-        break;
-      }
-    }
-  }
+	public SpriteRenderer nodeDecor;
 
-  public void ClearSelectedNode()
-  {
-    for (int index = 0; index < this.playersMark.Length; ++index)
-      this.playersMark[index].gameObject.SetActive(false);
-    this.playersMarkT.gameObject.SetActive(false);
-  }
+	public Sprite nodeImageTown;
 
-  public void OnMouseUp()
-  {
-    if (!Functions.ClickedThisTransform(this.transform) || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver() || MapManager.Instance.characterWindow.IsActive()) || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.selectedNode || (bool) (UnityEngine.Object) EventManager.Instance)
-      return;
-    GameManager.Instance.SetCursorPlain();
-    MapManager.Instance.HidePopup();
-    if (MapManager.Instance.CanTravelToThisNode(this))
-      MapManager.Instance.PlayerSelectedNode(this);
-    GameManager.Instance.PlayAudio(AudioManager.Instance.soundButtonClick);
-  }
+	public Sprite nodeImageCombat;
 
-  private void OnMouseOver()
-  {
-    if (!GameManager.Instance.GetDeveloperMode() || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver() || MapManager.Instance.characterWindow.IsActive()) || (bool) (UnityEngine.Object) EventManager.Instance || EventSystem.current.IsPointerOverGameObject() || !Input.GetMouseButtonUp(1) || GameManager.Instance.IsMultiplayer() && (!GameManager.Instance.IsMultiplayer() || !NetworkManager.Instance.IsMaster()))
-      return;
-    MapManager.Instance.TravelToThisNode(this);
-  }
+	public Sprite nodeImageCombatRare;
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (UnityEngine.Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (UnityEngine.Object) MapManager.Instance && (MapManager.Instance.IsCorruptionOver() || MapManager.Instance.IsConflictOver() || MapManager.Instance.characterWindow.IsActive()) || (bool) (UnityEngine.Object) EventManager.Instance || EventSystem.current.IsPointerOverGameObject() || !(this.GetNodeAssignedId() != ""))
-      return;
-    MapManager.Instance.ShowPopup(this);
-    GameManager.Instance.PlayLibraryAudio("ui_click");
-    if (MapManager.Instance.CanTravelToThisNode(this))
-    {
-      GameManager.Instance.SetCursorHover();
-      this.HighlightNode(true);
-    }
-    else
-      this.HoverNode(true);
-    if (!((UnityEngine.Object) MapManager.Instance.nodeActive != (UnityEngine.Object) this) || this.nodeData.NodeId == "sen_41" && (AtOManager.Instance.currentMapNode == "tutorial_0" || AtOManager.Instance.currentMapNode == "tutorial_1" || AtOManager.Instance.currentMapNode == "tutorial_2"))
-      return;
-    MapManager.Instance.DrawArrowsTemp(this);
-  }
+	public Sprite nodeImageFinalBoss;
 
-  public void OnMouseExit()
-  {
-    if (AlertManager.Instance.IsActive() || (bool) (UnityEngine.Object) EventManager.Instance)
-      return;
-    GameManager.Instance.SetCursorPlain();
-    if (EventSystem.current.IsPointerOverGameObject())
-      return;
-    MapManager.Instance.HidePopup();
-    if (this.highlightedNode)
-      this.HighlightNode(false);
-    else
-      this.HoverNode(false);
-    if (!((UnityEngine.Object) MapManager.Instance.nodeActive != (UnityEngine.Object) this))
-      return;
-    MapManager.Instance.HideArrowsTemp(this);
-  }
+	public Sprite nodeImageEvent;
+
+	public Transform nodeImageParticlesT;
+
+	private ParticleSystem nodeImageParticlesSystem;
+
+	private SpriteRenderer availableSR;
+
+	private SpriteRenderer plainSR;
+
+	private Animator anim;
+
+	private bool highlightedNode;
+
+	private Color colorReset = new Color(1f, 1f, 1f, 1f);
+
+	private Color colorAvailable = new Color(0.27f, 0.85f, 0.27f);
+
+	private Color colorAvailableOff = new Color(1f, 0.46f, 0.82f, 0.85f);
+
+	private int nodeNumeral;
+
+	public string action;
+
+	public string actionId;
+
+	public Transform playersMarkT;
+
+	public Transform[] playersMark;
+
+	public SpriteRenderer[] playersMarkSpr;
+
+	private void Awake()
+	{
+		plainSR = plainT.GetComponent<SpriteRenderer>();
+		availableSR = availableT.GetComponent<SpriteRenderer>();
+		nodeImageParticlesSystem = nodeImageParticlesT.GetComponent<ParticleSystem>();
+		anim = nodeImage.transform.GetComponent<Animator>();
+		requisiteLayer.gameObject.SetActive(value: false);
+		requisite.gameObject.SetActive(value: false);
+		requisite2.gameObject.SetActive(value: false);
+		requisite3.gameObject.SetActive(value: false);
+	}
+
+	private void StartNode()
+	{
+		nodeDecor.sprite = null;
+		chestT.gameObject.SetActive(value: false);
+		if (plainSR == null)
+		{
+			plainSR = plainT.GetComponent<SpriteRenderer>();
+			availableSR = availableT.GetComponent<SpriteRenderer>();
+			anim = nodeImage.transform.GetComponent<Animator>();
+		}
+	}
+
+	public void InitNode()
+	{
+		StartNode();
+		if (nodeData != null)
+		{
+			string text = nodeData.NodeId.ToLower();
+			base.gameObject.name = text;
+			nodeNumeral = int.Parse(text.Split('_')[1]);
+		}
+	}
+
+	public bool Exists()
+	{
+		if (GetNodeAssignedId() == "")
+		{
+			return false;
+		}
+		return true;
+	}
+
+	public string GetNodeAction()
+	{
+		if (AtOManager.Instance.gameNodeAssigned.ContainsKey(nodeData.NodeId))
+		{
+			return AtOManager.Instance.gameNodeAssigned[nodeData.NodeId].Split(':')[0];
+		}
+		return "";
+	}
+
+	public string GetNodeAssignedId()
+	{
+		if (AtOManager.Instance.gameNodeAssigned != null && nodeData != null && AtOManager.Instance.gameNodeAssigned.ContainsKey(nodeData.NodeId))
+		{
+			string[] array = AtOManager.Instance.gameNodeAssigned[nodeData.NodeId].Split(':');
+			if (array != null && array.Length > 1)
+			{
+				return array[1];
+			}
+			return "";
+		}
+		return "";
+	}
+
+	public void AssignNode()
+	{
+		chestT.gameObject.SetActive(value: false);
+		bool flag = false;
+		if (!(nodeData != null))
+		{
+			return;
+		}
+		action = GetNodeAction();
+		actionId = GetNodeAssignedId();
+		if (actionId == "")
+		{
+			SetHidden();
+			return;
+		}
+		if (nodeData.NodeId == "of1_10" || nodeData.NodeId == "of2_10")
+		{
+			flag = true;
+		}
+		if (nodeData.GoToTown)
+		{
+			nodeImage.sprite = nodeImageTown;
+		}
+		else if (action == "combat")
+		{
+			if (GameManager.Instance.IsObeliskChallenge() && (AtOManager.Instance.NodeHaveBossRare(nodeData.NodeId) || flag))
+			{
+				if (nodeImageParticlesT != null)
+				{
+					nodeImageParticlesT.gameObject.SetActive(value: true);
+					if (nodeImageParticlesSystem == null)
+					{
+						nodeImageParticlesSystem = nodeImageParticlesT.GetComponent<ParticleSystem>();
+					}
+					if (nodeImageParticlesSystem != null)
+					{
+						ParticleSystem.MainModule main = nodeImageParticlesSystem.main;
+						if (nodeData.NodeCombatTier == Enums.CombatTier.T8 || nodeData.NodeCombatTier == Enums.CombatTier.T9 || flag)
+						{
+							main.startColor = new Color(1f, 0.1f, 0.15f);
+						}
+						else
+						{
+							main.startColor = new Color(0.1f, 0.6f, 1f);
+						}
+					}
+				}
+				if (nodeData.NodeCombatTier == Enums.CombatTier.T8 || nodeData.NodeCombatTier == Enums.CombatTier.T9 || flag)
+				{
+					nodeImage.sprite = nodeImageFinalBoss;
+				}
+				else
+				{
+					nodeImage.sprite = nodeImageCombatRare;
+					chestT.gameObject.SetActive(value: true);
+				}
+			}
+			else
+			{
+				nodeImage.sprite = nodeImageCombat;
+			}
+		}
+		else if (action == "event")
+		{
+			EventData eventData = Globals.Instance.GetEventData(actionId);
+			if (eventData != null && eventData.EventSpriteMap != null)
+			{
+				nodeImage.sprite = eventData.EventSpriteMap;
+			}
+			else
+			{
+				nodeImage.sprite = nodeImageEvent;
+			}
+			if (eventData != null && eventData.EventSpriteDecor != null)
+			{
+				nodeDecor.sprite = eventData.EventSpriteDecor;
+			}
+			if (eventData != null && eventData.EventIconShader != Enums.MapIconShader.None)
+			{
+				_ = anim != null;
+				if (nodeImageParticlesT != null)
+				{
+					nodeImageParticlesT.gameObject.SetActive(value: true);
+					if (nodeImageParticlesSystem == null)
+					{
+						nodeImageParticlesSystem = nodeImageParticlesT.GetComponent<ParticleSystem>();
+					}
+					if (nodeImageParticlesSystem != null)
+					{
+						ParticleSystem.MainModule main2 = nodeImageParticlesSystem.main;
+						if (eventData.EventIconShader == Enums.MapIconShader.Green)
+						{
+							main2.startColor = Color.green;
+						}
+						else if (eventData.EventIconShader == Enums.MapIconShader.Blue)
+						{
+							main2.startColor = new Color(0.1f, 0.6f, 1f);
+						}
+						else if (eventData.EventIconShader == Enums.MapIconShader.Purple)
+						{
+							main2.startColor = new Color(0.91f, 0.05f, 0.87f);
+						}
+						else if (eventData.EventIconShader == Enums.MapIconShader.Orange)
+						{
+							main2.startColor = new Color(1f, 0.69f, 0f);
+						}
+						else if (eventData.EventIconShader == Enums.MapIconShader.Red)
+						{
+							main2.startColor = Color.red;
+						}
+						else if (eventData.EventIconShader == Enums.MapIconShader.Black)
+						{
+							main2.startColor = Color.black;
+						}
+					}
+				}
+			}
+			else if (nodeImageParticlesT != null)
+			{
+				nodeImageParticlesT.gameObject.SetActive(value: false);
+			}
+			requisiteLayer.gameObject.SetActive(value: false);
+			requisite.gameObject.SetActive(value: false);
+			requisite2.gameObject.SetActive(value: false);
+			requisite3.gameObject.SetActive(value: false);
+			if (!currentT.gameObject.activeSelf && !blockedT.gameObject.activeSelf && eventData != null)
+			{
+				bool flag2 = false;
+				bool flag3 = false;
+				for (int i = 0; i < eventData.Replys.Length; i++)
+				{
+					EventReplyData eventReplyData = eventData.Replys[i];
+					if (!(eventReplyData.Requirement != null) || !(eventReplyData.Requirement.ItemSprite != null) || !AtOManager.Instance.PlayerHasRequirement(eventReplyData.Requirement))
+					{
+						continue;
+					}
+					if (!flag2)
+					{
+						requisiteSprite.GetComponent<EventItemTrack>().SetItemTrack(Globals.Instance.GetRequirementData(eventReplyData.Requirement.RequirementId));
+						SpriteRenderer spriteRenderer = requisiteSprite;
+						Sprite sprite = (requisiteSpriteShadow.sprite = eventReplyData.Requirement.ItemSprite);
+						spriteRenderer.sprite = sprite;
+						requisite.gameObject.SetActive(value: true);
+						flag2 = true;
+					}
+					else if (!flag3)
+					{
+						if (eventReplyData.Requirement.ItemSprite != requisiteSprite.sprite)
+						{
+							requisite2Sprite.GetComponent<EventItemTrack>().SetItemTrack(Globals.Instance.GetRequirementData(eventReplyData.Requirement.RequirementId));
+							SpriteRenderer spriteRenderer2 = requisite2Sprite;
+							Sprite sprite = (requisite2SpriteShadow.sprite = eventReplyData.Requirement.ItemSprite);
+							spriteRenderer2.sprite = sprite;
+							requisite2.gameObject.SetActive(value: true);
+							flag3 = true;
+						}
+					}
+					else if (eventReplyData.Requirement.ItemSprite != requisiteSprite.sprite && eventReplyData.Requirement.ItemSprite != requisite2Sprite.sprite)
+					{
+						requisite3Sprite.GetComponent<EventItemTrack>().SetItemTrack(Globals.Instance.GetRequirementData(eventReplyData.Requirement.RequirementId));
+						SpriteRenderer spriteRenderer3 = requisite3Sprite;
+						Sprite sprite = (requisite3SpriteShadow.sprite = eventReplyData.Requirement.ItemSprite);
+						spriteRenderer3.sprite = sprite;
+						requisite3.gameObject.SetActive(value: true);
+					}
+					if (requisite.gameObject.activeSelf || requisite2.gameObject.activeSelf || requisite3.gameObject.activeSelf)
+					{
+						requisiteLayer.gameObject.SetActive(value: true);
+					}
+				}
+			}
+		}
+		AssignBackground();
+	}
+
+	public void AssignBackground()
+	{
+		if (nodeData.NodeBackgroundImg != null)
+		{
+			background.sprite = nodeData.NodeBackgroundImg;
+		}
+	}
+
+	public IEnumerator ShowNode()
+	{
+		for (int i = 0; i < base.transform.childCount; i++)
+		{
+			if (base.transform.GetChild(i).gameObject.name.ToLower() == "mappiece")
+			{
+				yield break;
+			}
+		}
+		base.transform.localScale = Vector3.zero;
+		yield return Globals.Instance.WaitForSeconds(0.2f);
+		float size = 0f;
+		float increment = 0.06f;
+		float delay = 0.01f;
+		while (size < 1.2f)
+		{
+			size += increment;
+			base.transform.localScale = new Vector3(size, size, 1f);
+			yield return Globals.Instance.WaitForSeconds(delay);
+		}
+		while (size > 1f)
+		{
+			size -= increment;
+			base.transform.localScale = new Vector3(size, size, 1f);
+			yield return Globals.Instance.WaitForSeconds(delay);
+		}
+		base.transform.localScale = new Vector3(1f, 1f, 1f);
+	}
+
+	public void SetHidden()
+	{
+		base.gameObject.SetActive(value: false);
+	}
+
+	public void SetPlain()
+	{
+		if (Exists())
+		{
+			HideStates();
+			plainT.gameObject.SetActive(value: true);
+			nodeImage.transform.gameObject.SetActive(value: true);
+			plainSR.color = colorReset;
+		}
+		else
+		{
+			SetHidden();
+		}
+	}
+
+	public void SetAvailable()
+	{
+		if (Exists())
+		{
+			plainT.gameObject.SetActive(value: false);
+			HideStates();
+			availableT.gameObject.SetActive(value: true);
+			if (anim != null)
+			{
+				anim.enabled = true;
+			}
+			if (base.gameObject.activeSelf && base.transform.parent.transform.parent.gameObject.activeSelf)
+			{
+				StartCoroutine(ShowNode());
+			}
+		}
+		else
+		{
+			SetHidden();
+		}
+	}
+
+	public void SetActive()
+	{
+		if (Exists())
+		{
+			plainT.gameObject.SetActive(value: false);
+			nodeImage.transform.gameObject.SetActive(value: false);
+			HideStates();
+			currentT.gameObject.SetActive(value: true);
+			requisiteLayer.gameObject.SetActive(value: false);
+			requisite.gameObject.SetActive(value: false);
+			requisite2.gameObject.SetActive(value: false);
+			requisite3.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			SetHidden();
+		}
+	}
+
+	public void SetVisited()
+	{
+		if (Exists())
+		{
+			plainT.gameObject.SetActive(value: false);
+			nodeImage.transform.gameObject.SetActive(value: false);
+			HideStates();
+			visitedT.gameObject.SetActive(value: true);
+			requisiteLayer.gameObject.SetActive(value: false);
+			requisite.gameObject.SetActive(value: false);
+			requisite2.gameObject.SetActive(value: false);
+			requisite3.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			SetHidden();
+		}
+	}
+
+	public void SetBlocked()
+	{
+		if (Exists())
+		{
+			plainT.gameObject.SetActive(value: false);
+			nodeImage.transform.gameObject.SetActive(value: false);
+			HideStates();
+			blockedT.gameObject.SetActive(value: true);
+			requisiteLayer.gameObject.SetActive(value: false);
+			requisite.gameObject.SetActive(value: false);
+			requisite2.gameObject.SetActive(value: false);
+			requisite3.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			SetHidden();
+		}
+	}
+
+	private void HideStates()
+	{
+		availableT.gameObject.SetActive(value: false);
+		blockedT.gameObject.SetActive(value: false);
+		currentT.gameObject.SetActive(value: false);
+		visitedT.gameObject.SetActive(value: false);
+	}
+
+	public void HighlightNode(bool status)
+	{
+		MapManager.Instance.DrawArrow(MapManager.Instance.nodeActive, this, status);
+		highlightedNode = status;
+		if (status)
+		{
+			SpriteRenderer spriteRenderer = availableSR;
+			Color color = (plainSR.color = colorAvailable);
+			spriteRenderer.color = color;
+		}
+		else
+		{
+			SpriteRenderer spriteRenderer2 = availableSR;
+			Color color = (plainSR.color = colorReset);
+			spriteRenderer2.color = color;
+		}
+	}
+
+	private void HoverNode(bool status)
+	{
+		if (status)
+		{
+			if (plainT.gameObject.activeSelf)
+			{
+				plainSR.color = colorAvailableOff;
+			}
+		}
+		else if (plainT.gameObject.activeSelf)
+		{
+			plainSR.color = colorReset;
+		}
+	}
+
+	public void ShowSelectedNode(string _nick)
+	{
+		for (int i = 0; i < playersMark.Length; i++)
+		{
+			if (!playersMark[i].gameObject.activeSelf)
+			{
+				playersMark[i].gameObject.SetActive(value: true);
+				playersMarkSpr[i].color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(_nick));
+				playersMarkT.gameObject.SetActive(value: true);
+				break;
+			}
+		}
+	}
+
+	public void ClearSelectedNode()
+	{
+		for (int i = 0; i < playersMark.Length; i++)
+		{
+			playersMark[i].gameObject.SetActive(value: false);
+		}
+		playersMarkT.gameObject.SetActive(value: false);
+	}
+
+	public void OnMouseUp()
+	{
+		if (Functions.ClickedThisTransform(base.transform) && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!MapManager.Instance || !MapManager.Instance.IsCharacterUnlock()) && (!MapManager.Instance || (!MapManager.Instance.IsCorruptionOver() && !MapManager.Instance.IsConflictOver() && !MapManager.Instance.characterWindow.IsActive())) && (!MapManager.Instance || !MapManager.Instance.selectedNode) && !EventManager.Instance)
+		{
+			GameManager.Instance.SetCursorPlain();
+			MapManager.Instance.HidePopup();
+			if (MapManager.Instance.CanTravelToThisNode(this))
+			{
+				MapManager.Instance.PlayerSelectedNode(this);
+			}
+			GameManager.Instance.PlayAudio(AudioManager.Instance.soundButtonClick);
+		}
+	}
+
+	private void OnMouseOver()
+	{
+		if (GameManager.Instance.GetDeveloperMode() && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!MapManager.Instance || !MapManager.Instance.IsCharacterUnlock()) && (!MapManager.Instance || (!MapManager.Instance.IsCorruptionOver() && !MapManager.Instance.IsConflictOver() && !MapManager.Instance.characterWindow.IsActive())) && !EventManager.Instance && !EventSystem.current.IsPointerOverGameObject() && Input.GetMouseButtonUp(1) && (!GameManager.Instance.IsMultiplayer() || (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())))
+		{
+			MapManager.Instance.TravelToThisNode(this);
+		}
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!MapManager.Instance || !MapManager.Instance.IsCharacterUnlock()) && (!MapManager.Instance || (!MapManager.Instance.IsCorruptionOver() && !MapManager.Instance.IsConflictOver() && !MapManager.Instance.characterWindow.IsActive())) && !EventManager.Instance && !EventSystem.current.IsPointerOverGameObject() && GetNodeAssignedId() != "")
+		{
+			MapManager.Instance.ShowPopup(this);
+			GameManager.Instance.PlayLibraryAudio("ui_click");
+			if (MapManager.Instance.CanTravelToThisNode(this))
+			{
+				GameManager.Instance.SetCursorHover();
+				HighlightNode(status: true);
+			}
+			else
+			{
+				HoverNode(status: true);
+			}
+			if (MapManager.Instance.nodeActive != this && (!(nodeData.NodeId == "sen_41") || (!(AtOManager.Instance.currentMapNode == "tutorial_0") && !(AtOManager.Instance.currentMapNode == "tutorial_1") && !(AtOManager.Instance.currentMapNode == "tutorial_2"))))
+			{
+				MapManager.Instance.DrawArrowsTemp(this);
+			}
+		}
+	}
+
+	public void OnMouseExit()
+	{
+		if (AlertManager.Instance.IsActive() || (bool)EventManager.Instance)
+		{
+			return;
+		}
+		GameManager.Instance.SetCursorPlain();
+		if (!EventSystem.current.IsPointerOverGameObject())
+		{
+			MapManager.Instance.HidePopup();
+			if (highlightedNode)
+			{
+				HighlightNode(status: false);
+			}
+			else
+			{
+				HoverNode(status: false);
+			}
+			if (MapManager.Instance.nodeActive != this)
+			{
+				MapManager.Instance.HideArrowsTemp(this);
+			}
+		}
+	}
 }

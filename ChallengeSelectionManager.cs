@@ -1,1057 +1,1414 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ChallengeSelectionManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using Photon.Pun;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Photon.Pun;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class ChallengeSelectionManager : MonoBehaviour
 {
-  private PhotonView photonView;
-  public ChallengeBossBanners challengeBossBanners;
-  public SideCharacters sideCharacters;
-  public int currentHeroIndex;
-  private int maxRound = 4;
-  public PerkChallengeItem[] perkChallengeItems;
-  private int[] heroRoundArr = new int[4];
-  private int[] heroRerolledTimesArr = new int[4];
-  private int[,] heroPackSelectedRerolledTimesArr = new int[4, 8];
-  private int maxSelectablePerks = 4;
-  private int cardsForPack = 3;
-  private Hero[] theTeam;
-  private Dictionary<string, string[]> cardsDrafted = new Dictionary<string, string[]>();
-  private Dictionary<string, string> cardsDraftedSpecial = new Dictionary<string, string>();
-  private Dictionary<string, string> cardsDraftedPackname = new Dictionary<string, string>();
-  private Dictionary<string, string> cardsDraftedPackid = new Dictionary<string, string>();
-  private Dictionary<int, string> packsSelected = new Dictionary<int, string>();
-  private Dictionary<int, List<int>> perkDrafted = new Dictionary<int, List<int>>();
-  private Dictionary<string, int> dictBonus = new Dictionary<string, int>();
-  private Dictionary<string, int> dictBonusSingle = new Dictionary<string, int>();
-  private Dictionary<string, int> dictAura = new Dictionary<string, int>();
-  private Dictionary<string, int> dictAuraSingle = new Dictionary<string, int>();
-  private Dictionary<string, float> dictEnergyCost = new Dictionary<string, float>();
-  private bool statusReady;
-  private Coroutine manualReadyCo;
-  public TMP_Text _HP;
-  public TMP_Text _Energy;
-  public TMP_Text _Speed;
-  public Transform sceneCamera;
+	private PhotonView photonView;
 
-  public static ChallengeSelectionManager Instance { get; private set; }
+	public ChallengeBossBanners challengeBossBanners;
 
-  public int CardsForPack
-  {
-    get => this.cardsForPack;
-    set => this.cardsForPack = value;
-  }
+	public SideCharacters sideCharacters;
 
-  private void Awake()
-  {
-    if ((UnityEngine.Object) GameManager.Instance == (UnityEngine.Object) null)
-    {
-      SceneStatic.LoadByName("Game");
-    }
-    else
-    {
-      if ((UnityEngine.Object) ChallengeSelectionManager.Instance == (UnityEngine.Object) null)
-        ChallengeSelectionManager.Instance = this;
-      else if ((UnityEngine.Object) ChallengeSelectionManager.Instance != (UnityEngine.Object) this)
-        UnityEngine.Object.Destroy((UnityEngine.Object) this);
-      this.photonView = PhotonView.Get((Component) this);
-      this.sceneCamera.gameObject.SetActive(false);
-      NetworkManager.Instance.StartStopQueue(true);
-    }
-  }
+	public int currentHeroIndex;
 
-  private void Start() => this.StartCoroutine(this.StartCo());
+	private int maxRound = 4;
 
-  private IEnumerator StartCo()
-  {
-    ChallengeSelectionManager selectionManager = this;
-    AudioManager.Instance.DoBSO("Town");
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      if (Globals.Instance.ShowDebug)
-        Functions.DebugLogGD("**************************");
-      if (Globals.Instance.ShowDebug)
-        Functions.DebugLogGD("WaitingSyncro startchallenge", "net");
-      yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-      if (NetworkManager.Instance.IsMaster())
-      {
-        while (!NetworkManager.Instance.AllPlayersReady("startchallenge"))
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("Game ready, Everybody checked startchallenge", "net");
-        NetworkManager.Instance.PlayersNetworkContinue("startchallenge");
-      }
-      else
-      {
-        NetworkManager.Instance.SetWaitingSyncro("startchallenge", true);
-        NetworkManager.Instance.SetStatusReady("startchallenge");
-        while (NetworkManager.Instance.WaitingSyncro["startchallenge"])
-          yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("startchallenge, we can continue!", "net");
-      }
-    }
-    for (int key = 0; key < 4; ++key)
-    {
-      selectionManager.heroRoundArr[key] = 0;
-      selectionManager.heroRerolledTimesArr[key] = 0;
-      for (int index = 0; index < 8; ++index)
-        selectionManager.heroPackSelectedRerolledTimesArr[key, index] = 0;
-      if (!selectionManager.perkDrafted.ContainsKey(key))
-        selectionManager.perkDrafted.Add(key, new List<int>());
-      else
-        selectionManager.perkDrafted[key] = new List<int>();
-    }
-    selectionManager.theTeam = AtOManager.Instance.GetTeam();
-    selectionManager.SetDefaultCards(0);
-    selectionManager.SetDefaultCards(1);
-    selectionManager.SetDefaultCards(2);
-    selectionManager.SetDefaultCards(3);
-    AtOManager.Instance.DoChallengeShop();
-    selectionManager.perkChallengeItems = CardCraftManager.Instance.perkChallengeItems;
-    selectionManager.sideCharacters.Show();
-    selectionManager.GeneratePacks();
-    CardCraftManager.Instance.SetWaitingPlayerTextChallenge("");
-    CardCraftManager.Instance.EnableChallengeReadyButton(false);
-    if (GameManager.Instance.IsMultiplayer())
-      CardCraftManager.Instance.ChallengeReadySetButton(false);
-    selectionManager.challengeBossBanners.SetBosses();
-    GameManager.Instance.SceneLoaded();
-    selectionManager.StartCoroutine(selectionManager.NextHero(false));
-  }
+	public PerkChallengeItem[] perkChallengeItems;
 
-  private void GeneratePacks()
-  {
-    UnityEngine.Random.InitState(AtOManager.Instance.GetGameId().GetDeterministicHashCode());
-    for (int index1 = 0; index1 < 4; ++index1)
-    {
-      Hero hero = this.theTeam[index1];
-      if (hero != null && !((UnityEngine.Object) hero.HeroData == (UnityEngine.Object) null))
-      {
-        Enums.CardClass result1 = Enums.CardClass.None;
-        Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof (Enums.HeroClass), (object) hero.HeroData.HeroClass), out result1);
-        List<string> stringList1 = Globals.Instance.CardListNotUpgradedByClass[result1];
-        Enums.CardClass result2 = Enums.CardClass.None;
-        Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof (Enums.HeroClass), (object) hero.HeroData.HeroSubClass.HeroClassSecondary), out result2);
-        List<string> stringList2 = (List<string>) null;
-        if (result2 != Enums.CardClass.None)
-          stringList2 = Globals.Instance.CardListNotUpgradedByClass[result2];
-        for (int round = 0; round < 3; ++round)
-        {
-          List<PackData> packListForClass = this.GetPackListForClass(result1, hero.HeroData.HeroSubClass.Id, round);
-          for (int index2 = 0; index2 < 8; ++index2)
-          {
-            List<CardData> ts1 = new List<CardData>();
-            if (index2 < 7)
-            {
-              if ((UnityEngine.Object) packListForClass[index2].Card0 != (UnityEngine.Object) null)
-                ts1.Add(packListForClass[index2].Card0);
-              if ((UnityEngine.Object) packListForClass[index2].Card1 != (UnityEngine.Object) null)
-                ts1.Add(packListForClass[index2].Card1);
-              if ((UnityEngine.Object) packListForClass[index2].Card2 != (UnityEngine.Object) null)
-                ts1.Add(packListForClass[index2].Card2);
-              if ((UnityEngine.Object) packListForClass[index2].Card3 != (UnityEngine.Object) null)
-                ts1.Add(packListForClass[index2].Card3);
-              if ((UnityEngine.Object) packListForClass[index2].Card4 != (UnityEngine.Object) null)
-                ts1.Add(packListForClass[index2].Card4);
-              if ((UnityEngine.Object) packListForClass[index2].Card5 != (UnityEngine.Object) null)
-                ts1.Add(packListForClass[index2].Card5);
-            }
-            else
-            {
-              List<string> stringList3 = new List<string>();
-              for (int index3 = 0; index3 < 6; ++index3)
-              {
-                bool flag = false;
-                while (!flag)
-                {
-                  string id = stringList2 != null && UnityEngine.Random.Range(0, 2) != 0 ? stringList2[UnityEngine.Random.Range(0, stringList2.Count)] : stringList1[UnityEngine.Random.Range(0, stringList1.Count)];
-                  if (!stringList3.Contains(id))
-                  {
-                    stringList3.Add(id);
-                    ts1.Add(Globals.Instance.GetCardData(id));
-                    flag = true;
-                  }
-                }
-              }
-            }
-            List<CardData> ts2 = new List<CardData>();
-            if (index2 < 7)
-            {
-              if ((UnityEngine.Object) packListForClass[index2].CardSpecial0 != (UnityEngine.Object) null)
-                ts2.Add(packListForClass[index2].CardSpecial0);
-              if ((UnityEngine.Object) packListForClass[index2].CardSpecial1 != (UnityEngine.Object) null)
-                ts2.Add(packListForClass[index2].CardSpecial1);
-            }
-            else
-            {
-              List<string> stringList4 = new List<string>();
-              for (int index4 = 0; index4 < 2; ++index4)
-              {
-                bool flag = false;
-                while (!flag)
-                {
-                  string id = stringList1[UnityEngine.Random.Range(0, stringList1.Count)];
-                  if (!stringList4.Contains(id))
-                  {
-                    CardData cardData = Globals.Instance.GetCardData(id, false);
-                    if (cardData.CardRarity == Enums.CardRarity.Rare || cardData.CardRarity == Enums.CardRarity.Epic)
-                    {
-                      stringList4.Add(id);
-                      ts2.Add(cardData);
-                      flag = true;
-                    }
-                  }
-                }
-              }
-            }
-            List<CardData> cardDataList1 = ts1.ShuffleList<CardData>();
-            List<CardData> cardDataList2 = ts2.ShuffleList<CardData>();
-            string[] strArray1 = new string[this.cardsForPack];
-            for (int index5 = 0; index5 < this.cardsForPack; ++index5)
-              strArray1[index5] = Functions.GetCardByRarity(UnityEngine.Random.Range(0, 100), cardDataList1[index5], true);
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.Append(index1);
-            stringBuilder.Append("_");
-            stringBuilder.Append(round);
-            stringBuilder.Append("_");
-            stringBuilder.Append(index2);
-            this.cardsDrafted.Add(stringBuilder.ToString(), strArray1);
-            if (index2 < 7)
-              this.cardsDraftedPackname.Add(stringBuilder.ToString(), packListForClass[index2].PackName);
-            else
-              this.cardsDraftedPackname.Add(stringBuilder.ToString(), "random");
-            this.cardsDraftedPackid.Add(stringBuilder.ToString(), index2.ToString());
-            bool flag1 = false;
-            string str = "";
-            int index6 = UnityEngine.Random.Range(0, cardDataList2.Count);
-            for (int index7 = 0; !flag1 && index7 < 500; ++index7)
-            {
-              for (str = Functions.GetCardByRarity(UnityEngine.Random.Range(0, 100), cardDataList2[index6], true) + "_" + hero.HeroData.HeroSubClass.Id; this.cardsDraftedSpecial.ContainsValue(str); str = Functions.GetCardByRarity(UnityEngine.Random.Range(0, 100), cardDataList2[index6], true) + "_" + hero.HeroData.HeroSubClass.Id)
-              {
-                ++index6;
-                if (index6 >= cardDataList2.Count)
-                  index6 = 0;
-              }
-              string[] strArray2 = str.Split('_', StringSplitOptions.None);
-              if (strArray2 != null && strArray2.Length >= 1)
-              {
-                CardData cardData = Globals.Instance.GetCardData(strArray2[0], false);
-                if ((UnityEngine.Object) cardData != (UnityEngine.Object) null && cardData.CardUpgraded != Enums.CardUpgraded.No)
-                  flag1 = true;
-              }
-            }
-            stringBuilder.Clear();
-            stringBuilder.Append(index1);
-            stringBuilder.Append("_");
-            stringBuilder.Append(round);
-            stringBuilder.Append("_");
-            stringBuilder.Append(index2);
-            stringBuilder.Append("_special");
-            this.cardsDraftedSpecial.Add(stringBuilder.ToString(), str);
-          }
-        }
-      }
-    }
-  }
+	private int[] heroRoundArr = new int[4];
 
-  public void Resize() => this.sideCharacters.Resize();
+	private int[] heroRerolledTimesArr = new int[4];
 
-  private void SetCurrentHeroAndRound()
-  {
-    AtOManager.Instance.SideBarCharacterClicked(this.currentHeroIndex);
-  }
+	private int[,] heroPackSelectedRerolledTimesArr = new int[4, 8];
 
-  public void RerollFromButton()
-  {
-    if (GameManager.Instance.IsMultiplayer() && !(AtOManager.Instance.GetHero(this.currentHeroIndex).Owner == NetworkManager.Instance.GetPlayerNick()))
-      return;
-    this.Reroll(this.currentHeroIndex);
-  }
+	private int maxSelectablePerks = 4;
 
-  public void Reroll(int _heroId, bool fromMP = false)
-  {
-    if (!fromMP && GameManager.Instance.IsMultiplayer() && AtOManager.Instance.GetHero(_heroId).Owner == NetworkManager.Instance.GetPlayerNick())
-      this.photonView.RPC("NET_Reroll", RpcTarget.Others, (object) _heroId);
-    if (this.heroRerolledTimesArr[_heroId] >= 1)
-      return;
-    ++this.heroRerolledTimesArr[_heroId];
-    if (_heroId != this.currentHeroIndex)
-      return;
-    this.ShowCardList(_heroId, comingFromReroll: true);
-  }
+	private int cardsForPack = 3;
 
-  [PunRPC]
-  private void NET_Reroll(int _heroId) => this.Reroll(_heroId, true);
+	private Hero[] theTeam;
 
-  public void ChangeCharacter(int _heroIndex)
-  {
-    CardCraftManager.Instance.CleanChallengeBlocks();
-    SubClassData heroSubClass = this.theTeam[_heroIndex].HeroData.HeroSubClass;
-    this._HP.text = heroSubClass.Hp.ToString();
-    int energy = heroSubClass.Energy;
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(energy);
-    stringBuilder.Append(" <size=1.3>");
-    stringBuilder.Append(Texts.Instance.GetText("dataPerTurn").Replace("<%>", heroSubClass.EnergyTurn.ToString()));
-    stringBuilder.Append("</size>");
-    this._Energy.text = stringBuilder.ToString();
-    this._Speed.text = heroSubClass.Speed.ToString();
-    this.ShowCardList(_heroIndex, true);
-  }
+	private Dictionary<string, string[]> cardsDrafted = new Dictionary<string, string[]>();
 
-  public int GetCurrentRound() => this.heroRoundArr[this.currentHeroIndex];
+	private Dictionary<string, string> cardsDraftedSpecial = new Dictionary<string, string>();
 
-  private void ShowCardList(int heroId, bool refreshAllPacks = false, bool comingFromReroll = false)
-  {
-    this.currentHeroIndex = heroId;
-    GameManager.Instance.CleanTempContainer();
-    CardCraftManager.Instance.ReassignChallengeButtons();
-    this.WriteBonus();
-    if (this.heroRoundArr[heroId] < 3)
-    {
-      List<int> intList = new List<int>();
-      if (this.packsSelected != null && this.packsSelected.ContainsKey(heroId))
-      {
-        foreach (string s in this.packsSelected[heroId].Split('_', StringSplitOptions.None))
-        {
-          int result;
-          if (int.TryParse(s, out result))
-            intList.Add(result);
-        }
-      }
-      CardCraftManager.Instance.AssignChallengeRoundCards(this.heroRoundArr[heroId] + 1, this.maxRound);
-      int num1 = 8;
-      int num2 = 0;
-      for (int _block = 0; _block < num1; ++_block)
-      {
-        bool flag = true;
-        bool selectedPack = false;
-        string key = heroId.ToString() + "_" + this.heroRerolledTimesArr[heroId].ToString() + "_" + _block.ToString();
-        if (intList.Contains(_block))
-        {
-          key = heroId.ToString() + "_" + this.heroPackSelectedRerolledTimesArr[heroId, _block].ToString() + "_" + _block.ToString();
-          selectedPack = true;
-          flag = false;
-        }
-        else
-          CardCraftManager.Instance.ShowChallengePackSelected(false, _block);
-        if (refreshAllPacks || comingFromReroll & flag)
-        {
-          CardCraftManager.Instance.CleanChallengeBlocks(num2);
-          CardCraftManager.Instance.AssignChallengeTitle(num2, Functions.UppercaseFirst(Texts.Instance.GetText(this.cardsDraftedPackname[key])));
-          for (int row = 0; row < this.cardsForPack; ++row)
-            CardCraftManager.Instance.AssignChallengeCard(heroId, num2, row, this.cardsDrafted[key][row], selectedPack);
-        }
-        ++num2;
-      }
-      CardCraftManager.Instance.ShowChallengeRerollFully(true);
-      CardCraftManager.Instance.ShowChallengePerks(false);
-    }
-    else if (this.heroRoundArr[heroId] == 3)
-    {
-      CardCraftManager.Instance.CleanChallengeBlocks();
-      CardCraftManager.Instance.AssignChallengeRoundCards(this.heroRoundArr[heroId] + 1, this.maxRound);
-      string[] strArray = this.packsSelected[heroId].Split('_', StringSplitOptions.None);
-      StringBuilder stringBuilder1 = new StringBuilder();
-      StringBuilder stringBuilder2 = new StringBuilder();
-      for (int block = 0; block < 3; ++block)
-      {
-        stringBuilder2.Clear();
-        stringBuilder2.Append(heroId);
-        stringBuilder2.Append("_");
-        stringBuilder2.Append(this.heroPackSelectedRerolledTimesArr[heroId, int.Parse(strArray[block])]);
-        stringBuilder2.Append("_");
-        stringBuilder2.Append(strArray[block]);
-        stringBuilder2.Append("_special");
-        string str = this.cardsDraftedSpecial[stringBuilder2.ToString()].Split('_', StringSplitOptions.None)[0];
-        stringBuilder1.Append(str);
-        stringBuilder1.Append('_');
-        string key = heroId.ToString() + "_" + block.ToString() + "_" + strArray[block];
-        CardCraftManager.Instance.AssignChallengeTitle(block, Functions.UppercaseFirst(Texts.Instance.GetText(this.cardsDraftedPackname[key])));
-      }
-      bool showButtons = false;
-      if (!GameManager.Instance.IsMultiplayer() || AtOManager.Instance.GetHero(heroId).Owner == NetworkManager.Instance.GetPlayerNick())
-        showButtons = true;
-      CardCraftManager.Instance.AssignChallengeCardSpecial(stringBuilder1.ToString(), showButtons);
-      CardCraftManager.Instance.ShowChallengeRerollFully(false);
-      CardCraftManager.Instance.ShowChallengePerks(false);
-      CardCraftManager.Instance.controllerHorizontalIndex = -1;
-    }
-    else if (this.heroRoundArr[heroId] == 4)
-    {
-      CardCraftManager.Instance.CleanChallengeBlocks();
-      CardCraftManager.Instance.ShowChallengeRerollFully(false);
-      CardCraftManager.Instance.ShowChallengePerks(true);
-      this.AssignPerkButtons();
-    }
-    CardCraftManager.Instance.ShowChallengeReroll(this.heroRerolledTimesArr[heroId] < 1);
-    CardCraftManager.Instance.ActivateChallengeReroll(true);
-    if (!GameManager.Instance.IsMultiplayer() || !(AtOManager.Instance.GetHero(heroId).Owner != NetworkManager.Instance.GetPlayerNick()))
-      return;
-    CardCraftManager.Instance.ActivateChallengeReroll(false);
-  }
+	private Dictionary<string, string> cardsDraftedPackname = new Dictionary<string, string>();
 
-  private void AssignPerkButtons()
-  {
-    Enums.CardClass cardClass = (Enums.CardClass) Enum.Parse(typeof (Enums.CardClass), Enum.GetName(typeof (Enums.HeroClass), (object) this.theTeam[this.currentHeroIndex].HeroData.HeroClass));
-    if (this.theTeam[this.currentHeroIndex].HeroData.HeroSubClass.Id == Globals.Instance.GetSubClassData("engineer").Id)
-      cardClass = Enums.CardClass.Warrior;
-    List<PerkData> perkDataClass = Globals.Instance.GetPerkDataClass(cardClass);
-    int _index = 0;
-    int num = 0;
-    SortedDictionary<int, PerkData> sortedDictionary = new SortedDictionary<int, PerkData>();
-    for (int index = 0; index < perkDataClass.Count; ++index)
-    {
-      if (perkDataClass[index].ObeliskPerk && !sortedDictionary.ContainsKey(perkDataClass[index].Level))
-        sortedDictionary.Add(perkDataClass[index].Level, perkDataClass[index]);
-    }
-    foreach (KeyValuePair<int, PerkData> keyValuePair in sortedDictionary)
-    {
-      PerkChallengeItem perkChallengeItem = this.perkChallengeItems[_index];
-      perkChallengeItem.SetPerk(this.currentHeroIndex, _index, keyValuePair.Value.Id);
-      if (this.perkDrafted.ContainsKey(this.currentHeroIndex) && this.perkDrafted[this.currentHeroIndex].Contains(_index))
-      {
-        perkChallengeItem.SetActive(true);
-        ++num;
-      }
-      else
-        perkChallengeItem.SetActive(false);
-      ++_index;
-    }
-    Enums.CardClass result = Enums.CardClass.None;
-    Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof (Enums.HeroClass), (object) this.theTeam[this.currentHeroIndex].HeroData.HeroSubClass.HeroClassSecondary), out result);
-    for (int index = 0; index < this.perkChallengeItems.Length; ++index)
-    {
-      if (index > 20)
-      {
-        if (result != Enums.CardClass.None)
-          this.perkChallengeItems[index].gameObject.SetActive(true);
-        else
-          this.perkChallengeItems[index].gameObject.SetActive(false);
-      }
-    }
-    this.WriteSelectedPerks(this.currentHeroIndex);
-    this.FinishDraw();
-  }
+	private Dictionary<string, string> cardsDraftedPackid = new Dictionary<string, string>();
 
-  public void AssignPerk(int _heroId, int _perkIndex, bool fromMP = false)
-  {
-    if (!fromMP && GameManager.Instance.IsMultiplayer())
-    {
-      if (!(AtOManager.Instance.GetHero(_heroId).Owner == NetworkManager.Instance.GetPlayerNick()))
-        return;
-      this.photonView.RPC("NET_AssignPerk", RpcTarget.Others, (object) _heroId, (object) _perkIndex);
-    }
-    if (!this.perkDrafted.ContainsKey(_heroId))
-      this.perkDrafted.Add(_heroId, new List<int>());
-    if (this.perkDrafted[_heroId].Contains(_perkIndex))
-    {
-      this.perkDrafted[_heroId].Remove(_perkIndex);
-      if (GameManager.Instance.IsMultiplayer() && this.statusReady && !fromMP)
-        this.Ready();
-    }
-    else if (this.perkDrafted[_heroId].Count < this.maxSelectablePerks)
-      this.perkDrafted[_heroId].Add(_perkIndex);
-    if (this.currentHeroIndex != _heroId)
-      return;
-    this.AssignPerkButtons();
-  }
+	private Dictionary<int, string> packsSelected = new Dictionary<int, string>();
 
-  [PunRPC]
-  private void NET_AssignPerk(int _heroId, int _perk) => this.AssignPerk(_heroId, _perk, true);
+	private Dictionary<int, List<int>> perkDrafted = new Dictionary<int, List<int>>();
 
-  private void WriteSelectedPerks(int _heroId)
-  {
-    CardCraftManager.Instance.AssignChallengeRoundPerks(this.perkDrafted[_heroId].Count, this.maxSelectablePerks);
-  }
+	private Dictionary<string, int> dictBonus = new Dictionary<string, int>();
 
-  public int GetActiveHero() => this.currentHeroIndex;
+	private Dictionary<string, int> dictBonusSingle = new Dictionary<string, int>();
 
-  private void SetDefaultCards(int _heroIndex)
-  {
-    Hero hero = this.theTeam[_heroIndex];
-    if (hero == null || (UnityEngine.Object) hero.HeroData == (UnityEngine.Object) null)
-      return;
-    foreach (KeyValuePair<string, PackData> keyValuePair in Globals.Instance.PackDataSource)
-    {
-      if ((UnityEngine.Object) keyValuePair.Value.RequiredClass != (UnityEngine.Object) null && keyValuePair.Value.RequiredClass.Id == hero.HeroData.HeroSubClass.Id)
-      {
-        if ((UnityEngine.Object) keyValuePair.Value.Card0 != (UnityEngine.Object) null)
-          AtOManager.Instance.AddCardToHero(_heroIndex, this.StarterUpgradeCard(keyValuePair.Value.Card0.Id));
-        if ((UnityEngine.Object) keyValuePair.Value.Card1 != (UnityEngine.Object) null)
-          AtOManager.Instance.AddCardToHero(_heroIndex, this.StarterUpgradeCard(keyValuePair.Value.Card1.Id));
-        if ((UnityEngine.Object) keyValuePair.Value.Card2 != (UnityEngine.Object) null)
-          AtOManager.Instance.AddCardToHero(_heroIndex, this.StarterUpgradeCard(keyValuePair.Value.Card2.Id));
-        if ((UnityEngine.Object) keyValuePair.Value.Card3 != (UnityEngine.Object) null)
-          AtOManager.Instance.AddCardToHero(_heroIndex, this.StarterUpgradeCard(keyValuePair.Value.Card3.Id));
-        if (!((UnityEngine.Object) keyValuePair.Value.Card4 != (UnityEngine.Object) null))
-          break;
-        AtOManager.Instance.AddCardToHero(_heroIndex, this.StarterUpgradeCard(keyValuePair.Value.Card4.Id));
-        break;
-      }
-    }
-  }
+	private Dictionary<string, int> dictAura = new Dictionary<string, int>();
 
-  private string StarterUpgradeCard(string _cardId)
-  {
-    if (!GameManager.Instance.IsWeeklyChallenge())
-    {
-      int obeliskMadness = AtOManager.Instance.GetObeliskMadness();
-      if (obeliskMadness >= 5)
-      {
-        CardData cardData = Globals.Instance.GetCardData(_cardId, false);
-        if (cardData.Starter)
-          return obeliskMadness <= 7 ? cardData.UpgradesTo1 : cardData.UpgradesTo2;
-      }
-    }
-    else
-    {
-      CardData cardData = Globals.Instance.GetCardData(_cardId, false);
-      if (cardData.Starter)
-        return cardData.UpgradesTo2;
-    }
-    return _cardId;
-  }
+	private Dictionary<string, int> dictAuraSingle = new Dictionary<string, int>();
 
-  public List<PackData> GetPackListForClass(
-    Enums.CardClass cardClass,
-    string subclassId,
-    int round)
-  {
-    List<PackData> packListForClass = new List<PackData>();
-    SubClassData subClassData = Globals.Instance.GetSubClassData(subclassId);
-    packListForClass.Add(subClassData.ChallengePack0);
-    packListForClass.Add(subClassData.ChallengePack1);
-    packListForClass.Add(subClassData.ChallengePack2);
-    packListForClass.Add(subClassData.ChallengePack3);
-    packListForClass.Add(subClassData.ChallengePack4);
-    packListForClass.Add(subClassData.ChallengePack5);
-    packListForClass.Add(subClassData.ChallengePack6);
-    return packListForClass;
-  }
+	private Dictionary<string, float> dictEnergyCost = new Dictionary<string, float>();
 
-  public void SelectPack(int _heroId, int _pack, bool fromMP = false)
-  {
-    if (!fromMP && GameManager.Instance.IsMultiplayer() && AtOManager.Instance.GetHero(_heroId).Owner == NetworkManager.Instance.GetPlayerNick())
-      this.photonView.RPC("NET_SelectPack", RpcTarget.Others, (object) _heroId, (object) _pack);
-    StringBuilder stringBuilder = new StringBuilder();
-    if (this.heroRoundArr[_heroId] < 3)
-    {
-      stringBuilder.Append(_heroId);
-      stringBuilder.Append("_");
-      stringBuilder.Append(this.heroRerolledTimesArr[_heroId]);
-      stringBuilder.Append("_");
-      stringBuilder.Append(_pack);
-      foreach (string _cardName in this.cardsDrafted[stringBuilder.ToString()])
-        AtOManager.Instance.AddCardToHero(_heroId, _cardName);
-      if (!this.packsSelected.ContainsKey(_heroId))
-        this.packsSelected.Add(_heroId, "");
-      Dictionary<int, string> packsSelected = this.packsSelected;
-      int key = _heroId;
-      packsSelected[key] = packsSelected[key] + _pack.ToString() + "_";
-      this.heroPackSelectedRerolledTimesArr[_heroId, _pack] = this.heroRerolledTimesArr[_heroId];
-      if (this.currentHeroIndex == _heroId)
-        CardCraftManager.Instance.ShowChallengePackSelected(true, _pack);
-    }
-    else
-    {
-      string[] strArray = this.packsSelected[_heroId].Split('_', StringSplitOptions.None);
-      stringBuilder.Append(_heroId);
-      stringBuilder.Append("_");
-      stringBuilder.Append(this.heroPackSelectedRerolledTimesArr[_heroId, int.Parse(strArray[_pack])]);
-      stringBuilder.Append("_");
-      stringBuilder.Append(strArray[_pack]);
-      stringBuilder.Append("_special");
-      string _cardName = this.cardsDraftedSpecial[stringBuilder.ToString()].Split('_', StringSplitOptions.None)[0];
-      AtOManager.Instance.AddCardToHero(_heroId, _cardName);
-    }
-    ++this.heroRoundArr[_heroId];
-    this.sideCharacters.RefreshCards(_heroId);
-    if (this.currentHeroIndex != _heroId)
-      return;
-    CardCraftManager.Instance.ShowChallengeButtons(false, _pack);
-    CardCraftManager.Instance.CreateDeck(this.currentHeroIndex);
-    if (this.heroRoundArr[this.currentHeroIndex] <= this.maxRound)
-      this.StartCoroutine(this.NextRound());
-    else
-      this.StartCoroutine(this.NextHero());
-  }
+	private bool statusReady;
 
-  [PunRPC]
-  private void NET_SelectPack(int _heroId, int _pack) => this.SelectPack(_heroId, _pack, true);
+	private Coroutine manualReadyCo;
 
-  private IEnumerator NextRound()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.15f);
-    this.ShowCardList(this.currentHeroIndex);
-  }
+	public TMP_Text _HP;
 
-  public void NextHeroFunc(bool _isRight)
-  {
-    int currentHeroIndex = this.currentHeroIndex;
-    int num = !_isRight ? currentHeroIndex - 1 : currentHeroIndex + 1;
-    if (num > 3)
-      num = 0;
-    else if (num < 0)
-      num = 3;
-    GameObject gameObject = GameObject.Find("/SideCharacters/OverCharacter" + num.ToString());
-    if (!((UnityEngine.Object) gameObject != (UnityEngine.Object) null))
-      return;
-    gameObject.transform.GetComponent<OverCharacter>().Clicked();
-  }
+	public TMP_Text _Energy;
 
-  private IEnumerator NextHero(bool timeOut = true)
-  {
-    if (timeOut)
-      yield return (object) Globals.Instance.WaitForSeconds(0.15f);
-    bool flag = false;
-    this.currentHeroIndex = 0;
-    while (this.currentHeroIndex < 4 && !flag)
-    {
-      if (this.heroRoundArr[this.currentHeroIndex] < 3 && (!GameManager.Instance.IsMultiplayer() || AtOManager.Instance.GetHero(this.currentHeroIndex).Owner == NetworkManager.Instance.GetPlayerNick()))
-        flag = true;
-      if (!flag)
-        ++this.currentHeroIndex;
-    }
-    if (this.currentHeroIndex < 4)
-    {
-      this.SetCurrentHeroAndRound();
-      this.ShowCardList(this.currentHeroIndex);
-    }
-    else
-      this.FinishDraw();
-  }
+	public TMP_Text _Speed;
 
-  private void FinishDraw()
-  {
-    bool flag = true;
-    for (int index = 0; index < 4; ++index)
-    {
-      this.sideCharacters.ShowChallengeButtons(index);
-      if (this.perkDrafted != null && this.perkDrafted[index] != null && this.perkDrafted[index].Count < 4)
-        this.sideCharacters.ShowChallengeButtons(index, false);
-    }
-    if (!GameManager.Instance.IsMultiplayer())
-    {
-      for (int key = 0; key < 4; ++key)
-      {
-        if (this.theTeam[key] != null && !((UnityEngine.Object) this.theTeam[key].HeroData == (UnityEngine.Object) null) && this.perkDrafted != null && this.perkDrafted[key] != null && this.perkDrafted[key].Count < 4)
-        {
-          flag = false;
-          break;
-        }
-      }
-    }
-    else
-    {
-      for (int index = 0; index < 4; ++index)
-      {
-        if (this.theTeam[index] != null && !((UnityEngine.Object) this.theTeam[index].HeroData == (UnityEngine.Object) null) && AtOManager.Instance.GetHero(index).Owner == NetworkManager.Instance.GetPlayerNick() && this.perkDrafted != null && this.perkDrafted[index] != null && this.perkDrafted[index].Count < 4)
-        {
-          flag = false;
-          break;
-        }
-      }
-    }
-    if (flag)
-    {
-      if (!GameManager.Instance.IsMultiplayer())
-      {
-        CardCraftManager.Instance.ChallengeReadySetButton(true);
-        CardCraftManager.Instance.EnableChallengeReadyButton(true);
-      }
-      else
-        CardCraftManager.Instance.EnableChallengeReadyButton(true);
-    }
-    else
-    {
-      CardCraftManager.Instance.EnableChallengeReadyButton(false);
-      CardCraftManager.Instance.ChallengeReadySetButton(false);
-    }
-  }
+	public Transform sceneCamera;
 
-  private void FinishObeliskDraft()
-  {
-    AtOManager.Instance.SetPlayerPerksChallenge(this.perkDrafted);
-    AtOManager.Instance.FinishObeliskDraft();
-  }
+	public static ChallengeSelectionManager Instance { get; private set; }
 
-  public void Ready()
-  {
-    if (!GameManager.Instance.IsMultiplayer())
-    {
-      this.FinishObeliskDraft();
-    }
-    else
-    {
-      if (this.manualReadyCo != null)
-        this.StopCoroutine(this.manualReadyCo);
-      this.statusReady = !this.statusReady;
-      NetworkManager.Instance.SetManualReady(this.statusReady);
-      if (this.statusReady)
-      {
-        CardCraftManager.Instance.ChallengeReadySetButton(true);
-        if (!NetworkManager.Instance.IsMaster())
-          return;
-        this.manualReadyCo = this.StartCoroutine(this.CheckForAllManualReady());
-      }
-      else
-        CardCraftManager.Instance.ChallengeReadySetButton(false);
-    }
-  }
+	public int CardsForPack
+	{
+		get
+		{
+			return cardsForPack;
+		}
+		set
+		{
+			cardsForPack = value;
+		}
+	}
 
-  public void SetWaitingPlayersText(string msg)
-  {
-    CardCraftManager.Instance.SetWaitingPlayerTextChallenge(msg);
-  }
+	private void Awake()
+	{
+		if (GameManager.Instance == null)
+		{
+			SceneStatic.LoadByName("Game");
+			return;
+		}
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			UnityEngine.Object.Destroy(this);
+		}
+		photonView = PhotonView.Get(this);
+		sceneCamera.gameObject.SetActive(value: false);
+		NetworkManager.Instance.StartStopQueue(state: true);
+	}
 
-  private IEnumerator CheckForAllManualReady()
-  {
-    bool check = true;
-    while (check)
-    {
-      if (!NetworkManager.Instance.AllPlayersManualReady())
-        yield return (object) Globals.Instance.WaitForSeconds(1f);
-      else
-        check = false;
-    }
-    this.FinishObeliskDraft();
-  }
+	private void Start()
+	{
+		StartCoroutine(StartCo());
+	}
 
-  private void AddToDictDT(string dt, int index)
-  {
-    if (!(dt != ""))
-      return;
-    dt = dt.ToLower();
-    if (!this.dictBonus.ContainsKey(dt))
-      this.dictBonus.Add(dt, 0);
-    if (index <= -1)
-      return;
-    this.dictBonus[dt]++;
-    if (this.currentHeroIndex != index)
-      return;
-    if (!this.dictBonusSingle.ContainsKey(dt))
-      this.dictBonusSingle.Add(dt, 0);
-    this.dictBonusSingle[dt]++;
-  }
+	private IEnumerator StartCo()
+	{
+		AudioManager.Instance.DoBSO("Town");
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			if (Globals.Instance.ShowDebug)
+			{
+				Functions.DebugLogGD("**************************");
+			}
+			if (Globals.Instance.ShowDebug)
+			{
+				Functions.DebugLogGD("WaitingSyncro startchallenge", "net");
+			}
+			yield return Globals.Instance.WaitForSeconds(0.1f);
+			if (NetworkManager.Instance.IsMaster())
+			{
+				while (!NetworkManager.Instance.AllPlayersReady("startchallenge"))
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				if (Globals.Instance.ShowDebug)
+				{
+					Functions.DebugLogGD("Game ready, Everybody checked startchallenge", "net");
+				}
+				NetworkManager.Instance.PlayersNetworkContinue("startchallenge");
+			}
+			else
+			{
+				NetworkManager.Instance.SetWaitingSyncro("startchallenge", status: true);
+				NetworkManager.Instance.SetStatusReady("startchallenge");
+				while (NetworkManager.Instance.WaitingSyncro["startchallenge"])
+				{
+					yield return Globals.Instance.WaitForSeconds(0.1f);
+				}
+				if (Globals.Instance.ShowDebug)
+				{
+					Functions.DebugLogGD("startchallenge, we can continue!", "net");
+				}
+			}
+		}
+		for (int i = 0; i < 4; i++)
+		{
+			heroRoundArr[i] = 0;
+			heroRerolledTimesArr[i] = 0;
+			for (int j = 0; j < 8; j++)
+			{
+				heroPackSelectedRerolledTimesArr[i, j] = 0;
+			}
+			if (!perkDrafted.ContainsKey(i))
+			{
+				perkDrafted.Add(i, new List<int>());
+			}
+			else
+			{
+				perkDrafted[i] = new List<int>();
+			}
+		}
+		theTeam = AtOManager.Instance.GetTeam();
+		SetDefaultCards(0);
+		SetDefaultCards(1);
+		SetDefaultCards(2);
+		SetDefaultCards(3);
+		AtOManager.Instance.DoChallengeShop();
+		perkChallengeItems = CardCraftManager.Instance.perkChallengeItems;
+		Debug.Log("SIDE CHARACTER MANHOOS BUG 1");
+		sideCharacters.Show();
+		Debug.Log("SIDE CHARACTER MANHOOS BUG 2");
+		sideCharacters.ShowChallengeButtons(-1, state: false);
+		Debug.Log("SIDE CHARACTER MANHOOS BUG 3");
+		GeneratePacks();
+		CardCraftManager.Instance.SetWaitingPlayerTextChallenge("");
+		CardCraftManager.Instance.EnableChallengeReadyButton(state: false);
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			CardCraftManager.Instance.ChallengeReadySetButton(state: false);
+		}
+		challengeBossBanners.SetBosses();
+		GameManager.Instance.SceneLoaded();
+		StartCoroutine(NextHero(timeOut: false));
+	}
 
-  private void AddToDictAU(string au, int index)
-  {
-    if (!(au != ""))
-      return;
-    au = au.ToLower();
-    if (!this.dictAura.ContainsKey(au))
-      this.dictAura.Add(au, 0);
-    if (index <= -1)
-      return;
-    this.dictAura[au]++;
-    if (this.currentHeroIndex != index)
-      return;
-    if (!this.dictAuraSingle.ContainsKey(au))
-      this.dictAuraSingle.Add(au, 0);
-    this.dictAuraSingle[au]++;
-  }
+	private void GeneratePacks()
+	{
+		UnityEngine.Random.InitState(AtOManager.Instance.GetGameId().GetDeterministicHashCode());
+		for (int i = 0; i < 4; i++)
+		{
+			Hero hero = theTeam[i];
+			if (hero == null || hero.HeroData == null)
+			{
+				continue;
+			}
+			Enums.CardClass result = Enums.CardClass.None;
+			Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof(Enums.HeroClass), hero.HeroData.HeroClass), out result);
+			List<string> list = Globals.Instance.CardListNotUpgradedByClass[result];
+			Enums.CardClass result2 = Enums.CardClass.None;
+			Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof(Enums.HeroClass), hero.HeroData.HeroSubClass.HeroClassSecondary), out result2);
+			List<string> list2 = null;
+			if (result2 != Enums.CardClass.None)
+			{
+				list2 = Globals.Instance.CardListNotUpgradedByClass[result2];
+			}
+			for (int j = 0; j < 3; j++)
+			{
+				List<PackData> packListForClass = GetPackListForClass(result, hero.HeroData.HeroSubClass.Id, j);
+				for (int k = 0; k < 8; k++)
+				{
+					List<CardData> list3 = new List<CardData>();
+					if (k < 7)
+					{
+						if (packListForClass[k].Card0 != null)
+						{
+							list3.Add(packListForClass[k].Card0);
+						}
+						if (packListForClass[k].Card1 != null)
+						{
+							list3.Add(packListForClass[k].Card1);
+						}
+						if (packListForClass[k].Card2 != null)
+						{
+							list3.Add(packListForClass[k].Card2);
+						}
+						if (packListForClass[k].Card3 != null)
+						{
+							list3.Add(packListForClass[k].Card3);
+						}
+						if (packListForClass[k].Card4 != null)
+						{
+							list3.Add(packListForClass[k].Card4);
+						}
+						if (packListForClass[k].Card5 != null)
+						{
+							list3.Add(packListForClass[k].Card5);
+						}
+					}
+					else
+					{
+						List<string> list4 = new List<string>();
+						string text = "";
+						bool flag = false;
+						bool flag2 = true;
+						for (int l = 0; l < 6; l++)
+						{
+							flag = false;
+							while (!flag)
+							{
+								flag2 = list2 == null || UnityEngine.Random.Range(0, 2) == 0;
+								text = ((!flag2) ? list2[UnityEngine.Random.Range(0, list2.Count)] : list[UnityEngine.Random.Range(0, list.Count)]);
+								if (!list4.Contains(text))
+								{
+									list4.Add(text);
+									list3.Add(Globals.Instance.GetCardData(text));
+									flag = true;
+								}
+							}
+						}
+						list4 = null;
+					}
+					List<CardData> list5 = new List<CardData>();
+					if (k < 7)
+					{
+						if (packListForClass[k].CardSpecial0 != null)
+						{
+							list5.Add(packListForClass[k].CardSpecial0);
+						}
+						if (packListForClass[k].CardSpecial1 != null)
+						{
+							list5.Add(packListForClass[k].CardSpecial1);
+						}
+					}
+					else
+					{
+						List<string> list6 = new List<string>();
+						string text2 = "";
+						bool flag3 = false;
+						for (int m = 0; m < 2; m++)
+						{
+							flag3 = false;
+							while (!flag3)
+							{
+								text2 = list[UnityEngine.Random.Range(0, list.Count)];
+								if (!list6.Contains(text2))
+								{
+									CardData cardData = Globals.Instance.GetCardData(text2, instantiate: false);
+									if (cardData.CardRarity == Enums.CardRarity.Rare || cardData.CardRarity == Enums.CardRarity.Epic)
+									{
+										list6.Add(text2);
+										list5.Add(cardData);
+										flag3 = true;
+									}
+								}
+							}
+						}
+						list6 = null;
+					}
+					list3 = list3.ShuffleList();
+					list5 = list5.ShuffleList();
+					string[] array = new string[cardsForPack];
+					for (int n = 0; n < cardsForPack; n++)
+					{
+						array[n] = Functions.GetCardByRarity(UnityEngine.Random.Range(0, 100), list3[n], isChallenge: true);
+					}
+					StringBuilder stringBuilder = new StringBuilder();
+					stringBuilder.Append(i);
+					stringBuilder.Append("_");
+					stringBuilder.Append(j);
+					stringBuilder.Append("_");
+					stringBuilder.Append(k);
+					cardsDrafted.Add(stringBuilder.ToString(), array);
+					if (k < 7)
+					{
+						cardsDraftedPackname.Add(stringBuilder.ToString(), packListForClass[k].PackName);
+					}
+					else
+					{
+						cardsDraftedPackname.Add(stringBuilder.ToString(), "random");
+					}
+					cardsDraftedPackid.Add(stringBuilder.ToString(), k.ToString());
+					bool flag4 = false;
+					string text3 = "";
+					int num = UnityEngine.Random.Range(0, list5.Count);
+					int num2 = 0;
+					while (!flag4 && num2 < 500)
+					{
+						text3 = Functions.GetCardByRarity(UnityEngine.Random.Range(0, 100), list5[num], isChallenge: true) + "_" + hero.HeroData.HeroSubClass.Id;
+						while (cardsDraftedSpecial.ContainsValue(text3))
+						{
+							num++;
+							if (num >= list5.Count)
+							{
+								num = 0;
+							}
+							text3 = Functions.GetCardByRarity(UnityEngine.Random.Range(0, 100), list5[num], isChallenge: true) + "_" + hero.HeroData.HeroSubClass.Id;
+						}
+						string[] array2 = text3.Split('_');
+						if (array2 != null && array2.Length >= 1)
+						{
+							CardData cardData2 = Globals.Instance.GetCardData(array2[0], instantiate: false);
+							if (cardData2 != null && cardData2.CardUpgraded != Enums.CardUpgraded.No)
+							{
+								flag4 = true;
+							}
+						}
+						num2++;
+					}
+					stringBuilder.Clear();
+					stringBuilder.Append(i);
+					stringBuilder.Append("_");
+					stringBuilder.Append(j);
+					stringBuilder.Append("_");
+					stringBuilder.Append(k);
+					stringBuilder.Append("_special");
+					cardsDraftedSpecial.Add(stringBuilder.ToString(), text3);
+				}
+			}
+		}
+	}
 
-  private void AddToDictEnergy(string value)
-  {
-    if (int.Parse(value) > 5)
-      value = "5";
-    if (this.dictEnergyCost.ContainsKey(value))
-      this.dictEnergyCost[value]++;
-    else
-      this.dictEnergyCost.Add(value, 1f);
-  }
+	public void Resize()
+	{
+		sideCharacters.Resize();
+	}
 
-  private void WriteBonusFullParty()
-  {
-    this.dictBonus.Clear();
-    this.dictBonusSingle.Clear();
-    this.dictAura.Clear();
-    this.dictAuraSingle.Clear();
-    this.dictEnergyCost.Clear();
-    this.AddToDictDT("Slashing", -1);
-    this.AddToDictDT("Blunt", -1);
-    this.AddToDictDT("Piercing", -1);
-    this.AddToDictDT("Fire", -1);
-    this.AddToDictDT("Cold", -1);
-    this.AddToDictDT("Lightning", -1);
-    this.AddToDictDT("Mind", -1);
-    this.AddToDictDT("Holy", -1);
-    this.AddToDictDT("Shadow", -1);
-    this.AddToDictAU("block", -1);
-    this.AddToDictAU("shield", -1);
-    for (int index1 = 0; index1 < 4; ++index1)
-    {
-      List<string> cards = AtOManager.Instance.GetHero(index1).Cards;
-      for (int index2 = 0; index2 < cards.Count; ++index2)
-      {
-        CardData cardData = Globals.Instance.GetCardData(cards[index2], false);
-        if (index1 == this.currentHeroIndex)
-          this.AddToDictEnergy(cardData.EnergyCost.ToString());
-        if (cardData.DamageType != Enums.DamageType.None)
-          this.AddToDictDT(Enum.GetName(typeof (Enums.DamageType), (object) cardData.DamageType), index1);
-        if (cardData.DamageType2 != Enums.DamageType.None)
-          this.AddToDictDT(Enum.GetName(typeof (Enums.DamageType), (object) cardData.DamageType2), index1);
-        if ((UnityEngine.Object) cardData.Aura != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.Aura.Id, index1);
-        if ((UnityEngine.Object) cardData.AuraSelf != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.AuraSelf.Id, index1);
-        if ((UnityEngine.Object) cardData.Aura2 != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.Aura2.Id, index1);
-        if ((UnityEngine.Object) cardData.AuraSelf2 != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.AuraSelf2.Id, index1);
-        if ((UnityEngine.Object) cardData.Aura3 != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.Aura3.Id, index1);
-        if ((UnityEngine.Object) cardData.AuraSelf3 != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.AuraSelf3.Id, index1);
-        if (cardData.Auras != null && cardData.Auras.Length != 0)
-        {
-          foreach (string au in ((IEnumerable<CardData.AuraBuffs>) cardData.Auras).SelectMany<CardData.AuraBuffs, AuraCurseData>((Func<CardData.AuraBuffs, IEnumerable<AuraCurseData>>) (x => (IEnumerable<AuraCurseData>) new AuraCurseData[2]
-          {
-            x.aura,
-            x.auraSelf
-          })).Where<AuraCurseData>((Func<AuraCurseData, bool>) (x => (UnityEngine.Object) x != (UnityEngine.Object) null)).Select<AuraCurseData, string>((Func<AuraCurseData, string>) (x => x.Id)))
-            this.AddToDictAU(au, index1);
-        }
-        if ((UnityEngine.Object) cardData.Curse != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.Curse.Id, index1);
-        if ((UnityEngine.Object) cardData.CurseSelf != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.CurseSelf.Id, index1);
-        if ((UnityEngine.Object) cardData.Curse2 != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.Curse2.Id, index1);
-        if ((UnityEngine.Object) cardData.CurseSelf2 != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.CurseSelf2.Id, index1);
-        if ((UnityEngine.Object) cardData.Curse3 != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.Curse3.Id, index1);
-        if ((UnityEngine.Object) cardData.CurseSelf3 != (UnityEngine.Object) null)
-          this.AddToDictAU(cardData.CurseSelf3.Id, index1);
-        if (cardData.Curses != null && cardData.Curses.Length != 0)
-        {
-          foreach (string au in ((IEnumerable<CardData.CurseDebuffs>) cardData.Curses).SelectMany<CardData.CurseDebuffs, AuraCurseData>((Func<CardData.CurseDebuffs, IEnumerable<AuraCurseData>>) (x => (IEnumerable<AuraCurseData>) new AuraCurseData[2]
-          {
-            x.curse,
-            x.curseSelf
-          })).Where<AuraCurseData>((Func<AuraCurseData, bool>) (x => (UnityEngine.Object) x != (UnityEngine.Object) null)).Select<AuraCurseData, string>((Func<AuraCurseData, string>) (x => x.Id)))
-            this.AddToDictAU(au, index1);
-        }
-      }
-    }
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append("<sprite name=cards><size=+.4>");
-    stringBuilder.Append(Texts.Instance.GetText("damageTypes"));
-    stringBuilder.Append("</size><br><indent=4>");
-    int num1 = 0;
-    foreach (KeyValuePair<string, int> dictBonu in this.dictBonus)
-    {
-      if (dictBonu.Value > 0)
-      {
-        stringBuilder.Append("<mspace=3>");
-        if (num1 > 0)
-          stringBuilder.Append("<color=#666><voffset=.4><size=-.8>|</size></voffset></color>");
-        stringBuilder.Append("<size=+.2><sprite name=");
-        stringBuilder.Append(dictBonu.Key.ToLower());
-        stringBuilder.Append("></size><space=1><mspace=1>");
-        stringBuilder.Append("<color=#FC0><size=+.2>");
-        if (this.dictBonusSingle.ContainsKey(dictBonu.Key))
-          stringBuilder.Append(this.dictBonusSingle[dictBonu.Key]);
-        else
-          stringBuilder.Append("0");
-        stringBuilder.Append("</size></color>");
-        stringBuilder.Append("/");
-        stringBuilder.Append(dictBonu.Value);
-        ++num1;
-      }
-    }
-    stringBuilder.Append("</mspace>");
-    CardCraftManager.Instance.cardChallengeBonus.text = stringBuilder.ToString();
-    stringBuilder.Clear();
-    stringBuilder.Append("<line-height=60%><br><br><line-height=100%>");
-    stringBuilder.Append("<indent=0><sprite name=cards><size=+.4>");
-    stringBuilder.Append(Texts.Instance.GetText("combatEffects"));
-    stringBuilder.Append("</size><br><indent=4>");
-    int num2 = 0;
-    foreach (KeyValuePair<string, int> keyValuePair in this.dictAura)
-    {
-      if (keyValuePair.Value > 0)
-      {
-        stringBuilder.Append("<nobr>");
-        stringBuilder.Append("<mspace=3>");
-        if (num2 % 8 == 0)
-          stringBuilder.Append("<br>");
-        else if (num2 > 0)
-          stringBuilder.Append("<color=#666><voffset=.4><size=-.8>|</size></voffset></color>");
-        stringBuilder.Append("<size=+.2><sprite name=");
-        stringBuilder.Append(keyValuePair.Key.ToLower());
-        stringBuilder.Append("></size><space=1><mspace=1>");
-        stringBuilder.Append("<color=#FC0><size=+.2>");
-        if (this.dictAuraSingle.ContainsKey(keyValuePair.Key))
-          stringBuilder.Append(this.dictAuraSingle[keyValuePair.Key]);
-        else
-          stringBuilder.Append("0");
-        stringBuilder.Append("</size></color>");
-        stringBuilder.Append("/");
-        stringBuilder.Append(keyValuePair.Value);
-        stringBuilder.Append("</nobr>");
-        ++num2;
-      }
-    }
-    stringBuilder.Append("</mspace>");
-    CardCraftManager.Instance.cardChallengeBonus.text += stringBuilder.ToString();
-  }
+	private void SetCurrentHeroAndRound()
+	{
+		AtOManager.Instance.SideBarCharacterClicked(currentHeroIndex);
+	}
 
-  private void WriteBonus()
-  {
-    this.dictBonus.Clear();
-    this.dictBonusSingle.Clear();
-    this.dictAura.Clear();
-    this.dictAuraSingle.Clear();
-    this.dictEnergyCost.Clear();
-    this.AddToDictDT("Slashing", -1);
-    this.AddToDictDT("Blunt", -1);
-    this.AddToDictDT("Piercing", -1);
-    this.AddToDictDT("Fire", -1);
-    this.AddToDictDT("Cold", -1);
-    this.AddToDictDT("Lightning", -1);
-    this.AddToDictDT("Mind", -1);
-    this.AddToDictDT("Holy", -1);
-    this.AddToDictDT("Shadow", -1);
-    this.AddToDictAU("heal", -1);
-    this.AddToDictAU("energy", -1);
-    this.AddToDictAU("block", -1);
-    this.AddToDictAU("shield", -1);
-    for (int index1 = 0; index1 < 4; ++index1)
-    {
-      if (index1 == this.currentHeroIndex)
-      {
-        List<string> cards = AtOManager.Instance.GetHero(index1).Cards;
-        for (int index2 = 0; index2 < cards.Count; ++index2)
-        {
-          CardData cardData = Globals.Instance.GetCardData(cards[index2], false);
-          this.AddToDictEnergy(cardData.EnergyCost.ToString());
-          if (cardData.DamageType != Enums.DamageType.None)
-            this.AddToDictDT(Enum.GetName(typeof (Enums.DamageType), (object) cardData.DamageType), index1);
-          if (cardData.DamageType2 != Enums.DamageType.None)
-            this.AddToDictDT(Enum.GetName(typeof (Enums.DamageType), (object) cardData.DamageType2), index1);
-          if (cardData.EnergyRecharge > 0)
-            this.AddToDictAU("energy", index1);
-          if (cardData.Heal > 0)
-            this.AddToDictAU("heal", index1);
-          if ((UnityEngine.Object) cardData.Aura != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.Aura.Id, index1);
-          if ((UnityEngine.Object) cardData.AuraSelf != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.AuraSelf.Id, index1);
-          if ((UnityEngine.Object) cardData.Aura2 != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.Aura2.Id, index1);
-          if ((UnityEngine.Object) cardData.AuraSelf2 != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.AuraSelf2.Id, index1);
-          if ((UnityEngine.Object) cardData.Aura3 != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.Aura3.Id, index1);
-          if ((UnityEngine.Object) cardData.AuraSelf3 != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.AuraSelf3.Id, index1);
-          if (cardData.Auras != null && cardData.Auras.Length != 0)
-          {
-            foreach (string au in ((IEnumerable<CardData.AuraBuffs>) cardData.Auras).SelectMany<CardData.AuraBuffs, AuraCurseData>((Func<CardData.AuraBuffs, IEnumerable<AuraCurseData>>) (x => (IEnumerable<AuraCurseData>) new AuraCurseData[2]
-            {
-              x.aura,
-              x.auraSelf
-            })).Where<AuraCurseData>((Func<AuraCurseData, bool>) (x => (UnityEngine.Object) x != (UnityEngine.Object) null)).Select<AuraCurseData, string>((Func<AuraCurseData, string>) (x => x.Id)))
-              this.AddToDictAU(au, index1);
-          }
-          if ((UnityEngine.Object) cardData.Curse != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.Curse.Id, index1);
-          if ((UnityEngine.Object) cardData.CurseSelf != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.CurseSelf.Id, index1);
-          if ((UnityEngine.Object) cardData.Curse2 != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.Curse2.Id, index1);
-          if ((UnityEngine.Object) cardData.CurseSelf2 != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.CurseSelf2.Id, index1);
-          if ((UnityEngine.Object) cardData.Curse3 != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.Curse3.Id, index1);
-          if ((UnityEngine.Object) cardData.CurseSelf3 != (UnityEngine.Object) null)
-            this.AddToDictAU(cardData.CurseSelf3.Id, index1);
-          if (cardData.Curses != null && cardData.Curses.Length != 0)
-          {
-            foreach (string au in ((IEnumerable<CardData.CurseDebuffs>) cardData.Curses).SelectMany<CardData.CurseDebuffs, AuraCurseData>((Func<CardData.CurseDebuffs, IEnumerable<AuraCurseData>>) (x => (IEnumerable<AuraCurseData>) new AuraCurseData[2]
-            {
-              x.curse,
-              x.curseSelf
-            })).Where<AuraCurseData>((Func<AuraCurseData, bool>) (x => (UnityEngine.Object) x != (UnityEngine.Object) null)).Select<AuraCurseData, string>((Func<AuraCurseData, string>) (x => x.Id)))
-              this.AddToDictAU(au, index1);
-          }
-        }
-      }
-    }
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append("<sprite name=cards><size=-.6><color=#FFF>");
-    stringBuilder.Append(Texts.Instance.GetText("damageTypes"));
-    stringBuilder.Append("</color></size><br><indent=4>");
-    int num1 = 0;
-    foreach (KeyValuePair<string, int> dictBonu in this.dictBonus)
-    {
-      if (dictBonu.Value > 0)
-      {
-        stringBuilder.Append("<mspace=2.6>");
-        if (num1 > 0)
-          stringBuilder.Append("<color=#666><voffset=.6><size=-1.5>|</size></voffset></color>");
-        stringBuilder.Append("<sprite name=");
-        stringBuilder.Append(dictBonu.Key.ToLower());
-        stringBuilder.Append("><space=1><mspace=1.4>");
-        stringBuilder.Append("<color=#FC0>");
-        if (this.dictBonusSingle.ContainsKey(dictBonu.Key))
-          stringBuilder.Append(this.dictBonusSingle[dictBonu.Key]);
-        else
-          stringBuilder.Append("0");
-        stringBuilder.Append("</color>");
-        ++num1;
-      }
-    }
-    stringBuilder.Append("</mspace>");
-    CardCraftManager.Instance.cardChallengeBonus.text = stringBuilder.ToString();
-    stringBuilder.Clear();
-    stringBuilder.Append("<line-height=70%><br><br></line-height><indent=0><sprite name=cards><size=-.6><color=#FFF>");
-    stringBuilder.Append(Texts.Instance.GetText("combatEffects"));
-    stringBuilder.Append("</color></size><br><indent=4>");
-    int num2 = 0;
-    foreach (KeyValuePair<string, int> keyValuePair in this.dictAura)
-    {
-      if (keyValuePair.Value > 0)
-      {
-        stringBuilder.Append("<nobr>");
-        stringBuilder.Append("<mspace=2.6>");
-        if (num2 > 0)
-        {
-          if (num2 % 14 == 0)
-            stringBuilder.Append("<br>");
-          else
-            stringBuilder.Append("<color=#666><voffset=.6><size=-1.5>|</size></voffset></color>");
-        }
-        stringBuilder.Append("<sprite name=");
-        stringBuilder.Append(keyValuePair.Key.ToLower());
-        stringBuilder.Append("><space=1><mspace=1.4>");
-        stringBuilder.Append("<color=#FC0>");
-        if (this.dictAuraSingle.ContainsKey(keyValuePair.Key))
-          stringBuilder.Append(this.dictAuraSingle[keyValuePair.Key]);
-        else
-          stringBuilder.Append("0");
-        stringBuilder.Append("</color>");
-        stringBuilder.Append("</nobr>");
-        ++num2;
-      }
-    }
-    stringBuilder.Append("</mspace>");
-    CardCraftManager.Instance.cardChallengeBonus.text += stringBuilder.ToString();
-  }
+	public void RerollFromButton()
+	{
+		if (!GameManager.Instance.IsMultiplayer() || AtOManager.Instance.GetHero(currentHeroIndex).Owner == NetworkManager.Instance.GetPlayerNick())
+		{
+			Reroll(currentHeroIndex);
+		}
+	}
+
+	public void Reroll(int _heroId, bool fromMP = false)
+	{
+		if (!fromMP && GameManager.Instance.IsMultiplayer() && AtOManager.Instance.GetHero(_heroId).Owner == NetworkManager.Instance.GetPlayerNick())
+		{
+			photonView.RPC("NET_Reroll", RpcTarget.Others, _heroId);
+		}
+		if (heroRerolledTimesArr[_heroId] < 1)
+		{
+			heroRerolledTimesArr[_heroId]++;
+			if (_heroId == currentHeroIndex)
+			{
+				ShowCardList(_heroId, refreshAllPacks: false, comingFromReroll: true);
+			}
+		}
+	}
+
+	[PunRPC]
+	private void NET_Reroll(int _heroId)
+	{
+		Reroll(_heroId, fromMP: true);
+	}
+
+	public void ChangeCharacter(int _heroIndex)
+	{
+		CardCraftManager.Instance.CleanChallengeBlocks();
+		SubClassData heroSubClass = theTeam[_heroIndex].HeroData.HeroSubClass;
+		int hp = heroSubClass.Hp;
+		_HP.text = hp.ToString();
+		int energy = heroSubClass.Energy;
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(energy);
+		stringBuilder.Append(" <size=1.3>");
+		stringBuilder.Append(Texts.Instance.GetText("dataPerTurn").Replace("<%>", heroSubClass.EnergyTurn.ToString()));
+		stringBuilder.Append("</size>");
+		_Energy.text = stringBuilder.ToString();
+		stringBuilder = null;
+		int speed = heroSubClass.Speed;
+		_Speed.text = speed.ToString();
+		ShowCardList(_heroIndex, refreshAllPacks: true);
+	}
+
+	public int GetCurrentRound()
+	{
+		return heroRoundArr[currentHeroIndex];
+	}
+
+	private void ShowCardList(int heroId, bool refreshAllPacks = false, bool comingFromReroll = false)
+	{
+		currentHeroIndex = heroId;
+		GameManager.Instance.CleanTempContainer();
+		CardCraftManager.Instance.ReassignChallengeButtons();
+		WriteBonus();
+		if (heroRoundArr[heroId] < 3)
+		{
+			List<int> list = new List<int>();
+			if (packsSelected != null && packsSelected.ContainsKey(heroId))
+			{
+				string[] array = packsSelected[heroId].Split('_');
+				for (int i = 0; i < array.Length; i++)
+				{
+					if (int.TryParse(array[i], out var result))
+					{
+						list.Add(result);
+					}
+				}
+			}
+			CardCraftManager.Instance.AssignChallengeRoundCards(heroRoundArr[heroId] + 1, maxRound);
+			int num = 8;
+			int num2 = 0;
+			for (int j = 0; j < num; j++)
+			{
+				bool flag = true;
+				bool selectedPack = false;
+				string key = heroId + "_" + heroRerolledTimesArr[heroId] + "_" + j;
+				if (list.Contains(j))
+				{
+					key = heroId + "_" + heroPackSelectedRerolledTimesArr[heroId, j] + "_" + j;
+					selectedPack = true;
+					flag = false;
+				}
+				else
+				{
+					CardCraftManager.Instance.ShowChallengePackSelected(_state: false, j);
+				}
+				if (refreshAllPacks || (comingFromReroll && flag))
+				{
+					CardCraftManager.Instance.CleanChallengeBlocks(num2);
+					CardCraftManager.Instance.AssignChallengeTitle(num2, Functions.UppercaseFirst(Texts.Instance.GetText(cardsDraftedPackname[key])));
+					for (int k = 0; k < cardsForPack; k++)
+					{
+						CardCraftManager.Instance.AssignChallengeCard(heroId, num2, k, cardsDrafted[key][k], selectedPack);
+					}
+				}
+				num2++;
+			}
+			CardCraftManager.Instance.ShowChallengeRerollFully(state: true);
+			CardCraftManager.Instance.ShowChallengePerks(state: false);
+		}
+		else if (heroRoundArr[heroId] == 3)
+		{
+			CardCraftManager.Instance.CleanChallengeBlocks();
+			CardCraftManager.Instance.AssignChallengeRoundCards(heroRoundArr[heroId] + 1, maxRound);
+			string[] array2 = packsSelected[heroId].Split('_');
+			StringBuilder stringBuilder = new StringBuilder();
+			StringBuilder stringBuilder2 = new StringBuilder();
+			for (int l = 0; l < 3; l++)
+			{
+				stringBuilder2.Clear();
+				stringBuilder2.Append(heroId);
+				stringBuilder2.Append("_");
+				stringBuilder2.Append(heroPackSelectedRerolledTimesArr[heroId, int.Parse(array2[l])]);
+				stringBuilder2.Append("_");
+				stringBuilder2.Append(array2[l]);
+				stringBuilder2.Append("_special");
+				string value = cardsDraftedSpecial[stringBuilder2.ToString()].Split('_')[0];
+				stringBuilder.Append(value);
+				stringBuilder.Append('_');
+				string key2 = heroId + "_" + l + "_" + array2[l];
+				CardCraftManager.Instance.AssignChallengeTitle(l, Functions.UppercaseFirst(Texts.Instance.GetText(cardsDraftedPackname[key2])));
+			}
+			bool showButtons = false;
+			if (!GameManager.Instance.IsMultiplayer() || AtOManager.Instance.GetHero(heroId).Owner == NetworkManager.Instance.GetPlayerNick())
+			{
+				showButtons = true;
+			}
+			CardCraftManager.Instance.AssignChallengeCardSpecial(stringBuilder.ToString(), showButtons);
+			CardCraftManager.Instance.ShowChallengeRerollFully(state: false);
+			CardCraftManager.Instance.ShowChallengePerks(state: false);
+			CardCraftManager.Instance.controllerHorizontalIndex = -1;
+			stringBuilder = null;
+			stringBuilder2 = null;
+		}
+		else if (heroRoundArr[heroId] == 4)
+		{
+			CardCraftManager.Instance.CleanChallengeBlocks();
+			CardCraftManager.Instance.ShowChallengeRerollFully(state: false);
+			CardCraftManager.Instance.ShowChallengePerks(state: true);
+			AssignPerkButtons();
+		}
+		CardCraftManager.Instance.ShowChallengeReroll(heroRerolledTimesArr[heroId] < 1);
+		CardCraftManager.Instance.ActivateChallengeReroll(state: true);
+		if (GameManager.Instance.IsMultiplayer() && AtOManager.Instance.GetHero(heroId).Owner != NetworkManager.Instance.GetPlayerNick())
+		{
+			CardCraftManager.Instance.ActivateChallengeReroll(state: false);
+		}
+	}
+
+	private void AssignPerkButtons()
+	{
+		Enums.CardClass cardClass = (Enums.CardClass)Enum.Parse(typeof(Enums.CardClass), Enum.GetName(typeof(Enums.HeroClass), theTeam[currentHeroIndex].HeroData.HeroClass));
+		if (theTeam[currentHeroIndex].HeroData.HeroSubClass.Id == Globals.Instance.GetSubClassData("engineer").Id)
+		{
+			cardClass = Enums.CardClass.Warrior;
+		}
+		List<PerkData> perkDataClass = Globals.Instance.GetPerkDataClass(cardClass);
+		int num = 0;
+		int num2 = 0;
+		SortedDictionary<int, PerkData> sortedDictionary = new SortedDictionary<int, PerkData>();
+		for (int i = 0; i < perkDataClass.Count; i++)
+		{
+			if (perkDataClass[i].ObeliskPerk && !sortedDictionary.ContainsKey(perkDataClass[i].Level))
+			{
+				sortedDictionary.Add(perkDataClass[i].Level, perkDataClass[i]);
+			}
+		}
+		foreach (KeyValuePair<int, PerkData> item in sortedDictionary)
+		{
+			PerkChallengeItem perkChallengeItem = perkChallengeItems[num];
+			perkChallengeItem.SetPerk(currentHeroIndex, num, item.Value.Id);
+			if (perkDrafted.ContainsKey(currentHeroIndex) && perkDrafted[currentHeroIndex].Contains(num))
+			{
+				perkChallengeItem.SetActive(state: true);
+				num2++;
+			}
+			else
+			{
+				perkChallengeItem.SetActive(state: false);
+			}
+			num++;
+		}
+		Enums.CardClass result = Enums.CardClass.None;
+		Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof(Enums.HeroClass), theTeam[currentHeroIndex].HeroData.HeroSubClass.HeroClassSecondary), out result);
+		for (int j = 0; j < perkChallengeItems.Length; j++)
+		{
+			if (j > 20)
+			{
+				if (result != Enums.CardClass.None)
+				{
+					perkChallengeItems[j].gameObject.SetActive(value: true);
+				}
+				else
+				{
+					perkChallengeItems[j].gameObject.SetActive(value: false);
+				}
+			}
+		}
+		WriteSelectedPerks(currentHeroIndex);
+		FinishDraw();
+	}
+
+	public void AssignPerk(int _heroId, int _perkIndex, bool fromMP = false)
+	{
+		if (!fromMP && GameManager.Instance.IsMultiplayer())
+		{
+			if (!(AtOManager.Instance.GetHero(_heroId).Owner == NetworkManager.Instance.GetPlayerNick()))
+			{
+				return;
+			}
+			photonView.RPC("NET_AssignPerk", RpcTarget.Others, _heroId, _perkIndex);
+		}
+		if (!perkDrafted.ContainsKey(_heroId))
+		{
+			perkDrafted.Add(_heroId, new List<int>());
+		}
+		if (perkDrafted[_heroId].Contains(_perkIndex))
+		{
+			perkDrafted[_heroId].Remove(_perkIndex);
+			if (GameManager.Instance.IsMultiplayer() && statusReady && !fromMP)
+			{
+				Ready();
+			}
+		}
+		else if (perkDrafted[_heroId].Count < maxSelectablePerks)
+		{
+			perkDrafted[_heroId].Add(_perkIndex);
+		}
+		if (currentHeroIndex == _heroId)
+		{
+			AssignPerkButtons();
+		}
+	}
+
+	[PunRPC]
+	private void NET_AssignPerk(int _heroId, int _perk)
+	{
+		AssignPerk(_heroId, _perk, fromMP: true);
+	}
+
+	private void WriteSelectedPerks(int _heroId)
+	{
+		CardCraftManager.Instance.AssignChallengeRoundPerks(perkDrafted[_heroId].Count, maxSelectablePerks);
+	}
+
+	public int GetActiveHero()
+	{
+		return currentHeroIndex;
+	}
+
+	private void SetDefaultCards(int _heroIndex)
+	{
+		Hero hero = theTeam[_heroIndex];
+		if (hero == null || hero.HeroData == null)
+		{
+			return;
+		}
+		foreach (KeyValuePair<string, PackData> item in Globals.Instance.PackDataSource)
+		{
+			if (item.Value.RequiredClass != null && item.Value.RequiredClass.Id == hero.HeroData.HeroSubClass.Id)
+			{
+				if (item.Value.Card0 != null)
+				{
+					AtOManager.Instance.AddCardToHero(_heroIndex, StarterUpgradeCard(item.Value.Card0.Id));
+				}
+				if (item.Value.Card1 != null)
+				{
+					AtOManager.Instance.AddCardToHero(_heroIndex, StarterUpgradeCard(item.Value.Card1.Id));
+				}
+				if (item.Value.Card2 != null)
+				{
+					AtOManager.Instance.AddCardToHero(_heroIndex, StarterUpgradeCard(item.Value.Card2.Id));
+				}
+				if (item.Value.Card3 != null)
+				{
+					AtOManager.Instance.AddCardToHero(_heroIndex, StarterUpgradeCard(item.Value.Card3.Id));
+				}
+				if (item.Value.Card4 != null)
+				{
+					AtOManager.Instance.AddCardToHero(_heroIndex, StarterUpgradeCard(item.Value.Card4.Id));
+				}
+				break;
+			}
+		}
+	}
+
+	private string StarterUpgradeCard(string _cardId)
+	{
+		if (!GameManager.Instance.IsWeeklyChallenge())
+		{
+			int obeliskMadness = AtOManager.Instance.GetObeliskMadness();
+			if (obeliskMadness >= 5)
+			{
+				CardData cardData = Globals.Instance.GetCardData(_cardId, instantiate: false);
+				if (cardData.Starter)
+				{
+					if (obeliskMadness <= 7)
+					{
+						return cardData.UpgradesTo1;
+					}
+					return cardData.UpgradesTo2;
+				}
+			}
+		}
+		else
+		{
+			CardData cardData2 = Globals.Instance.GetCardData(_cardId, instantiate: false);
+			if (cardData2.Starter)
+			{
+				return cardData2.UpgradesTo2;
+			}
+		}
+		return _cardId;
+	}
+
+	public List<PackData> GetPackListForClass(Enums.CardClass cardClass, string subclassId, int round)
+	{
+		List<PackData> list = new List<PackData>();
+		SubClassData subClassData = Globals.Instance.GetSubClassData(subclassId);
+		list.Add(subClassData.ChallengePack0);
+		list.Add(subClassData.ChallengePack1);
+		list.Add(subClassData.ChallengePack2);
+		list.Add(subClassData.ChallengePack3);
+		list.Add(subClassData.ChallengePack4);
+		list.Add(subClassData.ChallengePack5);
+		list.Add(subClassData.ChallengePack6);
+		return list;
+	}
+
+	public void SelectPack(int _heroId, int _pack, bool fromMP = false)
+	{
+		if (!fromMP && GameManager.Instance.IsMultiplayer() && AtOManager.Instance.GetHero(_heroId).Owner == NetworkManager.Instance.GetPlayerNick())
+		{
+			photonView.RPC("NET_SelectPack", RpcTarget.Others, _heroId, _pack);
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		if (heroRoundArr[_heroId] < 3)
+		{
+			stringBuilder.Append(_heroId);
+			stringBuilder.Append("_");
+			stringBuilder.Append(heroRerolledTimesArr[_heroId]);
+			stringBuilder.Append("_");
+			stringBuilder.Append(_pack);
+			string[] array = cardsDrafted[stringBuilder.ToString()];
+			for (int i = 0; i < array.Length; i++)
+			{
+				AtOManager.Instance.AddCardToHero(_heroId, array[i]);
+			}
+			if (!packsSelected.ContainsKey(_heroId))
+			{
+				packsSelected.Add(_heroId, "");
+			}
+			Dictionary<int, string> dictionary = packsSelected;
+			dictionary[_heroId] = dictionary[_heroId] + _pack + "_";
+			heroPackSelectedRerolledTimesArr[_heroId, _pack] = heroRerolledTimesArr[_heroId];
+			if (currentHeroIndex == _heroId)
+			{
+				CardCraftManager.Instance.ShowChallengePackSelected(_state: true, _pack);
+			}
+		}
+		else
+		{
+			string[] array2 = packsSelected[_heroId].Split('_');
+			stringBuilder.Append(_heroId);
+			stringBuilder.Append("_");
+			stringBuilder.Append(heroPackSelectedRerolledTimesArr[_heroId, int.Parse(array2[_pack])]);
+			stringBuilder.Append("_");
+			stringBuilder.Append(array2[_pack]);
+			stringBuilder.Append("_special");
+			string cardName = cardsDraftedSpecial[stringBuilder.ToString()].Split('_')[0];
+			AtOManager.Instance.AddCardToHero(_heroId, cardName);
+		}
+		heroRoundArr[_heroId]++;
+		sideCharacters.RefreshCards(_heroId);
+		if (currentHeroIndex == _heroId)
+		{
+			CardCraftManager.Instance.ShowChallengeButtons(state: false, _pack);
+			CardCraftManager.Instance.CreateDeck(currentHeroIndex);
+			if (heroRoundArr[currentHeroIndex] <= maxRound)
+			{
+				StartCoroutine(NextRound());
+			}
+			else
+			{
+				StartCoroutine(NextHero());
+			}
+		}
+	}
+
+	[PunRPC]
+	private void NET_SelectPack(int _heroId, int _pack)
+	{
+		SelectPack(_heroId, _pack, fromMP: true);
+	}
+
+	private IEnumerator NextRound()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.15f);
+		ShowCardList(currentHeroIndex);
+	}
+
+	public void NextHeroFunc(bool _isRight)
+	{
+		int num = currentHeroIndex;
+		num = ((!_isRight) ? (num - 1) : (num + 1));
+		if (num > 3)
+		{
+			num = 0;
+		}
+		else if (num < 0)
+		{
+			num = 3;
+		}
+		GameObject gameObject = GameObject.Find("/SideCharacters/OverCharacter" + num);
+		if (gameObject != null)
+		{
+			gameObject.transform.GetComponent<OverCharacter>().Clicked();
+		}
+	}
+
+	private IEnumerator NextHero(bool timeOut = true)
+	{
+		if (timeOut)
+		{
+			yield return Globals.Instance.WaitForSeconds(0.15f);
+		}
+		bool flag = false;
+		currentHeroIndex = 0;
+		while (currentHeroIndex < 4 && !flag)
+		{
+			if (heroRoundArr[currentHeroIndex] < 3 && (!GameManager.Instance.IsMultiplayer() || AtOManager.Instance.GetHero(currentHeroIndex).Owner == NetworkManager.Instance.GetPlayerNick()))
+			{
+				flag = true;
+			}
+			if (!flag)
+			{
+				currentHeroIndex++;
+			}
+		}
+		if (currentHeroIndex < 4)
+		{
+			SetCurrentHeroAndRound();
+			ShowCardList(currentHeroIndex);
+		}
+		else
+		{
+			FinishDraw();
+		}
+	}
+
+	private void FinishDraw()
+	{
+		bool flag = true;
+		for (int i = 0; i < 4; i++)
+		{
+			sideCharacters.ShowChallengeButtons(i);
+			if (perkDrafted != null && perkDrafted[i] != null && perkDrafted[i].Count < 4)
+			{
+				sideCharacters.ShowChallengeButtons(i, state: false);
+			}
+		}
+		if (!GameManager.Instance.IsMultiplayer())
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				if (theTeam[j] != null && !(theTeam[j].HeroData == null) && perkDrafted != null && perkDrafted[j] != null && perkDrafted[j].Count < 4)
+				{
+					flag = false;
+					break;
+				}
+			}
+		}
+		else
+		{
+			for (int k = 0; k < 4; k++)
+			{
+				if (theTeam[k] != null && !(theTeam[k].HeroData == null) && AtOManager.Instance.GetHero(k).Owner == NetworkManager.Instance.GetPlayerNick() && perkDrafted != null && perkDrafted[k] != null && perkDrafted[k].Count < 4)
+				{
+					flag = false;
+					break;
+				}
+			}
+		}
+		if (flag)
+		{
+			if (!GameManager.Instance.IsMultiplayer())
+			{
+				CardCraftManager.Instance.ChallengeReadySetButton(state: true);
+				CardCraftManager.Instance.EnableChallengeReadyButton(state: true);
+			}
+			else
+			{
+				CardCraftManager.Instance.EnableChallengeReadyButton(state: true);
+			}
+		}
+		else
+		{
+			CardCraftManager.Instance.EnableChallengeReadyButton(state: false);
+			CardCraftManager.Instance.ChallengeReadySetButton(state: false);
+		}
+	}
+
+	private void FinishObeliskDraft()
+	{
+		AtOManager.Instance.SetPlayerPerksChallenge(perkDrafted);
+		AtOManager.Instance.FinishObeliskDraft();
+	}
+
+	public void Ready()
+	{
+		if (!GameManager.Instance.IsMultiplayer())
+		{
+			FinishObeliskDraft();
+			return;
+		}
+		if (manualReadyCo != null)
+		{
+			StopCoroutine(manualReadyCo);
+		}
+		statusReady = !statusReady;
+		NetworkManager.Instance.SetManualReady(statusReady);
+		if (statusReady)
+		{
+			CardCraftManager.Instance.ChallengeReadySetButton(state: true);
+			if (NetworkManager.Instance.IsMaster())
+			{
+				manualReadyCo = StartCoroutine(CheckForAllManualReady());
+			}
+		}
+		else
+		{
+			CardCraftManager.Instance.ChallengeReadySetButton(state: false);
+		}
+	}
+
+	public void SetWaitingPlayersText(string msg)
+	{
+		CardCraftManager.Instance.SetWaitingPlayerTextChallenge(msg);
+	}
+
+	private IEnumerator CheckForAllManualReady()
+	{
+		bool check = true;
+		while (check)
+		{
+			if (!NetworkManager.Instance.AllPlayersManualReady())
+			{
+				yield return Globals.Instance.WaitForSeconds(1f);
+			}
+			else
+			{
+				check = false;
+			}
+		}
+		FinishObeliskDraft();
+	}
+
+	private void AddToDictDT(string dt, int index)
+	{
+		if (!(dt != ""))
+		{
+			return;
+		}
+		dt = dt.ToLower();
+		if (!dictBonus.ContainsKey(dt))
+		{
+			dictBonus.Add(dt, 0);
+		}
+		if (index <= -1)
+		{
+			return;
+		}
+		dictBonus[dt]++;
+		if (currentHeroIndex == index)
+		{
+			if (!dictBonusSingle.ContainsKey(dt))
+			{
+				dictBonusSingle.Add(dt, 0);
+			}
+			dictBonusSingle[dt]++;
+		}
+	}
+
+	private void AddToDictAU(string au, int index)
+	{
+		if (!(au != ""))
+		{
+			return;
+		}
+		au = au.ToLower();
+		if (!dictAura.ContainsKey(au))
+		{
+			dictAura.Add(au, 0);
+		}
+		if (index <= -1)
+		{
+			return;
+		}
+		dictAura[au]++;
+		if (currentHeroIndex == index)
+		{
+			if (!dictAuraSingle.ContainsKey(au))
+			{
+				dictAuraSingle.Add(au, 0);
+			}
+			dictAuraSingle[au]++;
+		}
+	}
+
+	private void AddToDictEnergy(string value)
+	{
+		if (int.Parse(value) > 5)
+		{
+			value = "5";
+		}
+		if (dictEnergyCost.ContainsKey(value))
+		{
+			dictEnergyCost[value]++;
+		}
+		else
+		{
+			dictEnergyCost.Add(value, 1f);
+		}
+	}
+
+	private void WriteBonusFullParty()
+	{
+		dictBonus.Clear();
+		dictBonusSingle.Clear();
+		dictAura.Clear();
+		dictAuraSingle.Clear();
+		dictEnergyCost.Clear();
+		AddToDictDT("Slashing", -1);
+		AddToDictDT("Blunt", -1);
+		AddToDictDT("Piercing", -1);
+		AddToDictDT("Fire", -1);
+		AddToDictDT("Cold", -1);
+		AddToDictDT("Lightning", -1);
+		AddToDictDT("Mind", -1);
+		AddToDictDT("Holy", -1);
+		AddToDictDT("Shadow", -1);
+		AddToDictAU("block", -1);
+		AddToDictAU("shield", -1);
+		for (int i = 0; i < 4; i++)
+		{
+			List<string> cards = AtOManager.Instance.GetHero(i).Cards;
+			for (int j = 0; j < cards.Count; j++)
+			{
+				CardData cardData = Globals.Instance.GetCardData(cards[j], instantiate: false);
+				if (i == currentHeroIndex)
+				{
+					AddToDictEnergy(cardData.EnergyCost.ToString());
+				}
+				string text = "";
+				if (cardData.DamageType != Enums.DamageType.None)
+				{
+					text = Enum.GetName(typeof(Enums.DamageType), cardData.DamageType);
+					AddToDictDT(text, i);
+				}
+				if (cardData.DamageType2 != Enums.DamageType.None)
+				{
+					text = Enum.GetName(typeof(Enums.DamageType), cardData.DamageType2);
+					AddToDictDT(text, i);
+				}
+				string text2 = "";
+				if (cardData.Aura != null)
+				{
+					text2 = cardData.Aura.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.AuraSelf != null)
+				{
+					text2 = cardData.AuraSelf.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Aura2 != null)
+				{
+					text2 = cardData.Aura2.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.AuraSelf2 != null)
+				{
+					text2 = cardData.AuraSelf2.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Aura3 != null)
+				{
+					text2 = cardData.Aura3.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.AuraSelf3 != null)
+				{
+					text2 = cardData.AuraSelf3.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Auras != null && cardData.Auras.Length != 0)
+				{
+					foreach (string item in from x in cardData.Auras.SelectMany((CardData.AuraBuffs x) => new AuraCurseData[2] { x.aura, x.auraSelf })
+						where x != null
+						select x.Id)
+					{
+						AddToDictAU(item, i);
+					}
+				}
+				if (cardData.Curse != null)
+				{
+					text2 = cardData.Curse.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.CurseSelf != null)
+				{
+					text2 = cardData.CurseSelf.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Curse2 != null)
+				{
+					text2 = cardData.Curse2.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.CurseSelf2 != null)
+				{
+					text2 = cardData.CurseSelf2.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Curse3 != null)
+				{
+					text2 = cardData.Curse3.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.CurseSelf3 != null)
+				{
+					text2 = cardData.CurseSelf3.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Curses == null || cardData.Curses.Length == 0)
+				{
+					continue;
+				}
+				foreach (string item2 in from x in cardData.Curses.SelectMany((CardData.CurseDebuffs x) => new AuraCurseData[2] { x.curse, x.curseSelf })
+					where x != null
+					select x.Id)
+				{
+					AddToDictAU(item2, i);
+				}
+			}
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("<sprite name=cards><size=+.4>");
+		stringBuilder.Append(Texts.Instance.GetText("damageTypes"));
+		stringBuilder.Append("</size><br><indent=4>");
+		int num = 0;
+		foreach (KeyValuePair<string, int> dictBonu in dictBonus)
+		{
+			if (dictBonu.Value > 0)
+			{
+				stringBuilder.Append("<mspace=3>");
+				if (num > 0)
+				{
+					stringBuilder.Append("<color=#666><voffset=.4><size=-.8>|</size></voffset></color>");
+				}
+				stringBuilder.Append("<size=+.2><sprite name=");
+				stringBuilder.Append(dictBonu.Key.ToLower());
+				stringBuilder.Append("></size><space=1><mspace=1>");
+				stringBuilder.Append("<color=#FC0><size=+.2>");
+				if (dictBonusSingle.ContainsKey(dictBonu.Key))
+				{
+					stringBuilder.Append(dictBonusSingle[dictBonu.Key]);
+				}
+				else
+				{
+					stringBuilder.Append("0");
+				}
+				stringBuilder.Append("</size></color>");
+				stringBuilder.Append("/");
+				stringBuilder.Append(dictBonu.Value);
+				num++;
+			}
+		}
+		stringBuilder.Append("</mspace>");
+		CardCraftManager.Instance.cardChallengeBonus.text = stringBuilder.ToString();
+		stringBuilder.Clear();
+		stringBuilder.Append("<line-height=60%><br><br><line-height=100%>");
+		stringBuilder.Append("<indent=0><sprite name=cards><size=+.4>");
+		stringBuilder.Append(Texts.Instance.GetText("combatEffects"));
+		stringBuilder.Append("</size><br><indent=4>");
+		num = 0;
+		foreach (KeyValuePair<string, int> item3 in dictAura)
+		{
+			if (item3.Value > 0)
+			{
+				stringBuilder.Append("<nobr>");
+				stringBuilder.Append("<mspace=3>");
+				if (num % 8 == 0)
+				{
+					stringBuilder.Append("<br>");
+				}
+				else if (num > 0)
+				{
+					stringBuilder.Append("<color=#666><voffset=.4><size=-.8>|</size></voffset></color>");
+				}
+				stringBuilder.Append("<size=+.2><sprite name=");
+				stringBuilder.Append(item3.Key.ToLower());
+				stringBuilder.Append("></size><space=1><mspace=1>");
+				stringBuilder.Append("<color=#FC0><size=+.2>");
+				if (dictAuraSingle.ContainsKey(item3.Key))
+				{
+					stringBuilder.Append(dictAuraSingle[item3.Key]);
+				}
+				else
+				{
+					stringBuilder.Append("0");
+				}
+				stringBuilder.Append("</size></color>");
+				stringBuilder.Append("/");
+				stringBuilder.Append(item3.Value);
+				stringBuilder.Append("</nobr>");
+				num++;
+			}
+		}
+		stringBuilder.Append("</mspace>");
+		CardCraftManager.Instance.cardChallengeBonus.text += stringBuilder.ToString();
+	}
+
+	private void WriteBonus()
+	{
+		dictBonus.Clear();
+		dictBonusSingle.Clear();
+		dictAura.Clear();
+		dictAuraSingle.Clear();
+		dictEnergyCost.Clear();
+		AddToDictDT("Slashing", -1);
+		AddToDictDT("Blunt", -1);
+		AddToDictDT("Piercing", -1);
+		AddToDictDT("Fire", -1);
+		AddToDictDT("Cold", -1);
+		AddToDictDT("Lightning", -1);
+		AddToDictDT("Mind", -1);
+		AddToDictDT("Holy", -1);
+		AddToDictDT("Shadow", -1);
+		AddToDictAU("heal", -1);
+		AddToDictAU("energy", -1);
+		AddToDictAU("block", -1);
+		AddToDictAU("shield", -1);
+		for (int i = 0; i < 4; i++)
+		{
+			if (i != currentHeroIndex)
+			{
+				continue;
+			}
+			List<string> cards = AtOManager.Instance.GetHero(i).Cards;
+			for (int j = 0; j < cards.Count; j++)
+			{
+				CardData cardData = Globals.Instance.GetCardData(cards[j], instantiate: false);
+				AddToDictEnergy(cardData.EnergyCost.ToString());
+				string text = "";
+				if (cardData.DamageType != Enums.DamageType.None)
+				{
+					text = Enum.GetName(typeof(Enums.DamageType), cardData.DamageType);
+					AddToDictDT(text, i);
+				}
+				if (cardData.DamageType2 != Enums.DamageType.None)
+				{
+					text = Enum.GetName(typeof(Enums.DamageType), cardData.DamageType2);
+					AddToDictDT(text, i);
+				}
+				string text2 = "";
+				if (cardData.EnergyRecharge > 0)
+				{
+					text2 = "energy";
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Heal > 0)
+				{
+					text2 = "heal";
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Aura != null)
+				{
+					text2 = cardData.Aura.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.AuraSelf != null)
+				{
+					text2 = cardData.AuraSelf.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Aura2 != null)
+				{
+					text2 = cardData.Aura2.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.AuraSelf2 != null)
+				{
+					text2 = cardData.AuraSelf2.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Aura3 != null)
+				{
+					text2 = cardData.Aura3.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.AuraSelf3 != null)
+				{
+					text2 = cardData.AuraSelf3.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Auras != null && cardData.Auras.Length != 0)
+				{
+					foreach (string item in from x in cardData.Auras.SelectMany((CardData.AuraBuffs x) => new AuraCurseData[2] { x.aura, x.auraSelf })
+						where x != null
+						select x.Id)
+					{
+						AddToDictAU(item, i);
+					}
+				}
+				if (cardData.Curse != null)
+				{
+					text2 = cardData.Curse.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.CurseSelf != null)
+				{
+					text2 = cardData.CurseSelf.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Curse2 != null)
+				{
+					text2 = cardData.Curse2.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.CurseSelf2 != null)
+				{
+					text2 = cardData.CurseSelf2.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Curse3 != null)
+				{
+					text2 = cardData.Curse3.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.CurseSelf3 != null)
+				{
+					text2 = cardData.CurseSelf3.Id;
+					AddToDictAU(text2, i);
+				}
+				if (cardData.Curses == null || cardData.Curses.Length == 0)
+				{
+					continue;
+				}
+				foreach (string item2 in from x in cardData.Curses.SelectMany((CardData.CurseDebuffs x) => new AuraCurseData[2] { x.curse, x.curseSelf })
+					where x != null
+					select x.Id)
+				{
+					AddToDictAU(item2, i);
+				}
+			}
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append("<sprite name=cards><size=-.6><color=#FFF>");
+		stringBuilder.Append(Texts.Instance.GetText("damageTypes"));
+		stringBuilder.Append("</color></size><br><indent=4>");
+		int num = 0;
+		foreach (KeyValuePair<string, int> dictBonu in dictBonus)
+		{
+			if (dictBonu.Value > 0)
+			{
+				stringBuilder.Append("<mspace=2.6>");
+				if (num > 0)
+				{
+					stringBuilder.Append("<color=#666><voffset=.6><size=-1.5>|</size></voffset></color>");
+				}
+				stringBuilder.Append("<sprite name=");
+				stringBuilder.Append(dictBonu.Key.ToLower());
+				stringBuilder.Append("><space=1><mspace=1.4>");
+				stringBuilder.Append("<color=#FC0>");
+				if (dictBonusSingle.ContainsKey(dictBonu.Key))
+				{
+					stringBuilder.Append(dictBonusSingle[dictBonu.Key]);
+				}
+				else
+				{
+					stringBuilder.Append("0");
+				}
+				stringBuilder.Append("</color>");
+				num++;
+			}
+		}
+		stringBuilder.Append("</mspace>");
+		CardCraftManager.Instance.cardChallengeBonus.text = stringBuilder.ToString();
+		stringBuilder.Clear();
+		stringBuilder.Append("<line-height=70%><br><br></line-height><indent=0><sprite name=cards><size=-.6><color=#FFF>");
+		stringBuilder.Append(Texts.Instance.GetText("combatEffects"));
+		stringBuilder.Append("</color></size><br><indent=4>");
+		num = 0;
+		foreach (KeyValuePair<string, int> item3 in dictAura)
+		{
+			if (item3.Value <= 0)
+			{
+				continue;
+			}
+			stringBuilder.Append("<nobr>");
+			stringBuilder.Append("<mspace=2.6>");
+			if (num > 0)
+			{
+				if (num % 14 == 0)
+				{
+					stringBuilder.Append("<br>");
+				}
+				else
+				{
+					stringBuilder.Append("<color=#666><voffset=.6><size=-1.5>|</size></voffset></color>");
+				}
+			}
+			stringBuilder.Append("<sprite name=");
+			stringBuilder.Append(item3.Key.ToLower());
+			stringBuilder.Append("><space=1><mspace=1.4>");
+			stringBuilder.Append("<color=#FC0>");
+			if (dictAuraSingle.ContainsKey(item3.Key))
+			{
+				stringBuilder.Append(dictAuraSingle[item3.Key]);
+			}
+			else
+			{
+				stringBuilder.Append("0");
+			}
+			stringBuilder.Append("</color>");
+			stringBuilder.Append("</nobr>");
+			num++;
+		}
+		stringBuilder.Append("</mspace>");
+		CardCraftManager.Instance.cardChallengeBonus.text += stringBuilder.ToString();
+	}
 }

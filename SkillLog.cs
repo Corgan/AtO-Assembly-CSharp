@@ -1,68 +1,84 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: SkillLog
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class SkillLog : MonoBehaviour
 {
-  public Transform borderRed;
-  public Transform borderGreen;
-  public SpriteRenderer sprite;
-  private SkillForLog SFL;
-  private CardItem CI;
-  private float distanceBetweenIcons = 0.55f;
+	public Transform borderRed;
 
-  private void Position(int index, bool isHero)
-  {
-    float x = (float) (-0.20000000298023224 - (double) index * (double) this.distanceBetweenIcons);
-    if (isHero)
-      this.transform.localPosition = new Vector3(x, 0.0f, -1f);
-    else
-      this.transform.localPosition = new Vector3(-x, 0.0f, -1f);
-  }
+	public Transform borderGreen;
 
-  public void SetSkill(SkillForLog _SFL, int index, bool isHero)
-  {
-    this.SFL = _SFL;
-    this.sprite.sprite = this.SFL.cardData.Sprite;
-    if (this.SFL.isFromHero)
-      this.borderRed.gameObject.SetActive(false);
-    else
-      this.borderGreen.gameObject.SetActive(false);
-    this.Position(index, isHero);
-  }
+	public SpriteRenderer sprite;
 
-  private void DestroyCard()
-  {
-    if ((Object) this.CI != (Object) null)
-      this.CI.HideKeyNotes();
-    Object.Destroy((Object) MatchManager.Instance.skillLogCard);
-    MatchManager.Instance.ShowMask(false);
-  }
+	private SkillForLog SFL;
 
-  private void ShowCard()
-  {
-    if ((Object) MatchManager.Instance.skillLogCard != (Object) null)
-      Object.Destroy((Object) MatchManager.Instance.skillLogCard);
-    Vector3 position = this.transform.position + new Vector3(0.0f, 2.6f, 0.0f);
-    MatchManager.Instance.skillLogCard = Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, position, Quaternion.identity);
-    this.CI = MatchManager.Instance.skillLogCard.GetComponent<CardItem>();
-    this.CI.SetCard(this.SFL.cardData.InternalId, false);
-    MatchManager.Instance.skillLogCard.transform.localScale = Vector3.zero;
-    this.CI.DisableCollider();
-    this.CI.DisableTrail();
-    this.CI.TopLayeringOrder("UI");
-    this.CI.SetDestinationScaleRotation(position, 1.4f, Quaternion.Euler(0.0f, 0.0f, 0.0f));
-    this.CI.discard = true;
-    this.CI.ShowKeyNotes();
-    MatchManager.Instance.ShowMask(true);
-  }
+	private CardItem CI;
 
-  private void OnMouseEnter() => this.ShowCard();
+	private float distanceBetweenIcons = 0.55f;
 
-  private void OnMouseExit() => this.DestroyCard();
+	private void Position(int index, bool isHero)
+	{
+		float num = -0.2f - (float)index * distanceBetweenIcons;
+		if (isHero)
+		{
+			base.transform.localPosition = new Vector3(num, 0f, -1f);
+		}
+		else
+		{
+			base.transform.localPosition = new Vector3(0f - num, 0f, -1f);
+		}
+	}
+
+	public void SetSkill(SkillForLog _SFL, int index, bool isHero)
+	{
+		SFL = _SFL;
+		sprite.sprite = SFL.cardData.Sprite;
+		if (SFL.isFromHero)
+		{
+			borderRed.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			borderGreen.gameObject.SetActive(value: false);
+		}
+		Position(index, isHero);
+	}
+
+	private void DestroyCard()
+	{
+		if (CI != null)
+		{
+			CI.HideKeyNotes();
+		}
+		Object.Destroy(MatchManager.Instance.skillLogCard);
+		MatchManager.Instance.ShowMask(state: false);
+	}
+
+	private void ShowCard()
+	{
+		if (MatchManager.Instance.skillLogCard != null)
+		{
+			Object.Destroy(MatchManager.Instance.skillLogCard);
+		}
+		Vector3 position = base.transform.position + new Vector3(0f, 2.6f, 0f);
+		MatchManager.Instance.skillLogCard = Object.Instantiate(GameManager.Instance.CardPrefab, position, Quaternion.identity);
+		CI = MatchManager.Instance.skillLogCard.GetComponent<CardItem>();
+		CI.SetCard(SFL.cardData.InternalId, deckScale: false);
+		MatchManager.Instance.skillLogCard.transform.localScale = Vector3.zero;
+		CI.DisableCollider();
+		CI.DisableTrail();
+		CI.TopLayeringOrder("UI");
+		CI.SetDestinationScaleRotation(position, 1.4f, Quaternion.Euler(0f, 0f, 0f));
+		CI.discard = true;
+		CI.ShowKeyNotes();
+		MatchManager.Instance.ShowMask(state: true);
+	}
+
+	private void OnMouseEnter()
+	{
+		ShowCard();
+	}
+
+	private void OnMouseExit()
+	{
+		DestroyCard();
+	}
 }

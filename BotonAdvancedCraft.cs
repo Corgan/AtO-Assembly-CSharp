@@ -1,28 +1,22 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BotonAdvancedCraft
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class BotonAdvancedCraft : MonoBehaviour
 {
-  public Transform circleOn;
-  public Transform circleOff;
+	public Transform circleOn;
 
-  public void SetState(bool state)
-  {
-    if (state)
-    {
-      this.circleOn.gameObject.SetActive(true);
-      this.circleOff.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.circleOn.gameObject.SetActive(false);
-      this.circleOff.gameObject.SetActive(true);
-    }
-  }
+	public Transform circleOff;
+
+	public void SetState(bool state)
+	{
+		if (state)
+		{
+			circleOn.gameObject.SetActive(value: true);
+			circleOff.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			circleOn.gameObject.SetActive(value: false);
+			circleOff.gameObject.SetActive(value: true);
+		}
+	}
 }

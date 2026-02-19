@@ -1,33 +1,33 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EpicToonFX.ETFXSpriteBouncer
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
-namespace EpicToonFX
+namespace EpicToonFX;
+
+public class ETFXSpriteBouncer : MonoBehaviour
 {
-  public class ETFXSpriteBouncer : MonoBehaviour
-  {
-    public float scaleAmount = 1.1f;
-    public float scaleDuration = 1f;
-    private Vector3 startScale;
-    private float scaleTimer;
+	public float scaleAmount = 1.1f;
 
-    private void Start()
-    {
-      this.startScale = this.transform.localScale;
-      if ((double) this.startScale.y == 1.0)
-        return;
-      this.startScale = new Vector3(this.startScale.x, this.startScale.y / this.scaleAmount, this.startScale.z);
-    }
+	public float scaleDuration = 1f;
 
-    private void Update()
-    {
-      this.scaleTimer += Time.deltaTime;
-      this.transform.localScale = new Vector3(this.startScale.x, Mathf.Lerp(this.startScale.y, this.startScale.y * this.scaleAmount, Mathf.Clamp01(this.scaleTimer / this.scaleDuration)) + Mathf.PingPong(this.scaleTimer / this.scaleDuration, 0.1f), this.startScale.z);
-    }
-  }
+	private Vector3 startScale;
+
+	private float scaleTimer;
+
+	private void Start()
+	{
+		startScale = base.transform.localScale;
+		if (startScale.y != 1f)
+		{
+			float y = startScale.y / scaleAmount;
+			startScale = new Vector3(startScale.x, y, startScale.z);
+		}
+	}
+
+	private void Update()
+	{
+		scaleTimer += Time.deltaTime;
+		float t = Mathf.Clamp01(scaleTimer / scaleDuration);
+		float y = Mathf.Lerp(startScale.y, startScale.y * scaleAmount, t) + Mathf.PingPong(scaleTimer / scaleDuration, 0.1f);
+		Vector3 localScale = new Vector3(startScale.x, y, startScale.z);
+		base.transform.localScale = localScale;
+	}
 }

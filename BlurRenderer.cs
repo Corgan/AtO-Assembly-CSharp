@@ -1,39 +1,39 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BlurRenderer
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class BlurRenderer : MonoBehaviour
 {
-  public Camera blurCamera;
-  public Material blurMaterial;
+	public Camera blurCamera;
 
-  private void Start() => this.CaptureScreen();
+	public Material blurMaterial;
 
-  private void OnEnable() => this.CaptureScreen();
+	private void Start()
+	{
+		CaptureScreen();
+	}
 
-  public void CaptureScreen()
-  {
-    Debug.Log((object) nameof (CaptureScreen));
-    int width = Screen.width;
-    int height = Screen.height;
-    int depth = 24;
-    RenderTexture renderTexture = new RenderTexture(height, width, depth);
-    Rect source = new Rect(0.0f, 0.0f, (float) height, (float) width);
-    Texture2D texture2D = new Texture2D(height, width, TextureFormat.RGBA32, false);
-    this.blurCamera.targetTexture = renderTexture;
-    this.blurCamera.Render();
-    RenderTexture active = RenderTexture.active;
-    RenderTexture.active = renderTexture;
-    texture2D.ReadPixels(source, 0, 0);
-    texture2D.Apply();
-    this.blurCamera.targetTexture = (RenderTexture) null;
-    RenderTexture.active = active;
-    Object.Destroy((Object) renderTexture);
-    this.blurMaterial.SetTexture("_RenTex", (Texture) texture2D);
-  }
+	private void OnEnable()
+	{
+		CaptureScreen();
+	}
+
+	public void CaptureScreen()
+	{
+		Debug.Log("CaptureScreen");
+		int width = Screen.width;
+		int height = Screen.height;
+		int depth = 24;
+		RenderTexture renderTexture = new RenderTexture(height, width, depth);
+		Rect source = new Rect(0f, 0f, height, width);
+		Texture2D texture2D = new Texture2D(height, width, TextureFormat.RGBA32, mipChain: false);
+		blurCamera.targetTexture = renderTexture;
+		blurCamera.Render();
+		RenderTexture active = RenderTexture.active;
+		RenderTexture.active = renderTexture;
+		texture2D.ReadPixels(source, 0, 0);
+		texture2D.Apply();
+		blurCamera.targetTexture = null;
+		RenderTexture.active = active;
+		Object.Destroy(renderTexture);
+		blurMaterial.SetTexture("_RenTex", texture2D);
+	}
 }

@@ -1,215 +1,290 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BoxSelection
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class BoxSelection : MonoBehaviour
 {
-  public SpriteRenderer sr;
-  private Coroutine coColor;
-  public Transform selection;
-  public Transform boxBorder;
-  public BoxPlayer[] boxPlayer;
-  public TMP_Text playerOwner;
-  public Transform lockImg;
-  public Transform classImg;
-  public Transform dice;
-  public Transform disabledLayer;
-  private int id;
-  private string owner = "";
-  public Transform playerReadyT;
-  public Transform iconReady;
-  public Transform iconNotReady;
-  public Transform arrowController;
-  private bool enabledRandom = true;
+	public SpriteRenderer sr;
 
-  private void Awake() => this.HidePlayers();
+	private Coroutine coColor;
 
-  private void Start()
-  {
-    this.id = int.Parse(this.gameObject.name.Split('_', StringSplitOptions.None)[1]);
-    this.SetOwner("");
-    this.ShowHideArrowController(false);
-    if (GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsWeeklyChallenge())
-      this.enabledRandom = false;
-    if (this.enabledRandom)
-    {
-      this.dice.GetChild(0).GetComponent<RandomHeroSelector>().SetId(this.id);
-      if (GameManager.Instance.IsMultiplayer())
-        this.dice.gameObject.SetActive(false);
-      else
-        this.dice.gameObject.SetActive(true);
-    }
-    else
-      this.dice.gameObject.SetActive(false);
-  }
+	public Transform selection;
 
-  private void HidePlayers()
-  {
-    for (int index = 0; index < 4; ++index)
-      this.boxPlayer[index].gameObject.SetActive(false);
-  }
+	public Transform boxBorder;
 
-  public void ShowHideArrowController(bool _state)
-  {
-    if (this.arrowController.gameObject.activeSelf == _state)
-      return;
-    this.arrowController.gameObject.SetActive(_state);
-  }
+	public BoxPlayer[] boxPlayer;
 
-  public void ShowPlayer(int num) => this.boxPlayer[num].gameObject.SetActive(true);
+	public TMP_Text playerOwner;
 
-  public void SetOwner(string playerNick)
-  {
-    this.owner = playerNick;
-    this.playerReadyT.gameObject.SetActive(false);
-    if (GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsWeeklyChallenge())
-      this.enabledRandom = false;
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      if (playerNick != "")
-        this.playerReadyT.gameObject.SetActive(true);
-      if (playerNick != NetworkManager.Instance.GetPlayerNick())
-      {
-        this.lockImg.gameObject.SetActive(true);
-        this.classImg.gameObject.SetActive(false);
-        this.dice.gameObject.SetActive(false);
-      }
-      else
-      {
-        this.lockImg.gameObject.SetActive(false);
-        this.classImg.gameObject.SetActive(true);
-        if (this.enabledRandom)
-          this.dice.gameObject.SetActive(true);
-        else
-          this.dice.gameObject.SetActive(false);
-      }
-    }
-    else
-    {
-      this.lockImg.gameObject.SetActive(false);
-      this.classImg.gameObject.SetActive(true);
-      if (this.enabledRandom)
-        this.dice.gameObject.SetActive(true);
-      else
-        this.dice.gameObject.SetActive(false);
-    }
-    this.playerOwner.text = NetworkManager.Instance.GetPlayerNickReal(playerNick);
-    this.ActivePlayerNick(playerNick);
-    if (playerNick != "")
-    {
-      this.playerOwner.color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(playerNick));
-      this.TransformColor(NetworkManager.Instance.GetColorFromNick(playerNick));
-    }
-    else
-      this.TransformColor("#87552D");
-  }
+	public Transform lockImg;
 
-  public void SetReady(bool _state)
-  {
-    this.iconReady.gameObject.SetActive(_state);
-    this.iconNotReady.gameObject.SetActive(!_state);
-  }
+	public Transform classImg;
 
-  public int GetId() => this.id;
+	public Transform dice;
 
-  public string GetOwner() => this.owner;
+	public Transform disabledLayer;
 
-  public void HideSelection() => this.selection.gameObject.SetActive(false);
+	private int id;
 
-  public void ShowSelection() => this.selection.gameObject.SetActive(true);
+	private string owner = "";
 
-  private void SelectPlayer(int num)
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      if (index != num)
-        this.boxPlayer[index].HideBorder();
-      else
-        this.boxPlayer[index].DrawBorder();
-    }
-  }
+	public Transform playerReadyT;
 
-  public void ActivePlayerNick(string playerNick)
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      if (this.boxPlayer[index].playerNick != playerNick || playerNick == "")
-        this.boxPlayer[index].Activate(false);
-      else
-        this.boxPlayer[index].Activate(true);
-    }
-  }
+	public Transform iconReady;
 
-  public void SetPlayerPosition(int position, string playerName)
-  {
-    this.boxPlayer[position].SetName(playerName);
-  }
+	public Transform iconNotReady;
 
-  public void CheckSkuForHero()
-  {
-    if (!GameManager.Instance.IsMultiplayer() || !GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsWeeklyChallenge() || !NetworkManager.Instance.IsMaster() || !((UnityEngine.Object) HeroSelectionManager.Instance.GetBoxHeroFromIndex(this.id) != (UnityEngine.Object) null))
-      return;
-    SubClassData subClassData = Globals.Instance.GetSubClassData(HeroSelectionManager.Instance.GetBoxHeroFromIndex(this.id).GetSubclassName());
-    for (int index = 0; index < this.boxPlayer.Length; ++index)
-    {
-      if ((UnityEngine.Object) subClassData != (UnityEngine.Object) null && subClassData.Sku != "" && !NetworkManager.Instance.PlayerHaveSku(this.boxPlayer[index].playerName.text, subClassData.Sku))
-        this.boxPlayer[index].DisableSKU(subClassData.Sku);
-    }
-  }
+	public Transform arrowController;
 
-  public void TransformColor(string color)
-  {
-    if (this.coColor != null)
-      this.StopCoroutine(this.coColor);
-    this.coColor = this.StartCoroutine(this.TransformColorCo(color));
-  }
+	private bool enabledRandom = true;
 
-  private IEnumerator TransformColorCo(string color)
-  {
-    Color targetColor = Functions.HexToColor(color);
-    float timeLeft = 0.2f;
-    while ((double) timeLeft > 0.0)
-    {
-      this.sr.color = Color.Lerp(this.sr.color, targetColor, Time.deltaTime / timeLeft);
-      timeLeft -= Time.deltaTime;
-      yield return (object) null;
-    }
-  }
+	private void Awake()
+	{
+		HidePlayers();
+	}
 
-  private void OnMouseExit()
-  {
-    if (AlertManager.Instance.IsActive() || !(SceneStatic.GetSceneName() == "HeroSelection") || (UnityEngine.Object) HeroSelectionManager.Instance.charPopupGO != (UnityEngine.Object) null && HeroSelectionManager.Instance.charPopup.IsOpened())
-      return;
-    HeroSelectionManager.Instance.MouseOverBox((GameObject) null);
-    this.boxBorder.gameObject.SetActive(false);
-    if (!HeroSelectionManager.Instance.dragging)
-      return;
-    HeroSelectionManager.Instance.MouseOverBox((GameObject) null);
-  }
+	private void Start()
+	{
+		id = int.Parse(base.gameObject.name.Split('_')[1]);
+		SetOwner("");
+		ShowHideArrowController(_state: false);
+		if (GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsWeeklyChallenge())
+		{
+			enabledRandom = false;
+		}
+		if (enabledRandom)
+		{
+			dice.GetChild(0).GetComponent<RandomHeroSelector>().SetId(id);
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				dice.gameObject.SetActive(value: false);
+			}
+			else
+			{
+				dice.gameObject.SetActive(value: true);
+			}
+		}
+		else
+		{
+			dice.gameObject.SetActive(value: false);
+		}
+	}
 
-  private void OnMouseOver()
-  {
-    if (AlertManager.Instance.IsActive() || !(SceneStatic.GetSceneName() == "HeroSelection") || (UnityEngine.Object) HeroSelectionManager.Instance.charPopupGO != (UnityEngine.Object) null && HeroSelectionManager.Instance.charPopup.IsOpened())
-      return;
-    HeroSelectionManager.Instance.MouseOverBox(this.gameObject);
-  }
+	private void HidePlayers()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			boxPlayer[i].gameObject.SetActive(value: false);
+		}
+	}
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || !(SceneStatic.GetSceneName() == "HeroSelection") || (UnityEngine.Object) HeroSelectionManager.Instance.charPopupGO != (UnityEngine.Object) null && HeroSelectionManager.Instance.charPopup.IsOpened() || !HeroSelectionManager.Instance.dragging)
-      return;
-    if (HeroSelectionManager.Instance.IsYourBox(this.gameObject.name))
-      this.boxBorder.gameObject.SetActive(true);
-    GameManager.Instance.PlayAudio(AudioManager.Instance.soundButtonClick);
-  }
+	public void ShowHideArrowController(bool _state)
+	{
+		if (arrowController.gameObject.activeSelf != _state)
+		{
+			arrowController.gameObject.SetActive(_state);
+		}
+	}
 
-  public void ShowDisabledLayer(bool state) => this.disabledLayer.gameObject.SetActive(state);
+	public void ShowPlayer(int num)
+	{
+		boxPlayer[num].gameObject.SetActive(value: true);
+	}
+
+	public void SetOwner(string playerNick)
+	{
+		owner = playerNick;
+		playerReadyT.gameObject.SetActive(value: false);
+		if (GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsWeeklyChallenge())
+		{
+			enabledRandom = false;
+		}
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			if (playerNick != "")
+			{
+				playerReadyT.gameObject.SetActive(value: true);
+			}
+			if (playerNick != NetworkManager.Instance.GetPlayerNick())
+			{
+				lockImg.gameObject.SetActive(value: true);
+				classImg.gameObject.SetActive(value: false);
+				dice.gameObject.SetActive(value: false);
+			}
+			else
+			{
+				lockImg.gameObject.SetActive(value: false);
+				classImg.gameObject.SetActive(value: true);
+				if (enabledRandom)
+				{
+					dice.gameObject.SetActive(value: true);
+				}
+				else
+				{
+					dice.gameObject.SetActive(value: false);
+				}
+			}
+		}
+		else
+		{
+			lockImg.gameObject.SetActive(value: false);
+			classImg.gameObject.SetActive(value: true);
+			if (enabledRandom)
+			{
+				dice.gameObject.SetActive(value: true);
+			}
+			else
+			{
+				dice.gameObject.SetActive(value: false);
+			}
+		}
+		playerOwner.text = NetworkManager.Instance.GetPlayerNickReal(playerNick);
+		ActivePlayerNick(playerNick);
+		if (playerNick != "")
+		{
+			playerOwner.color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(playerNick));
+			TransformColor(NetworkManager.Instance.GetColorFromNick(playerNick));
+		}
+		else
+		{
+			TransformColor("#87552D");
+		}
+	}
+
+	public void SetReady(bool _state)
+	{
+		iconReady.gameObject.SetActive(_state);
+		iconNotReady.gameObject.SetActive(!_state);
+	}
+
+	public int GetId()
+	{
+		return id;
+	}
+
+	public string GetOwner()
+	{
+		return owner;
+	}
+
+	public void HideSelection()
+	{
+		selection.gameObject.SetActive(value: false);
+	}
+
+	public void ShowSelection()
+	{
+		selection.gameObject.SetActive(value: true);
+	}
+
+	private void SelectPlayer(int num)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (i != num)
+			{
+				boxPlayer[i].HideBorder();
+			}
+			else
+			{
+				boxPlayer[i].DrawBorder();
+			}
+		}
+	}
+
+	public void ActivePlayerNick(string playerNick)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (boxPlayer[i].playerNick != playerNick || playerNick == "")
+			{
+				boxPlayer[i].Activate(state: false);
+			}
+			else
+			{
+				boxPlayer[i].Activate(state: true);
+			}
+		}
+	}
+
+	public void SetPlayerPosition(int position, string playerName)
+	{
+		boxPlayer[position].SetName(playerName);
+	}
+
+	public void CheckSkuForHero()
+	{
+		if (!GameManager.Instance.IsMultiplayer() || !GameManager.Instance.IsLoadingGame() || GameManager.Instance.IsWeeklyChallenge() || !NetworkManager.Instance.IsMaster() || !(HeroSelectionManager.Instance.GetBoxHeroFromIndex(id) != null))
+		{
+			return;
+		}
+		string subclassName = HeroSelectionManager.Instance.GetBoxHeroFromIndex(id).GetSubclassName();
+		SubClassData subClassData = Globals.Instance.GetSubClassData(subclassName);
+		for (int i = 0; i < boxPlayer.Length; i++)
+		{
+			if (subClassData != null && subClassData.Sku != "" && !NetworkManager.Instance.PlayerHaveSku(boxPlayer[i].playerName.text, subClassData.Sku))
+			{
+				boxPlayer[i].DisableSKU(subClassData.Sku);
+			}
+		}
+	}
+
+	public void TransformColor(string color)
+	{
+		if (coColor != null)
+		{
+			StopCoroutine(coColor);
+		}
+		coColor = StartCoroutine(TransformColorCo(color));
+	}
+
+	private IEnumerator TransformColorCo(string color)
+	{
+		Color targetColor = Functions.HexToColor(color);
+		float timeLeft = 0.2f;
+		while (timeLeft > 0f)
+		{
+			sr.color = Color.Lerp(sr.color, targetColor, Time.deltaTime / timeLeft);
+			timeLeft -= Time.deltaTime;
+			yield return null;
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!AlertManager.Instance.IsActive() && SceneStatic.GetSceneName() == "HeroSelection" && (!(HeroSelectionManager.Instance.charPopupGO != null) || !HeroSelectionManager.Instance.charPopup.IsOpened()))
+		{
+			HeroSelectionManager.Instance.MouseOverBox(null);
+			boxBorder.gameObject.SetActive(value: false);
+			if (HeroSelectionManager.Instance.dragging)
+			{
+				HeroSelectionManager.Instance.MouseOverBox(null);
+			}
+		}
+	}
+
+	private void OnMouseOver()
+	{
+		if (!AlertManager.Instance.IsActive() && SceneStatic.GetSceneName() == "HeroSelection" && (!(HeroSelectionManager.Instance.charPopupGO != null) || !HeroSelectionManager.Instance.charPopup.IsOpened()))
+		{
+			HeroSelectionManager.Instance.MouseOverBox(base.gameObject);
+		}
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && SceneStatic.GetSceneName() == "HeroSelection" && (!(HeroSelectionManager.Instance.charPopupGO != null) || !HeroSelectionManager.Instance.charPopup.IsOpened()) && HeroSelectionManager.Instance.dragging)
+		{
+			if (HeroSelectionManager.Instance.IsYourBox(base.gameObject.name))
+			{
+				boxBorder.gameObject.SetActive(value: true);
+			}
+			GameManager.Instance.PlayAudio(AudioManager.Instance.soundButtonClick);
+		}
+	}
+
+	public void ShowDisabledLayer(bool state)
+	{
+		disabledLayer.gameObject.SetActive(state);
+	}
 }

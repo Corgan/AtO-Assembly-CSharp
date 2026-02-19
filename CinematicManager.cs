@@ -1,239 +1,254 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CinematicManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using Paradox;
-using Photon.Pun;
 using System.Collections;
+using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class CinematicManager : MonoBehaviour
 {
-  private PhotonView photonView;
-  private CinematicData cinematicData;
-  private GameObject cinematicGO;
-  private Animator cinematicGOAnim;
-  private bool playCinematic = true;
-  private int totalPlayersReady;
-  public TMP_Text textBottom;
-  public TMP_Text textMiddle;
-  public TMP_Text UIPlayers;
-  public Transform buttonSkip;
-  private bool skipable;
-  private bool finishCinematic;
-  private Coroutine hideTextCo;
+	private PhotonView photonView;
 
-  public static CinematicManager Instance { get; private set; }
+	private CinematicData cinematicData;
 
-  private void Awake()
-  {
-    if ((Object) CinematicManager.Instance == (Object) null)
-      CinematicManager.Instance = this;
-    else if ((Object) CinematicManager.Instance != (Object) this)
-      Object.Destroy((Object) this.gameObject);
-    if ((Object) GameManager.Instance == (Object) null)
-    {
-      SceneStatic.LoadByName("Game");
-    }
-    else
-    {
-      this.photonView = PhotonView.Get((Component) this);
-      GameManager.Instance.SetCamera();
-      NetworkManager.Instance.StartStopQueue(true);
-      this.DoCinematic();
-    }
-  }
+	private GameObject cinematicGO;
 
-  private void Update()
-  {
-    if (!this.playCinematic || !((Object) this.cinematicGOAnim != (Object) null))
-      return;
-    double normalizedTime = (double) this.cinematicGOAnim.GetCurrentAnimatorStateInfo(0).normalizedTime;
-    float num = (float) normalizedTime - Mathf.Floor((float) normalizedTime);
-    if (!this.finishCinematic && (double) num <= 0.949999988079071)
-      return;
-    this.EndCinematic();
-  }
+	private Animator cinematicGOAnim;
 
-  public void DoText(string _cinematic, int _index, int _position)
-  {
-    if (this.hideTextCo != null)
-    {
-      this.StopCoroutine(this.hideTextCo);
-      this.textBottom.gameObject.SetActive(false);
-      this.textMiddle.gameObject.SetActive(false);
-    }
-    switch (_cinematic)
-    {
-      case "intro":
-        if (_position == 0)
-        {
-          this.textBottom.text = Texts.Instance.GetText("cinematicIntro" + _index.ToString());
-          break;
-        }
-        if (_position == 1)
-        {
-          this.textMiddle.text = Texts.Instance.GetText("cinematicIntro" + _index.ToString());
-          break;
-        }
-        break;
-      case "outro":
-        if (_position == 0)
-        {
-          this.textBottom.text = Texts.Instance.GetText("cinematicOutro" + _index.ToString());
-          break;
-        }
-        if (_position == 1)
-        {
-          this.textMiddle.text = Texts.Instance.GetText("cinematicOutro" + _index.ToString());
-          break;
-        }
-        break;
-    }
-    if (_position == 0)
-    {
-      this.textBottom.color = Color.white;
-      this.textBottom.gameObject.SetActive(true);
-    }
-    else if (_position == 1)
-    {
-      this.textMiddle.color = Color.white;
-      this.textMiddle.gameObject.SetActive(true);
-    }
-    this.hideTextCo = this.StartCoroutine(this.HideText());
-  }
+	private bool playCinematic = true;
 
-  private IEnumerator HideText()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(6f);
-    this.textBottom.gameObject.SetActive(false);
-    this.textMiddle.gameObject.SetActive(false);
-  }
+	private int totalPlayersReady;
 
-  private void FadeOutBSO()
-  {
-    if (!((Object) this.cinematicData != (Object) null) || !((Object) this.cinematicData.CinematicBSO != (Object) null))
-      return;
-    AudioManager.Instance.FadeOutBSO();
-  }
+	public TMP_Text textBottom;
 
-  private void DoCinematic()
-  {
-    this.UIPlayers.text = "";
-    this.buttonSkip.gameObject.SetActive(true);
-    if (AtOManager.Instance.CinematicId != "")
-    {
-      this.cinematicData = Globals.Instance.GetCinematicData(AtOManager.Instance.CinematicId);
-      if ((Object) this.cinematicData != (Object) null)
-      {
-        if (this.cinematicData.CinematicEndAdventure && !GameManager.Instance.IsObeliskChallenge())
-          AtOManager.Instance.SetAdventureCompleted(true);
-        if ((Object) this.cinematicData.CinematicBSO != (Object) null)
-          AudioManager.Instance.DoBSO(acBSO: this.cinematicData.CinematicBSO);
-        if (this.cinematicData.CinematicId == "intro")
-          this.StartCoroutine(this.SendActStartTelemetryCo());
-      }
-    }
-    AtOManager.Instance.CinematicId = "";
-    if ((Object) this.cinematicData == (Object) null)
-    {
-      GameManager.Instance.ChangeScene("Map");
-    }
-    else
-    {
-      this.cinematicGO = Object.Instantiate<GameObject>(this.cinematicData.CinematicGo, Vector3.zero, Quaternion.identity);
-      this.cinematicGOAnim = this.cinematicGO.GetComponent<Animator>();
-      GameManager.Instance.SceneLoaded();
-      this.cinematicGOAnim.Play(this.cinematicGOAnim.GetCurrentAnimatorStateInfo(0).shortNameHash);
-      if ((Object) this.cinematicGOAnim != (Object) null && this.cinematicGOAnim.GetCurrentAnimatorClipInfo(0) != null && (double) this.cinematicGOAnim.GetCurrentAnimatorClipInfo(0)[0].clip.length > 5.0)
-      {
-        this.skipable = true;
-        this.buttonSkip.gameObject.SetActive(true);
-      }
-      else
-      {
-        this.finishCinematic = true;
-        this.buttonSkip.gameObject.SetActive(false);
-      }
-      this.ControllerMovement(true);
-    }
-  }
+	public TMP_Text textMiddle;
 
-  private IEnumerator SendActStartTelemetryCo()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(1f);
-    Telemetry.SendActStart();
-  }
+	public TMP_Text UIPlayers;
 
-  private void EndCinematic()
-  {
-    this.playCinematic = false;
-    this.cinematicGOAnim.enabled = false;
-    this.FadeOutBSO();
-    this.StartCoroutine(this.EndCinematicCo());
-  }
+	public Transform buttonSkip;
 
-  private IEnumerator EndCinematicCo()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.5f);
-    if ((Object) this.cinematicData != (Object) null)
-    {
-      if (this.cinematicData.CinematicEndAdventure && !GameManager.Instance.IsObeliskChallenge())
-      {
-        AtOManager.Instance.FinishGame();
-        yield break;
-      }
-      else
-      {
-        AtOManager.Instance.fromEventCombatData = this.cinematicData.CinematicCombat;
-        AtOManager.Instance.fromEventEventData = this.cinematicData.CinematicEvent;
-      }
-    }
-    GameManager.Instance.ChangeScene("Map");
-  }
+	private bool skipable;
 
-  public void SkipCinematic()
-  {
-    if (!this.skipable || !this.buttonSkip.gameObject.activeSelf)
-      return;
-    this.buttonSkip.gameObject.SetActive(false);
-    if (!GameManager.Instance.IsMultiplayer())
-      this.EndCinematic();
-    else
-      this.photonView.RPC("NET_SkipCinematic", RpcTarget.All);
-  }
+	private bool finishCinematic;
 
-  [PunRPC]
-  private void NET_SkipCinematic()
-  {
-    ++this.totalPlayersReady;
-    this.SetTotalPlayersReady();
-  }
+	private Coroutine hideTextCo;
 
-  private void SetTotalPlayersReady()
-  {
-    int numPlayers = NetworkManager.Instance.GetNumPlayers();
-    this.UIPlayers.text = NetworkManager.Instance.GetWaitingPlayersString(this.totalPlayersReady, numPlayers);
-    if (this.totalPlayersReady < numPlayers)
-      return;
-    this.EndCinematic();
-  }
+	public static CinematicManager Instance { get; private set; }
 
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    bool shoulderLeft = false,
-    bool shoulderRight = false)
-  {
-    if (!(goingUp | goingLeft | goingRight | goingDown))
-      return;
-    Mouse.current.WarpCursorPosition((Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this.buttonSkip.GetChild(0).position));
-  }
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(base.gameObject);
+		}
+		if (GameManager.Instance == null)
+		{
+			SceneStatic.LoadByName("Game");
+			return;
+		}
+		photonView = PhotonView.Get(this);
+		GameManager.Instance.SetCamera();
+		NetworkManager.Instance.StartStopQueue(state: true);
+		DoCinematic();
+	}
+
+	private void Update()
+	{
+		if (playCinematic && cinematicGOAnim != null)
+		{
+			float num = 0f;
+			float normalizedTime = cinematicGOAnim.GetCurrentAnimatorStateInfo(0).normalizedTime;
+			num = normalizedTime - Mathf.Floor(normalizedTime);
+			if (finishCinematic || num > 0.95f)
+			{
+				EndCinematic();
+			}
+		}
+	}
+
+	public void DoText(string _cinematic, int _index, int _position)
+	{
+		if (hideTextCo != null)
+		{
+			StopCoroutine(hideTextCo);
+			textBottom.gameObject.SetActive(value: false);
+			textMiddle.gameObject.SetActive(value: false);
+		}
+		if (_cinematic == "intro")
+		{
+			switch (_position)
+			{
+			case 0:
+				textBottom.text = Texts.Instance.GetText("cinematicIntro" + _index);
+				break;
+			case 1:
+				textMiddle.text = Texts.Instance.GetText("cinematicIntro" + _index);
+				break;
+			}
+		}
+		else if (_cinematic == "outro")
+		{
+			switch (_position)
+			{
+			case 0:
+				textBottom.text = Texts.Instance.GetText("cinematicOutro" + _index);
+				break;
+			case 1:
+				textMiddle.text = Texts.Instance.GetText("cinematicOutro" + _index);
+				break;
+			}
+		}
+		switch (_position)
+		{
+		case 0:
+			textBottom.color = Color.white;
+			textBottom.gameObject.SetActive(value: true);
+			break;
+		case 1:
+			textMiddle.color = Color.white;
+			textMiddle.gameObject.SetActive(value: true);
+			break;
+		}
+		hideTextCo = StartCoroutine(HideText());
+	}
+
+	private IEnumerator HideText()
+	{
+		yield return Globals.Instance.WaitForSeconds(6f);
+		textBottom.gameObject.SetActive(value: false);
+		textMiddle.gameObject.SetActive(value: false);
+	}
+
+	private void FadeOutBSO()
+	{
+		if (cinematicData != null && cinematicData.CinematicBSO != null)
+		{
+			AudioManager.Instance.FadeOutBSO();
+		}
+	}
+
+	private void DoCinematic()
+	{
+		UIPlayers.text = "";
+		buttonSkip.gameObject.SetActive(value: true);
+		if (AtOManager.Instance.CinematicId != "")
+		{
+			cinematicData = Globals.Instance.GetCinematicData(AtOManager.Instance.CinematicId);
+			if (cinematicData != null)
+			{
+				if (cinematicData.CinematicEndAdventure && !GameManager.Instance.IsObeliskChallenge())
+				{
+					AtOManager.Instance.SetAdventureCompleted(state: true);
+				}
+				if (cinematicData.CinematicBSO != null)
+				{
+					AudioManager.Instance.DoBSO("", cinematicData.CinematicBSO);
+				}
+				if (cinematicData.CinematicId == "intro")
+				{
+					StartCoroutine(SendActStartTelemetryCo());
+				}
+			}
+		}
+		AtOManager.Instance.CinematicId = "";
+		if (cinematicData == null)
+		{
+			GameManager.Instance.ChangeScene("Map");
+			return;
+		}
+		cinematicGO = Object.Instantiate(cinematicData.CinematicGo, Vector3.zero, Quaternion.identity);
+		cinematicGOAnim = cinematicGO.GetComponent<Animator>();
+		if (cinematicGOAnim == null)
+		{
+			cinematicGOAnim = cinematicGO.GetComponentInChildren<Animator>();
+		}
+		GameManager.Instance.SceneLoaded();
+		AnimatorStateInfo currentAnimatorStateInfo = cinematicGOAnim.GetCurrentAnimatorStateInfo(0);
+		cinematicGOAnim.Play(currentAnimatorStateInfo.shortNameHash);
+		if (cinematicGOAnim != null && cinematicGOAnim.GetCurrentAnimatorClipInfo(0) != null && cinematicGOAnim.GetCurrentAnimatorClipInfo(0)[0].clip.length > 5f)
+		{
+			skipable = true;
+			buttonSkip.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			finishCinematic = true;
+			buttonSkip.gameObject.SetActive(value: false);
+		}
+		ControllerMovement(goingUp: true);
+	}
+
+	private IEnumerator SendActStartTelemetryCo()
+	{
+		yield return Globals.Instance.WaitForSeconds(1f);
+	}
+
+	private void EndCinematic()
+	{
+		playCinematic = false;
+		cinematicGOAnim.enabled = false;
+		FadeOutBSO();
+		StartCoroutine(EndCinematicCo());
+	}
+
+	private IEnumerator EndCinematicCo()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.5f);
+		if (cinematicData != null)
+		{
+			if (cinematicData.CinematicEndAdventure && !GameManager.Instance.IsObeliskChallenge())
+			{
+				AtOManager.Instance.FinishGame();
+				yield break;
+			}
+			AtOManager.Instance.fromEventCombatData = cinematicData.CinematicCombat;
+			AtOManager.Instance.fromEventEventData = cinematicData.CinematicEvent;
+		}
+		GameManager.Instance.ChangeScene("Map");
+	}
+
+	public void SkipCinematic()
+	{
+		if (skipable && buttonSkip.gameObject.activeSelf)
+		{
+			buttonSkip.gameObject.SetActive(value: false);
+			if (!GameManager.Instance.IsMultiplayer())
+			{
+				EndCinematic();
+			}
+			else
+			{
+				photonView.RPC("NET_SkipCinematic", RpcTarget.All);
+			}
+		}
+	}
+
+	[PunRPC]
+	private void NET_SkipCinematic()
+	{
+		totalPlayersReady++;
+		SetTotalPlayersReady();
+	}
+
+	private void SetTotalPlayersReady()
+	{
+		int numPlayers = NetworkManager.Instance.GetNumPlayers();
+		UIPlayers.text = NetworkManager.Instance.GetWaitingPlayersString(totalPlayersReady, numPlayers);
+		if (totalPlayersReady >= numPlayers)
+		{
+			EndCinematic();
+		}
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, bool shoulderLeft = false, bool shoulderRight = false)
+	{
+		if (goingUp || goingLeft || goingRight || goingDown)
+		{
+			Vector2 position = GameManager.Instance.cameraMain.WorldToScreenPoint(buttonSkip.GetChild(0).position);
+			Mouse.current.WarpCursorPosition(position);
+		}
+	}
 }

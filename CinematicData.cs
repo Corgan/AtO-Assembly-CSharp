@@ -1,61 +1,95 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CinematicData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Cinematic", menuName = "Cinematic Data", order = 62)]
 public class CinematicData : ScriptableObject
 {
-  [SerializeField]
-  private string cinematicId;
-  [SerializeField]
-  private GameObject cinematicGo;
-  [SerializeField]
-  private AudioClip cinematicBSO;
-  [SerializeField]
-  private EventData cinematicEvent;
-  [SerializeField]
-  private CombatData cinematicCombat;
-  [SerializeField]
-  private bool cinematicEndAdventure;
+	[SerializeField]
+	private string cinematicId;
 
-  public string CinematicId
-  {
-    get => this.cinematicId;
-    set => this.cinematicId = value;
-  }
+	[SerializeField]
+	private GameObject cinematicGo;
 
-  public GameObject CinematicGo
-  {
-    get => this.cinematicGo;
-    set => this.cinematicGo = value;
-  }
+	[SerializeField]
+	private AudioClip cinematicBSO;
 
-  public EventData CinematicEvent
-  {
-    get => this.cinematicEvent;
-    set => this.cinematicEvent = value;
-  }
+	[SerializeField]
+	private EventData cinematicEvent;
 
-  public CombatData CinematicCombat
-  {
-    get => this.cinematicCombat;
-    set => this.cinematicCombat = value;
-  }
+	[SerializeField]
+	private CombatData cinematicCombat;
 
-  public bool CinematicEndAdventure
-  {
-    get => this.cinematicEndAdventure;
-    set => this.cinematicEndAdventure = value;
-  }
+	[SerializeField]
+	private bool cinematicEndAdventure;
 
-  public AudioClip CinematicBSO
-  {
-    get => this.cinematicBSO;
-    set => this.cinematicBSO = value;
-  }
+	public string CinematicId
+	{
+		get
+		{
+			return cinematicId;
+		}
+		set
+		{
+			cinematicId = value;
+		}
+	}
+
+	public GameObject CinematicGo
+	{
+		get
+		{
+			return cinematicGo;
+		}
+		set
+		{
+			cinematicGo = value;
+		}
+	}
+
+	public EventData CinematicEvent
+	{
+		get
+		{
+			return cinematicEvent;
+		}
+		set
+		{
+			cinematicEvent = value;
+		}
+	}
+
+	public CombatData CinematicCombat
+	{
+		get
+		{
+			return cinematicCombat;
+		}
+		set
+		{
+			cinematicCombat = value;
+		}
+	}
+
+	public bool CinematicEndAdventure
+	{
+		get
+		{
+			return cinematicEndAdventure;
+		}
+		set
+		{
+			cinematicEndAdventure = value;
+		}
+	}
+
+	public AudioClip CinematicBSO
+	{
+		get
+		{
+			return cinematicBSO;
+		}
+		set
+		{
+			cinematicBSO = value;
+		}
+	}
 }

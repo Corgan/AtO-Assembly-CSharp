@@ -1,54 +1,62 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ConsoleToGUI
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class ConsoleToGUI : MonoBehaviour
 {
-  public GameObject consoleCanvas;
-  public TextMeshProUGUI consoleText;
-  private string myLog = "*begin log";
-  private bool doShow = true;
-  private int kChars = 1200;
+	public GameObject consoleCanvas;
 
-  private void OnEnable()
-  {
-    Application.logMessageReceived += new Application.LogCallback(this.Log);
-  }
+	public TextMeshProUGUI consoleText;
 
-  private void OnDisable()
-  {
-    Application.logMessageReceived -= new Application.LogCallback(this.Log);
-  }
+	private string myLog = "*begin log";
 
-  private void Start() => this.doShow = false;
+	private bool doShow = true;
 
-  public void ConsoleShow()
-  {
-    this.doShow = !this.doShow;
-    if (this.doShow)
-    {
-      this.consoleCanvas.gameObject.SetActive(true);
-      this.SetText();
-    }
-    else
-      this.consoleCanvas.gameObject.SetActive(false);
-  }
+	private int kChars = 1200;
 
-  private void SetText() => this.consoleText.text = this.myLog;
+	private void OnEnable()
+	{
+		Application.logMessageReceived += Log;
+	}
 
-  public void Log(string logString, string stackTrace, UnityEngine.LogType type)
-  {
-    this.myLog = this.myLog + "\n" + logString;
-    if (this.myLog.Length > this.kChars)
-      this.myLog = this.myLog.Substring(this.myLog.Length - this.kChars);
-    if (!this.consoleCanvas.gameObject.activeSelf)
-      return;
-    this.SetText();
-  }
+	private void OnDisable()
+	{
+		Application.logMessageReceived -= Log;
+	}
+
+	private void Start()
+	{
+		doShow = false;
+	}
+
+	public void ConsoleShow()
+	{
+		doShow = !doShow;
+		if (doShow)
+		{
+			consoleCanvas.gameObject.SetActive(value: true);
+			SetText();
+		}
+		else
+		{
+			consoleCanvas.gameObject.SetActive(value: false);
+		}
+	}
+
+	private void SetText()
+	{
+		consoleText.text = myLog;
+	}
+
+	public void Log(string logString, string stackTrace, LogType type)
+	{
+		myLog = myLog + "\n" + logString;
+		if (myLog.Length > kChars)
+		{
+			myLog = myLog.Substring(myLog.Length - kChars);
+		}
+		if (consoleCanvas.gameObject.activeSelf)
+		{
+			SetText();
+		}
+	}
 }

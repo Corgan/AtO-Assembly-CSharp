@@ -1,43 +1,62 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BotHeroChar
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class BotHeroChar : MonoBehaviour
 {
-  public bool isHeroStats;
-  private SubClassData subClassData;
-  private SpriteRenderer spr;
+	public bool isHeroStats;
 
-  public void SetSubClassData(SubClassData _subClassData) => this.subClassData = _subClassData;
+	private SubClassData subClassData;
 
-  private void Awake()
-  {
-    this.spr = this.GetComponent<BotonRollover>().image.GetComponent<SpriteRenderer>();
-  }
+	private SpriteRenderer spr;
 
-  private void Start() => this.turnOffColor();
+	public void SetSubClassData(SubClassData _subClassData)
+	{
+		subClassData = _subClassData;
+	}
 
-  private void OnMouseEnter() => this.turnOnColor();
+	private void Awake()
+	{
+		spr = GetComponent<BotonRollover>().image.GetComponent<SpriteRenderer>();
+	}
 
-  private void OnMouseExit() => this.turnOffColor();
+	private void Start()
+	{
+		turnOffColor();
+	}
 
-  private void OnMouseUp()
-  {
-    if (AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive())
-      return;
-    if (this.isHeroStats)
-      HeroSelectionManager.Instance.charPopup.Trigger(this.subClassData, this.isHeroStats);
-    else
-      PerkTree.Instance.Show(this.subClassData.Id);
-    this.turnOffColor();
-  }
+	private void OnMouseEnter()
+	{
+		turnOnColor();
+	}
 
-  private void turnOffColor() => this.spr.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+	private void OnMouseExit()
+	{
+		turnOffColor();
+	}
 
-  private void turnOnColor() => this.spr.color = new Color(1f, 1f, 1f, 1f);
+	private void OnMouseUp()
+	{
+		if (!AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive())
+		{
+			if (isHeroStats)
+			{
+				HeroSelectionManager.Instance.charPopup.Init(subClassData);
+				HeroSelectionManager.Instance.charPopup.Show();
+			}
+			else
+			{
+				PerkTree.Instance.Show(subClassData.Id);
+			}
+			turnOffColor();
+		}
+	}
+
+	private void turnOffColor()
+	{
+		spr.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+	}
+
+	private void turnOnColor()
+	{
+		spr.color = new Color(1f, 1f, 1f, 1f);
+	}
 }

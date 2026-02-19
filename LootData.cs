@@ -1,127 +1,217 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: LootData
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "New Loot Table", menuName = "Loot Table Data", order = 57)]
 public class LootData : ScriptableObject
 {
-  [SerializeField]
-  private string id;
-  [SerializeField]
-  private bool allowDropOnlyItems;
-  [SerializeField]
-  private int numItems;
-  [SerializeField]
-  private int goldQuantity;
-  [SerializeField]
-  private LootItem[] lootItemTable;
-  [Header("Upgrade Percents")]
-  [SerializeField]
-  private float defaultPercentUncommon;
-  [SerializeField]
-  private float defaultPercentRare;
-  [SerializeField]
-  private float defaultPercentEpic;
-  [SerializeField]
-  private float defaultPercentMythic;
-  [Header("Shady Deal")]
-  [SerializeField]
-  private GameObject shadyModel;
-  [SerializeField]
-  private float shadyScaleX = 1f;
-  [SerializeField]
-  private float shadyScaleY = 1f;
-  [SerializeField]
-  private float shadyOffsetX;
-  [SerializeField]
-  private float shadyOffsetY;
+	[SerializeField]
+	private string id;
 
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
+	[SerializeField]
+	private bool allowDropOnlyItems;
 
-  public int NumItems
-  {
-    get => this.numItems;
-    set => this.numItems = value;
-  }
+	[SerializeField]
+	private int numItems;
 
-  public LootItem[] LootItemTable
-  {
-    get => this.lootItemTable;
-    set => this.lootItemTable = value;
-  }
+	[SerializeField]
+	private int goldQuantity;
 
-  public float DefaultPercentUncommon
-  {
-    get => this.defaultPercentUncommon;
-    set => this.defaultPercentUncommon = value;
-  }
+	[SerializeField]
+	private LootItem[] lootItemTable;
 
-  public float DefaultPercentRare
-  {
-    get => this.defaultPercentRare;
-    set => this.defaultPercentRare = value;
-  }
+	[Header("Upgrade Percents")]
+	[SerializeField]
+	private float defaultPercentUncommon;
 
-  public float DefaultPercentEpic
-  {
-    get => this.defaultPercentEpic;
-    set => this.defaultPercentEpic = value;
-  }
+	[SerializeField]
+	private float defaultPercentRare;
 
-  public float DefaultPercentMythic
-  {
-    get => this.defaultPercentMythic;
-    set => this.defaultPercentMythic = value;
-  }
+	[SerializeField]
+	private float defaultPercentEpic;
 
-  public int GoldQuantity
-  {
-    get => this.goldQuantity;
-    set => this.goldQuantity = value;
-  }
+	[SerializeField]
+	private float defaultPercentMythic;
 
-  public GameObject ShadyModel
-  {
-    get => this.shadyModel;
-    set => this.shadyModel = value;
-  }
+	[Header("Shady Deal")]
+	[SerializeField]
+	private GameObject shadyModel;
 
-  public float ShadyScaleX
-  {
-    get => this.shadyScaleX;
-    set => this.shadyScaleX = value;
-  }
+	[SerializeField]
+	private float shadyScaleX = 1f;
 
-  public float ShadyScaleY
-  {
-    get => this.shadyScaleY;
-    set => this.shadyScaleY = value;
-  }
+	[SerializeField]
+	private float shadyScaleY = 1f;
 
-  public float ShadyOffsetX
-  {
-    get => this.shadyOffsetX;
-    set => this.shadyOffsetX = value;
-  }
+	[SerializeField]
+	private float shadyOffsetX;
 
-  public float ShadyOffsetY
-  {
-    get => this.shadyOffsetY;
-    set => this.shadyOffsetY = value;
-  }
+	[SerializeField]
+	private float shadyOffsetY;
 
-  public bool AllowDropOnlyItems
-  {
-    get => this.allowDropOnlyItems;
-    set => this.allowDropOnlyItems = value;
-  }
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
+
+	public int NumItems
+	{
+		get
+		{
+			return numItems;
+		}
+		set
+		{
+			numItems = value;
+		}
+	}
+
+	public LootItem[] LootItemTable
+	{
+		get
+		{
+			return lootItemTable;
+		}
+		set
+		{
+			lootItemTable = value;
+		}
+	}
+
+	public float DefaultPercentUncommon
+	{
+		get
+		{
+			return defaultPercentUncommon;
+		}
+		set
+		{
+			defaultPercentUncommon = value;
+		}
+	}
+
+	public float DefaultPercentRare
+	{
+		get
+		{
+			return defaultPercentRare;
+		}
+		set
+		{
+			defaultPercentRare = value;
+		}
+	}
+
+	public float DefaultPercentEpic
+	{
+		get
+		{
+			return defaultPercentEpic;
+		}
+		set
+		{
+			defaultPercentEpic = value;
+		}
+	}
+
+	public float DefaultPercentMythic
+	{
+		get
+		{
+			return defaultPercentMythic;
+		}
+		set
+		{
+			defaultPercentMythic = value;
+		}
+	}
+
+	public int GoldQuantity
+	{
+		get
+		{
+			return goldQuantity;
+		}
+		set
+		{
+			goldQuantity = value;
+		}
+	}
+
+	public GameObject ShadyModel
+	{
+		get
+		{
+			return shadyModel;
+		}
+		set
+		{
+			shadyModel = value;
+		}
+	}
+
+	public float ShadyScaleX
+	{
+		get
+		{
+			return shadyScaleX;
+		}
+		set
+		{
+			shadyScaleX = value;
+		}
+	}
+
+	public float ShadyScaleY
+	{
+		get
+		{
+			return shadyScaleY;
+		}
+		set
+		{
+			shadyScaleY = value;
+		}
+	}
+
+	public float ShadyOffsetX
+	{
+		get
+		{
+			return shadyOffsetX;
+		}
+		set
+		{
+			shadyOffsetX = value;
+		}
+	}
+
+	public float ShadyOffsetY
+	{
+		get
+		{
+			return shadyOffsetY;
+		}
+		set
+		{
+			shadyOffsetY = value;
+		}
+	}
+
+	public bool AllowDropOnlyItems
+	{
+		get
+		{
+			return allowDropOnlyItems;
+		}
+		set
+		{
+			allowDropOnlyItems = value;
+		}
+	}
 }

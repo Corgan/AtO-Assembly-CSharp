@@ -1,116 +1,139 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: UIDiscardSelector
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 public class UIDiscardSelector : MonoBehaviour
 {
-  public TMP_Text textInstructions;
-  public Transform button;
-  public Transform buttonHide;
-  public Canvas canvas;
-  private Button buttonB;
-  public GameObject elements;
-  public TMP_Text buttonShowText;
-  private bool showStatus = true;
-  public Transform cardContainer;
-  private bool nonLimitedNumCards;
-  private Enums.CardPlace cardPlace;
+	public TMP_Text textInstructions;
 
-  private void Awake()
-  {
-    this.buttonB = this.button.GetComponent<Button>();
-    this.canvas.gameObject.SetActive(false);
-  }
+	public Transform button;
 
-  public bool IsActive() => this.canvas.gameObject.activeSelf;
+	public Transform buttonHide;
 
-  public void HideShow(bool doMask = true)
-  {
-    if (this.showStatus)
-    {
-      this.elements.gameObject.SetActive(false);
-      this.buttonShowText.text = Texts.Instance.GetText("show").ToUpper();
-      if (doMask)
-        MatchManager.Instance.ShowMaskFromUIScreen(false);
-    }
-    else
-    {
-      this.elements.gameObject.SetActive(true);
-      this.buttonShowText.text = Texts.Instance.GetText("hide").ToUpper();
-      if (doMask)
-        MatchManager.Instance.ShowMaskFromUIScreen(true);
-    }
-    this.showStatus = !this.showStatus;
-  }
+	public Canvas canvas;
 
-  public void TextInstructions()
-  {
-    int num = MatchManager.Instance.CardsLeftForDiscard();
-    if (num < 0)
-      num = 0;
-    StringBuilder stringBuilder = new StringBuilder();
-    if (this.cardPlace == Enums.CardPlace.TopDeck)
-      stringBuilder.Append(Texts.Instance.GetText("chooseTopDeck"));
-    else
-      stringBuilder.Append(Texts.Instance.GetText("chooseDiscard"));
-    if (!this.nonLimitedNumCards)
-    {
-      stringBuilder.Append("\n<size=3><color=#bbb>");
-      stringBuilder.Append(Texts.Instance.GetText("cardsLeft"));
-      stringBuilder.Append(" <color=green>");
-      stringBuilder.Append(num.ToString());
-      stringBuilder.Append("</color>");
-    }
-    this.textInstructions.text = stringBuilder.ToString();
-    if (GameManager.Instance.IsMultiplayer() && (Object) MatchManager.Instance != (Object) null && !MatchManager.Instance.IsYourTurn())
-    {
-      this.buttonB.gameObject.SetActive(false);
-      this.buttonB.interactable = false;
-    }
-    else
-    {
-      this.buttonB.gameObject.SetActive(true);
-      if (num == 0 || this.nonLimitedNumCards)
-        this.buttonB.interactable = true;
-      else
-        this.buttonB.interactable = false;
-    }
-  }
+	private Button buttonB;
 
-  public void TurnOn(Enums.CardPlace _cardPlace, bool _nonLimitedNumCards = false)
-  {
-    this.buttonB.interactable = false;
-    MatchManager.Instance.ShowMask(true);
-    MatchManager.Instance.lockHideMask = true;
-    this.cardPlace = _cardPlace;
-    this.nonLimitedNumCards = _nonLimitedNumCards;
-    this.TextInstructions();
-    this.showStatus = false;
-    this.HideShow(false);
-    this.canvas.gameObject.SetActive(true);
-    MatchManager.Instance.WarningMultiplayerIfNotActive();
-  }
+	public GameObject elements;
 
-  public void Action()
-  {
-    if (!this.buttonB.interactable || !MatchManager.Instance.WaitingForDiscardAssignment && !MatchManager.Instance.WaitingForLookDiscardWindow)
-      return;
-    this.buttonB.gameObject.SetActive(false);
-    MatchManager.Instance.AssignDiscardAction();
-  }
+	public TMP_Text buttonShowText;
 
-  public void TurnOff()
-  {
-    MatchManager.Instance.lockHideMask = false;
-    MatchManager.Instance.ShowMask(false);
-    this.canvas.gameObject.SetActive(false);
-  }
+	private bool showStatus = true;
+
+	public Transform cardContainer;
+
+	private bool nonLimitedNumCards;
+
+	private Enums.CardPlace cardPlace;
+
+	private void Awake()
+	{
+		buttonB = button.GetComponent<Button>();
+		canvas.gameObject.SetActive(value: false);
+	}
+
+	public bool IsActive()
+	{
+		return canvas.gameObject.activeSelf;
+	}
+
+	public void HideShow(bool doMask = true)
+	{
+		if (showStatus)
+		{
+			elements.gameObject.SetActive(value: false);
+			buttonShowText.text = Texts.Instance.GetText("show").ToUpper();
+			if (doMask)
+			{
+				MatchManager.Instance.ShowMaskFromUIScreen(state: false);
+			}
+		}
+		else
+		{
+			elements.gameObject.SetActive(value: true);
+			buttonShowText.text = Texts.Instance.GetText("hide").ToUpper();
+			if (doMask)
+			{
+				MatchManager.Instance.ShowMaskFromUIScreen(state: true);
+			}
+		}
+		showStatus = !showStatus;
+	}
+
+	public void TextInstructions()
+	{
+		int num = MatchManager.Instance.CardsLeftForDiscard();
+		if (num < 0)
+		{
+			num = 0;
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		if (cardPlace == Enums.CardPlace.TopDeck)
+		{
+			stringBuilder.Append(Texts.Instance.GetText("chooseTopDeck"));
+		}
+		else if (cardPlace == Enums.CardPlace.Vanish)
+		{
+			stringBuilder.Append(Texts.Instance.GetText("chooseVanish"));
+		}
+		else
+		{
+			stringBuilder.Append(Texts.Instance.GetText("chooseDiscard"));
+		}
+		if (!nonLimitedNumCards)
+		{
+			stringBuilder.Append("\n<size=3><color=#bbb>");
+			stringBuilder.Append(Texts.Instance.GetText("cardsLeft"));
+			stringBuilder.Append(" <color=green>");
+			stringBuilder.Append(num.ToString());
+			stringBuilder.Append("</color>");
+		}
+		textInstructions.text = stringBuilder.ToString();
+		if (GameManager.Instance.IsMultiplayer() && MatchManager.Instance != null && !MatchManager.Instance.IsYourTurn())
+		{
+			buttonB.gameObject.SetActive(value: false);
+			buttonB.interactable = false;
+			return;
+		}
+		buttonB.gameObject.SetActive(value: true);
+		if (num == 0 || nonLimitedNumCards)
+		{
+			buttonB.interactable = true;
+		}
+		else
+		{
+			buttonB.interactable = false;
+		}
+	}
+
+	public void TurnOn(Enums.CardPlace _cardPlace, bool _nonLimitedNumCards = false)
+	{
+		buttonB.interactable = false;
+		MatchManager.Instance.ShowMask(state: true);
+		MatchManager.Instance.lockHideMask = true;
+		cardPlace = _cardPlace;
+		nonLimitedNumCards = _nonLimitedNumCards;
+		TextInstructions();
+		showStatus = false;
+		HideShow(doMask: false);
+		canvas.gameObject.SetActive(value: true);
+		MatchManager.Instance.WarningMultiplayerIfNotActive();
+	}
+
+	public void Action()
+	{
+		if (buttonB.interactable && (MatchManager.Instance.WaitingForDiscardAssignment || MatchManager.Instance.WaitingForLookDiscardWindow))
+		{
+			buttonB.gameObject.SetActive(value: false);
+			MatchManager.Instance.AssignDiscardAction();
+		}
+	}
+
+	public void TurnOff()
+	{
+		MatchManager.Instance.lockHideMask = false;
+		MatchManager.Instance.ShowMask(state: false);
+		canvas.gameObject.SetActive(value: false);
+	}
 }

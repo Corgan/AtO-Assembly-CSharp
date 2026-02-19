@@ -1,222 +1,263 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: SideCharacters
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class SideCharacters : MonoBehaviour
 {
-  public OverCharacter[] charArray = new OverCharacter[4];
-  private Transform[] charTransforms = new Transform[4];
-  private int heroActive = -1;
+	public OverCharacter[] charArray = new OverCharacter[4];
 
-  private void Awake()
-  {
-    for (int index = 0; index < 4; ++index)
-      this.charTransforms[index] = this.charArray[index].transform;
-  }
+	private Transform[] charTransforms = new Transform[4];
 
-  private void Start()
-  {
-    if ((Object) AtOManager.Instance == (Object) null || AtOManager.Instance.GetTeam().Length == 0 || (bool) (Object) MatchManager.Instance)
-      return;
-    this.Show();
-  }
+	private int heroActive = -1;
 
-  public void Show()
-  {
-    this.Resize();
-    Hero[] team = AtOManager.Instance.GetTeam();
-    for (int index = 0; index < 4; ++index)
-    {
-      if (AtOManager.Instance.currentMapNode == "tutorial_0" || AtOManager.Instance.currentMapNode == "tutorial_1")
-      {
-        switch (index)
-        {
-          case 1:
-          case 2:
-            continue;
-          case 3:
-            this.charArray[index].transform.localPosition = new Vector3(0.0f, -1.24f * Globals.Instance.multiplierY, 0.0f);
-            break;
-        }
-      }
-      if (team != null && index < team.Length && team[index] != null && (Object) team[index].HeroData != (Object) null)
-      {
-        this.charArray[index].gameObject.SetActive(true);
-        this.charArray[index].Init(index);
-        this.charArray[index].Enable();
-      }
-    }
-    if (!(bool) (Object) TownManager.Instance && !(bool) (Object) ChallengeSelectionManager.Instance && !(bool) (Object) EventManager.Instance)
-      return;
-    this.InCharacterScreen(true);
-  }
+	private void Awake()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			charTransforms[i] = charArray[i].transform;
+		}
+	}
 
-  public void InCharacterScreen(bool state)
-  {
-    for (int index = 0; index < 4; ++index)
-      this.charArray[index].InCharacterScreen(state);
-  }
+	private void Start()
+	{
+		if (!(AtOManager.Instance == null) && AtOManager.Instance.GetTeam().Length != 0 && !MatchManager.Instance)
+		{
+			Show();
+		}
+	}
 
-  public void Hide()
-  {
-    if (!(bool) (Object) MatchManager.Instance)
-      return;
-    for (int index = 0; index < 4; ++index)
-      this.charArray[index].gameObject.SetActive(false);
-  }
+	public void Show()
+	{
+		Resize();
+		Hero[] team = AtOManager.Instance.GetTeam();
+		for (int i = 0; i < 4; i++)
+		{
+			if (AtOManager.Instance.currentMapNode == "tutorial_0" || AtOManager.Instance.currentMapNode == "tutorial_1")
+			{
+				if (i == 1 || i == 2)
+				{
+					continue;
+				}
+				if (i == 3)
+				{
+					charArray[i].transform.localPosition = new Vector3(0f, -1.24f * Globals.Instance.multiplierY, 0f);
+				}
+			}
+			if (team != null && i < team.Length && team[i] != null && team[i].HeroData != null)
+			{
+				charArray[i].gameObject.SetActive(value: true);
+				charArray[i].Init(i);
+				charArray[i].Enable();
+			}
+		}
+		if ((bool)TownManager.Instance || (bool)ChallengeSelectionManager.Instance || (bool)EventManager.Instance)
+		{
+			InCharacterScreen(state: true);
+		}
+	}
 
-  public void Resize()
-  {
-    float num = (float) (1920.0 * (double) Screen.height / (1080.0 * (double) Screen.width));
-    this.transform.position = new Vector3((float) (-(double) Globals.Instance.sizeW * 0.5 + 0.38999998569488525 * (double) Globals.Instance.multiplierX * (double) num), (float) ((double) Globals.Instance.sizeH * 0.5 - 1.8999999761581421 * (double) Globals.Instance.multiplierY * (double) num), this.transform.position.z);
-    for (int index = 0; index < 4; ++index)
-      this.charTransforms[index].localPosition = new Vector3(0.0f, (float) index * -1.24f * Globals.Instance.multiplierY, 0.0f);
-  }
+	public void InCharacterScreen(bool state)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			charArray[i].InCharacterScreen(state);
+		}
+	}
 
-  public Vector3 CharacterIconPosition(int index) => this.charArray[index].CharacterIconPosition();
+	public void Hide()
+	{
+		if ((bool)MatchManager.Instance)
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				charArray[i].gameObject.SetActive(value: false);
+			}
+		}
+	}
 
-  public void Refresh()
-  {
-    if (AtOManager.Instance.currentMapNode == "tutorial_0" || AtOManager.Instance.currentMapNode == "tutorial_1" || AtOManager.Instance.currentMapNode == "tutorial_2")
-    {
-      this.Show();
-    }
-    else
-    {
-      for (int index = 0; index < 4; ++index)
-        this.charArray[index].Init(index);
-    }
-    if (this.heroActive <= -1)
-      return;
-    this.charArray[this.heroActive].SetActive(true);
-  }
+	public void Resize()
+	{
+		float num = 1920f * (float)Screen.height / (1080f * (float)Screen.width);
+		float x = (0f - Globals.Instance.sizeW) * 0.5f + 0.39f * Globals.Instance.multiplierX * num;
+		float y = Globals.Instance.sizeH * 0.5f - 1.9f * Globals.Instance.multiplierY * num;
+		base.transform.position = new Vector3(x, y, base.transform.position.z);
+		for (int i = 0; i < 4; i++)
+		{
+			charTransforms[i].localPosition = new Vector3(0f, (float)i * -1.24f * Globals.Instance.multiplierY, 0f);
+		}
+	}
 
-  public void RefreshCards(int hero = -1)
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      if (hero == -1 || hero == index)
-        this.charArray[index].DoCards();
-    }
-  }
+	public Vector3 CharacterIconPosition(int index)
+	{
+		return charArray[index].CharacterIconPosition();
+	}
 
-  public void ShowChallengeButtons(int hero = -1, bool state = true)
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      if (hero == -1 || hero == index)
-        this.charArray[index].ShowChallengeButtonReady(state);
-    }
-  }
+	public void Refresh()
+	{
+		if (AtOManager.Instance.currentMapNode == "tutorial_0" || AtOManager.Instance.currentMapNode == "tutorial_1" || AtOManager.Instance.currentMapNode == "tutorial_2")
+		{
+			Show();
+		}
+		else
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				charArray[i].Init(i);
+			}
+		}
+		if (heroActive > -1)
+		{
+			charArray[heroActive].SetActive(status: true);
+		}
+	}
 
-  public void ShowUpgrade(int hero = -1)
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      if (hero == -1 || hero == index)
-        this.charArray[index].ShowUpgrade();
-    }
-  }
+	public void RefreshCards(int hero = -1)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (hero == -1 || hero == i)
+			{
+				charArray[i].DoCards();
+			}
+		}
+	}
 
-  public void ResetCharacters()
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      this.charArray[index].Enable();
-      this.charArray[index].SetActive(false);
-      this.charArray[index].SetClickable(true);
-      this.charArray[index].SetClickable(true);
-    }
-    this.ShowLevelUpCharacters();
-    this.heroActive = -1;
-  }
+	public void ShowChallengeButtons(int hero = -1, bool state = true)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (hero == -1 || hero == i)
+			{
+				charArray[i].ShowChallengeButtonReady(state);
+			}
+		}
+	}
 
-  public void EnableOwnedCharacters(bool clickable = true)
-  {
-    Hero[] team = AtOManager.Instance.GetTeam();
-    if (team == null || team.Length == 0)
-      return;
-    string playerNick = NetworkManager.Instance.GetPlayerNick();
-    for (int index = 0; index < 4; ++index)
-    {
-      if (team[index] != null && !((Object) team[index].HeroData == (Object) null))
-      {
-        if (team[index].Owner == null || team[index].Owner == "" || team[index].Owner == playerNick)
-        {
-          this.charArray[index].Enable();
-          this.charArray[index].SetClickable(clickable);
-          if (clickable)
-            this.charArray[index].EnableCards(false);
-          else
-            this.charArray[index].EnableCards(true);
-        }
-        else
-        {
-          this.charArray[index].Disable();
-          this.charArray[index].EnableCards(false);
-        }
-        this.charArray[index].Enable();
-        this.charArray[index].SetClickable(true);
-      }
-    }
-  }
+	public void ShowUpgrade(int hero = -1)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (hero == -1 || hero == i)
+			{
+				charArray[i].ShowUpgrade();
+			}
+		}
+	}
 
-  public void ShowLevelUpCharacters()
-  {
-    for (int index = 0; index < 4; ++index)
-      this.charArray[index].ShowLevelUp();
-  }
+	public void ResetCharacters()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			charArray[i].Enable();
+			charArray[i].SetActive(status: false);
+			charArray[i].SetClickable(status: true);
+			charArray[i].SetClickable(status: true);
+		}
+		ShowLevelUpCharacters();
+		heroActive = -1;
+	}
 
-  public void ShowActiveStatus(int characterIndex)
-  {
-    if (characterIndex <= -1)
-      return;
-    this.charArray[characterIndex].ShowActiveStatus(true);
-  }
+	public void EnableOwnedCharacters(bool clickable = true)
+	{
+		Hero[] team = AtOManager.Instance.GetTeam();
+		if (team == null || team.Length == 0)
+		{
+			return;
+		}
+		string playerNick = NetworkManager.Instance.GetPlayerNick();
+		for (int i = 0; i < 4; i++)
+		{
+			if (team[i] == null || team[i].HeroData == null)
+			{
+				continue;
+			}
+			if (team[i].Owner == null || team[i].Owner == "" || team[i].Owner == playerNick)
+			{
+				charArray[i].Enable();
+				charArray[i].SetClickable(clickable);
+				if (clickable)
+				{
+					charArray[i].EnableCards(status: false);
+				}
+				else
+				{
+					charArray[i].EnableCards(status: true);
+				}
+			}
+			else
+			{
+				charArray[i].Disable();
+				charArray[i].EnableCards(status: false);
+			}
+			charArray[i].Enable();
+			charArray[i].SetClickable(status: true);
+		}
+	}
 
-  public void SetActive(int characterIndex)
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      if (index != characterIndex)
-        this.charArray[index].SetActive(false);
-      else
-        this.charArray[index].SetActive(true);
-    }
-    this.heroActive = characterIndex;
-  }
+	public void ShowLevelUpCharacters()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			charArray[i].ShowLevelUp();
+		}
+	}
 
-  public int GetFirstEnabledCharacter()
-  {
-    string playerNick = NetworkManager.Instance.GetPlayerNick();
-    Hero[] team = AtOManager.Instance.GetTeam();
-    if (team == null || team.Length == 0)
-      return 0;
-    for (int enabledCharacter = 0; enabledCharacter < 4; ++enabledCharacter)
-    {
-      if (team[enabledCharacter] != null && !((Object) team[enabledCharacter].HeroData == (Object) null) && (team[enabledCharacter].Owner == null || team[enabledCharacter].Owner == "" || team[enabledCharacter].Owner == playerNick))
-        return enabledCharacter;
-    }
-    return 0;
-  }
+	public void ShowActiveStatus(int characterIndex)
+	{
+		if (characterIndex > -1)
+		{
+			charArray[characterIndex].ShowActiveStatus(status: true);
+		}
+	}
 
-  public void EnableAll()
-  {
-    for (int index = 0; index < 4; ++index)
-      this.charArray[index].Enable();
-  }
+	public void SetActive(int characterIndex)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (i != characterIndex)
+			{
+				charArray[i].SetActive(status: false);
+			}
+			else
+			{
+				charArray[i].SetActive(status: true);
+			}
+		}
+		heroActive = characterIndex;
+	}
 
-  public void DisableAll(int _enableChar = -1)
-  {
-    for (int index = 0; index < 4; ++index)
-    {
-      if (_enableChar != index)
-        this.charArray[index].Disable();
-    }
-  }
+	public int GetFirstEnabledCharacter()
+	{
+		string playerNick = NetworkManager.Instance.GetPlayerNick();
+		Hero[] team = AtOManager.Instance.GetTeam();
+		if (team == null || team.Length == 0)
+		{
+			return 0;
+		}
+		for (int i = 0; i < 4; i++)
+		{
+			if (team[i] != null && !(team[i].HeroData == null) && (team[i].Owner == null || team[i].Owner == "" || team[i].Owner == playerNick))
+			{
+				return i;
+			}
+		}
+		return 0;
+	}
+
+	public void EnableAll()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			charArray[i].Enable();
+		}
+	}
+
+	public void DisableAll(int _enableChar = -1)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (_enableChar != i)
+			{
+				charArray[i].Disable();
+			}
+		}
+	}
 }

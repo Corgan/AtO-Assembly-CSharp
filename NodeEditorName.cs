@@ -1,37 +1,32 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: NodeEditorName
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 [ExecuteInEditMode]
 public class NodeEditorName : MonoBehaviour
 {
-  public TMP_Text nodeIdText;
+	public TMP_Text nodeIdText;
 
-  private void Awake()
-  {
-  }
+	private void Awake()
+	{
+	}
 
-  private void Start()
-  {
-    this.nodeIdText.text = "";
-    this.nodeIdText.gameObject.SetActive(false);
-  }
+	private void Start()
+	{
+		nodeIdText.text = "";
+		nodeIdText.gameObject.SetActive(value: false);
+	}
 
-  private void Update()
-  {
-  }
+	private void Update()
+	{
+	}
 
-  private void DoName()
-  {
-    NodeData nodeData = this.GetComponent<Node>().nodeData;
-    if ((Object) nodeData != (Object) null)
-      this.nodeIdText.text = nodeData.NodeId;
-    this.nodeIdText.gameObject.SetActive(true);
-  }
+	private void DoName()
+	{
+		NodeData nodeData = GetComponent<Node>().nodeData;
+		if (nodeData != null)
+		{
+			nodeIdText.text = nodeData.NodeId;
+		}
+		nodeIdText.gameObject.SetActive(value: true);
+	}
 }

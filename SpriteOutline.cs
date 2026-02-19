@@ -1,82 +1,101 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: SpriteOutline
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class SpriteOutline : MonoBehaviour
 {
-  public Color color = Color.white;
-  [Range(0.0f, 16f)]
-  public float outlineSize = 1f;
-  public bool autoResize = true;
-  private float outlineSizeDest;
-  private float outlineSizeShow = 3f;
-  private SpriteRenderer spriteRenderer;
-  private Color colorWhite = new Color(1f, 0.8f, 0.0f, 0.9f);
-  private Color colorRed = new Color(1f, 0.0f, 0.0f, 0.5f);
-  private Color colorGreen = new Color(0.0f, 1f, 0.0f, 0.5f);
+	public Color color = Color.white;
 
-  public void EnableGreen()
-  {
-    if (!(this.color != this.colorGreen))
-      return;
-    this.color = this.colorGreen;
-    if (this.autoResize)
-      this.outlineSizeDest = this.outlineSizeShow;
-    else
-      this.outlineSize = this.outlineSizeDest;
-    this.UpdateOutline(true);
-  }
+	[Range(0f, 16f)]
+	public float outlineSize = 1f;
 
-  public void EnableRed()
-  {
-    if (!(this.color != this.colorRed))
-      return;
-    this.color = this.colorRed;
-    if (this.autoResize)
-      this.outlineSizeDest = this.outlineSizeShow;
-    else
-      this.outlineSize = this.outlineSizeDest;
-    this.UpdateOutline(true);
-  }
+	public bool autoResize = true;
 
-  public void EnableWhite()
-  {
-    if (!(this.color != this.colorWhite))
-      return;
-    this.color = this.colorWhite;
-    if (this.autoResize)
-      this.outlineSizeDest = this.outlineSizeShow;
-    else
-      this.outlineSize = this.outlineSizeDest;
-    this.UpdateOutline(true);
-  }
+	private float outlineSizeDest;
 
-  public void Hide()
-  {
-    this.color = new Color(0.0f, 0.0f, 0.0f, 0.0f);
-    this.outlineSizeDest = 0.0f;
-  }
+	private float outlineSizeShow = 3f;
 
-  private void OnEnable()
-  {
-    this.spriteRenderer = this.GetComponent<SpriteRenderer>();
-    this.UpdateOutline(true);
-  }
+	private SpriteRenderer spriteRenderer;
 
-  private void OnDisable() => this.UpdateOutline(false);
+	private Color colorWhite = new Color(1f, 0.8f, 0f, 0.9f);
 
-  private void UpdateOutline(bool outline)
-  {
-    MaterialPropertyBlock properties = new MaterialPropertyBlock();
-    this.spriteRenderer.GetPropertyBlock(properties);
-    properties.SetFloat("_Outline", outline ? 1f : 0.0f);
-    properties.SetColor("_OutlineColor", this.color);
-    properties.SetFloat("_OutlineSize", this.outlineSize);
-    this.spriteRenderer.SetPropertyBlock(properties);
-  }
+	private Color colorRed = new Color(1f, 0f, 0f, 0.5f);
+
+	private Color colorGreen = new Color(0f, 1f, 0f, 0.5f);
+
+	public void EnableGreen()
+	{
+		if (color != colorGreen)
+		{
+			color = colorGreen;
+			if (autoResize)
+			{
+				outlineSizeDest = outlineSizeShow;
+			}
+			else
+			{
+				outlineSize = outlineSizeDest;
+			}
+			UpdateOutline(outline: true);
+		}
+	}
+
+	public void EnableRed()
+	{
+		if (color != colorRed)
+		{
+			color = colorRed;
+			if (autoResize)
+			{
+				outlineSizeDest = outlineSizeShow;
+			}
+			else
+			{
+				outlineSize = outlineSizeDest;
+			}
+			UpdateOutline(outline: true);
+		}
+	}
+
+	public void EnableWhite()
+	{
+		if (color != colorWhite)
+		{
+			color = colorWhite;
+			if (autoResize)
+			{
+				outlineSizeDest = outlineSizeShow;
+			}
+			else
+			{
+				outlineSize = outlineSizeDest;
+			}
+			UpdateOutline(outline: true);
+		}
+	}
+
+	public void Hide()
+	{
+		color = new Color(0f, 0f, 0f, 0f);
+		outlineSizeDest = 0f;
+	}
+
+	private void OnEnable()
+	{
+		spriteRenderer = GetComponent<SpriteRenderer>();
+		UpdateOutline(outline: true);
+	}
+
+	private void OnDisable()
+	{
+		UpdateOutline(outline: false);
+	}
+
+	private void UpdateOutline(bool outline)
+	{
+		MaterialPropertyBlock materialPropertyBlock = new MaterialPropertyBlock();
+		spriteRenderer.GetPropertyBlock(materialPropertyBlock);
+		materialPropertyBlock.SetFloat("_Outline", outline ? 1f : 0f);
+		materialPropertyBlock.SetColor("_OutlineColor", color);
+		materialPropertyBlock.SetFloat("_OutlineSize", outlineSize);
+		spriteRenderer.SetPropertyBlock(materialPropertyBlock);
+	}
 }

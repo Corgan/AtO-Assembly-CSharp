@@ -1,58 +1,83 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: CharacterUnlock
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class CharacterUnlock : MonoBehaviour
 {
-  public TMP_Text nameTMP;
-  public SpriteRenderer bgSPR;
-  public SpriteRenderer characterSPR;
-  public SpriteRenderer whirlSPR;
+	public TMP_Text nameTMP;
 
-  private void Start()
-  {
-  }
+	public SpriteRenderer bgSPR;
 
-  public void ShowUnlock(SubClassData _scd, SkinData _skd = null)
-  {
-    Color color = Functions.HexToColor(Globals.Instance.ClassColor[Enum.GetName(typeof (Enums.HeroClass), (object) _scd.HeroClass)]);
-    this.nameTMP.text = _scd.CharacterName;
-    if (_scd.CharacterName.ToLower() == "thuls")
-      this.characterSPR.transform.localPosition = new Vector3(-0.5f, 0.0f, 0.0f);
-    else if (_scd.CharacterName.ToLower() == "malukah")
-      this.characterSPR.transform.localPosition = new Vector3(-0.75f, 0.0f, 0.0f);
-    else if (_scd.CharacterName.ToLower() == "ottis")
-    {
-      if ((UnityEngine.Object) _skd != (UnityEngine.Object) null && _skd.SkinId == "ottiswolfwars")
-        this.characterSPR.transform.localPosition = new Vector3(-0.37f, -0.13f, 0.0f);
-      else
-        this.characterSPR.transform.localPosition = new Vector3(0.0f, 0.2f, 0.0f);
-    }
-    else if (_scd.CharacterName.ToLower() == "heiner")
-      this.characterSPR.transform.localPosition = new Vector3(-0.2f, -0.1f, 0.0f);
-    else if (_scd.CharacterName.ToLower() == "grukli")
-      this.characterSPR.transform.localPosition = new Vector3(-0.2f, 0.0f, 0.0f);
-    else if (_scd.CharacterName.ToLower() == "wilbur")
-      this.characterSPR.transform.localPosition = new Vector3(-0.4f, 0.0f, 0.0f);
-    else if (_scd.CharacterName.ToLower() == "nezglekt")
-      this.characterSPR.transform.localPosition = new Vector3(0.2f, -0.1f, 0.0f);
-    else if (_scd.CharacterName.ToLower() == "yogger")
-      this.characterSPR.transform.localPosition = new Vector3(-0.2f, 0.0f, 0.0f);
-    else
-      this.characterSPR.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
-    this.nameTMP.text = !((UnityEngine.Object) _skd != (UnityEngine.Object) null) ? Globals.Instance.GetSubClassData(_scd.Id).CharacterName : Texts.Instance.GetText("characterSkin");
-    this.bgSPR.color = color;
-    this.whirlSPR.color = new Color(color.r, color.g, color.b, 0.7f);
-    SkinData skinData = !((UnityEngine.Object) _skd == (UnityEngine.Object) null) ? _skd : Globals.Instance.GetSkinData(Globals.Instance.GetSkinBaseIdBySubclass(_scd.Id));
-    if (!((UnityEngine.Object) skinData != (UnityEngine.Object) null))
-      return;
-    this.characterSPR.sprite = skinData.SpriteSiluetaGrande;
-  }
+	public SpriteRenderer characterSPR;
+
+	public SpriteRenderer whirlSPR;
+
+	private void Start()
+	{
+	}
+
+	public void ShowUnlock(SubClassData _scd, SkinData _skd = null)
+	{
+		Color color = Functions.HexToColor(Globals.Instance.ClassColor[Enum.GetName(typeof(Enums.HeroClass), _scd.HeroClass)]);
+		nameTMP.text = _scd.CharacterName;
+		if (_scd.CharacterName.ToLower() == "thuls")
+		{
+			characterSPR.transform.localPosition = new Vector3(-0.5f, 0f, 0f);
+		}
+		else if (_scd.CharacterName.ToLower() == "malukah")
+		{
+			characterSPR.transform.localPosition = new Vector3(-0.75f, 0f, 0f);
+		}
+		else if (_scd.CharacterName.ToLower() == "ottis")
+		{
+			if (_skd != null && _skd.SkinId == "ottiswolfwars")
+			{
+				characterSPR.transform.localPosition = new Vector3(-0.37f, -0.13f, 0f);
+			}
+			else
+			{
+				characterSPR.transform.localPosition = new Vector3(0f, 0.2f, 0f);
+			}
+		}
+		else if (_scd.CharacterName.ToLower() == "heiner")
+		{
+			characterSPR.transform.localPosition = new Vector3(-0.2f, -0.1f, 0f);
+		}
+		else if (_scd.CharacterName.ToLower() == "grukli")
+		{
+			characterSPR.transform.localPosition = new Vector3(-0.2f, 0f, 0f);
+		}
+		else if (_scd.CharacterName.ToLower() == "wilbur")
+		{
+			characterSPR.transform.localPosition = new Vector3(-0.4f, 0f, 0f);
+		}
+		else if (_scd.CharacterName.ToLower() == "nezglekt")
+		{
+			characterSPR.transform.localPosition = new Vector3(0.2f, -0.1f, 0f);
+		}
+		else if (_scd.CharacterName.ToLower() == "yogger")
+		{
+			characterSPR.transform.localPosition = new Vector3(-0.2f, 0f, 0f);
+		}
+		else
+		{
+			characterSPR.transform.localPosition = new Vector3(0f, 0f, 0f);
+		}
+		if (_skd != null)
+		{
+			nameTMP.text = Texts.Instance.GetText("characterSkin");
+		}
+		else
+		{
+			nameTMP.text = Globals.Instance.GetSubClassData(_scd.Id).CharacterName;
+		}
+		bgSPR.color = color;
+		whirlSPR.color = new Color(color.r, color.g, color.b, 0.7f);
+		SkinData skinData = null;
+		skinData = ((!(_skd == null)) ? _skd : Globals.Instance.GetSkinData(Globals.Instance.GetSkinBaseIdBySubclass(_scd.Id)));
+		if (skinData != null)
+		{
+			characterSPR.sprite = skinData.SpriteSiluetaGrande;
+		}
+	}
 }

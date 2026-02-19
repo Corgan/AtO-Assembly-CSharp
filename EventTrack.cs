@@ -1,86 +1,105 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: EventTrack
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class EventTrack : MonoBehaviour
 {
-  public TMP_Text trackName;
-  private string description;
-  public Transform textT;
-  public Transform bgT;
-  public SpriteRenderer iconSprite;
-  private BoxCollider2D collider;
+	public TMP_Text trackName;
 
-  private void Awake() => this.collider = this.GetComponent<BoxCollider2D>();
+	private string description;
 
-  public void SetTrack(string erq)
-  {
-    EventRequirementData requirementData = Globals.Instance.GetRequirementData(erq);
-    this.trackName.text = requirementData.RequirementName;
-    this.description = requirementData.Description;
-    if ((Object) requirementData.TrackSprite != (Object) null)
-      this.iconSprite.sprite = requirementData.TrackSprite;
-    this.StartCoroutine(this.ShowTrack(true));
-  }
+	public Transform textT;
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (Object) EventManager.Instance && this.textT.gameObject.activeSelf)
-      return;
-    if (this.textT.gameObject.activeSelf)
-      this.StartCoroutine(this.ShowTrack(true));
-    else
-      this.collider.offset = new Vector2(0.0f, 0.0f);
-    PopupManager.Instance.SetText(this.description, true);
-  }
+	public Transform bgT;
 
-  private IEnumerator ShowTrack(bool state)
-  {
-    float posEndText = 0.0f;
-    float posEndBg = 0.0f;
-    Vector3 stepBg = Vector3.zero;
-    Vector3 stepText = Vector3.zero;
-    int steps = 10;
-    stepBg = new Vector3(2.54f / (float) steps, 0.0f, 0.0f);
-    stepText = new Vector3(4.1f / (float) steps, 0.0f, 0.0f);
-    if (state)
-    {
-      posEndText = -0.12f;
-      posEndBg = -0.5f;
-      this.collider.offset = new Vector2(-0.45f, -0.03f);
-    }
-    else
-    {
-      posEndText = -4.1f;
-      posEndBg = -3.4f;
-      this.collider.offset = new Vector2(-2.4f, -0.03f);
-    }
-    for (int i = 0; i < steps; ++i)
-    {
-      if (state)
-      {
-        if ((double) this.textT.localPosition.x < (double) posEndText)
-          this.textT.localPosition += stepText;
-        if ((double) this.bgT.localPosition.x < (double) posEndBg)
-          this.bgT.localPosition += stepBg;
-      }
-      else
-      {
-        if ((double) this.textT.localPosition.x > (double) posEndText)
-          this.textT.localPosition -= stepText;
-        if ((double) this.bgT.localPosition.x > (double) posEndBg)
-          this.bgT.localPosition -= stepBg;
-      }
-      yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-    }
-  }
+	public SpriteRenderer iconSprite;
 
-  private void OnMouseExit() => PopupManager.Instance.ClosePopup();
+	private BoxCollider2D collider;
+
+	private void Awake()
+	{
+		collider = GetComponent<BoxCollider2D>();
+	}
+
+	public void SetTrack(string erq)
+	{
+		EventRequirementData requirementData = Globals.Instance.GetRequirementData(erq);
+		trackName.text = requirementData.RequirementName;
+		description = requirementData.Description;
+		if (requirementData.TrackSprite != null)
+		{
+			iconSprite.sprite = requirementData.TrackSprite;
+		}
+		StartCoroutine(ShowTrack(state: true));
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!MapManager.Instance || !MapManager.Instance.IsCharacterUnlock()) && (!EventManager.Instance || !textT.gameObject.activeSelf))
+		{
+			if (textT.gameObject.activeSelf)
+			{
+				StartCoroutine(ShowTrack(state: true));
+			}
+			else
+			{
+				collider.offset = new Vector2(0f, 0f);
+			}
+			PopupManager.Instance.SetText(description, fast: true);
+		}
+	}
+
+	private IEnumerator ShowTrack(bool state)
+	{
+		_ = Vector3.zero;
+		_ = Vector3.zero;
+		int steps = 10;
+		Vector3 stepBg = new Vector3(2.54f / (float)steps, 0f, 0f);
+		Vector3 stepText = new Vector3(4.1f / (float)steps, 0f, 0f);
+		float posEndText;
+		float posEndBg;
+		if (state)
+		{
+			posEndText = -0.12f;
+			posEndBg = -0.5f;
+			collider.offset = new Vector2(-0.45f, -0.03f);
+		}
+		else
+		{
+			posEndText = -4.1f;
+			posEndBg = -3.4f;
+			collider.offset = new Vector2(-2.4f, -0.03f);
+		}
+		for (int i = 0; i < steps; i++)
+		{
+			if (state)
+			{
+				if (textT.localPosition.x < posEndText)
+				{
+					textT.localPosition += stepText;
+				}
+				if (bgT.localPosition.x < posEndBg)
+				{
+					bgT.localPosition += stepBg;
+				}
+			}
+			else
+			{
+				if (textT.localPosition.x > posEndText)
+				{
+					textT.localPosition -= stepText;
+				}
+				if (bgT.localPosition.x > posEndBg)
+				{
+					bgT.localPosition -= stepBg;
+				}
+			}
+			yield return Globals.Instance.WaitForSeconds(0.01f);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		PopupManager.Instance.ClosePopup();
+	}
 }

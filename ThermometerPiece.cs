@@ -1,92 +1,101 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ThermometerPiece
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-#nullable disable
 public class ThermometerPiece : MonoBehaviour
 {
-  public int piece;
-  public int round;
-  private ThermometerTierData thermometerTierData;
-  private ThermometerData thermometerData;
-  private SpriteRenderer spr;
-  private Color oriColor;
-  private int pieceRound;
+	public int piece;
 
-  private void Awake() => this.spr = this.GetComponent<SpriteRenderer>();
+	public int round;
 
-  private void Start() => this.Init(this.round);
+	private ThermometerTierData thermometerTierData;
 
-  public void SetThermometerTierData(ThermometerTierData _thermometerTierData)
-  {
-    this.thermometerTierData = _thermometerTierData;
-  }
+	private ThermometerData thermometerData;
 
-  public void SetThermometerData(ThermometerData _thermometerData)
-  {
-    this.thermometerData = _thermometerData;
-  }
+	private SpriteRenderer spr;
 
-  public void Init(int _currentRound)
-  {
-    if ((Object) this.thermometerTierData != (Object) null)
-    {
-      this.thermometerData = (ThermometerData) null;
-      this.round = _currentRound;
-      this.pieceRound = this.round + this.piece - 2;
-      if (this.pieceRound > 0)
-      {
-        for (int index = 0; index < this.thermometerTierData.RoundThermometer.Length; ++index)
-        {
-          if (this.pieceRound >= this.thermometerTierData.RoundThermometer[index].Round)
-          {
-            this.thermometerData = this.thermometerTierData.RoundThermometer[index].ThermometerData;
-            if (MadnessManager.Instance.IsMadnessTraitActive("equalizer") && (Object) this.thermometerTierData != (Object) null && this.thermometerTierData.RoundThermometer[1] != null)
-            {
-              this.thermometerData = Object.Instantiate<ThermometerData>(this.thermometerTierData.RoundThermometer[1].ThermometerData);
-              this.thermometerData.ThermometerId = this.thermometerTierData.RoundThermometer[index].ThermometerData.ThermometerId;
-              this.thermometerData.ThermometerColor = this.thermometerTierData.RoundThermometer[index].ThermometerData.ThermometerColor;
-            }
-            if (this.pieceRound == this.thermometerTierData.RoundThermometer[index].Round)
-              break;
-          }
-        }
-      }
-      if ((Object) this.thermometerData == (Object) null)
-      {
-        this.gameObject.SetActive(false);
-      }
-      else
-      {
-        this.gameObject.SetActive(true);
-        this.spr.color = this.thermometerData.ThermometerColor;
-      }
-    }
-    else
-      this.gameObject.SetActive(false);
-  }
+	private Color oriColor;
 
-  private void OnMouseEnter()
-  {
-    if (MatchManager.Instance.CardDrag || EventSystem.current.IsPointerOverGameObject())
-      return;
-    this.oriColor = this.spr.color;
-    this.spr.color = new Color(this.oriColor.r - 0.15f, this.oriColor.g - 0.15f, this.oriColor.b - 0.15f, 1f);
-    PopupManager.Instance.SetText(Functions.ThermometerTextForPopup(this.thermometerData), true, "followdown", true);
-    MatchManager.Instance.AdjustRoundForThermoDisplay(this.piece, this.pieceRound, this.oriColor);
-  }
+	private int pieceRound;
 
-  private void OnMouseExit()
-  {
-    if (MatchManager.Instance.CardDrag || EventSystem.current.IsPointerOverGameObject())
-      return;
-    this.spr.color = this.oriColor;
-    PopupManager.Instance.ClosePopup();
-    MatchManager.Instance.AdjustRoundForThermoDisplay(2, 0, new Color(1f, 1f, 1f, 1f));
-  }
+	private void Awake()
+	{
+		spr = GetComponent<SpriteRenderer>();
+	}
+
+	private void Start()
+	{
+		Init(round);
+	}
+
+	public void SetThermometerTierData(ThermometerTierData _thermometerTierData)
+	{
+		thermometerTierData = _thermometerTierData;
+	}
+
+	public void SetThermometerData(ThermometerData _thermometerData)
+	{
+		thermometerData = _thermometerData;
+	}
+
+	public void Init(int _currentRound)
+	{
+		if (thermometerTierData != null)
+		{
+			thermometerData = null;
+			round = _currentRound;
+			pieceRound = round + piece - 2;
+			if (pieceRound > 0)
+			{
+				for (int i = 0; i < thermometerTierData.RoundThermometer.Length; i++)
+				{
+					if (pieceRound >= thermometerTierData.RoundThermometer[i].Round)
+					{
+						thermometerData = thermometerTierData.RoundThermometer[i].ThermometerData;
+						if (MadnessManager.Instance.IsMadnessTraitActive("equalizer") && thermometerTierData != null && thermometerTierData.RoundThermometer[1] != null)
+						{
+							thermometerData = Object.Instantiate(thermometerTierData.RoundThermometer[1].ThermometerData);
+							thermometerData.ThermometerId = thermometerTierData.RoundThermometer[i].ThermometerData.ThermometerId;
+							thermometerData.ThermometerColor = thermometerTierData.RoundThermometer[i].ThermometerData.ThermometerColor;
+						}
+						if (pieceRound == thermometerTierData.RoundThermometer[i].Round)
+						{
+							break;
+						}
+					}
+				}
+			}
+			if (thermometerData == null)
+			{
+				base.gameObject.SetActive(value: false);
+				return;
+			}
+			base.gameObject.SetActive(value: true);
+			spr.color = thermometerData.ThermometerColor;
+		}
+		else
+		{
+			base.gameObject.SetActive(value: false);
+		}
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!MatchManager.Instance.CardDrag && !EventSystem.current.IsPointerOverGameObject())
+		{
+			oriColor = spr.color;
+			spr.color = new Color(oriColor.r - 0.15f, oriColor.g - 0.15f, oriColor.b - 0.15f, 1f);
+			PopupManager.Instance.SetText(Functions.ThermometerTextForPopup(thermometerData), fast: true, "followdown", alwaysCenter: true);
+			MatchManager.Instance.AdjustRoundForThermoDisplay(piece, pieceRound, oriColor);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!MatchManager.Instance.CardDrag && !EventSystem.current.IsPointerOverGameObject())
+		{
+			spr.color = oriColor;
+			PopupManager.Instance.ClosePopup();
+			MatchManager.Instance.AdjustRoundForThermoDisplay(2, 0, new Color(1f, 1f, 1f, 1f));
+		}
+	}
 }

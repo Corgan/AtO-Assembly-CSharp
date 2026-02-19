@@ -1,710 +1,827 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: RewardsManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using Photon.Pun;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class RewardsManager : MonoBehaviour
 {
-  private PhotonView photonView;
-  public Transform sceneCamera;
-  public CharacterWindowUI characterWindowUI;
-  public Transform[] characterRewardArray = new Transform[4];
-  public Dictionary<int, string[]> cardsByOrder;
-  public Hero[] theTeam;
-  public string[] cardSelectedArr;
-  private string[] combatScarab;
-  private int combatScarabGold;
-  public int combatScarabDust;
-  private int combatScarabExp;
-  public int dustQuantity;
-  private ThermometerData thermometerData;
-  public TMP_Text title;
-  public TMP_Text subtitle;
-  public TMP_Text corruptionRewardText;
-  public Transform corruptionReward;
-  public Transform corruptionRewardBgText;
-  public Transform corruptionRewardBgCard;
-  private int numRewards;
-  private int numCardsReward = 3;
-  public int typeOfReward;
-  private TierRewardData tierReward;
-  private TierRewardData tierRewardBase;
-  private TierRewardData tierRewardInf;
-  public int experienceEach;
-  public int goldEach;
-  private int cardTierModFromCorruption;
-  private bool finishReward;
-  private bool reseting;
-  public Transform buttonRestart;
-  private string teamAtOToJson;
-  private string[] keyListGold;
-  private int[] valueListGold;
-  private int playerGold;
-  private string[] keyListDust;
-  private int[] valueListDust;
-  private int playerDust;
-  private int divinationsNumber;
-  private int totalGoldGained;
-  private int totalDustGained;
-  private int expGained;
-  private int atoGoldGained;
-  private int atoDustGained;
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
+	private PhotonView photonView;
 
-  public static RewardsManager Instance { get; private set; }
+	public Transform sceneCamera;
 
-  private void Awake()
-  {
-    if ((UnityEngine.Object) GameManager.Instance == (UnityEngine.Object) null)
-    {
-      SceneStatic.LoadByName("Rewards");
-    }
-    else
-    {
-      if ((UnityEngine.Object) RewardsManager.Instance == (UnityEngine.Object) null)
-        RewardsManager.Instance = this;
-      else if ((UnityEngine.Object) RewardsManager.Instance != (UnityEngine.Object) this)
-        UnityEngine.Object.Destroy((UnityEngine.Object) this);
-      this.sceneCamera.gameObject.SetActive(false);
-      this.photonView = PhotonView.Get((Component) this);
-      this.corruptionReward.gameObject.SetActive(false);
-      NetworkManager.Instance.StartStopQueue(true);
-    }
-  }
+	public CharacterWindowUI characterWindowUI;
 
-  public void RestartRewards()
-  {
-    if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
-    {
-      this.reseting = true;
-      this.StartCoroutine(this.RestartRewardsMaster());
-    }
-    else
-    {
-      this.buttonRestart.gameObject.SetActive(false);
-      this.photonView.RPC("NET_RestartRewards", RpcTarget.MasterClient, (object) NetworkManager.Instance.GetPlayerNickReal(NetworkManager.Instance.GetPlayerNick()));
-    }
-  }
+	public Transform[] characterRewardArray = new Transform[4];
 
-  private IEnumerator RestartRewardsMaster()
-  {
-    if (!this.finishReward)
-    {
-      if (GameManager.Instance.IsMultiplayer())
-      {
-        this.photonView.RPC("NET_ShowMaskLoading", RpcTarget.Others);
-        GameManager.Instance.SetMaskLoading();
-        yield return (object) Globals.Instance.WaitForSeconds(1f);
-      }
-      AtOManager.Instance.SetTeamFromTeamHero(JsonHelper.FromJson<Hero>(this.teamAtOToJson));
-      AtOManager.Instance.SetPlayerGold(this.playerGold);
-      Dictionary<string, int> _mpPlayersGold = new Dictionary<string, int>();
-      for (int index = 0; index < this.keyListGold.Length; ++index)
-        _mpPlayersGold.Add(this.keyListGold[index], this.valueListGold[index]);
-      AtOManager.Instance.SetMpPlayersGold(_mpPlayersGold);
-      AtOManager.Instance.SetPlayerDust(this.playerDust);
-      Dictionary<string, int> _mpPlayersDust = new Dictionary<string, int>();
-      for (int index = 0; index < this.keyListDust.Length; ++index)
-        _mpPlayersDust.Add(this.keyListDust[index], this.valueListDust[index]);
-      AtOManager.Instance.SetMpPlayersDust(_mpPlayersDust);
-      AtOManager.Instance.divinationsNumber = this.divinationsNumber;
-      AtOManager.Instance.totalGoldGained = this.totalGoldGained;
-      AtOManager.Instance.totalDustGained = this.totalDustGained;
-      PlayerManager.Instance.GoldGained = this.atoGoldGained;
-      PlayerManager.Instance.DustGained = this.atoDustGained;
-      PlayerManager.Instance.ExpGained = this.expGained;
-      AtOManager.Instance.RelaunchRewards();
-    }
-  }
+	public Dictionary<int, string[]> cardsByOrder;
 
-  [PunRPC]
-  private void NET_RestartRewards(string _nick)
-  {
-    AlertManager.Instance.AlertConfirmDouble(string.Format(Texts.Instance.GetText("restartClient"), (object) _nick));
-    AlertManager.buttonClickDelegate = new AlertManager.OnButtonClickDelegate(this.WantToRestart);
-    AlertManager.Instance.ShowReloadIcon();
-  }
+	public Hero[] theTeam;
 
-  [PunRPC]
-  private void NET_ShowMaskLoading()
-  {
-    this.reseting = true;
-    GameManager.Instance.SetMaskLoading();
-  }
+	public string[] cardSelectedArr;
 
-  private void WantToRestart()
-  {
-    AlertManager.buttonClickDelegate -= new AlertManager.OnButtonClickDelegate(this.WantToRestart);
-    if (!AlertManager.Instance.GetConfirmAnswer())
-      return;
-    this.RestartRewards();
-  }
+	private string[] combatScarab;
 
-  private void Start()
-  {
-    if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
-    {
-      this.teamAtOToJson = JsonHelper.ToJson<Hero>(AtOManager.Instance.GetTeam());
-      this.playerGold = AtOManager.Instance.GetPlayerGold();
-      Dictionary<string, int> mpPlayersGold = AtOManager.Instance.GetMpPlayersGold();
-      this.keyListGold = new string[mpPlayersGold.Count];
-      mpPlayersGold.Keys.CopyTo(this.keyListGold, 0);
-      this.valueListGold = new int[mpPlayersGold.Count];
-      mpPlayersGold.Values.CopyTo(this.valueListGold, 0);
-      this.playerDust = AtOManager.Instance.GetPlayerDust();
-      Dictionary<string, int> mpPlayersDust = AtOManager.Instance.GetMpPlayersDust();
-      this.keyListDust = new string[mpPlayersDust.Count];
-      mpPlayersDust.Keys.CopyTo(this.keyListDust, 0);
-      this.valueListDust = new int[mpPlayersDust.Count];
-      mpPlayersDust.Values.CopyTo(this.valueListDust, 0);
-      this.divinationsNumber = AtOManager.Instance.divinationsNumber;
-      this.totalGoldGained = AtOManager.Instance.totalGoldGained;
-      this.totalDustGained = AtOManager.Instance.totalDustGained;
-      this.atoGoldGained = PlayerManager.Instance.GoldGained;
-      this.atoDustGained = PlayerManager.Instance.DustGained;
-      this.expGained = PlayerManager.Instance.ExpGained;
-    }
-    this.cardSelectedArr = new string[4];
-    this.theTeam = AtOManager.Instance.GetTeam();
-    AudioManager.Instance.DoBSO("Rewards");
-    this.StartCoroutine(this.SetRewards());
-  }
+	private int combatScarabGold;
 
-  private IEnumerator SetRewards()
-  {
-    if (GameManager.Instance.IsMultiplayer())
-    {
-      if (NetworkManager.Instance.IsMaster())
-      {
-        while (!NetworkManager.Instance.AllPlayersReady("setrewards"))
-          yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("Game ready, Everybody checked setrewards");
-        NetworkManager.Instance.PlayersNetworkContinue("setrewards");
-      }
-      else
-      {
-        NetworkManager.Instance.SetWaitingSyncro("setrewards", true);
-        NetworkManager.Instance.SetStatusReady("setrewards");
-        while (NetworkManager.Instance.WaitingSyncro["setrewards"])
-          yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-        if (Globals.Instance.ShowDebug)
-          Functions.DebugLogGD("setrewards, we can continue!");
-      }
-    }
-    GameManager.Instance.SceneLoaded();
-    if (AtOManager.Instance.corruptionAccepted)
-    {
-      AtOManager.Instance.comingFromCombatDoRewards = true;
-      CardData cardData = Globals.Instance.GetCardData(AtOManager.Instance.corruptionIdCard, false);
-      if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
-      {
-        StringBuilder stringBuilder = new StringBuilder();
-        Animator component1 = this.corruptionReward.GetComponent<Animator>();
-        switch (AtOManager.Instance.corruptionId)
-        {
-          case "increasedqualityofcardrewards":
-            stringBuilder.Append("<sprite name=cards> +1 ");
-            stringBuilder.Append(Texts.Instance.GetText("cardsTier"));
-            this.corruptionRewardText.text = stringBuilder.ToString();
-            this.corruptionRewardBgText.gameObject.SetActive(true);
-            this.corruptionReward.gameObject.SetActive(true);
-            this.cardTierModFromCorruption = 1;
-            this.numCardsReward = 4;
-            component1.SetTrigger("gold");
-            break;
-          case "goldshards0":
-            if (cardData.CardRarity == Enums.CardRarity.Common)
-            {
-              int num1 = AtOManager.Instance.ModifyQuantityObeliskTraits(0, 320);
-              stringBuilder.Append("<sprite name=gold> ");
-              stringBuilder.Append(num1);
-              int num2 = AtOManager.Instance.ModifyQuantityObeliskTraits(1, 320);
-              stringBuilder.Append("  <sprite name=dust> ");
-              stringBuilder.Append(num2);
-            }
-            else
-            {
-              int num3 = AtOManager.Instance.ModifyQuantityObeliskTraits(0, 520);
-              stringBuilder.Append("<sprite name=gold> ");
-              stringBuilder.Append(num3);
-              int num4 = AtOManager.Instance.ModifyQuantityObeliskTraits(1, 520);
-              stringBuilder.Append("  <sprite name=dust> ");
-              stringBuilder.Append(num4);
-            }
-            this.corruptionRewardText.text = stringBuilder.ToString();
-            this.corruptionRewardBgText.gameObject.SetActive(true);
-            this.corruptionReward.gameObject.SetActive(true);
-            component1.SetTrigger("gold");
-            break;
-          case "goldshards1":
-            if (cardData.CardRarity == Enums.CardRarity.Rare)
-            {
-              int num5 = AtOManager.Instance.ModifyQuantityObeliskTraits(0, 720);
-              stringBuilder.Append("<sprite name=gold> ");
-              stringBuilder.Append(num5);
-              int num6 = AtOManager.Instance.ModifyQuantityObeliskTraits(1, 720);
-              stringBuilder.Append("  <sprite name=dust> ");
-              stringBuilder.Append(num6);
-              stringBuilder.Append("  <sprite name=supply> 1");
-            }
-            else
-            {
-              int num7 = AtOManager.Instance.ModifyQuantityObeliskTraits(0, 1000);
-              stringBuilder.Append("<sprite name=gold> ");
-              stringBuilder.Append(num7);
-              int num8 = AtOManager.Instance.ModifyQuantityObeliskTraits(1, 1000);
-              stringBuilder.Append("  <sprite name=dust> ");
-              stringBuilder.Append(num8);
-              stringBuilder.Append("  <sprite name=supply> 2");
-            }
-            this.corruptionRewardText.text = stringBuilder.ToString();
-            this.corruptionRewardBgText.gameObject.SetActive(true);
-            this.corruptionReward.gameObject.SetActive(true);
-            component1.SetTrigger("gold");
-            break;
-          case "herocard":
-            stringBuilder.Append(this.theTeam[AtOManager.Instance.corruptionRewardChar].SourceName);
-            this.corruptionRewardText.text = stringBuilder.ToString();
-            this.corruptionRewardBgCard.gameObject.SetActive(true);
-            this.corruptionReward.gameObject.SetActive(true);
-            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.corruptionRewardBgCard);
-            gameObject.transform.localPosition = new Vector3(0.0f, -0.9f, 0.0f);
-            gameObject.transform.localScale = new Vector3(1f, 1f, 1f);
-            CardItem component2 = gameObject.GetComponent<CardItem>();
-            component2.SetCard(AtOManager.Instance.corruptionRewardCard, false, this.theTeam[AtOManager.Instance.corruptionRewardChar]);
-            component2.TopLayeringOrder("Book", 2000);
-            component2.cardmakebig = true;
-            component2.CreateColliderAdjusted();
-            component2.cardmakebigSize = 1f;
-            component2.cardmakebigSizeMax = 1.1f;
-            if (!PlayerManager.Instance.IsCardUnlocked(AtOManager.Instance.corruptionRewardCard))
-            {
-              PlayerManager.Instance.CardUnlock(AtOManager.Instance.corruptionRewardCard, true);
-              component2.ShowUnlocked(false);
-            }
-            component1.SetTrigger("card");
-            break;
-        }
-      }
-      else
-        AtOManager.Instance.ClearCorruption();
-    }
-    if (AtOManager.Instance.combatScarab != "")
-    {
-      this.combatScarab = AtOManager.Instance.combatScarab.Split('%', StringSplitOptions.None);
-      if (this.combatScarab.Length == 2 && this.combatScarab[1] == "1")
-      {
-        if (this.combatScarab[0] == "goldenscarab")
-          this.combatScarabGold = 150;
-        else if (this.combatScarab[0] == "jadescarab")
-        {
-          this.combatScarabGold = 50;
-          this.combatScarabDust = 50;
-          this.combatScarabExp = 50;
-        }
-        else if (this.combatScarab[0] == "crystalscarab")
-          this.combatScarabDust = 150;
-      }
-    }
-    TierRewardData eventRewardTier = AtOManager.Instance.GetEventRewardTier();
-    TierRewardData townDivinationTier = AtOManager.Instance.GetTownDivinationTier();
-    this.subtitle.text = Texts.Instance.GetText("eventRewardsSubtitle");
-    if ((UnityEngine.Object) townDivinationTier != (UnityEngine.Object) null)
-    {
-      this.title.text = Texts.Instance.GetText("divinationRoundRewards");
-      if (townDivinationTier.TierNum > 5)
-        this.numCardsReward = 4;
-    }
-    else if ((UnityEngine.Object) eventRewardTier != (UnityEngine.Object) null)
-      this.title.text = Texts.Instance.GetText("eventRewards");
-    else if (AtOManager.Instance.GetTeamNPC().Length != 0)
-    {
-      this.title.text = Texts.Instance.GetText("combatRewards");
-      this.thermometerData = AtOManager.Instance.GetCombatThermometerData();
-    }
-    else
-      this.title.text = "";
-    if ((UnityEngine.Object) this.thermometerData != (UnityEngine.Object) null)
-      this.subtitle.text = Functions.ThermometerTextForRewards(this.thermometerData);
-    if (this.combatScarabGold > 0 || this.combatScarabDust > 0 || this.combatScarabExp > 0)
-    {
-      StringBuilder stringBuilder1 = new StringBuilder();
-      StringBuilder stringBuilder2 = new StringBuilder();
-      if (this.combatScarabGold > 0)
-      {
-        stringBuilder2.Append("<space=1><sprite name=gold>+");
-        stringBuilder2.Append(this.combatScarabGold);
-      }
-      if (this.combatScarabDust > 0)
-      {
-        stringBuilder2.Append("<space=1><sprite name=dust>+");
-        stringBuilder2.Append(this.combatScarabDust);
-      }
-      if (this.combatScarabExp > 0)
-      {
-        stringBuilder2.Append("<space=1><sprite name=experience>+");
-        stringBuilder2.Append(this.combatScarabExp);
-      }
-      stringBuilder1.Append("\n<size=-.5><color=#FFEBA5><color=#A48D3D>[</color>");
-      stringBuilder1.Append(string.Format(Texts.Instance.GetText("scarabBonus"), (object) stringBuilder2.ToString()));
-      stringBuilder1.Append("<color=#A48D3D>]</color></size></color>");
-      this.subtitle.text += stringBuilder1.ToString();
-    }
-    bool flag1 = false;
-    if (GameManager.Instance.IsObeliskChallenge() && Globals.Instance.ZoneDataSource[AtOManager.Instance.GetTownZoneId().ToLower()].ObeliskLow)
-      flag1 = true;
-    if (!GameManager.Instance.IsMultiplayer() || GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-    {
-      UnityEngine.Random.InitState((AtOManager.Instance.GetGameId() + "_" + AtOManager.Instance.mapVisitedNodes.Count.ToString() + "_" + AtOManager.Instance.currentMapNode + "_" + AtOManager.Instance.divinationsNumber.ToString()).GetDeterministicHashCode());
-      ++AtOManager.Instance.divinationsNumber;
-      this.cardsByOrder = new Dictionary<int, string[]>();
-      if ((UnityEngine.Object) townDivinationTier != (UnityEngine.Object) null)
-      {
-        this.tierRewardBase = townDivinationTier;
-        this.typeOfReward = 2;
-      }
-      else if ((UnityEngine.Object) eventRewardTier != (UnityEngine.Object) null)
-      {
-        this.tierRewardBase = eventRewardTier;
-        this.typeOfReward = 2;
-      }
-      else if (AtOManager.Instance.GetTeamNPC().Length != 0)
-      {
-        this.tierRewardBase = AtOManager.Instance.GetTeamNPCReward();
-        this.typeOfReward = 1;
-      }
-      else
-      {
-        this.tierRewardBase = Globals.Instance.GetTierRewardData(0);
-        this.typeOfReward = 0;
-      }
-      this.dustQuantity = this.tierRewardBase.Dust;
-      int num9 = this.tierRewardBase.TierNum;
-      AtOManager.Instance.currentRewardTier = num9;
-      if ((UnityEngine.Object) this.thermometerData != (UnityEngine.Object) null)
-        num9 += this.thermometerData.CardBonus + this.cardTierModFromCorruption;
-      if (num9 < 0)
-        num9 = 0;
-      this.tierRewardBase = Globals.Instance.GetTierRewardData(num9);
-      if (GameManager.Instance.IsObeliskChallenge())
-      {
-        if (flag1)
-          num9 += 2;
-        else
-          ++num9;
-      }
-      this.tierRewardInf = num9 <= 0 ? this.tierRewardBase : Globals.Instance.GetTierRewardData(num9 - 1);
-      CardData _cardData = (CardData) null;
-      for (int key = 0; key < this.theTeam.Length; ++key)
-      {
-        if (this.theTeam[key] == null || (UnityEngine.Object) this.theTeam[key].HeroData == (UnityEngine.Object) null)
-        {
-          this.cardsByOrder[key] = new string[3]
-          {
-            "",
-            "",
-            ""
-          };
-        }
-        else
-        {
-          Hero hero = this.theTeam[key];
-          Enums.CardClass result1 = Enums.CardClass.None;
-          Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof (Enums.HeroClass), (object) hero.HeroData.HeroClass), out result1);
-          Enums.CardClass result2 = Enums.CardClass.None;
-          Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof (Enums.HeroClass), (object) hero.HeroData.HeroSubClass.HeroClassSecondary), out result2);
-          int length = this.numCardsReward;
-          if (this.numCardsReward == 3 && result2 != Enums.CardClass.None)
-            length = 4;
-          string[] arr = new string[length];
-          List<string> stringList1 = Globals.Instance.CardListNotUpgradedByClass[result1];
-          List<string> stringList2 = result2 == Enums.CardClass.None ? new List<string>() : Globals.Instance.CardListNotUpgradedByClass[result2];
-          for (int index1 = 0; index1 < length; ++index1)
-          {
-            this.tierReward = index1 != 0 ? this.tierRewardInf : this.tierRewardBase;
-            int num10 = UnityEngine.Random.Range(0, 100);
-            bool flag2 = true;
-            while (flag2)
-            {
-              flag2 = false;
-              bool flag3 = false;
-              while (!flag3)
-              {
-                flag2 = false;
-                _cardData = Globals.Instance.GetCardData(index1 < 2 || result2 == Enums.CardClass.None ? stringList1[UnityEngine.Random.Range(0, stringList1.Count)] : stringList2[UnityEngine.Random.Range(0, stringList2.Count)], false);
-                if (!flag2)
-                {
-                  if (num10 < this.tierReward.Common)
-                  {
-                    if (_cardData.CardRarity == Enums.CardRarity.Common)
-                      flag3 = true;
-                  }
-                  else if (num10 < this.tierReward.Common + this.tierReward.Uncommon)
-                  {
-                    if (_cardData.CardRarity == Enums.CardRarity.Uncommon)
-                      flag3 = true;
-                  }
-                  else if (num10 < this.tierReward.Common + this.tierReward.Uncommon + this.tierReward.Rare)
-                  {
-                    if (_cardData.CardRarity == Enums.CardRarity.Rare)
-                      flag3 = true;
-                  }
-                  else if (num10 < this.tierReward.Common + this.tierReward.Uncommon + this.tierReward.Rare + this.tierReward.Epic)
-                  {
-                    if (_cardData.CardRarity == Enums.CardRarity.Epic)
-                      flag3 = true;
-                  }
-                  else if (_cardData.CardRarity == Enums.CardRarity.Mythic)
-                    flag3 = true;
-                }
-              }
-              int rarity = UnityEngine.Random.Range(0, 100);
-              string id = _cardData.Id;
-              _cardData = Globals.Instance.GetCardData(Functions.GetCardByRarity(rarity, _cardData), false);
-              if ((UnityEngine.Object) _cardData == (UnityEngine.Object) null)
-              {
-                flag2 = true;
-              }
-              else
-              {
-                for (int index2 = 0; index2 < arr.Length; ++index2)
-                {
-                  if (arr[index2] == _cardData.Id)
-                  {
-                    flag2 = true;
-                    break;
-                  }
-                }
-              }
-            }
-            arr[index1] = _cardData.Id;
-          }
-          this.cardsByOrder[key] = Functions.ShuffleArray<string>(arr);
-        }
-      }
-      this.experienceEach = 0;
-      this.goldEach = 0;
-      if (this.typeOfReward == 1)
-      {
-        this.experienceEach = Functions.FuncRoundToInt((float) (AtOManager.Instance.GetExperienceFromCombat() / 4));
-        this.goldEach = Functions.FuncRoundToInt((float) (AtOManager.Instance.GetGoldFromCombat() / 4));
-        if ((UnityEngine.Object) this.thermometerData != (UnityEngine.Object) null)
-        {
-          this.experienceEach += Functions.FuncRoundToInt((float) ((double) this.experienceEach * (double) this.thermometerData.ExpBonus / 100.0));
-          this.goldEach += Functions.FuncRoundToInt((float) ((double) this.goldEach * (double) this.thermometerData.GoldBonus / 100.0));
-        }
-      }
-      if (GameManager.Instance.IsObeliskChallenge() & flag1)
-      {
-        this.goldEach *= 2;
-        this.dustQuantity *= 2;
-      }
-      if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
-      {
-        if (!GameManager.Instance.IsObeliskChallenge())
-        {
-          this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-          this.goldEach -= Functions.FuncRoundToInt((float) this.goldEach * 0.5f);
-        }
-        else
-        {
-          this.dustQuantity -= Functions.FuncRoundToInt((float) this.dustQuantity * 0.3f);
-          this.goldEach -= Functions.FuncRoundToInt((float) this.goldEach * 0.3f);
-        }
-      }
-      if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
-      {
-        this.dustQuantity += Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-        this.goldEach += Functions.FuncRoundToInt((float) this.dustQuantity * 0.5f);
-      }
-      this.goldEach += this.combatScarabGold;
-      this.experienceEach += this.combatScarabExp;
-      if (GameManager.Instance.IsMultiplayer())
-        this.photonView.RPC("NET_ShareRewards", RpcTarget.Others, (object) this.cardsByOrder[0], (object) this.cardsByOrder[1], (object) this.cardsByOrder[2], (object) this.cardsByOrder[3], (object) this.dustQuantity, (object) this.typeOfReward, (object) this.experienceEach, (object) this.goldEach, (object) this.combatScarabDust);
-      this.ShowRewards();
-    }
-  }
+	public int combatScarabDust;
 
-  public void ShowCharacterWindow(string type = "", bool isHero = true, int characterIndex = -1)
-  {
-    this.characterWindowUI.Show(type, characterIndex);
-  }
+	private int combatScarabExp;
 
-  public void ShowDeck(int auxInt) => this.characterWindowUI.Show("deck", auxInt);
+	public int dustQuantity;
 
-  [PunRPC]
-  private void NET_ShareRewards(
-    string[] cards0,
-    string[] cards1,
-    string[] cards2,
-    string[] cards3,
-    int _dustQuantity,
-    int _typeOfReward,
-    int _experienceEach,
-    int _goldEach,
-    int _combatScarabDust)
-  {
-    this.cardsByOrder = new Dictionary<int, string[]>();
-    this.cardsByOrder.Add(0, cards0);
-    this.cardsByOrder.Add(1, cards1);
-    this.cardsByOrder.Add(2, cards2);
-    this.cardsByOrder.Add(3, cards3);
-    this.dustQuantity = _dustQuantity;
-    this.typeOfReward = _typeOfReward;
-    this.experienceEach = _experienceEach;
-    this.goldEach = _goldEach;
-    this.combatScarabDust = _combatScarabDust;
-    this.ShowRewards();
-  }
+	private ThermometerData thermometerData;
 
-  private void ShowRewards() => this.StartCoroutine(this.ShowRewardsCo());
+	public TMP_Text title;
 
-  private IEnumerator ShowRewardsCo()
-  {
-    for (int i = 0; i < 4; ++i)
-    {
-      if (this.theTeam[i] != null && !((UnityEngine.Object) this.theTeam[i].HeroData == (UnityEngine.Object) null))
-      {
-        yield return (object) Globals.Instance.WaitForSeconds(0.15f);
-        this.characterRewardArray[i].gameObject.SetActive(true);
-        this.characterRewardArray[i].GetComponent<CharacterReward>().Init(i);
-        ++this.numRewards;
-      }
-    }
-    GameManager.Instance.ShowTutorialPopup("cardsReward", Vector3.zero, Vector3.zero);
-  }
+	public TMP_Text subtitle;
 
-  public void SetCardReward(string playerNick, string internalId)
-  {
-    for (int index = 0; index < 4; ++index)
-      this.characterRewardArray[index].GetComponent<CharacterReward>().CardSelected(playerNick, internalId);
-  }
+	public TMP_Text corruptionRewardText;
 
-  public void CardSelected(int index, string cardId)
-  {
-    if (GameManager.Instance.IsMultiplayer())
-      this.photonView.RPC("MASTER_CardSelected", RpcTarget.MasterClient, (object) (short) index, (object) cardId);
-    else
-      this.NET_CardSelected((short) index, cardId);
-  }
+	public Transform corruptionReward;
 
-  [PunRPC]
-  private void MASTER_CardSelected(short index, string cardId)
-  {
-    if (this.reseting)
-      return;
-    this.photonView.RPC("NET_CardSelected", RpcTarget.All, (object) index, (object) cardId);
-  }
+	public Transform corruptionRewardBgText;
 
-  [PunRPC]
-  private void NET_CardSelected(short _index, string cardId)
-  {
-    int index = (int) _index;
-    this.cardSelectedArr[index] = cardId;
-    this.characterRewardArray[index].GetComponent<CharacterReward>().ShowSelected(cardId);
-    this.CheckAllAssigned();
-  }
+	public Transform corruptionRewardBgCard;
 
-  public void DustSelected(int index)
-  {
-    if (GameManager.Instance.IsMultiplayer())
-      this.photonView.RPC("MASTER_DustSelected", RpcTarget.MasterClient, (object) (short) index);
-    else
-      this.NET_DustSelected((short) index);
-  }
+	private int numRewards;
 
-  [PunRPC]
-  private void MASTER_DustSelected(short index)
-  {
-    if (this.reseting)
-      return;
-    this.photonView.RPC("NET_DustSelected", RpcTarget.All, (object) index);
-  }
+	private int numCardsReward = 3;
 
-  [PunRPC]
-  private void NET_DustSelected(short _index)
-  {
-    int index = (int) _index;
-    this.cardSelectedArr[index] = "dust";
-    this.characterRewardArray[index].GetComponent<CharacterReward>().ShowSelected("dust");
-    this.CheckAllAssigned();
-  }
+	public int typeOfReward;
 
-  private void CheckAllAssigned()
-  {
-    for (int index = 0; index < this.numRewards; ++index)
-    {
-      if (this.cardSelectedArr[index] == null)
-        return;
-    }
-    if (!GameManager.Instance.IsMultiplayer() || GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster())
-    {
-      this.finishReward = true;
-      this.buttonRestart.gameObject.SetActive(false);
-      this.StartCoroutine(this.CloseWindow());
-    }
-    this.SetCombatCorruption();
-    SaveManager.SavePlayerData();
-  }
+	private TierRewardData tierReward;
 
-  public void Reload() => SceneStatic.LoadByName("Rewards");
+	private TierRewardData tierRewardBase;
 
-  private void SetCombatCorruption() => AtOManager.Instance.SetCombatCorruptionForScore();
+	private TierRewardData tierRewardInf;
 
-  private IEnumerator CloseWindow()
-  {
-    yield return (object) Globals.Instance.WaitForSeconds(0.4f);
-    AtOManager.Instance.DeleteSaveGameTurn();
-    AtOManager.Instance.FinishCardRewards(this.cardSelectedArr);
-  }
+	public int experienceEach;
 
-  public void ControllerMovement(
-    bool goingUp = false,
-    bool goingRight = false,
-    bool goingDown = false,
-    bool goingLeft = false,
-    bool shoulderLeft = false,
-    bool shoulderRight = false)
-  {
-    this._controllerList.Clear();
-    this._controllerList.Add(this.buttonRestart);
-    for (int index = 0; index < 4; ++index)
-    {
-      if (Functions.TransformIsVisible(this.characterRewardArray[index].transform))
-      {
-        foreach (Transform transform in this.characterRewardArray[index].GetComponent<CharacterReward>().cardsTransform)
-        {
-          if (transform.gameObject.activeSelf)
-            this._controllerList.Add(transform);
-        }
-        if ((UnityEngine.Object) this.characterRewardArray[index].GetComponent<CharacterReward>().quantityDust != (UnityEngine.Object) null && this.characterRewardArray[index].GetComponent<CharacterReward>().quantityDust.GetChild(0).GetComponent<BoxCollider2D>().enabled)
-          this._controllerList.Add(this.characterRewardArray[index].GetComponent<CharacterReward>().quantityDust);
-        this._controllerList.Add(this.characterRewardArray[index].GetComponent<CharacterReward>().buttonCharacterDeck);
-      }
-    }
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((UnityEngine.Object) this._controllerList[this.controllerHorizontalIndex] != (UnityEngine.Object) null))
-      return;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
+	public int goldEach;
 
-  public void ControllerMoveShoulder(bool _isRight = false)
-  {
-  }
+	private int cardTierModFromCorruption;
+
+	private bool finishReward;
+
+	private bool reseting;
+
+	public Transform buttonRestart;
+
+	private string teamAtOToJson;
+
+	private string[] keyListGold;
+
+	private int[] valueListGold;
+
+	private int playerGold;
+
+	private string[] keyListDust;
+
+	private int[] valueListDust;
+
+	private int playerDust;
+
+	private int divinationsNumber;
+
+	private int totalGoldGained;
+
+	private int totalDustGained;
+
+	private int expGained;
+
+	private int atoGoldGained;
+
+	private int atoDustGained;
+
+	public int controllerHorizontalIndex = -1;
+
+	private Vector2 warpPosition = Vector2.zero;
+
+	private List<Transform> _controllerList = new List<Transform>();
+
+	public static RewardsManager Instance { get; private set; }
+
+	private void Awake()
+	{
+		if (GameManager.Instance == null)
+		{
+			SceneStatic.LoadByName("Rewards");
+			return;
+		}
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			UnityEngine.Object.Destroy(this);
+		}
+		sceneCamera.gameObject.SetActive(value: false);
+		photonView = PhotonView.Get(this);
+		corruptionReward.gameObject.SetActive(value: false);
+		NetworkManager.Instance.StartStopQueue(state: true);
+	}
+
+	public void RestartRewards()
+	{
+		if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
+		{
+			reseting = true;
+			StartCoroutine(RestartRewardsMaster());
+			return;
+		}
+		buttonRestart.gameObject.SetActive(value: false);
+		string playerNickReal = NetworkManager.Instance.GetPlayerNickReal(NetworkManager.Instance.GetPlayerNick());
+		photonView.RPC("NET_RestartRewards", RpcTarget.MasterClient, playerNickReal);
+	}
+
+	private IEnumerator RestartRewardsMaster()
+	{
+		if (!finishReward)
+		{
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				photonView.RPC("NET_ShowMaskLoading", RpcTarget.Others);
+				GameManager.Instance.SetMaskLoading();
+				yield return Globals.Instance.WaitForSeconds(1f);
+			}
+			AtOManager.Instance.SetTeamFromTeamHero(JsonHelper.FromJson<Hero>(teamAtOToJson));
+			AtOManager.Instance.SetPlayerGold(playerGold);
+			Dictionary<string, int> dictionary = new Dictionary<string, int>();
+			for (int i = 0; i < keyListGold.Length; i++)
+			{
+				dictionary.Add(keyListGold[i], valueListGold[i]);
+			}
+			AtOManager.Instance.SetMpPlayersGold(dictionary);
+			AtOManager.Instance.SetPlayerDust(playerDust);
+			Dictionary<string, int> dictionary2 = new Dictionary<string, int>();
+			for (int j = 0; j < keyListDust.Length; j++)
+			{
+				dictionary2.Add(keyListDust[j], valueListDust[j]);
+			}
+			AtOManager.Instance.SetMpPlayersDust(dictionary2);
+			AtOManager.Instance.divinationsNumber = divinationsNumber;
+			AtOManager.Instance.totalGoldGained = totalGoldGained;
+			AtOManager.Instance.totalDustGained = totalDustGained;
+			PlayerManager.Instance.GoldGained = atoGoldGained;
+			PlayerManager.Instance.DustGained = atoDustGained;
+			PlayerManager.Instance.ExpGained = expGained;
+			AtOManager.Instance.RelaunchRewards();
+		}
+	}
+
+	[PunRPC]
+	private void NET_RestartRewards(string _nick)
+	{
+		AlertManager.Instance.AlertConfirmDouble(string.Format(Texts.Instance.GetText("restartClient"), _nick));
+		AlertManager.buttonClickDelegate = WantToRestart;
+		AlertManager.Instance.ShowReloadIcon();
+	}
+
+	[PunRPC]
+	private void NET_ShowMaskLoading()
+	{
+		reseting = true;
+		GameManager.Instance.SetMaskLoading();
+	}
+
+	private void WantToRestart()
+	{
+		AlertManager.buttonClickDelegate = (AlertManager.OnButtonClickDelegate)Delegate.Remove(AlertManager.buttonClickDelegate, new AlertManager.OnButtonClickDelegate(WantToRestart));
+		if (AlertManager.Instance.GetConfirmAnswer())
+		{
+			RestartRewards();
+		}
+	}
+
+	private void Start()
+	{
+		if (!GameManager.Instance.IsMultiplayer() || NetworkManager.Instance.IsMaster())
+		{
+			teamAtOToJson = JsonHelper.ToJson(AtOManager.Instance.GetTeam());
+			playerGold = AtOManager.Instance.GetPlayerGold();
+			Dictionary<string, int> mpPlayersGold = AtOManager.Instance.GetMpPlayersGold();
+			keyListGold = new string[mpPlayersGold.Count];
+			mpPlayersGold.Keys.CopyTo(keyListGold, 0);
+			valueListGold = new int[mpPlayersGold.Count];
+			mpPlayersGold.Values.CopyTo(valueListGold, 0);
+			playerDust = AtOManager.Instance.GetPlayerDust();
+			Dictionary<string, int> mpPlayersDust = AtOManager.Instance.GetMpPlayersDust();
+			keyListDust = new string[mpPlayersDust.Count];
+			mpPlayersDust.Keys.CopyTo(keyListDust, 0);
+			valueListDust = new int[mpPlayersDust.Count];
+			mpPlayersDust.Values.CopyTo(valueListDust, 0);
+			divinationsNumber = AtOManager.Instance.divinationsNumber;
+			totalGoldGained = AtOManager.Instance.totalGoldGained;
+			totalDustGained = AtOManager.Instance.totalDustGained;
+			atoGoldGained = PlayerManager.Instance.GoldGained;
+			atoDustGained = PlayerManager.Instance.DustGained;
+			expGained = PlayerManager.Instance.ExpGained;
+		}
+		cardSelectedArr = new string[4];
+		theTeam = AtOManager.Instance.GetTeam();
+		AudioManager.Instance.DoBSO("Rewards");
+		StartCoroutine(SetRewards());
+	}
+
+	private IEnumerator SetRewards()
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			if (NetworkManager.Instance.IsMaster())
+			{
+				while (!NetworkManager.Instance.AllPlayersReady("setrewards"))
+				{
+					yield return Globals.Instance.WaitForSeconds(0.01f);
+				}
+				if (Globals.Instance.ShowDebug)
+				{
+					Functions.DebugLogGD("Game ready, Everybody checked setrewards");
+				}
+				NetworkManager.Instance.PlayersNetworkContinue("setrewards");
+			}
+			else
+			{
+				NetworkManager.Instance.SetWaitingSyncro("setrewards", status: true);
+				NetworkManager.Instance.SetStatusReady("setrewards");
+				while (NetworkManager.Instance.WaitingSyncro["setrewards"])
+				{
+					yield return Globals.Instance.WaitForSeconds(0.1f);
+				}
+				if (Globals.Instance.ShowDebug)
+				{
+					Functions.DebugLogGD("setrewards, we can continue!");
+				}
+			}
+		}
+		GameManager.Instance.SceneLoaded();
+		if (AtOManager.Instance.corruptionAccepted)
+		{
+			AtOManager.Instance.comingFromCombatDoRewards = true;
+			CardData cardData = Globals.Instance.GetCardData(AtOManager.Instance.corruptionIdCard, instantiate: false);
+			if (cardData != null)
+			{
+				StringBuilder stringBuilder = new StringBuilder();
+				Animator component = corruptionReward.GetComponent<Animator>();
+				switch (AtOManager.Instance.corruptionId)
+				{
+				case "increasedqualityofcardrewards":
+					stringBuilder.Append("<sprite name=cards> +1 ");
+					stringBuilder.Append(Texts.Instance.GetText("cardsTier"));
+					corruptionRewardText.text = stringBuilder.ToString();
+					corruptionRewardBgText.gameObject.SetActive(value: true);
+					corruptionReward.gameObject.SetActive(value: true);
+					cardTierModFromCorruption = 1;
+					numCardsReward = 4;
+					component.SetTrigger("gold");
+					break;
+				case "goldshards0":
+					if (cardData.CardRarity == Enums.CardRarity.Common)
+					{
+						int quantity = 320;
+						quantity = AtOManager.Instance.ModifyQuantityObeliskTraits(0, quantity);
+						stringBuilder.Append("<sprite name=gold> ");
+						stringBuilder.Append(quantity);
+						quantity = 320;
+						quantity = AtOManager.Instance.ModifyQuantityObeliskTraits(1, quantity);
+						stringBuilder.Append("  <sprite name=dust> ");
+						stringBuilder.Append(quantity);
+					}
+					else
+					{
+						int quantity = 520;
+						quantity = AtOManager.Instance.ModifyQuantityObeliskTraits(0, quantity);
+						stringBuilder.Append("<sprite name=gold> ");
+						stringBuilder.Append(quantity);
+						quantity = 520;
+						quantity = AtOManager.Instance.ModifyQuantityObeliskTraits(1, quantity);
+						stringBuilder.Append("  <sprite name=dust> ");
+						stringBuilder.Append(quantity);
+					}
+					corruptionRewardText.text = stringBuilder.ToString();
+					corruptionRewardBgText.gameObject.SetActive(value: true);
+					corruptionReward.gameObject.SetActive(value: true);
+					component.SetTrigger("gold");
+					break;
+				case "goldshards1":
+					if (cardData.CardRarity == Enums.CardRarity.Rare)
+					{
+						int quantity = 720;
+						quantity = AtOManager.Instance.ModifyQuantityObeliskTraits(0, quantity);
+						stringBuilder.Append("<sprite name=gold> ");
+						stringBuilder.Append(quantity);
+						quantity = 720;
+						quantity = AtOManager.Instance.ModifyQuantityObeliskTraits(1, quantity);
+						stringBuilder.Append("  <sprite name=dust> ");
+						stringBuilder.Append(quantity);
+						stringBuilder.Append("  <sprite name=supply> 1");
+					}
+					else
+					{
+						int quantity = 1000;
+						quantity = AtOManager.Instance.ModifyQuantityObeliskTraits(0, quantity);
+						stringBuilder.Append("<sprite name=gold> ");
+						stringBuilder.Append(quantity);
+						quantity = 1000;
+						quantity = AtOManager.Instance.ModifyQuantityObeliskTraits(1, quantity);
+						stringBuilder.Append("  <sprite name=dust> ");
+						stringBuilder.Append(quantity);
+						stringBuilder.Append("  <sprite name=supply> 2");
+					}
+					corruptionRewardText.text = stringBuilder.ToString();
+					corruptionRewardBgText.gameObject.SetActive(value: true);
+					corruptionReward.gameObject.SetActive(value: true);
+					component.SetTrigger("gold");
+					break;
+				case "herocard":
+				{
+					stringBuilder.Append(theTeam[AtOManager.Instance.corruptionRewardChar].SourceName);
+					corruptionRewardText.text = stringBuilder.ToString();
+					corruptionRewardBgCard.gameObject.SetActive(value: true);
+					corruptionReward.gameObject.SetActive(value: true);
+					GameObject obj = UnityEngine.Object.Instantiate(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, corruptionRewardBgCard);
+					obj.transform.localPosition = new Vector3(0f, -0.9f, 0f);
+					obj.transform.localScale = new Vector3(1f, 1f, 1f);
+					CardItem component2 = obj.GetComponent<CardItem>();
+					component2.SetCard(AtOManager.Instance.corruptionRewardCard, deckScale: false, theTeam[AtOManager.Instance.corruptionRewardChar]);
+					component2.TopLayeringOrder("Book", 2000);
+					component2.cardmakebig = true;
+					component2.CreateColliderAdjusted();
+					component2.cardmakebigSize = 1f;
+					component2.cardmakebigSizeMax = 1.1f;
+					if (!PlayerManager.Instance.IsCardUnlocked(AtOManager.Instance.corruptionRewardCard))
+					{
+						PlayerManager.Instance.CardUnlock(AtOManager.Instance.corruptionRewardCard, save: true);
+						component2.ShowUnlocked(showEffects: false);
+					}
+					component.SetTrigger("card");
+					break;
+				}
+				}
+			}
+			else
+			{
+				AtOManager.Instance.ClearCorruption();
+			}
+		}
+		if (AtOManager.Instance.combatScarab != "")
+		{
+			combatScarab = AtOManager.Instance.combatScarab.Split('%');
+			if (combatScarab.Length == 2 && combatScarab[1] == "1")
+			{
+				if (combatScarab[0] == "goldenscarab")
+				{
+					combatScarabGold = 150;
+				}
+				else if (combatScarab[0] == "jadescarab")
+				{
+					combatScarabGold = 50;
+					combatScarabDust = 50;
+					combatScarabExp = 50;
+				}
+				else if (combatScarab[0] == "crystalscarab")
+				{
+					combatScarabDust = 150;
+				}
+			}
+		}
+		TierRewardData eventRewardTier = AtOManager.Instance.GetEventRewardTier();
+		TierRewardData townDivinationTier = AtOManager.Instance.GetTownDivinationTier();
+		subtitle.text = Texts.Instance.GetText("eventRewardsSubtitle");
+		if (townDivinationTier != null)
+		{
+			title.text = Texts.Instance.GetText("divinationRoundRewards");
+			if (townDivinationTier.TierNum > 5)
+			{
+				numCardsReward = 4;
+			}
+		}
+		else if (eventRewardTier != null)
+		{
+			title.text = Texts.Instance.GetText("eventRewards");
+		}
+		else if (AtOManager.Instance.GetTeamNPC().Length != 0)
+		{
+			title.text = Texts.Instance.GetText("combatRewards");
+			thermometerData = AtOManager.Instance.GetCombatThermometerData();
+		}
+		else
+		{
+			title.text = "";
+		}
+		if (thermometerData != null)
+		{
+			subtitle.text = Functions.ThermometerTextForRewards(thermometerData);
+		}
+		if (combatScarabGold > 0 || combatScarabDust > 0 || combatScarabExp > 0)
+		{
+			StringBuilder stringBuilder2 = new StringBuilder();
+			StringBuilder stringBuilder3 = new StringBuilder();
+			if (combatScarabGold > 0)
+			{
+				stringBuilder3.Append("<space=1><sprite name=gold>+");
+				stringBuilder3.Append(combatScarabGold);
+			}
+			if (combatScarabDust > 0)
+			{
+				stringBuilder3.Append("<space=1><sprite name=dust>+");
+				stringBuilder3.Append(combatScarabDust);
+			}
+			if (combatScarabExp > 0)
+			{
+				stringBuilder3.Append("<space=1><sprite name=experience>+");
+				stringBuilder3.Append(combatScarabExp);
+			}
+			stringBuilder2.Append("\n<size=-.5><color=#FFEBA5><color=#A48D3D>[</color>");
+			stringBuilder2.Append(string.Format(Texts.Instance.GetText("scarabBonus"), stringBuilder3.ToString()));
+			stringBuilder2.Append("<color=#A48D3D>]</color></size></color>");
+			subtitle.text += stringBuilder2.ToString();
+		}
+		bool flag = false;
+		if (GameManager.Instance.IsObeliskChallenge() && Globals.Instance.ZoneDataSource[AtOManager.Instance.GetTownZoneId().ToLower()].ObeliskLow)
+		{
+			flag = true;
+		}
+		if (GameManager.Instance.IsMultiplayer() && (!GameManager.Instance.IsMultiplayer() || !NetworkManager.Instance.IsMaster()))
+		{
+			yield break;
+		}
+		UnityEngine.Random.InitState((AtOManager.Instance.GetGameId() + "_" + AtOManager.Instance.mapVisitedNodes.Count + "_" + AtOManager.Instance.currentMapNode + "_" + AtOManager.Instance.divinationsNumber).GetDeterministicHashCode());
+		AtOManager.Instance.divinationsNumber++;
+		cardsByOrder = new Dictionary<int, string[]>();
+		if (townDivinationTier != null)
+		{
+			tierRewardBase = townDivinationTier;
+			typeOfReward = 2;
+		}
+		else if (eventRewardTier != null)
+		{
+			tierRewardBase = eventRewardTier;
+			typeOfReward = 2;
+		}
+		else if (AtOManager.Instance.GetTeamNPC().Length != 0)
+		{
+			tierRewardBase = AtOManager.Instance.GetTeamNPCReward();
+			typeOfReward = 1;
+		}
+		else
+		{
+			tierRewardBase = Globals.Instance.GetTierRewardData(0);
+			typeOfReward = 0;
+		}
+		dustQuantity = tierRewardBase.Dust;
+		int num = tierRewardBase.TierNum;
+		AtOManager.Instance.currentRewardTier = num;
+		if (thermometerData != null)
+		{
+			num += thermometerData.CardBonus + cardTierModFromCorruption;
+		}
+		if (num < 0)
+		{
+			num = 0;
+		}
+		tierRewardBase = Globals.Instance.GetTierRewardData(num);
+		if (GameManager.Instance.IsObeliskChallenge())
+		{
+			num = ((!flag) ? (num + 1) : (num + 2));
+		}
+		if (num > 0)
+		{
+			tierRewardInf = Globals.Instance.GetTierRewardData(num - 1);
+		}
+		else
+		{
+			tierRewardInf = tierRewardBase;
+		}
+		CardData cardData2 = null;
+		for (int i = 0; i < theTeam.Length; i++)
+		{
+			if (theTeam[i] == null || theTeam[i].HeroData == null)
+			{
+				cardsByOrder[i] = new string[3] { "", "", "" };
+				continue;
+			}
+			Hero hero = theTeam[i];
+			Enums.CardClass result = Enums.CardClass.None;
+			Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof(Enums.HeroClass), hero.HeroData.HeroClass), out result);
+			Enums.CardClass result2 = Enums.CardClass.None;
+			Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof(Enums.HeroClass), hero.HeroData.HeroSubClass.HeroClassSecondary), out result2);
+			int num2 = numCardsReward;
+			if (numCardsReward == 3 && result2 != Enums.CardClass.None)
+			{
+				num2 = 4;
+			}
+			string[] array = new string[num2];
+			List<string> list = Globals.Instance.CardListNotUpgradedByClass[result];
+			List<string> list2 = ((result2 == Enums.CardClass.None) ? new List<string>() : Globals.Instance.CardListNotUpgradedByClass[result2]);
+			for (int j = 0; j < num2; j++)
+			{
+				if (j == 0)
+				{
+					tierReward = tierRewardBase;
+				}
+				else
+				{
+					tierReward = tierRewardInf;
+				}
+				int num3 = UnityEngine.Random.Range(0, 100);
+				bool flag2 = true;
+				while (flag2)
+				{
+					flag2 = false;
+					bool flag3 = false;
+					while (!flag3)
+					{
+						flag2 = false;
+						string id = ((j < 2 || result2 == Enums.CardClass.None) ? list[UnityEngine.Random.Range(0, list.Count)] : list2[UnityEngine.Random.Range(0, list2.Count)]);
+						cardData2 = Globals.Instance.GetCardData(id, instantiate: false);
+						if (flag2)
+						{
+							continue;
+						}
+						if (num3 < tierReward.Common)
+						{
+							if (cardData2.CardRarity == Enums.CardRarity.Common)
+							{
+								flag3 = true;
+							}
+						}
+						else if (num3 < tierReward.Common + tierReward.Uncommon)
+						{
+							if (cardData2.CardRarity == Enums.CardRarity.Uncommon)
+							{
+								flag3 = true;
+							}
+						}
+						else if (num3 < tierReward.Common + tierReward.Uncommon + tierReward.Rare)
+						{
+							if (cardData2.CardRarity == Enums.CardRarity.Rare)
+							{
+								flag3 = true;
+							}
+						}
+						else if (num3 < tierReward.Common + tierReward.Uncommon + tierReward.Rare + tierReward.Epic)
+						{
+							if (cardData2.CardRarity == Enums.CardRarity.Epic)
+							{
+								flag3 = true;
+							}
+						}
+						else if (cardData2.CardRarity == Enums.CardRarity.Mythic)
+						{
+							flag3 = true;
+						}
+					}
+					int rarity = UnityEngine.Random.Range(0, 100);
+					_ = cardData2.Id;
+					cardData2 = Globals.Instance.GetCardData(Functions.GetCardByRarity(rarity, cardData2), instantiate: false);
+					if (cardData2 == null)
+					{
+						flag2 = true;
+						continue;
+					}
+					for (int k = 0; k < array.Length; k++)
+					{
+						if (array[k] == cardData2.Id)
+						{
+							flag2 = true;
+							break;
+						}
+					}
+				}
+				array[j] = cardData2.Id;
+			}
+			cardsByOrder[i] = Functions.ShuffleArray(array);
+		}
+		experienceEach = 0;
+		goldEach = 0;
+		if (typeOfReward == 1)
+		{
+			experienceEach = Functions.FuncRoundToInt(AtOManager.Instance.GetExperienceFromCombat() / 4);
+			goldEach = Functions.FuncRoundToInt(AtOManager.Instance.GetGoldFromCombat() / 4);
+			if (thermometerData != null)
+			{
+				experienceEach += Functions.FuncRoundToInt((float)experienceEach * thermometerData.ExpBonus / 100f);
+				goldEach += Functions.FuncRoundToInt((float)goldEach * thermometerData.GoldBonus / 100f);
+			}
+		}
+		if (GameManager.Instance.IsObeliskChallenge() && flag)
+		{
+			goldEach *= 2;
+			dustQuantity *= 2;
+		}
+		if (MadnessManager.Instance.IsMadnessTraitActive("poverty") || AtOManager.Instance.IsChallengeTraitActive("poverty"))
+		{
+			if (!GameManager.Instance.IsObeliskChallenge())
+			{
+				dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+				goldEach -= Functions.FuncRoundToInt((float)goldEach * 0.5f);
+			}
+			else
+			{
+				dustQuantity -= Functions.FuncRoundToInt((float)dustQuantity * 0.3f);
+				goldEach -= Functions.FuncRoundToInt((float)goldEach * 0.3f);
+			}
+		}
+		if (AtOManager.Instance.IsChallengeTraitActive("prosperity"))
+		{
+			dustQuantity += Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+			goldEach += Functions.FuncRoundToInt((float)dustQuantity * 0.5f);
+		}
+		goldEach += combatScarabGold;
+		experienceEach += combatScarabExp;
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			photonView.RPC("NET_ShareRewards", RpcTarget.Others, cardsByOrder[0], cardsByOrder[1], cardsByOrder[2], cardsByOrder[3], dustQuantity, typeOfReward, experienceEach, goldEach, combatScarabDust);
+		}
+		ShowRewards();
+	}
+
+	public void ShowCharacterWindow(string type = "", bool isHero = true, int characterIndex = -1)
+	{
+		characterWindowUI.Show(type, characterIndex);
+	}
+
+	public void ShowDeck(int auxInt)
+	{
+		characterWindowUI.Show("deck", auxInt);
+	}
+
+	[PunRPC]
+	private void NET_ShareRewards(string[] cards0, string[] cards1, string[] cards2, string[] cards3, int _dustQuantity, int _typeOfReward, int _experienceEach, int _goldEach, int _combatScarabDust)
+	{
+		cardsByOrder = new Dictionary<int, string[]>();
+		cardsByOrder.Add(0, cards0);
+		cardsByOrder.Add(1, cards1);
+		cardsByOrder.Add(2, cards2);
+		cardsByOrder.Add(3, cards3);
+		dustQuantity = _dustQuantity;
+		typeOfReward = _typeOfReward;
+		experienceEach = _experienceEach;
+		goldEach = _goldEach;
+		combatScarabDust = _combatScarabDust;
+		ShowRewards();
+	}
+
+	private void ShowRewards()
+	{
+		StartCoroutine(ShowRewardsCo());
+	}
+
+	private IEnumerator ShowRewardsCo()
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (theTeam[i] != null && !(theTeam[i].HeroData == null))
+			{
+				yield return Globals.Instance.WaitForSeconds(0.15f);
+				characterRewardArray[i].gameObject.SetActive(value: true);
+				characterRewardArray[i].GetComponent<CharacterReward>().Init(i);
+				numRewards++;
+			}
+		}
+		GameManager.Instance.ShowTutorialPopup("cardsReward", Vector3.zero, Vector3.zero);
+	}
+
+	public void SetCardReward(string playerNick, string internalId)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			characterRewardArray[i].GetComponent<CharacterReward>().CardSelected(playerNick, internalId);
+		}
+	}
+
+	public void CardSelected(int index, string cardId)
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			photonView.RPC("MASTER_CardSelected", RpcTarget.MasterClient, (short)index, cardId);
+		}
+		else
+		{
+			NET_CardSelected((short)index, cardId);
+		}
+	}
+
+	[PunRPC]
+	private void MASTER_CardSelected(short index, string cardId)
+	{
+		if (!reseting)
+		{
+			photonView.RPC("NET_CardSelected", RpcTarget.All, index, cardId);
+		}
+	}
+
+	[PunRPC]
+	private void NET_CardSelected(short _index, string cardId)
+	{
+		cardSelectedArr[_index] = cardId;
+		characterRewardArray[_index].GetComponent<CharacterReward>().ShowSelected(cardId);
+		CheckAllAssigned();
+	}
+
+	public void DustSelected(int index)
+	{
+		if (GameManager.Instance.IsMultiplayer())
+		{
+			photonView.RPC("MASTER_DustSelected", RpcTarget.MasterClient, (short)index);
+		}
+		else
+		{
+			NET_DustSelected((short)index);
+		}
+	}
+
+	[PunRPC]
+	private void MASTER_DustSelected(short index)
+	{
+		if (!reseting)
+		{
+			photonView.RPC("NET_DustSelected", RpcTarget.All, index);
+		}
+	}
+
+	[PunRPC]
+	private void NET_DustSelected(short _index)
+	{
+		cardSelectedArr[_index] = "dust";
+		characterRewardArray[_index].GetComponent<CharacterReward>().ShowSelected("dust");
+		CheckAllAssigned();
+	}
+
+	private void CheckAllAssigned()
+	{
+		for (int i = 0; i < numRewards; i++)
+		{
+			if (cardSelectedArr[i] == null)
+			{
+				return;
+			}
+		}
+		if (!GameManager.Instance.IsMultiplayer() || (GameManager.Instance.IsMultiplayer() && NetworkManager.Instance.IsMaster()))
+		{
+			finishReward = true;
+			buttonRestart.gameObject.SetActive(value: false);
+			StartCoroutine(CloseWindow());
+		}
+		SetCombatCorruption();
+		SaveManager.SavePlayerData();
+	}
+
+	public void Reload()
+	{
+		SceneStatic.LoadByName("Rewards");
+	}
+
+	private void SetCombatCorruption()
+	{
+		AtOManager.Instance.SetCombatCorruptionForScore();
+	}
+
+	private IEnumerator CloseWindow()
+	{
+		yield return Globals.Instance.WaitForSeconds(0.4f);
+		AtOManager.Instance.DeleteSaveGameTurn();
+		AtOManager.Instance.FinishCardRewards(cardSelectedArr);
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false, bool shoulderLeft = false, bool shoulderRight = false)
+	{
+		_controllerList.Clear();
+		_controllerList.Add(buttonRestart);
+		for (int i = 0; i < 4; i++)
+		{
+			if (!Functions.TransformIsVisible(characterRewardArray[i].transform))
+			{
+				continue;
+			}
+			foreach (Transform item in characterRewardArray[i].GetComponent<CharacterReward>().cardsTransform)
+			{
+				if (item.gameObject.activeSelf)
+				{
+					_controllerList.Add(item);
+				}
+			}
+			if (characterRewardArray[i].GetComponent<CharacterReward>().quantityDust != null && characterRewardArray[i].GetComponent<CharacterReward>().quantityDust.GetChild(0).GetComponent<BoxCollider2D>().enabled)
+			{
+				_controllerList.Add(characterRewardArray[i].GetComponent<CharacterReward>().quantityDust);
+			}
+			_controllerList.Add(characterRewardArray[i].GetComponent<CharacterReward>().buttonCharacterDeck);
+		}
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
+
+	public void ControllerMoveShoulder(bool _isRight = false)
+	{
+	}
 }

@@ -1,37 +1,38 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: RandomSeed
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 public class RandomSeed : MonoBehaviour
 {
-  private void Start()
-  {
-    if ((Object) this.GetComponent<SpriteRenderer>() != (Object) null)
-    {
-      Renderer component = this.GetComponent<Renderer>();
-      if ((Object) component != (Object) null && (Object) component.material != (Object) null)
-        component.material.SetFloat("_RandomSeed", Random.Range(0.0f, 1000f));
-      else
-        Debug.LogError((object) ("Missing Renderer or Material: " + this.gameObject.name));
-    }
-    else
-    {
-      Image component = this.GetComponent<Image>();
-      if ((Object) component != (Object) null)
-      {
-        if ((Object) component.material != (Object) null)
-          component.material.SetFloat("_RandomSeed", Random.Range(0.0f, 1000f));
-        else
-          Debug.LogError((object) ("Missing Material on UI Image: " + this.gameObject.name));
-      }
-      else
-        Debug.LogError((object) ("Missing Sprite Renderer or UI Image on: " + this.gameObject.name));
-    }
-  }
+	private void Start()
+	{
+		if (GetComponent<SpriteRenderer>() != null)
+		{
+			Renderer component = GetComponent<Renderer>();
+			if (component != null && component.material != null)
+			{
+				component.material.SetFloat("_RandomSeed", Random.Range(0f, 1000f));
+			}
+			else
+			{
+				Debug.LogError("Missing Renderer or Material: " + base.gameObject.name);
+			}
+			return;
+		}
+		Image component2 = GetComponent<Image>();
+		if (component2 != null)
+		{
+			if (component2.material != null)
+			{
+				component2.material.SetFloat("_RandomSeed", Random.Range(0f, 1000f));
+			}
+			else
+			{
+				Debug.LogError("Missing Material on UI Image: " + base.gameObject.name);
+			}
+		}
+		else
+		{
+			Debug.LogError("Missing Sprite Renderer or UI Image on: " + base.gameObject.name);
+		}
+	}
 }

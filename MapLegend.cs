@@ -1,106 +1,119 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: MapLegend
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using UnityEngine;
 
-#nullable disable
 public class MapLegend : MonoBehaviour
 {
-  public Transform info;
-  public Transform legend;
-  private RectTransform rt;
-  private RectTransform rtLegend;
-  private Coroutine co;
-  private Vector3 posEnd;
-  private Vector3 posIni;
-  private Vector3 step;
-  private float legendOffset;
-  private bool open;
+	public Transform info;
 
-  private void Awake() => this.rt = this.GetComponent<RectTransform>();
+	public Transform legend;
 
-  private void Start()
-  {
-    this.rtLegend = this.legend.GetComponent<RectTransform>();
-    this.legendOffset = this.rtLegend.position.y;
-    this.legend.gameObject.SetActive(false);
-    this.Resize();
-  }
+	private RectTransform rt;
 
-  public void Resize()
-  {
-    this.posIni = new Vector3(0.0f, (float) (-(double) Globals.Instance.sizeH * 0.5 - 0.57999998331069946 * (double) Globals.Instance.multiplierY), -2f);
-    this.posEnd = this.posIni + new Vector3(0.0f, 1.72f * Globals.Instance.multiplierY, 0.0f);
-    this.step = new Vector3(0.0f, Mathf.Abs(this.posIni.y - this.posEnd.y) * 0.1f, 0.0f);
-    this.rt.position = this.posIni;
-  }
+	private RectTransform rtLegend;
 
-  private void OnMouseEnter()
-  {
-    if (MapManager.Instance.corruption.gameObject.activeSelf || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock())
-      return;
-    this.ShowLegend(true);
-  }
+	private Coroutine co;
 
-  private void OnMouseOver()
-  {
-    if (MapManager.Instance.corruption.gameObject.activeSelf || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock())
-      return;
-    this.ShowLegend(true);
-  }
+	private Vector3 posEnd;
 
-  private void ShowLegend(bool state)
-  {
-    if (state == this.open || (bool) (Object) EventManager.Instance || state && !MapManager.Instance.worldTransform.gameObject.activeSelf)
-      return;
-    this.open = state;
-    if (this.co != null)
-      this.StopCoroutine(this.co);
-    this.co = this.StartCoroutine(this.ShowLegendCo(state));
-  }
+	private Vector3 posIni;
 
-  private IEnumerator ShowLegendCo(bool state)
-  {
-    float destinationY;
-    if (state)
-    {
-      this.info.gameObject.SetActive(false);
-      this.legend.gameObject.SetActive(true);
-      destinationY = this.posEnd.y - this.legendOffset;
-      while ((double) this.rtLegend.localPosition.y < (double) destinationY)
-      {
-        RectTransform rtLegend = this.rtLegend;
-        rtLegend.localPosition = rtLegend.localPosition + this.step;
-        if ((double) this.rtLegend.localPosition.y + (double) this.step.y < (double) destinationY)
-          yield return (object) null;
-        else
-          break;
-      }
-      this.open = true;
-    }
-    else
-    {
-      destinationY = this.posIni.y - this.legendOffset;
-      while ((double) this.rtLegend.localPosition.y > (double) destinationY)
-      {
-        RectTransform rtLegend = this.rtLegend;
-        rtLegend.localPosition = rtLegend.localPosition - this.step;
-        if ((double) this.rtLegend.localPosition.y - (double) this.step.y > (double) destinationY)
-          yield return (object) null;
-        else
-          break;
-      }
-      this.info.gameObject.SetActive(true);
-      this.legend.gameObject.SetActive(false);
-      this.open = false;
-    }
-    this.rtLegend.localPosition = new Vector3(this.rtLegend.localPosition.x, destinationY, this.rtLegend.localPosition.z);
-    yield return (object) null;
-  }
+	private Vector3 step;
 
-  private void OnMouseExit() => this.ShowLegend(false);
+	private float legendOffset;
+
+	private bool open;
+
+	private void Awake()
+	{
+		rt = GetComponent<RectTransform>();
+	}
+
+	private void Start()
+	{
+		rtLegend = legend.GetComponent<RectTransform>();
+		legendOffset = rtLegend.position.y;
+		legend.gameObject.SetActive(value: false);
+		Resize();
+	}
+
+	public void Resize()
+	{
+		posIni = new Vector3(0f, (0f - Globals.Instance.sizeH) * 0.5f - 0.58f * Globals.Instance.multiplierY, -2f);
+		posEnd = posIni + new Vector3(0f, 1.72f * Globals.Instance.multiplierY, 0f);
+		step = new Vector3(0f, Mathf.Abs(posIni.y - posEnd.y) * 0.1f, 0f);
+		rt.position = posIni;
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!MapManager.Instance.corruption.gameObject.activeSelf && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!MapManager.Instance || !MapManager.Instance.IsCharacterUnlock()))
+		{
+			ShowLegend(state: true);
+		}
+	}
+
+	private void OnMouseOver()
+	{
+		if (!MapManager.Instance.corruption.gameObject.activeSelf && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!MapManager.Instance || !MapManager.Instance.IsCharacterUnlock()))
+		{
+			ShowLegend(state: true);
+		}
+	}
+
+	private void ShowLegend(bool state)
+	{
+		if (state != open && !EventManager.Instance && (!state || MapManager.Instance.worldTransform.gameObject.activeSelf))
+		{
+			open = state;
+			if (co != null)
+			{
+				StopCoroutine(co);
+			}
+			co = StartCoroutine(ShowLegendCo(state));
+		}
+	}
+
+	private IEnumerator ShowLegendCo(bool state)
+	{
+		float destinationY;
+		if (state)
+		{
+			info.gameObject.SetActive(value: false);
+			legend.gameObject.SetActive(value: true);
+			destinationY = posEnd.y - legendOffset;
+			while (rtLegend.localPosition.y < destinationY)
+			{
+				rtLegend.localPosition += step;
+				if (rtLegend.localPosition.y + step.y >= destinationY)
+				{
+					break;
+				}
+				yield return null;
+			}
+			open = true;
+		}
+		else
+		{
+			destinationY = posIni.y - legendOffset;
+			while (rtLegend.localPosition.y > destinationY)
+			{
+				rtLegend.localPosition -= step;
+				if (rtLegend.localPosition.y - step.y <= destinationY)
+				{
+					break;
+				}
+				yield return null;
+			}
+			info.gameObject.SetActive(value: true);
+			legend.gameObject.SetActive(value: false);
+			open = false;
+		}
+		rtLegend.localPosition = new Vector3(rtLegend.localPosition.x, destinationY, rtLegend.localPosition.z);
+		yield return null;
+	}
+
+	private void OnMouseExit()
+	{
+		ShowLegend(state: false);
+	}
 }

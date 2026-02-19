@@ -1,152 +1,177 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BotonSkin
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Text;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class BotonSkin : MonoBehaviour
 {
-  public SpriteRenderer spriteSkin;
-  public Transform overT;
-  public Transform overRedT;
-  public Transform overHoverT;
-  public Transform lockT;
-  public TMP_Text skinName;
-  public int auxInt = -1000;
-  private string dlcSku = "";
-  private SkinData skinData;
-  private bool locked;
-  private bool active;
-  private bool mustQuest;
+	public SpriteRenderer spriteSkin;
 
-  private void Awake()
-  {
-    if (this.skinName.transform.childCount > 0)
-    {
-      for (int index = 0; index < this.skinName.transform.childCount; ++index)
-      {
-        MeshRenderer component = this.skinName.transform.GetChild(index).GetComponent<MeshRenderer>();
-        component.sortingLayerName = this.skinName.GetComponent<MeshRenderer>().sortingLayerName;
-        component.sortingOrder = this.skinName.GetComponent<MeshRenderer>().sortingOrder;
-      }
-    }
-    this.overT.gameObject.SetActive(false);
-  }
+	public Transform overT;
 
-  public void SetSelected(bool state) => this.overT.gameObject.SetActive(state);
+	public Transform overRedT;
 
-  public void SetSkinData(SkinData _skinData)
-  {
-    this.skinData = _skinData;
-    this.active = false;
-    this.overT.gameObject.SetActive(false);
-    this.overRedT.gameObject.SetActive(false);
-    this.overHoverT.gameObject.SetActive(false);
-    this.spriteSkin.sprite = this.skinData.SpritePortrait;
-    string input = Texts.Instance.GetText(this.skinData.SkinName);
-    if (input == "")
-      input = this.skinData.SkinName;
-    this.skinName.text = input.OnlyFirstCharToUpper();
-    this.locked = false;
-    if (!this.skinData.BaseSkin)
-    {
-      if (this.skinData.Sku != "")
-      {
-        if (!SteamManager.Instance.PlayerHaveDLC(this.skinData.Sku))
-        {
-          this.locked = true;
-          this.dlcSku = this.skinData.Sku;
-        }
-        else if (this.skinData.SteamStat != "" && SteamManager.Instance.GetStatInt(this.skinData.SteamStat) != 1)
-        {
-          this.locked = true;
-          this.dlcSku = this.skinData.Sku;
-          this.mustQuest = true;
-        }
-      }
-      if (!this.locked && this.skinData.PerkLevel > 0 && PlayerManager.Instance.GetPerkRank(this.skinData.SkinSubclass.SubClassName) < this.skinData.PerkLevel)
-        this.locked = true;
-    }
-    this.overT.gameObject.SetActive(false);
-    if (!this.locked)
-    {
-      this.lockT.gameObject.SetActive(false);
-      if (PlayerManager.Instance.SkinUsed.ContainsKey(this.skinData.SkinSubclass.SubClassName) && PlayerManager.Instance.SkinUsed[this.skinData.SkinSubclass.SubClassName] == this.skinData.SkinId)
-      {
-        this.overT.gameObject.SetActive(true);
-        this.active = true;
-        this.skinName.color = new Color(1f, 0.68f, 0.09f);
-      }
-      else
-        this.skinName.color = new Color(1f, 1f, 1f, 1f);
-    }
-    else
-    {
-      this.skinName.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
-      this.lockT.gameObject.SetActive(true);
-    }
-  }
+	public Transform overHoverT;
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
-      return;
-    StringBuilder stringBuilder = new StringBuilder();
-    if ((Object) this.skinData != (Object) null)
-    {
-      HeroSelectionManager.Instance.charPopup.ShowSkin(this.skinData.SkinGo);
-      if (this.skinData.SkinTextId != string.Empty && Texts.Instance.GetText(this.skinData.SkinTextId) != string.Empty)
-      {
-        stringBuilder.Append("<line-height=10><br></line-height><color=#FC0>~ ");
-        stringBuilder.Append(Texts.Instance.GetText(this.skinData.SkinTextId));
-        stringBuilder.Append(" ~</color><line-height=6><br></line-height><br>");
-      }
-    }
-    if (this.locked)
-    {
-      this.overRedT.gameObject.SetActive(true);
-      if (this.dlcSku != "")
-      {
-        if (this.mustQuest)
-          stringBuilder.Append(string.Format(Texts.Instance.GetText("requiredDLCandQuest"), (object) SteamManager.Instance.GetDLCName(this.dlcSku)));
-        else
-          stringBuilder.Append(string.Format(Texts.Instance.GetText("requiredDLC"), (object) SteamManager.Instance.GetDLCName(this.dlcSku)));
-      }
-      else
-        stringBuilder.Append(string.Format(Texts.Instance.GetText("skinRequiredRankLevel"), (object) this.skinData.PerkLevel));
-    }
-    else if (!this.active)
-    {
-      GameManager.Instance.SetCursorHover();
-      this.overHoverT.gameObject.SetActive(true);
-    }
-    if (stringBuilder.Length <= 0)
-      return;
-    PopupManager.Instance.SetText(stringBuilder.ToString(), true, alwaysCenter: true);
-  }
+	public Transform lockT;
 
-  private void OnMouseExit()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
-      return;
-    this.overRedT.gameObject.SetActive(false);
-    this.overHoverT.gameObject.SetActive(false);
-    GameManager.Instance.SetCursorPlain();
-    PopupManager.Instance.ClosePopup();
-    HeroSelectionManager.Instance.charPopup.ResetSkin();
-  }
+	public TMP_Text skinName;
 
-  public void OnMouseUp()
-  {
-    if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive() || this.locked)
-      return;
-    PlayerManager.Instance.SetSkin(this.skinData.SkinSubclass.SubClassName, this.skinData.SkinId);
-    HeroSelectionManager.Instance.SetSkinIntoSubclassData(this.skinData.SkinSubclass.SubClassName, this.skinData.SkinId);
-    HeroSelectionManager.Instance.charPopup.DoSkins();
-  }
+	public int auxInt = -1000;
+
+	private string dlcSku = "";
+
+	private SkinData skinData;
+
+	private bool locked;
+
+	private bool active;
+
+	private bool mustQuest;
+
+	private void Awake()
+	{
+		if (skinName.transform.childCount > 0)
+		{
+			for (int i = 0; i < skinName.transform.childCount; i++)
+			{
+				MeshRenderer component = skinName.transform.GetChild(i).GetComponent<MeshRenderer>();
+				component.sortingLayerName = skinName.GetComponent<MeshRenderer>().sortingLayerName;
+				component.sortingOrder = skinName.GetComponent<MeshRenderer>().sortingOrder;
+			}
+		}
+		overT.gameObject.SetActive(value: false);
+	}
+
+	public void SetSelected(bool state)
+	{
+		overT.gameObject.SetActive(state);
+	}
+
+	public void SetSkinData(SkinData _skinData)
+	{
+		skinData = _skinData;
+		active = false;
+		overT.gameObject.SetActive(value: false);
+		overRedT.gameObject.SetActive(value: false);
+		overHoverT.gameObject.SetActive(value: false);
+		spriteSkin.sprite = skinData.SpritePortrait;
+		string text = Texts.Instance.GetText(skinData.SkinName);
+		if (text == "")
+		{
+			text = skinData.SkinName;
+		}
+		skinName.text = text.OnlyFirstCharToUpper();
+		locked = false;
+		if (!skinData.BaseSkin)
+		{
+			if (skinData.Sku != "")
+			{
+				if (!SteamManager.Instance.PlayerHaveDLC(skinData.Sku))
+				{
+					locked = true;
+					dlcSku = skinData.Sku;
+				}
+				else if (skinData.SteamStat != "" && SteamManager.Instance.GetStatInt(skinData.SteamStat) != 1)
+				{
+					locked = true;
+					dlcSku = skinData.Sku;
+					mustQuest = true;
+				}
+			}
+			if (!locked && skinData.PerkLevel > 0 && PlayerManager.Instance.GetPerkRank(skinData.SkinSubclass.SubClassName) < skinData.PerkLevel)
+			{
+				locked = true;
+			}
+		}
+		overT.gameObject.SetActive(value: false);
+		if (!locked)
+		{
+			lockT.gameObject.SetActive(value: false);
+			if (PlayerManager.Instance.SkinUsed.ContainsKey(skinData.SkinSubclass.SubClassName.Replace(" ", "")) && PlayerManager.Instance.SkinUsed[skinData.SkinSubclass.SubClassName.Replace(" ", "")] == skinData.SkinId)
+			{
+				overT.gameObject.SetActive(value: true);
+				active = true;
+				skinName.color = new Color(1f, 0.68f, 0.09f);
+			}
+			else
+			{
+				skinName.color = new Color(1f, 1f, 1f, 1f);
+			}
+		}
+		else
+		{
+			skinName.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
+			lockT.gameObject.SetActive(value: true);
+		}
+	}
+
+	private void OnMouseEnter()
+	{
+		if (AlertManager.Instance.IsActive() || SettingsManager.Instance.IsActive())
+		{
+			return;
+		}
+		StringBuilder stringBuilder = new StringBuilder();
+		if (skinData != null)
+		{
+			HeroSelectionManager.Instance.charPopup.ShowSkin(skinData.SkinGo);
+			if (skinData.SkinTextId != string.Empty && Texts.Instance.GetText(skinData.SkinTextId) != string.Empty)
+			{
+				stringBuilder.Append("<line-height=10><br></line-height><color=#FC0>~ ");
+				stringBuilder.Append(Texts.Instance.GetText(skinData.SkinTextId));
+				stringBuilder.Append(" ~</color><line-height=6><br></line-height><br>");
+			}
+		}
+		if (locked)
+		{
+			overRedT.gameObject.SetActive(value: true);
+			if (dlcSku != "")
+			{
+				if (mustQuest)
+				{
+					stringBuilder.Append(string.Format(Texts.Instance.GetText("requiredDLCandQuest"), SteamManager.Instance.GetDLCName(dlcSku)));
+				}
+				else
+				{
+					stringBuilder.Append(string.Format(Texts.Instance.GetText("requiredDLC"), SteamManager.Instance.GetDLCName(dlcSku)));
+				}
+			}
+			else
+			{
+				stringBuilder.Append(string.Format(Texts.Instance.GetText("skinRequiredRankLevel"), skinData.PerkLevel));
+			}
+		}
+		else if (!active)
+		{
+			GameManager.Instance.SetCursorHover();
+			overHoverT.gameObject.SetActive(value: true);
+		}
+		if (stringBuilder.Length > 0)
+		{
+			PopupManager.Instance.SetText(stringBuilder.ToString(), fast: true, "", alwaysCenter: true);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive())
+		{
+			overRedT.gameObject.SetActive(value: false);
+			overHoverT.gameObject.SetActive(value: false);
+			GameManager.Instance.SetCursorPlain();
+			PopupManager.Instance.ClosePopup();
+			HeroSelectionManager.Instance.charPopup.ResetSkin();
+		}
+	}
+
+	public void OnMouseUp()
+	{
+		if (!AlertManager.Instance.IsActive() && !SettingsManager.Instance.IsActive() && !locked)
+		{
+			PlayerManager.Instance.SetSkin(skinData.SkinSubclass.SubClassName.Replace(" ", ""), skinData.SkinId);
+			HeroSelectionManager.Instance.SetSkinIntoSubclassData(skinData.SkinSubclass.SubClassName.Replace(" ", ""), skinData.SkinId);
+			HeroSelectionManager.Instance.charPopup.DoSkins();
+			HeroSelectionManager.Instance.charPopupMini.SetSubClassData(skinData.SkinSubclass);
+		}
+	}
 }

@@ -1,90 +1,100 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: UICombatDeath
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 public class UICombatDeath : MonoBehaviour
 {
-  public TMP_Text textCharDeath;
-  public TMP_Text textInstructions;
-  public Transform mask;
-  public Image imageChar;
-  public Canvas canvas;
-  public Transform button;
-  private List<GameObject> cardsGO;
+	public TMP_Text textCharDeath;
 
-  private void Awake()
-  {
-    this.canvas.gameObject.SetActive(false);
-    this.cardsGO = new List<GameObject>();
-  }
+	public TMP_Text textInstructions;
 
-  public bool IsActive() => this.canvas.gameObject.activeSelf;
+	public Transform mask;
 
-  public void TurnOn(bool showButton = true)
-  {
-    MatchManager.Instance.lockHideMask = true;
-    this.canvas.gameObject.SetActive(true);
-    if (showButton)
-      this.button.gameObject.SetActive(true);
-    else
-      this.button.gameObject.SetActive(false);
-  }
+	public Image imageChar;
 
-  public void SetCharacter(Hero _hero)
-  {
-    string str1 = string.Format(Texts.Instance.GetText("deathScreenTitle"), (object) _hero.SourceName);
-    string str2 = string.Format(Texts.Instance.GetText("deathScreenBody"), (object) 70.ToString());
-    this.textCharDeath.text = str1;
-    this.textInstructions.text = str2;
-    if ((Object) _hero.BorderSprite != (Object) null)
-    {
-      this.imageChar.gameObject.SetActive(true);
-      this.imageChar.sprite = _hero.BorderSprite;
-    }
-    else
-      this.imageChar.gameObject.SetActive(false);
-  }
+	public Canvas canvas;
 
-  public void SetCard(string theCard)
-  {
-    int num = 0;
-    string cardInDictionary = MatchManager.Instance.CreateCardInDictionary(theCard);
-    GameObject gameObject = Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.transform);
-    this.cardsGO.Add(gameObject);
-    CardItem component = gameObject.GetComponent<CardItem>();
-    gameObject.name = "TMP_" + cardInDictionary;
-    component.SetCard(cardInDictionary, false);
-    component.TopLayeringOrder("UI", 32100 + 40 * num);
-    component.SetLocalScale(new Vector3(1.2f, 1.2f, 1f));
-    component.SetLocalPosition(new Vector3(4.9f, 1.9f, 0.0f));
-    component.DisableTrail();
-    component.HideRarityParticles();
-    component.HideCardIconParticles();
-    component.cardfordisplay = true;
-    component.DrawBorder("red");
-  }
+	public Transform button;
 
-  public void TurnOffFromButton()
-  {
-    this.button.gameObject.SetActive(false);
-    MatchManager.Instance.DeathScreenOff();
-  }
+	private List<GameObject> cardsGO;
 
-  public void TurnOff()
-  {
-    MatchManager.Instance.lockHideMask = false;
-    this.canvas.gameObject.SetActive(false);
-    for (int index = 0; index < this.cardsGO.Count; ++index)
-      Object.Destroy((Object) this.cardsGO[index]);
-    this.cardsGO.Clear();
-    MatchManager.Instance.waitingDeathScreen = false;
-  }
+	private void Awake()
+	{
+		canvas.gameObject.SetActive(value: false);
+		cardsGO = new List<GameObject>();
+	}
+
+	public bool IsActive()
+	{
+		return canvas.gameObject.activeSelf;
+	}
+
+	public void TurnOn(bool showButton = true)
+	{
+		MatchManager.Instance.lockHideMask = true;
+		canvas.gameObject.SetActive(value: true);
+		if (showButton)
+		{
+			button.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			button.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void SetCharacter(Hero _hero)
+	{
+		string text = string.Format(Texts.Instance.GetText("deathScreenTitle"), _hero.SourceName);
+		string text2 = string.Format(Texts.Instance.GetText("deathScreenBody"), 70.ToString());
+		textCharDeath.text = text;
+		textInstructions.text = text2;
+		if (_hero.BorderSprite != null)
+		{
+			imageChar.gameObject.SetActive(value: true);
+			imageChar.sprite = _hero.BorderSprite;
+		}
+		else
+		{
+			imageChar.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void SetCard(string theCard)
+	{
+		int num = 0;
+		string text = MatchManager.Instance.CreateCardInDictionary(theCard);
+		GameObject gameObject = Object.Instantiate(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, base.transform);
+		cardsGO.Add(gameObject);
+		CardItem component = gameObject.GetComponent<CardItem>();
+		gameObject.name = "TMP_" + text;
+		component.SetCard(text, deckScale: false);
+		component.TopLayeringOrder("UI", 32100 + 40 * num);
+		component.SetLocalScale(new Vector3(1.2f, 1.2f, 1f));
+		component.SetLocalPosition(new Vector3(4.9f, 1.9f, 0f));
+		component.DisableTrail();
+		component.HideRarityParticles();
+		component.HideCardIconParticles();
+		component.cardfordisplay = true;
+		component.DrawBorder("red");
+	}
+
+	public void TurnOffFromButton()
+	{
+		button.gameObject.SetActive(value: false);
+		MatchManager.Instance.DeathScreenOff();
+	}
+
+	public void TurnOff()
+	{
+		MatchManager.Instance.lockHideMask = false;
+		canvas.gameObject.SetActive(value: false);
+		for (int i = 0; i < cardsGO.Count; i++)
+		{
+			Object.Destroy(cardsGO[i]);
+		}
+		cardsGO.Clear();
+		MatchManager.Instance.waitingDeathScreen = false;
+	}
 }

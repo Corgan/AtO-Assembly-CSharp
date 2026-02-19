@@ -1,199 +1,224 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: TownBuilding
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using UnityEngine;
 
-#nullable disable
 public class TownBuilding : MonoBehaviour
 {
-  public Sprite[] bgShaderLevel;
-  public Sprite[] imgOverLevel;
-  public Transform[] specialLevel;
-  public SpriteRenderer bgShader;
-  public SpriteRenderer bgPlain;
-  public Transform imgOver;
-  private SpriteRenderer imgOverSprite;
-  private SpriteRenderer imgBaseSprite;
-  public string idTitle;
-  public string idDescription;
-  public Sprite spriteDisabled;
-  private bool disabled;
-  private Color colorOri;
-  private Coroutine shadowCo;
+	public Sprite[] bgShaderLevel;
 
-  private void Awake()
-  {
-    this.imgOver.gameObject.SetActive(false);
-    this.imgOverSprite = this.imgOver.GetComponent<SpriteRenderer>();
-    this.imgBaseSprite = this.GetComponent<SpriteRenderer>();
-    this.HideShadow(true);
-  }
+	public Sprite[] imgOverLevel;
 
-  public void DisableThis()
-  {
-    if ((Object) this.spriteDisabled != (Object) null)
-      this.imgOverSprite.sprite = this.imgBaseSprite.sprite = this.spriteDisabled;
-    this.disabled = true;
-  }
+	public Transform[] specialLevel;
 
-  public void Init(int level)
-  {
-    this.bgShader.sprite = this.bgPlain.sprite = this.bgShaderLevel[level];
-    this.imgOverSprite.sprite = this.imgBaseSprite.sprite = this.imgOverLevel[level];
-    if (this.specialLevel != null && level < this.specialLevel.Length && (Object) this.specialLevel[level] != (Object) null && !this.specialLevel[level].gameObject.activeSelf)
-      this.specialLevel[level].gameObject.SetActive(true);
-    this.colorOri = new Color(0.0f, 0.68f, 1f, 1f);
-    this.StartCoroutine(this.UpdateShapeToSprite());
-  }
+	public SpriteRenderer bgShader;
 
-  private void HideShadow(bool instant)
-  {
-    if (instant)
-    {
-      SpriteRenderer bgShader = this.bgShader;
-      SpriteRenderer bgPlain = this.bgPlain;
-      Color color1 = new Color(this.colorOri.r, this.colorOri.g, this.colorOri.b, 0.0f);
-      Color color2 = color1;
-      bgPlain.color = color2;
-      Color color3 = color1;
-      bgShader.color = color3;
-      this.bgShader.gameObject.SetActive(false);
-      this.bgPlain.gameObject.SetActive(false);
-    }
-    else
-    {
-      if (this.shadowCo != null)
-        this.StopCoroutine(this.shadowCo);
-      this.shadowCo = this.StartCoroutine(this.AnimationShadow(0));
-    }
-  }
+	public SpriteRenderer bgPlain;
 
-  private void ShowShadow()
-  {
-    if (this.shadowCo != null)
-      this.StopCoroutine(this.shadowCo);
-    this.shadowCo = this.StartCoroutine(this.AnimationShadow(1));
-  }
+	public Transform imgOver;
 
-  private IEnumerator AnimationShadow(int direction)
-  {
-    float currentAlpha = this.bgShader.color.a;
-    if (direction == 0)
-    {
-      while ((double) currentAlpha > 0.0)
-      {
-        currentAlpha -= 0.035f;
-        Color color1 = new Color(this.colorOri.r, this.colorOri.g, this.colorOri.b, currentAlpha);
-        Color color2 = new Color(this.colorOri.r, this.colorOri.g, this.colorOri.b, color1.a * 2f);
-        this.bgShader.color = color1;
-        this.bgPlain.color = color2;
-        yield return (object) null;
-      }
-      this.bgShader.gameObject.SetActive(false);
-      this.bgPlain.gameObject.SetActive(false);
-    }
-    else
-    {
-      this.bgShader.gameObject.SetActive(true);
-      this.bgPlain.gameObject.SetActive(true);
-      while ((double) currentAlpha < 0.3)
-      {
-        currentAlpha += 0.035f;
-        Color color3 = new Color(this.colorOri.r, this.colorOri.g, this.colorOri.b, currentAlpha);
-        Color color4 = new Color(this.colorOri.r, this.colorOri.g, this.colorOri.b, color3.a * 2f);
-        this.bgShader.color = color3;
-        this.bgPlain.color = color4;
-        yield return (object) null;
-      }
-    }
-  }
+	private SpriteRenderer imgOverSprite;
 
-  private void OnMouseEnter()
-  {
-    if (AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive())
-      return;
-    this.ShowShadow();
-    this.imgOver.gameObject.SetActive(true);
-    GameManager.Instance.PlayLibraryAudio("ui_click");
-    PopupManager.Instance.SetTown(this.idTitle, this.idDescription, this.disabled);
-    GameManager.Instance.SetCursorHover();
-  }
+	private SpriteRenderer imgBaseSprite;
 
-  private void OnMouseExit() => this.fHide();
+	public string idTitle;
 
-  private void OnMouseUp()
-  {
-    if (!Functions.ClickedThisTransform(this.transform) || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || TownManager.Instance.AreTreasuresLocked() || this.disabled)
-      return;
-    bool flag = false;
-    if (AtOManager.Instance.TownTutorialStep > -1 && AtOManager.Instance.TownTutorialStep < 3)
-      flag = true;
-    if (this.idTitle == "craftCards")
-    {
-      if (flag && AtOManager.Instance.TownTutorialStep != 0)
-      {
-        AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
-        return;
-      }
-      AtOManager.Instance.DoCardCraft();
-    }
-    else if (this.idTitle == "upgradeCards")
-    {
-      if (flag && AtOManager.Instance.TownTutorialStep != 1)
-      {
-        AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
-        return;
-      }
-      AtOManager.Instance.DoCardUpgrade();
-    }
-    else if (this.idTitle == "removeCards")
-    {
-      if (flag)
-      {
-        AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
-        return;
-      }
-      AtOManager.Instance.DoCardHealer();
-    }
-    else if (this.idTitle == "divinationCards")
-    {
-      if (flag)
-      {
-        AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
-        return;
-      }
-      AtOManager.Instance.DoCardDivination();
-    }
-    else if (this.idTitle == "buyItems")
-    {
-      if (flag && AtOManager.Instance.TownTutorialStep != 2)
-      {
-        AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
-        return;
-      }
-      AtOManager.Instance.DoItemShop("");
-    }
-    this.fHide();
-  }
+	public string idDescription;
 
-  private void fHide()
-  {
-    this.HideShadow(false);
-    this.imgOver.gameObject.SetActive(false);
-    PopupManager.Instance.ClosePopup();
-    GameManager.Instance.SetCursorPlain();
-  }
+	public Sprite spriteDisabled;
 
-  public IEnumerator UpdateShapeToSprite()
-  {
-    TownBuilding townBuilding = this;
-    if ((Object) townBuilding.gameObject.GetComponent<PolygonCollider2D>() != (Object) null)
-      Object.Destroy((Object) townBuilding.gameObject.GetComponent<PolygonCollider2D>());
-    yield return (object) Globals.Instance.WaitForSeconds(0.1f);
-    townBuilding.gameObject.AddComponent<PolygonCollider2D>();
-  }
+	private bool disabled;
+
+	private Color colorOri;
+
+	private Coroutine shadowCo;
+
+	private void Awake()
+	{
+		imgOver.gameObject.SetActive(value: false);
+		imgOverSprite = imgOver.GetComponent<SpriteRenderer>();
+		imgBaseSprite = GetComponent<SpriteRenderer>();
+		HideShadow(instant: true);
+	}
+
+	public void DisableThis()
+	{
+		if (spriteDisabled != null)
+		{
+			SpriteRenderer spriteRenderer = imgOverSprite;
+			Sprite sprite = (imgBaseSprite.sprite = spriteDisabled);
+			spriteRenderer.sprite = sprite;
+		}
+		disabled = true;
+	}
+
+	public void Init(int level)
+	{
+		SpriteRenderer spriteRenderer = bgShader;
+		Sprite sprite = (bgPlain.sprite = bgShaderLevel[level]);
+		spriteRenderer.sprite = sprite;
+		SpriteRenderer spriteRenderer2 = imgOverSprite;
+		sprite = (imgBaseSprite.sprite = imgOverLevel[level]);
+		spriteRenderer2.sprite = sprite;
+		if (specialLevel != null && level < specialLevel.Length && specialLevel[level] != null && !specialLevel[level].gameObject.activeSelf)
+		{
+			specialLevel[level].gameObject.SetActive(value: true);
+		}
+		colorOri = new Color(0f, 0.68f, 1f, 1f);
+		StartCoroutine(UpdateShapeToSprite());
+	}
+
+	private void HideShadow(bool instant)
+	{
+		if (instant)
+		{
+			SpriteRenderer spriteRenderer = bgShader;
+			Color color = (bgPlain.color = new Color(colorOri.r, colorOri.g, colorOri.b, 0f));
+			spriteRenderer.color = color;
+			bgShader.gameObject.SetActive(value: false);
+			bgPlain.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			if (shadowCo != null)
+			{
+				StopCoroutine(shadowCo);
+			}
+			shadowCo = StartCoroutine(AnimationShadow(0));
+		}
+	}
+
+	private void ShowShadow()
+	{
+		if (shadowCo != null)
+		{
+			StopCoroutine(shadowCo);
+		}
+		shadowCo = StartCoroutine(AnimationShadow(1));
+	}
+
+	private IEnumerator AnimationShadow(int direction)
+	{
+		float currentAlpha = bgShader.color.a;
+		if (direction == 0)
+		{
+			while (currentAlpha > 0f)
+			{
+				currentAlpha -= 0.035f;
+				Color color = new Color(colorOri.r, colorOri.g, colorOri.b, currentAlpha);
+				Color color2 = new Color(colorOri.r, colorOri.g, colorOri.b, color.a * 2f);
+				bgShader.color = color;
+				bgPlain.color = color2;
+				yield return null;
+			}
+			bgShader.gameObject.SetActive(value: false);
+			bgPlain.gameObject.SetActive(value: false);
+		}
+		else
+		{
+			bgShader.gameObject.SetActive(value: true);
+			bgPlain.gameObject.SetActive(value: true);
+			while ((double)currentAlpha < 0.3)
+			{
+				currentAlpha += 0.035f;
+				Color color = new Color(colorOri.r, colorOri.g, colorOri.b, currentAlpha);
+				Color color2 = new Color(colorOri.r, colorOri.g, colorOri.b, color.a * 2f);
+				bgShader.color = color;
+				bgPlain.color = color2;
+				yield return null;
+			}
+		}
+	}
+
+	private void OnMouseEnter()
+	{
+		if (!AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!AtOManager.Instance.IsCombatTool || !(idTitle == "divinationCards")))
+		{
+			ShowShadow();
+			imgOver.gameObject.SetActive(value: true);
+			GameManager.Instance.PlayLibraryAudio("ui_click");
+			PopupManager.Instance.SetTown(idTitle, idDescription, disabled);
+			GameManager.Instance.SetCursorHover();
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		fHide();
+	}
+
+	private void OnMouseUp()
+	{
+		if (!Functions.ClickedThisTransform(base.transform) || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || TownManager.Instance.AreTreasuresLocked() || disabled)
+		{
+			return;
+		}
+		bool flag = false;
+		if (AtOManager.Instance.TownTutorialStep > -1 && AtOManager.Instance.TownTutorialStep < 3)
+		{
+			flag = true;
+		}
+		if (idTitle == "craftCards")
+		{
+			if (flag && AtOManager.Instance.TownTutorialStep != 0)
+			{
+				AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
+				return;
+			}
+			AtOManager.Instance.DoCardCraft();
+		}
+		else if (idTitle == "upgradeCards")
+		{
+			if (flag && AtOManager.Instance.TownTutorialStep != 1)
+			{
+				AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
+				return;
+			}
+			AtOManager.Instance.DoCardUpgrade();
+		}
+		else if (idTitle == "removeCards")
+		{
+			if (flag)
+			{
+				AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
+				return;
+			}
+			AtOManager.Instance.DoCardHealer();
+		}
+		else if (idTitle == "divinationCards")
+		{
+			if (flag)
+			{
+				AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
+				return;
+			}
+			AtOManager.Instance.DoCardDivination();
+		}
+		else if (idTitle == "buyItems")
+		{
+			if (flag && AtOManager.Instance.TownTutorialStep != 2)
+			{
+				AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("tutorialTownNeedComplete"));
+				return;
+			}
+			AtOManager.Instance.DoItemShop("");
+		}
+		fHide();
+	}
+
+	private void fHide()
+	{
+		HideShadow(instant: false);
+		imgOver.gameObject.SetActive(value: false);
+		PopupManager.Instance.ClosePopup();
+		GameManager.Instance.SetCursorPlain();
+	}
+
+	public IEnumerator UpdateShapeToSprite()
+	{
+		if (base.gameObject.GetComponent<PolygonCollider2D>() != null)
+		{
+			Object.Destroy(base.gameObject.GetComponent<PolygonCollider2D>());
+		}
+		yield return Globals.Instance.WaitForSeconds(0.1f);
+		base.gameObject.AddComponent<PolygonCollider2D>();
+	}
 }

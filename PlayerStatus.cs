@@ -1,55 +1,62 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PlayerStatus
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 public class PlayerStatus : MonoBehaviour
 {
-  public Image lineImg;
-  public TMP_Text playerName;
-  public Image[] characterImg;
-  public Transform arrowOnline;
-  public Transform arrowOffline;
-  public Image statusImg;
+	public Image lineImg;
 
-  public void SetPlayer(string nick)
-  {
-    this.playerName.text = nick;
-    this.playerName.color = this.lineImg.color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(nick));
-    this.HideStatusReady();
-  }
+	public TMP_Text playerName;
 
-  public void SetOnline()
-  {
-    this.arrowOnline.gameObject.SetActive(true);
-    this.arrowOffline.gameObject.SetActive(false);
-  }
+	public Image[] characterImg;
 
-  public void SetOffline()
-  {
-    this.arrowOnline.gameObject.SetActive(false);
-    this.arrowOffline.gameObject.SetActive(true);
-  }
+	public Transform arrowOnline;
 
-  public void HideStatusReady() => this.statusImg.gameObject.SetActive(false);
+	public Transform arrowOffline;
 
-  public void ShowStatusReady()
-  {
-    this.statusImg.gameObject.SetActive(true);
-    this.statusImg.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
-  }
+	public Image statusImg;
 
-  public void SetStatus(bool status)
-  {
-    if (status)
-      this.statusImg.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
-    else
-      this.statusImg.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
-  }
+	public void SetPlayer(string nick)
+	{
+		playerName.text = nick;
+		TMP_Text tMP_Text = playerName;
+		Color color = (lineImg.color = Functions.HexToColor(NetworkManager.Instance.GetColorFromNick(nick)));
+		tMP_Text.color = color;
+		HideStatusReady();
+	}
+
+	public void SetOnline()
+	{
+		arrowOnline.gameObject.SetActive(value: true);
+		arrowOffline.gameObject.SetActive(value: false);
+	}
+
+	public void SetOffline()
+	{
+		arrowOnline.gameObject.SetActive(value: false);
+		arrowOffline.gameObject.SetActive(value: true);
+	}
+
+	public void HideStatusReady()
+	{
+		statusImg.gameObject.SetActive(value: false);
+	}
+
+	public void ShowStatusReady()
+	{
+		statusImg.gameObject.SetActive(value: true);
+		statusImg.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
+	}
+
+	public void SetStatus(bool status)
+	{
+		if (status)
+		{
+			statusImg.color = Functions.HexToColor(Globals.Instance.ClassColor["scout"]);
+		}
+		else
+		{
+			statusImg.color = Functions.HexToColor(Globals.Instance.ClassColor["warrior"]);
+		}
+	}
 }

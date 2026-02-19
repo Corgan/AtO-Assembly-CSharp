@@ -1,131 +1,197 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ItemCorruptionIcon
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using WebSocketSharp;
 
-#nullable disable
 public class ItemCorruptionIcon : MonoBehaviour
 {
-  private string internalId;
-  private SpriteRenderer itemSpriteRenderer;
-  private Transform rareParticles;
-  private bool allowInput;
-  private Coroutine showCardCo;
-  private CardItem CI;
-  private GameObject card;
-  private CardData cardData;
-  private bool mouseIsOver;
-  [SerializeField]
-  private Transform spriteBackgroundHover;
-  private string itemType;
+	private string internalId;
 
-  private void Awake()
-  {
-    this.itemSpriteRenderer = this.GetComponentInChildren<SpriteRenderer>();
-    this.rareParticles = this.GetComponentInChildren<ParticleSystem>(true).transform;
-  }
+	private SpriteRenderer itemSpriteRenderer;
 
-  private void OnMouseUp()
-  {
-    if (!this.allowInput)
-      return;
-    this.fOnMouseUP();
-  }
+	private Transform rareParticles;
 
-  private void OnMouseOver() => this.DoHover(true);
+	private bool allowInput;
 
-  private void OnMouseExit() => this.DoHover(false);
+	private Coroutine showCardCo;
 
-  private void fOnMouseUP()
-  {
-    if (this.internalId.IsNullOrEmpty())
-      return;
-    GameManager.Instance.CleanTempContainer();
-    CardCraftManager.Instance.SelectCard(this.internalId);
-  }
+	private CardItem CI;
 
-  public void SetSprite(Sprite sprite) => this.itemSpriteRenderer.sprite = sprite;
+	private GameObject card;
 
-  public void SetInternalId(string internalId)
-  {
-    this.internalId = internalId;
-    this.cardData = Globals.Instance.GetCardData(internalId.Split("_", StringSplitOptions.None)[0]);
-  }
+	private CardData cardData;
 
-  public void AllowInput(bool state) => this.allowInput = state;
+	private bool mouseIsOver;
 
-  public void ShowRareParticles(bool state = true)
-  {
-    this.rareParticles.gameObject.SetActive(state);
-  }
+	[SerializeField]
+	private Transform spriteBackgroundHover;
 
-  public void DoHover(bool state)
-  {
-    if (this.mouseIsOver == state || !this.allowInput)
-      return;
-    this.mouseIsOver = state;
-    if (state)
-    {
-      if (this.showCardCo != null)
-        this.StopCoroutine(this.showCardCo);
-      if (this.gameObject.activeSelf && this.gameObject.activeInHierarchy)
-        this.showCardCo = this.StartCoroutine(this.ShowCardCo());
-    }
-    else
-    {
-      if (this.showCardCo != null)
-        this.StopCoroutine(this.showCardCo);
-      if ((UnityEngine.Object) this.CI != (UnityEngine.Object) null)
-        this.CI.HideKeyNotes();
-      if ((UnityEngine.Object) this.card != (UnityEngine.Object) null)
-      {
-        UnityEngine.Object.Destroy((UnityEngine.Object) this.card);
-        this.CI = (CardItem) null;
-      }
-    }
-    if (!((UnityEngine.Object) this.cardData == (UnityEngine.Object) null) && this.cardData.CardType == Enums.CardType.Corruption)
-      return;
-    this.spriteBackgroundHover.gameObject.SetActive(state);
-  }
+	private string itemType;
 
-  private IEnumerator ShowCardCo()
-  {
-    // ISSUE: reference to a compiler-generated field
-    int num = this.\u003C\u003E1__state;
-    ItemCorruptionIcon itemCorruptionIcon = this;
-    if (num != 0)
-      return false;
-    // ISSUE: reference to a compiler-generated field
-    this.\u003C\u003E1__state = -1;
-    if ((UnityEngine.Object) itemCorruptionIcon.cardData == (UnityEngine.Object) null)
-      return false;
-    Vector3 position = new Vector3(-2.1f, 0.0f, 0.0f);
-    UnityEngine.Object.Destroy((UnityEngine.Object) itemCorruptionIcon.card);
-    Transform transform = itemCorruptionIcon.transform;
-    itemCorruptionIcon.card = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, transform);
-    itemCorruptionIcon.card.name = itemCorruptionIcon.cardData.Id;
-    itemCorruptionIcon.CI = itemCorruptionIcon.card.GetComponent<CardItem>();
-    itemCorruptionIcon.CI.SetCard(itemCorruptionIcon.cardData.Id, _theHero: AtOManager.Instance.GetHero(CardCraftManager.Instance.heroIndex), GetFromGlobal: true);
-    itemCorruptionIcon.CI.DisableTrail();
-    if ((bool) (UnityEngine.Object) LootManager.Instance)
-      itemCorruptionIcon.CI.TopLayeringOrder("UI", 32000);
-    else
-      itemCorruptionIcon.CI.TopLayeringOrder("UI", 32000);
-    if (true)
-      itemCorruptionIcon.CI.DisableCollider();
-    else
-      itemCorruptionIcon.CI.EnableCollider();
-    itemCorruptionIcon.card.transform.position = itemCorruptionIcon.transform.position + new Vector3(0.0f, 0.4f, 0.0f);
-    itemCorruptionIcon.CI.SetDestinationScaleRotation(position, 1.2f, Quaternion.Euler(0.0f, 0.0f, 0.0f));
-    if ((UnityEngine.Object) CardCraftManager.Instance != (UnityEngine.Object) null)
-      itemCorruptionIcon.CI.SetDestinationLocalScale(1.4f);
-    itemCorruptionIcon.CI.active = true;
-    return false;
-  }
+	private void Awake()
+	{
+		itemSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+		rareParticles = GetComponentInChildren<ParticleSystem>(includeInactive: true).transform;
+	}
+
+	private void OnMouseUp()
+	{
+		if (allowInput && !isCardCorrupted(cardData))
+		{
+			fOnMouseUP();
+		}
+	}
+
+	private void OnMouseOver()
+	{
+		DoHover(state: true);
+		if (Input.GetMouseButtonUp(1))
+		{
+			fOnMouseUpRight();
+		}
+	}
+
+	private void fOnMouseUpRight()
+	{
+		if (!SettingsManager.Instance.IsActive() && !AlertManager.Instance.IsActive() && (!MatchManager.Instance || (!MatchManager.Instance.CardDrag && !EventSystem.current.IsPointerOverGameObject())))
+		{
+			ShowCardScreenManager();
+		}
+	}
+
+	private void ShowCardScreenManager()
+	{
+		if (CardScreenManager.Instance != null)
+		{
+			DoHover(state: false);
+			CardScreenManager.Instance.ShowCardScreen(_state: true);
+			CardScreenManager.Instance.SetCardData(cardData);
+		}
+	}
+
+	private void OnMouseExit()
+	{
+		DoHover(state: false);
+	}
+
+	private void fOnMouseUP()
+	{
+		if (!internalId.IsNullOrEmpty())
+		{
+			GameManager.Instance.CleanTempContainer();
+			CardCraftManager.Instance.SelectCard(internalId);
+		}
+	}
+
+	public void SetSprite(Sprite sprite)
+	{
+		itemSpriteRenderer.sprite = sprite;
+	}
+
+	public void SetInternalId(string internalId)
+	{
+		this.internalId = internalId;
+		cardData = Globals.Instance.GetCardData(internalId.Split("_")[0]);
+	}
+
+	public void AllowInput(bool state)
+	{
+		allowInput = state;
+	}
+
+	public void ShowRareParticles(bool state = true)
+	{
+		rareParticles.gameObject.SetActive(state);
+	}
+
+	public void DoHover(bool state)
+	{
+		if (mouseIsOver == state || !allowInput)
+		{
+			return;
+		}
+		mouseIsOver = state;
+		if (state)
+		{
+			if (showCardCo != null)
+			{
+				StopCoroutine(showCardCo);
+			}
+			if (base.gameObject.activeSelf && base.gameObject.activeInHierarchy)
+			{
+				showCardCo = StartCoroutine(ShowCardCo());
+			}
+		}
+		else
+		{
+			if (showCardCo != null)
+			{
+				StopCoroutine(showCardCo);
+			}
+			if (CI != null)
+			{
+				CI.HideKeyNotes();
+			}
+			if (card != null)
+			{
+				Object.Destroy(card);
+				CI = null;
+			}
+		}
+		if (cardData == null || cardData.CardType != Enums.CardType.Corruption)
+		{
+			spriteBackgroundHover.gameObject.SetActive(state);
+		}
+	}
+
+	private IEnumerator ShowCardCo()
+	{
+		if (!(cardData == null))
+		{
+			Vector3 position = new Vector3(-2.1f, 0f, 0f);
+			Object.Destroy(card);
+			card = Object.Instantiate(parent: base.transform, original: GameManager.Instance.CardPrefab, position: Vector3.zero, rotation: Quaternion.identity);
+			card.name = cardData.Id;
+			CI = card.GetComponent<CardItem>();
+			CI.SetCard(cardData.Id, deckScale: true, AtOManager.Instance.GetHero(CardCraftManager.Instance.heroIndex), null, GetFromGlobal: true);
+			CI.DisableTrail();
+			if ((bool)LootManager.Instance)
+			{
+				CI.TopLayeringOrder("UI", 32000);
+			}
+			else
+			{
+				CI.TopLayeringOrder("UI", 32000);
+			}
+			if (0 == 0)
+			{
+				CI.DisableCollider();
+			}
+			else
+			{
+				CI.EnableCollider();
+			}
+			card.transform.position = base.transform.position + new Vector3(0f, 0.4f, 0f);
+			CI.SetDestinationScaleRotation(position, 1.2f, Quaternion.Euler(0f, 0f, 0f));
+			if (CardCraftManager.Instance != null)
+			{
+				CI.SetDestinationLocalScale(1.4f);
+			}
+			CI.active = true;
+		}
+		yield break;
+	}
+
+	private bool isCardCorrupted(CardData cardData)
+	{
+		if (cardData == null)
+		{
+			return false;
+		}
+		if (cardData.CardUpgraded == Enums.CardUpgraded.Rare)
+		{
+			return true;
+		}
+		return false;
+	}
 }

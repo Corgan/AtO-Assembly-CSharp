@@ -1,206 +1,262 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: GiveManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-#nullable disable
 public class GiveManager : MonoBehaviour
 {
-  public Transform elements;
-  public TMP_Text quantityText;
-  public TMP_Text target;
-  public TMP_Text descriptionText;
-  public int playerTarget;
-  public int quantity;
-  public Transform prevPlayer;
-  public Transform nextPlayer;
-  public Transform bgGold;
-  public Transform bgShards;
-  public BotonGeneric botonGold;
-  public BotonGeneric botonDust;
-  public Transform botonGive;
-  private int type;
-  public List<Transform> buttonsController;
-  public int controllerHorizontalIndex = -1;
-  private Vector2 warpPosition = Vector2.zero;
-  private List<Transform> _controllerList = new List<Transform>();
+	public Transform elements;
 
-  public static GiveManager Instance { get; private set; }
+	public TMP_Text quantityText;
 
-  private void Awake()
-  {
-    if ((Object) GiveManager.Instance == (Object) null)
-      GiveManager.Instance = this;
-    else if ((Object) GiveManager.Instance != (Object) this)
-      Object.Destroy((Object) this.gameObject);
-    Object.DontDestroyOnLoad((Object) this.gameObject);
-  }
+	public TMP_Text target;
 
-  public bool IsActive() => this.elements.gameObject.activeSelf;
+	public TMP_Text descriptionText;
 
-  public void ShowGive(bool state, int _type = 0)
-  {
-    if (GameManager.Instance.IsMultiplayer() && state && AtOManager.Instance.townDivinationCreator == NetworkManager.Instance.GetPlayerNick())
-    {
-      AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("cantGiveGoldDivination"));
-    }
-    else
-    {
-      this.elements.gameObject.SetActive(state);
-      if (state)
-      {
-        if ((bool) (Object) MapManager.Instance)
-          MapManager.Instance.characterWindow.Hide();
-        else if ((bool) (Object) TownManager.Instance)
-        {
-          TownManager.Instance.characterWindow.Hide();
-          TownManager.Instance.ShowTownUpgrades(false);
-        }
-        this.botonGive.gameObject.SetActive(false);
-        this.playerTarget = 0;
-        if (this.playerTarget == NetworkManager.Instance.GetMyPosition())
-          this.NextTarget();
-        this.SetQuantity(0);
-        if (NetworkManager.Instance.GetNumPlayers() > 2)
-        {
-          this.prevPlayer.gameObject.SetActive(true);
-          this.nextPlayer.gameObject.SetActive(true);
-        }
-        else
-        {
-          this.prevPlayer.gameObject.SetActive(false);
-          this.nextPlayer.gameObject.SetActive(false);
-        }
-        this.type = _type;
-        if (this.type == 0)
-        {
-          this.bgGold.gameObject.SetActive(true);
-          this.bgShards.gameObject.SetActive(false);
-          this.descriptionText.text = Texts.Instance.GetText("selectGiveGold");
-          this.botonGold.Disable();
-          this.botonDust.Enable();
-        }
-        else
-        {
-          this.bgGold.gameObject.SetActive(false);
-          this.bgShards.gameObject.SetActive(true);
-          this.descriptionText.text = Texts.Instance.GetText("selectGiveShards");
-          this.botonGold.Enable();
-          this.botonDust.Disable();
-        }
-        this.RefreshTargetName();
-        if (!(bool) (Object) CardCraftManager.Instance)
-          return;
-        CardCraftManager.Instance.ShowSearch(false);
-      }
-      else
-      {
-        this.target.text = "";
-        if (!(bool) (Object) CardCraftManager.Instance || CardCraftManager.Instance.craftType != 2)
-          return;
-        CardCraftManager.Instance.ShowSearch(true);
-      }
-    }
-  }
+	public int playerTarget;
 
-  private void SetQuantity(int q)
-  {
-    this.quantity = q;
-    if (this.quantity < 0)
-      this.quantity = 0;
-    else if (this.type == 0 && this.quantity > AtOManager.Instance.GetPlayerGold())
-      this.quantity = AtOManager.Instance.GetPlayerGold();
-    else if (this.type == 1 && this.quantity > AtOManager.Instance.GetPlayerDust())
-      this.quantity = AtOManager.Instance.GetPlayerDust();
-    this.quantityText.text = this.quantity.ToString();
-    if (this.quantity != 0)
-      this.botonGive.gameObject.SetActive(true);
-    else
-      this.botonGive.gameObject.SetActive(false);
-  }
+	public int quantity;
 
-  public void Give(int q) => this.SetQuantity(this.quantity + q);
+	public Transform prevPlayer;
 
-  public void NextTarget()
-  {
-    ++this.playerTarget;
-    if (this.playerTarget >= NetworkManager.Instance.GetNumPlayers())
-      this.playerTarget = 0;
-    if (this.playerTarget == NetworkManager.Instance.GetMyPosition())
-      this.NextTarget();
-    else
-      this.RefreshTargetName();
-  }
+	public Transform nextPlayer;
 
-  private void RefreshTargetName()
-  {
-    StringBuilder stringBuilder = new StringBuilder();
-    string playerNickPosition = NetworkManager.Instance.GetPlayerNickPosition(this.playerTarget);
-    stringBuilder.Append(NetworkManager.Instance.GetPlayerNickReal(playerNickPosition));
-    stringBuilder.Append("<br><size=3.5><color=#BBB>(");
-    Hero[] team = AtOManager.Instance.GetTeam();
-    for (int index = 0; index < team.Length; ++index)
-    {
-      if (team[index].Owner == playerNickPosition)
-      {
-        stringBuilder.Append(team[index].HeroData.HeroSubClass.CharacterName);
-        stringBuilder.Append(", ");
-      }
-    }
-    stringBuilder.Remove(stringBuilder.Length - 2, 2);
-    stringBuilder.Append(")");
-    this.target.text = stringBuilder.ToString();
-  }
+	public Transform bgGold;
 
-  public void PrevTarget()
-  {
-    --this.playerTarget;
-    if (this.playerTarget < 0)
-      this.playerTarget = NetworkManager.Instance.GetNumPlayers() - 1;
-    if (this.playerTarget == NetworkManager.Instance.GetMyPosition())
-      this.PrevTarget();
-    else
-      this.RefreshTargetName();
-  }
+	public Transform bgShards;
 
-  public void GiveAction()
-  {
-    if (this.quantity <= 0)
-      return;
-    if (NetworkManager.Instance.IsMaster())
-      AtOManager.Instance.GivePlayer(this.type, this.quantity, NetworkManager.Instance.GetPlayerNickPosition(this.playerTarget), NetworkManager.Instance.GetPlayerNick(), save: true);
-    else
-      AtOManager.Instance.AskGivePlayerToPlayer(this.type, this.quantity, NetworkManager.Instance.GetPlayerNickPosition(this.playerTarget), NetworkManager.Instance.GetPlayerNick());
-    this.ShowGive(false);
-  }
+	public BotonGeneric botonGold;
 
-  public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false)
-  {
-    this._controllerList.Clear();
-    if (Functions.TransformIsVisible(this.nextPlayer))
-    {
-      this._controllerList.Add(this.nextPlayer);
-      this._controllerList.Add(this.prevPlayer);
-    }
-    if (Functions.TransformIsVisible(this.botonGive))
-      this._controllerList.Add(this.botonGive);
-    for (int index = 0; index < this.buttonsController.Count; ++index)
-    {
-      if (Functions.TransformIsVisible(this.buttonsController[index]))
-        this._controllerList.Add(this.buttonsController[index]);
-    }
-    this.controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(this._controllerList);
-    this.controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(this._controllerList, this.controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
-    if (!((Object) this._controllerList[this.controllerHorizontalIndex] != (Object) null))
-      return;
-    this.warpPosition = (Vector2) GameManager.Instance.cameraMain.WorldToScreenPoint(this._controllerList[this.controllerHorizontalIndex].position);
-    Mouse.current.WarpCursorPosition(this.warpPosition);
-  }
+	public BotonGeneric botonDust;
+
+	public Transform botonGive;
+
+	private int type;
+
+	public List<Transform> buttonsController;
+
+	public int controllerHorizontalIndex = -1;
+
+	private Vector2 warpPosition = Vector2.zero;
+
+	private List<Transform> _controllerList = new List<Transform>();
+
+	public static GiveManager Instance { get; private set; }
+
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(base.gameObject);
+		}
+		Object.DontDestroyOnLoad(base.gameObject);
+	}
+
+	public bool IsActive()
+	{
+		return elements.gameObject.activeSelf;
+	}
+
+	public void ShowGive(bool state, int _type = 0)
+	{
+		if (GameManager.Instance.IsMultiplayer() && state && AtOManager.Instance.townDivinationCreator == NetworkManager.Instance.GetPlayerNick())
+		{
+			AlertManager.Instance.AlertConfirm(Texts.Instance.GetText("cantGiveGoldDivination"));
+			return;
+		}
+		elements.gameObject.SetActive(state);
+		if (state)
+		{
+			if ((bool)MapManager.Instance)
+			{
+				MapManager.Instance.characterWindow.Hide();
+			}
+			else if ((bool)TownManager.Instance)
+			{
+				TownManager.Instance.characterWindow.Hide();
+				TownManager.Instance.ShowTownUpgrades(state: false);
+			}
+			botonGive.gameObject.SetActive(value: false);
+			playerTarget = 0;
+			if (playerTarget == NetworkManager.Instance.GetMyPosition())
+			{
+				NextTarget();
+			}
+			SetQuantity(0);
+			if (NetworkManager.Instance.GetNumPlayers() > 2)
+			{
+				prevPlayer.gameObject.SetActive(value: true);
+				nextPlayer.gameObject.SetActive(value: true);
+			}
+			else
+			{
+				prevPlayer.gameObject.SetActive(value: false);
+				nextPlayer.gameObject.SetActive(value: false);
+			}
+			type = _type;
+			if (type == 0)
+			{
+				bgGold.gameObject.SetActive(value: true);
+				bgShards.gameObject.SetActive(value: false);
+				descriptionText.text = Texts.Instance.GetText("selectGiveGold");
+				botonGold.Disable();
+				botonDust.Enable();
+			}
+			else
+			{
+				bgGold.gameObject.SetActive(value: false);
+				bgShards.gameObject.SetActive(value: true);
+				descriptionText.text = Texts.Instance.GetText("selectGiveShards");
+				botonGold.Enable();
+				botonDust.Disable();
+			}
+			RefreshTargetName();
+			if ((bool)CardCraftManager.Instance)
+			{
+				CardCraftManager.Instance.ShowSearch(state: false);
+			}
+		}
+		else
+		{
+			target.text = "";
+			if ((bool)CardCraftManager.Instance && CardCraftManager.Instance.craftType == 2)
+			{
+				CardCraftManager.Instance.ShowSearch(state: true);
+			}
+		}
+	}
+
+	private void SetQuantity(int q)
+	{
+		quantity = q;
+		if (quantity < 0)
+		{
+			quantity = 0;
+		}
+		else if (type == 0 && quantity > AtOManager.Instance.GetPlayerGold())
+		{
+			quantity = AtOManager.Instance.GetPlayerGold();
+		}
+		else if (type == 1 && quantity > AtOManager.Instance.GetPlayerDust())
+		{
+			quantity = AtOManager.Instance.GetPlayerDust();
+		}
+		quantityText.text = quantity.ToString();
+		if (quantity != 0)
+		{
+			botonGive.gameObject.SetActive(value: true);
+		}
+		else
+		{
+			botonGive.gameObject.SetActive(value: false);
+		}
+	}
+
+	public void Give(int q)
+	{
+		SetQuantity(quantity + q);
+	}
+
+	public void NextTarget()
+	{
+		playerTarget++;
+		if (playerTarget >= NetworkManager.Instance.GetNumPlayers())
+		{
+			playerTarget = 0;
+		}
+		if (playerTarget == NetworkManager.Instance.GetMyPosition())
+		{
+			NextTarget();
+		}
+		else
+		{
+			RefreshTargetName();
+		}
+	}
+
+	private void RefreshTargetName()
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		string playerNickPosition = NetworkManager.Instance.GetPlayerNickPosition(playerTarget);
+		stringBuilder.Append(NetworkManager.Instance.GetPlayerNickReal(playerNickPosition));
+		stringBuilder.Append("<br><size=3.5><color=#BBB>(");
+		Hero[] team = AtOManager.Instance.GetTeam();
+		for (int i = 0; i < team.Length; i++)
+		{
+			if (team[i].Owner == playerNickPosition)
+			{
+				stringBuilder.Append(team[i].HeroData.HeroSubClass.CharacterName);
+				stringBuilder.Append(", ");
+			}
+		}
+		stringBuilder.Remove(stringBuilder.Length - 2, 2);
+		stringBuilder.Append(")");
+		target.text = stringBuilder.ToString();
+	}
+
+	public void PrevTarget()
+	{
+		playerTarget--;
+		if (playerTarget < 0)
+		{
+			playerTarget = NetworkManager.Instance.GetNumPlayers() - 1;
+		}
+		if (playerTarget == NetworkManager.Instance.GetMyPosition())
+		{
+			PrevTarget();
+		}
+		else
+		{
+			RefreshTargetName();
+		}
+	}
+
+	public void GiveAction()
+	{
+		if (quantity > 0)
+		{
+			if (NetworkManager.Instance.IsMaster())
+			{
+				AtOManager.Instance.GivePlayer(type, quantity, NetworkManager.Instance.GetPlayerNickPosition(playerTarget), NetworkManager.Instance.GetPlayerNick(), anim: true, save: true);
+			}
+			else
+			{
+				AtOManager.Instance.AskGivePlayerToPlayer(type, quantity, NetworkManager.Instance.GetPlayerNickPosition(playerTarget), NetworkManager.Instance.GetPlayerNick());
+			}
+			ShowGive(state: false);
+		}
+	}
+
+	public void ControllerMovement(bool goingUp = false, bool goingRight = false, bool goingDown = false, bool goingLeft = false)
+	{
+		_controllerList.Clear();
+		if (Functions.TransformIsVisible(nextPlayer))
+		{
+			_controllerList.Add(nextPlayer);
+			_controllerList.Add(prevPlayer);
+		}
+		if (Functions.TransformIsVisible(botonGive))
+		{
+			_controllerList.Add(botonGive);
+		}
+		for (int i = 0; i < buttonsController.Count; i++)
+		{
+			if (Functions.TransformIsVisible(buttonsController[i]))
+			{
+				_controllerList.Add(buttonsController[i]);
+			}
+		}
+		controllerHorizontalIndex = Functions.GetListClosestIndexToMousePosition(_controllerList);
+		controllerHorizontalIndex = Functions.GetClosestIndexBasedOnDirection(_controllerList, controllerHorizontalIndex, goingUp, goingRight, goingDown, goingLeft);
+		if (_controllerList[controllerHorizontalIndex] != null)
+		{
+			warpPosition = GameManager.Instance.cameraMain.WorldToScreenPoint(_controllerList[controllerHorizontalIndex].position);
+			Mouse.current.WarpCursorPosition(warpPosition);
+		}
+	}
 }

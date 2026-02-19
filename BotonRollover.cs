@@ -1,204 +1,240 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: BotonRollover
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using TMPro;
 using UnityEngine;
 
-#nullable disable
 public class BotonRollover : MonoBehaviour
 {
-  public Transform image;
-  private SpriteRenderer imageBanner;
-  public AudioClip sound;
-  public Transform particles;
-  public Transform rollOverText;
-  public int auxInt;
-  public bool fadeOnRoll = true;
-  private TMP_Text textTMP;
-  private float textY;
-  private Sprite imgOriginal;
-  private Vector3 imgSizeOriginal;
-  private SpriteRenderer SR;
-  private Coroutine Co;
-  private float posEndTop;
-  private float posEndBottom;
+	public Transform image;
 
-  private void Awake()
-  {
-    if (!((Object) this.image != (Object) null))
-      return;
-    this.SR = this.image.GetComponent<SpriteRenderer>();
-  }
+	private SpriteRenderer imageBanner;
 
-  private void Start()
-  {
-    if ((Object) this.SR != (Object) null)
-      this.imgOriginal = this.SR.sprite;
-    if ((Object) this.image != (Object) null)
-    {
-      this.imgSizeOriginal = this.image.localScale;
-      if (this.gameObject.name != "BotStats" && this.gameObject.name != "BotPerks" && this.image.childCount > 0 && (Object) this.image.GetChild(0) != (Object) null && (Object) this.image.GetChild(0).GetComponent<SpriteRenderer>() != (Object) null)
-      {
-        this.imageBanner = this.image.GetChild(0).GetComponent<SpriteRenderer>();
-        this.imageBanner.color = new Color(0.7f, 0.7f, 0.7f, 0.9f);
-      }
-    }
-    if (!((Object) this.rollOverText != (Object) null))
-      return;
-    this.textTMP = this.rollOverText.GetComponent<TMP_Text>();
-    this.textY = this.rollOverText.localPosition.y;
-    this.posEndTop = this.textY + 0.05f;
-    this.posEndBottom = this.textY;
-  }
+	public AudioClip sound;
 
-  private void fRollOver()
-  {
-    GameManager.Instance.SetCursorHover();
-    if ((Object) this.sound != (Object) null)
-      GameManager.Instance.PlayAudio(this.sound, 0.1f);
-    int num = (Object) this.particles != (Object) null ? 1 : 0;
-    if ((Object) this.rollOverText != (Object) null)
-      this.Co = this.StartCoroutine(this.ShowText(true));
-    if (!((Object) this.image != (Object) null))
-      return;
-    this.image.localScale = this.imgSizeOriginal + new Vector3(0.1f, 0.1f, 0.1f);
-    if (!((Object) this.imageBanner != (Object) null))
-      return;
-    this.imageBanner.color = new Color(0.86f, 0.58f, 0.43f, 0.9f);
-  }
+	public Transform particles;
 
-  private void fRollOut()
-  {
-    GameManager.Instance.SetCursorPlain();
-    if ((Object) this.particles != (Object) null)
-      this.particles.gameObject.SetActive(false);
-    if ((Object) this.rollOverText != (Object) null)
-      this.Co = this.StartCoroutine(this.ShowText(false));
-    if (!((Object) this.image != (Object) null))
-      return;
-    this.image.localScale = this.imgSizeOriginal;
-    if (!((Object) this.imageBanner != (Object) null))
-      return;
-    this.imageBanner.color = new Color(0.7f, 0.7f, 0.7f, 0.9f);
-  }
+	public Transform rollOverText;
 
-  private IEnumerator ShowText(bool state)
-  {
-    BotonRollover botonRollover = this;
-    if (botonRollover.Co != null)
-      botonRollover.StopCoroutine(botonRollover.Co);
-    float num = !state ? botonRollover.posEndBottom : botonRollover.posEndTop;
-    int steps = 10;
-    float step = (num - botonRollover.rollOverText.localPosition.y) / (float) steps;
-    for (int i = 0; i < steps; ++i)
-    {
-      botonRollover.rollOverText.localPosition += new Vector3(0.0f, step, 0.0f);
-      if (botonRollover.fadeOnRoll)
-      {
-        if (state)
-        {
-          if ((double) botonRollover.textTMP.color.a < 1.0)
-            botonRollover.textTMP.color = new Color(botonRollover.textTMP.color.r, botonRollover.textTMP.color.g, botonRollover.textTMP.color.b, botonRollover.textTMP.color.a + 0.1f);
-        }
-        else if ((double) botonRollover.textTMP.color.a > 0.0)
-          botonRollover.textTMP.color = new Color(botonRollover.textTMP.color.r, botonRollover.textTMP.color.g, botonRollover.textTMP.color.b, botonRollover.textTMP.color.a - 0.1f);
-      }
-      yield return (object) Globals.Instance.WaitForSeconds(0.01f);
-    }
-  }
+	public int auxInt;
 
-  private void CloseWindows(string botName)
-  {
-    if (!(bool) (Object) MatchManager.Instance)
-      return;
-    if (MatchManager.Instance.characterWindow.IsActive())
-      MatchManager.Instance.characterWindow.Hide();
-    if (!(botName != "OptionsLog") || !((Object) MatchManager.Instance != (Object) null) || !MatchManager.Instance.console.IsActive())
-      return;
-    MatchManager.Instance.ShowLog();
-  }
+	public bool fadeOnRoll = true;
 
-  public void OnMouseUp()
-  {
-    if (!Functions.ClickedThisTransform(this.transform) || (bool) (Object) MatchManager.Instance && MatchManager.Instance.CombatLoading || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (Object) MatchManager.Instance && MatchManager.Instance.console.IsActive())
-      return;
-    string name = this.gameObject.name;
-    this.CloseWindows(name);
-    GameManager.Instance.PlayAudio(AudioManager.Instance.soundButtonClick);
-    switch (name)
-    {
-      case "OptionsSettings":
-        SettingsManager.Instance.ShowSettings(true);
-        break;
-      case "OptionsExit":
-        OptionsManager.Instance.Exit();
-        break;
-      case "OptionsTome":
-        if ((Object) TeamManagement.Instance != (Object) null)
-          TeamManagement.Instance.EnableDisableTestingPanels(false);
-        TomeManager.Instance.ShowTome(true);
-        break;
-      case "OptionsResign":
-        if ((Object) MatchManager.Instance != (Object) null)
-        {
-          MatchManager.Instance.ResignCombat();
-          break;
-        }
-        break;
-      case "OptionsStats":
-        DamageMeterManager.Instance.Show();
-        break;
-      case "OptionsRetry":
-        if ((Object) MatchManager.Instance != (Object) null)
-        {
-          MatchManager.Instance.ALL_BreakByDesync();
-          break;
-        }
-        break;
-      case "MadnessTransform":
-        MadnessManager.Instance.ShowMadness();
-        break;
-      case "CharacterDeck":
-        if (CardScreenManager.Instance.IsActive())
-          return;
-        if ((Object) RewardsManager.Instance != (Object) null)
-        {
-          RewardsManager.Instance.ShowDeck(this.auxInt);
-          break;
-        }
-        if ((Object) LootManager.Instance != (Object) null)
-        {
-          LootManager.Instance.ShowDeck(this.auxInt);
-          break;
-        }
-        if ((Object) TownManager.Instance != (Object) null)
-        {
-          TownManager.Instance.ShowDeck(this.auxInt);
-          break;
-        }
-        if ((Object) MapManager.Instance != (Object) null)
-        {
-          MapManager.Instance.ShowDeck(this.auxInt);
-          break;
-        }
-        break;
-      case "OptionsLog":
-        MatchManager.Instance.ShowLog();
-        break;
-    }
-    this.fRollOut();
-  }
+	private TMP_Text textTMP;
 
-  private void OnMouseExit() => this.fRollOut();
+	private float textY;
 
-  private void OnMouseEnter()
-  {
-    if ((bool) (Object) MatchManager.Instance && MatchManager.Instance.CombatLoading || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || (bool) (Object) MapManager.Instance && MapManager.Instance.IsCharacterUnlock() || (bool) (Object) MatchManager.Instance && MatchManager.Instance.console.IsActive())
-      return;
-    this.fRollOver();
-  }
+	private Sprite imgOriginal;
+
+	private Vector3 imgSizeOriginal;
+
+	private SpriteRenderer SR;
+
+	private Coroutine Co;
+
+	private float posEndTop;
+
+	private float posEndBottom;
+
+	private void Awake()
+	{
+		if (image != null)
+		{
+			SR = image.GetComponent<SpriteRenderer>();
+		}
+	}
+
+	private void Start()
+	{
+		if (SR != null)
+		{
+			imgOriginal = SR.sprite;
+		}
+		if (image != null)
+		{
+			imgSizeOriginal = image.localScale;
+			if (base.gameObject.name != "BotStats" && base.gameObject.name != "BotPerks" && image.childCount > 0 && image.GetChild(0) != null && image.GetChild(0).GetComponent<SpriteRenderer>() != null)
+			{
+				imageBanner = image.GetChild(0).GetComponent<SpriteRenderer>();
+				imageBanner.color = new Color(0.7f, 0.7f, 0.7f, 0.9f);
+			}
+		}
+		if (rollOverText != null)
+		{
+			textTMP = rollOverText.GetComponent<TMP_Text>();
+			textY = rollOverText.localPosition.y;
+			posEndTop = textY + 0.05f;
+			posEndBottom = textY;
+		}
+	}
+
+	private void fRollOver()
+	{
+		GameManager.Instance.SetCursorHover();
+		if (sound != null)
+		{
+			GameManager.Instance.PlayAudio(sound, 0.1f);
+		}
+		_ = particles != null;
+		if (rollOverText != null)
+		{
+			Co = StartCoroutine(ShowText(state: true));
+		}
+		if (image != null)
+		{
+			image.localScale = imgSizeOriginal + new Vector3(0.1f, 0.1f, 0.1f);
+			if (imageBanner != null)
+			{
+				imageBanner.color = new Color(0.86f, 0.58f, 0.43f, 0.9f);
+			}
+		}
+	}
+
+	private void fRollOut()
+	{
+		GameManager.Instance.SetCursorPlain();
+		if (particles != null)
+		{
+			particles.gameObject.SetActive(value: false);
+		}
+		if (rollOverText != null)
+		{
+			Co = StartCoroutine(ShowText(state: false));
+		}
+		if (image != null)
+		{
+			image.localScale = imgSizeOriginal;
+			if (imageBanner != null)
+			{
+				imageBanner.color = new Color(0.7f, 0.7f, 0.7f, 0.9f);
+			}
+		}
+	}
+
+	private IEnumerator ShowText(bool state)
+	{
+		if (Co != null)
+		{
+			StopCoroutine(Co);
+		}
+		float num = ((!state) ? posEndBottom : posEndTop);
+		int steps = 10;
+		float step = (num - rollOverText.localPosition.y) / (float)steps;
+		for (int i = 0; i < steps; i++)
+		{
+			rollOverText.localPosition += new Vector3(0f, step, 0f);
+			if (fadeOnRoll)
+			{
+				if (state)
+				{
+					if (textTMP.color.a < 1f)
+					{
+						textTMP.color = new Color(textTMP.color.r, textTMP.color.g, textTMP.color.b, textTMP.color.a + 0.1f);
+					}
+				}
+				else if (textTMP.color.a > 0f)
+				{
+					textTMP.color = new Color(textTMP.color.r, textTMP.color.g, textTMP.color.b, textTMP.color.a - 0.1f);
+				}
+			}
+			yield return Globals.Instance.WaitForSeconds(0.01f);
+		}
+	}
+
+	private void CloseWindows(string botName)
+	{
+		if ((bool)MatchManager.Instance)
+		{
+			if (MatchManager.Instance.characterWindow.IsActive())
+			{
+				MatchManager.Instance.characterWindow.Hide();
+			}
+			if (botName != "OptionsLog" && MatchManager.Instance != null && MatchManager.Instance.console.IsActive())
+			{
+				MatchManager.Instance.ShowLog();
+			}
+		}
+	}
+
+	public void OnMouseUp()
+	{
+		if (!Functions.ClickedThisTransform(base.transform) || ((bool)MatchManager.Instance && MatchManager.Instance.CombatLoading) || AlertManager.Instance.IsActive() || GameManager.Instance.IsTutorialActive() || SettingsManager.Instance.IsActive() || DamageMeterManager.Instance.IsActive() || ((bool)MapManager.Instance && MapManager.Instance.IsCharacterUnlock()) || ((bool)MatchManager.Instance && MatchManager.Instance.console.IsActive()))
+		{
+			return;
+		}
+		string text = base.gameObject.name;
+		CloseWindows(text);
+		GameManager.Instance.PlayAudio(AudioManager.Instance.soundButtonClick);
+		switch (text)
+		{
+		case "OptionsSettings":
+			SettingsManager.Instance.ShowSettings(_state: true);
+			break;
+		case "OptionsExit":
+			OptionsManager.Instance.Exit();
+			break;
+		case "OptionsTome":
+			if (TeamManagement.Instance != null)
+			{
+				TeamManagement.Instance.EnableDisableTestingPanels(state: false);
+			}
+			TomeManager.Instance.ShowTome(_status: true);
+			break;
+		case "OptionsResign":
+			if (MatchManager.Instance != null)
+			{
+				MatchManager.Instance.ResignCombat();
+			}
+			break;
+		case "OptionsStats":
+			DamageMeterManager.Instance.Show();
+			break;
+		case "OptionsRetry":
+			if (MatchManager.Instance != null)
+			{
+				MatchManager.Instance.ALL_BreakByDesync();
+			}
+			break;
+		case "MadnessTransform":
+			MadnessManager.Instance.ShowMadness();
+			break;
+		case "CharacterDeck":
+			if (CardScreenManager.Instance.IsActive())
+			{
+				return;
+			}
+			if (RewardsManager.Instance != null)
+			{
+				RewardsManager.Instance.ShowDeck(auxInt);
+			}
+			else if (LootManager.Instance != null)
+			{
+				LootManager.Instance.ShowDeck(auxInt);
+			}
+			else if (TownManager.Instance != null)
+			{
+				TownManager.Instance.ShowDeck(auxInt);
+			}
+			else if (MapManager.Instance != null)
+			{
+				MapManager.Instance.ShowDeck(auxInt);
+			}
+			break;
+		case "OptionsLog":
+			MatchManager.Instance.ShowLog();
+			break;
+		}
+		fRollOut();
+	}
+
+	private void OnMouseExit()
+	{
+		fRollOut();
+	}
+
+	private void OnMouseEnter()
+	{
+		if ((!MatchManager.Instance || !MatchManager.Instance.CombatLoading) && !AlertManager.Instance.IsActive() && !GameManager.Instance.IsTutorialActive() && !SettingsManager.Instance.IsActive() && !DamageMeterManager.Instance.IsActive() && (!MapManager.Instance || !MapManager.Instance.IsCharacterUnlock()) && (!MatchManager.Instance || !MatchManager.Instance.console.IsActive()))
+		{
+			fRollOver();
+		}
+	}
 }

@@ -1,53 +1,46 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: LineSmoother
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections.Generic;
 using UnityEngine;
 
-#nullable disable
 public class LineSmoother : MonoBehaviour
 {
-  public static Vector3[] SmoothLine(Vector3[] inputPoints, float segmentSize)
-  {
-    AnimationCurve animationCurve1 = new AnimationCurve();
-    AnimationCurve animationCurve2 = new AnimationCurve();
-    AnimationCurve animationCurve3 = new AnimationCurve();
-    Keyframe[] keyframeArray1 = new Keyframe[inputPoints.Length];
-    Keyframe[] keyframeArray2 = new Keyframe[inputPoints.Length];
-    Keyframe[] keyframeArray3 = new Keyframe[inputPoints.Length];
-    for (int time = 0; time < inputPoints.Length; ++time)
-    {
-      keyframeArray1[time] = new Keyframe((float) time, inputPoints[time].x);
-      keyframeArray2[time] = new Keyframe((float) time, inputPoints[time].y);
-      keyframeArray3[time] = new Keyframe((float) time, inputPoints[time].z);
-    }
-    animationCurve1.keys = keyframeArray1;
-    animationCurve2.keys = keyframeArray2;
-    animationCurve3.keys = keyframeArray3;
-    for (int index = 0; index < inputPoints.Length; ++index)
-    {
-      animationCurve1.SmoothTangents(index, 0.0f);
-      animationCurve2.SmoothTangents(index, 0.0f);
-      animationCurve3.SmoothTangents(index, 0.0f);
-    }
-    List<Vector3> vector3List = new List<Vector3>();
-    for (int index1 = 0; index1 < inputPoints.Length; ++index1)
-    {
-      vector3List.Add(inputPoints[index1]);
-      if (index1 + 1 < inputPoints.Length)
-      {
-        int num = (int) ((double) Vector3.Distance(inputPoints[index1], inputPoints[index1 + 1]) / (double) segmentSize);
-        for (int index2 = 1; index2 < num; ++index2)
-        {
-          float time = (float) index2 / (float) num + (float) index1;
-          Vector3 vector3 = new Vector3(animationCurve1.Evaluate(time), animationCurve2.Evaluate(time), animationCurve3.Evaluate(time));
-          vector3List.Add(vector3);
-        }
-      }
-    }
-    return vector3List.ToArray();
-  }
+	public static Vector3[] SmoothLine(Vector3[] inputPoints, float segmentSize)
+	{
+		AnimationCurve animationCurve = new AnimationCurve();
+		AnimationCurve animationCurve2 = new AnimationCurve();
+		AnimationCurve animationCurve3 = new AnimationCurve();
+		Keyframe[] array = new Keyframe[inputPoints.Length];
+		Keyframe[] array2 = new Keyframe[inputPoints.Length];
+		Keyframe[] array3 = new Keyframe[inputPoints.Length];
+		for (int i = 0; i < inputPoints.Length; i++)
+		{
+			array[i] = new Keyframe(i, inputPoints[i].x);
+			array2[i] = new Keyframe(i, inputPoints[i].y);
+			array3[i] = new Keyframe(i, inputPoints[i].z);
+		}
+		animationCurve.keys = array;
+		animationCurve2.keys = array2;
+		animationCurve3.keys = array3;
+		for (int j = 0; j < inputPoints.Length; j++)
+		{
+			animationCurve.SmoothTangents(j, 0f);
+			animationCurve2.SmoothTangents(j, 0f);
+			animationCurve3.SmoothTangents(j, 0f);
+		}
+		List<Vector3> list = new List<Vector3>();
+		for (int k = 0; k < inputPoints.Length; k++)
+		{
+			list.Add(inputPoints[k]);
+			if (k + 1 < inputPoints.Length)
+			{
+				int num = (int)(Vector3.Distance(inputPoints[k], inputPoints[k + 1]) / segmentSize);
+				for (int l = 1; l < num; l++)
+				{
+					float time = (float)l / (float)num + (float)k;
+					Vector3 item = new Vector3(animationCurve.Evaluate(time), animationCurve2.Evaluate(time), animationCurve3.Evaluate(time));
+					list.Add(item);
+				}
+			}
+		}
+		return list.ToArray();
+	}
 }

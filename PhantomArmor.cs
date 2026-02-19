@@ -1,43 +1,51 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: PhantomArmor
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 public class PhantomArmor : BossNPC
 {
-  private GameObject phantomArmor;
-  private GameObject vfx;
+	private GameObject phantomArmor;
 
-  public PhantomArmor(NPC npc)
-    : base(npc)
-  {
-    Transform npcParent = MatchManager.Instance.GetNPCParent();
-    this.phantomArmor = Object.Instantiate<GameObject>(MatchManager.Instance.phantomArmorPrefab, npcParent);
-    this.phantomArmor.SetActive(false);
-    this.vfx = Object.Instantiate<GameObject>(MatchManager.Instance.phantomArmorVfxPrefab, npcParent);
-    this.vfx.SetActive(false);
-  }
+	private GameObject vfx;
 
-  public bool IsSpecialCard(string cardId) => cardId.ToLower() == "divineexecutionmnp";
+	public PhantomArmor(NPC npc)
+		: base(npc)
+	{
+		Initialize();
+	}
 
-  public void TriggerSpecialEffect()
-  {
-    Debug.Log((object) "TriggerSpecialEffect called");
-    foreach (NPC npc in MatchManager.Instance.GetTeamNPC())
-      npc?.NPCItem?.Anim?.SetTrigger("ability");
-    this.phantomArmor.SetActive(true);
-    this.vfx.SetActive(true);
-  }
+	public void Initialize()
+	{
+		Transform nPCParent = MatchManager.Instance.GetNPCParent();
+		phantomArmor = Object.Instantiate(MatchManager.Instance.phantomArmorPrefab, nPCParent);
+		phantomArmor.SetActive(value: false);
+		vfx = Object.Instantiate(MatchManager.Instance.phantomArmorVfxPrefab, nPCParent);
+		vfx.SetActive(value: false);
+	}
 
-  public void SpecialEffectFinish()
-  {
-    this.phantomArmor.SetActive(false);
-    this.vfx.SetActive(false);
-  }
+	public bool IsSpecialCard(string cardId)
+	{
+		return cardId.StartsWith("divineexecutionmnp");
+	}
 
-  public bool IsSpecialEffectFinished() => !this.phantomArmor.activeSelf;
+	public void TriggerSpecialEffect()
+	{
+		Debug.Log("TriggerSpecialEffect called");
+		NPC[] teamNPC = MatchManager.Instance.GetTeamNPC();
+		for (int i = 0; i < teamNPC.Length; i++)
+		{
+			teamNPC[i]?.NPCItem?.Anim?.SetTrigger("ability");
+		}
+		phantomArmor.SetActive(value: true);
+		vfx.SetActive(value: true);
+	}
+
+	public void SpecialEffectFinish()
+	{
+		phantomArmor.SetActive(value: false);
+		vfx.SetActive(value: false);
+	}
+
+	public bool IsSpecialEffectFinished()
+	{
+		return !phantomArmor.activeSelf;
+	}
 }

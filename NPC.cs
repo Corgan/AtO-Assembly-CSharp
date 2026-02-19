@@ -1,599 +1,747 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: NPC
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-#nullable disable
 [Serializable]
 public class NPC : Character
 {
-  private CardItem currentCardItem;
+	private CardItem currentCardItem;
 
-  public CardItem GetCurrentCardItem() => this.currentCardItem;
+	private int priorityOffsetter;
 
-  public override void InitData()
-  {
-    if (!((UnityEngine.Object) this.NpcData != (UnityEngine.Object) null))
-      return;
-    this.GameName = this.NpcData.Id;
-    this.ScriptableObjectName = this.NpcData.ScriptableObjectName;
-    this.NpcData.NPCName = Texts.Instance.GetText(this.GameName + "_name", "monsters");
-    this.SourceName = this.NpcData.NPCName;
-    this.ClassName = this.SubclassName = "Monster";
-    this.SpriteSpeed = this.NpcData.SpriteSpeed;
-    this.SpritePortrait = this.NpcData.SpritePortrait;
-    this.Id = this.NpcData.Id + "_" + this.InternalId;
-    this.Hp = this.HpCurrent = this.NpcData.Hp;
-    this.Energy = this.EnergyCurrent = 10000;
-    this.EnergyTurn = 0;
-    this.Speed = this.NpcData.Speed;
-    this.IsHero = false;
-    this.ResistSlashing = this.NpcData.ResistSlashing;
-    if (this.ResistSlashing >= 100)
-      this.ImmuneSlashing = true;
-    this.ResistBlunt = this.NpcData.ResistBlunt;
-    if (this.ResistBlunt >= 100)
-      this.ImmuneBlunt = true;
-    this.ResistPiercing = this.NpcData.ResistPiercing;
-    if (this.ResistPiercing >= 100)
-      this.ImmunePiercing = true;
-    this.ResistFire = this.NpcData.ResistFire;
-    if (this.ResistFire >= 100)
-      this.ImmuneFire = true;
-    this.ResistCold = this.NpcData.ResistCold;
-    if (this.ResistCold >= 100)
-      this.ImmuneCold = true;
-    this.ResistLightning = this.NpcData.ResistLightning;
-    if (this.ResistLightning >= 100)
-      this.ImmuneLightning = true;
-    this.ResistMind = this.NpcData.ResistMind;
-    if (this.ResistMind >= 100)
-      this.ImmuneMind = true;
-    this.ResistHoly = this.NpcData.ResistHoly;
-    if (this.ResistHoly >= 100)
-      this.ImmuneHoly = true;
-    this.ResistShadow = this.NpcData.ResistShadow;
-    if (this.ResistShadow >= 100)
-      this.ImmuneShadow = true;
-    for (int index = 0; index < this.NpcData.AuracurseImmune.Count; ++index)
-    {
-      string lower = this.NpcData.AuracurseImmune[index].Trim().ToLower();
-      bool flag = true;
-      if (lower == "bleed" && AtOManager.Instance.TeamHavePerk("mainperkbleed2c"))
-        flag = false;
-      if (lower == "sight" && AtOManager.Instance.TeamHavePerk("mainperksight1c"))
-        flag = false;
-      if (flag && !this.AuracurseImmune.Contains(lower))
-        this.AuracurseImmune.Add(lower);
-    }
-    this.Alive = true;
-    this.AuraList = new List<Aura>();
-    if (this.NpcData.AICards != null)
-      this.SetInitalCards(this.NpcData);
-    switch (AtOManager.Instance.GetNgPlus())
-    {
-      case 1:
-        if (AtOManager.Instance.GetTownTier() == 0)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp - (float) this.Hp * 0.1f);
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 1)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp - (float) this.Hp * 0.05f);
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 2 || AtOManager.Instance.GetTownTier() != 3)
-          break;
-        break;
-      case 2:
-        if (AtOManager.Instance.GetTownTier() != 0 && AtOManager.Instance.GetTownTier() != 1)
-        {
-          if (AtOManager.Instance.GetTownTier() == 2)
-          {
-            this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.1f);
-            ++this.Speed;
-            break;
-          }
-          if (AtOManager.Instance.GetTownTier() == 3)
-          {
-            this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.15f);
-            ++this.Speed;
-            break;
-          }
-          break;
-        }
-        break;
-      case 3:
-        if (AtOManager.Instance.GetTownTier() == 0)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.05f);
-          ++this.Speed;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 1)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.1f);
-          ++this.Speed;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 2)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.15f);
-          ++this.Speed;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 3)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.2f);
-          ++this.Speed;
-          break;
-        }
-        break;
-      case 4:
-        if (AtOManager.Instance.GetTownTier() == 0)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.15f);
-          ++this.Speed;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 1)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.25f);
-          ++this.Speed;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 2)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.3f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 3)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.35f);
-          this.Speed += 2;
-          break;
-        }
-        break;
-      case 5:
-        if (AtOManager.Instance.GetTownTier() == 0)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.25f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 1)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.35f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 2)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.4f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 3)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.45f);
-          this.Speed += 2;
-          break;
-        }
-        break;
-      case 6:
-        if (AtOManager.Instance.GetTownTier() == 0)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.3f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 1)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.45f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 2)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.5f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 3)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.55f);
-          this.Speed += 3;
-          break;
-        }
-        break;
-      case 7:
-        if (AtOManager.Instance.GetTownTier() == 0)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.35f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 1)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.5f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 2)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.55f);
-          this.Speed += 3;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 3)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.6f);
-          this.Speed += 3;
-          break;
-        }
-        break;
-      case 8:
-        if (AtOManager.Instance.GetTownTier() == 0)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.4f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 1)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.55f);
-          this.Speed += 3;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 2)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.6f);
-          this.Speed += 3;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 3)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.65f);
-          this.Speed += 3;
-          break;
-        }
-        break;
-      case 9:
-        if (AtOManager.Instance.GetTownTier() == 0)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.45f);
-          this.Speed += 2;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 1)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.6f);
-          this.Speed += 3;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 2)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.65f);
-          this.Speed += 3;
-          break;
-        }
-        if (AtOManager.Instance.GetTownTier() == 3)
-        {
-          this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.7f);
-          this.Speed += 4;
-          break;
-        }
-        break;
-    }
-    if (AtOManager.Instance.IsChallengeTraitActive("fastmonsters"))
-      ++this.Speed;
-    if (AtOManager.Instance.IsChallengeTraitActive("slowmonsters"))
-      --this.Speed;
-    if (AtOManager.Instance.IsChallengeTraitActive("ludicrousspeed"))
-      this.Speed += 3;
-    if (AtOManager.Instance.IsChallengeTraitActive("vigorousmonsters"))
-      this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.25f);
-    if (AtOManager.Instance.IsChallengeTraitActive("gargantuanmonsters"))
-      this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * 0.5f);
-    if (AtOManager.Instance.IsChallengeTraitActive("punymonsters"))
-      this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp - (float) this.Hp * 0.25f);
-    if (AtOManager.Instance.Sandbox_additionalMonsterHP != 0)
-      this.Hp = this.HpCurrent = Functions.FuncRoundToInt((float) this.Hp + (float) this.Hp * ((float) AtOManager.Instance.Sandbox_additionalMonsterHP * 0.01f));
-    if (this.Hp > 0)
-      return;
-    this.Hp = this.HpCurrent = 1;
-  }
+	public CardItem GetCurrentCardItem()
+	{
+		return currentCardItem;
+	}
 
-  public bool NPCIsBoss() => (UnityEngine.Object) this.NpcData != (UnityEngine.Object) null && this.NpcData.IsBoss;
+	public override void InitData()
+	{
+		if (!(base.NpcData != null))
+		{
+			return;
+		}
+		base.GameName = base.NpcData.Id;
+		base.ScriptableObjectName = base.NpcData.ScriptableObjectName;
+		base.NpcData.NPCName = Texts.Instance.GetText(base.GameName + "_name", "monsters");
+		base.SourceName = base.NpcData.NPCName;
+		string text = (base.SubclassName = "Monster");
+		base.ClassName = text;
+		base.SpriteSpeed = base.NpcData.SpriteSpeed;
+		base.SpritePortrait = base.NpcData.SpritePortrait;
+		base.Id = base.NpcData.Id + "_" + base.InternalId;
+		int num = (base.HpCurrent = base.NpcData.Hp);
+		base.Hp = num;
+		num = (base.EnergyCurrent = 10000);
+		base.Energy = num;
+		base.EnergyTurn = 0;
+		base.Speed = base.NpcData.Speed;
+		base.IsHero = false;
+		base.ResistSlashing = base.NpcData.ResistSlashing;
+		if (base.ResistSlashing >= 100)
+		{
+			base.ImmuneSlashing = true;
+		}
+		base.ResistBlunt = base.NpcData.ResistBlunt;
+		if (base.ResistBlunt >= 100)
+		{
+			base.ImmuneBlunt = true;
+		}
+		base.ResistPiercing = base.NpcData.ResistPiercing;
+		if (base.ResistPiercing >= 100)
+		{
+			base.ImmunePiercing = true;
+		}
+		base.ResistFire = base.NpcData.ResistFire;
+		if (base.ResistFire >= 100)
+		{
+			base.ImmuneFire = true;
+		}
+		base.ResistCold = base.NpcData.ResistCold;
+		if (base.ResistCold >= 100)
+		{
+			base.ImmuneCold = true;
+		}
+		base.ResistLightning = base.NpcData.ResistLightning;
+		if (base.ResistLightning >= 100)
+		{
+			base.ImmuneLightning = true;
+		}
+		base.ResistMind = base.NpcData.ResistMind;
+		if (base.ResistMind >= 100)
+		{
+			base.ImmuneMind = true;
+		}
+		base.ResistHoly = base.NpcData.ResistHoly;
+		if (base.ResistHoly >= 100)
+		{
+			base.ImmuneHoly = true;
+		}
+		base.ResistShadow = base.NpcData.ResistShadow;
+		if (base.ResistShadow >= 100)
+		{
+			base.ImmuneShadow = true;
+		}
+		bool flag = true;
+		string text3 = "";
+		for (int i = 0; i < base.NpcData.AuracurseImmune.Count; i++)
+		{
+			text3 = base.NpcData.AuracurseImmune[i].Trim().ToLower();
+			flag = true;
+			if (text3 == "bleed" && AtOManager.Instance.TeamHavePerk("mainperkbleed2c"))
+			{
+				flag = false;
+			}
+			if (text3 == "sight" && AtOManager.Instance.TeamHavePerk("mainperksight1c"))
+			{
+				flag = false;
+			}
+			if (flag && !base.AuracurseImmune.Contains(text3))
+			{
+				base.AuracurseImmune.Add(text3);
+			}
+		}
+		base.Alive = true;
+		base.AuraList = new List<Aura>();
+		if (base.NpcData.AICards != null)
+		{
+			SetInitalCards(base.NpcData);
+		}
+		switch (AtOManager.Instance.GetNgPlus())
+		{
+		case 1:
+			if (AtOManager.Instance.GetTownTier() == 0)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp - (float)base.Hp * 0.1f));
+				base.Hp = num;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 1)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp - (float)base.Hp * 0.05f));
+				base.Hp = num;
+			}
+			else if (AtOManager.Instance.GetTownTier() != 2 && AtOManager.Instance.GetTownTier() != 3)
+			{
+			}
+			break;
+		case 2:
+			if (AtOManager.Instance.GetTownTier() != 0 && AtOManager.Instance.GetTownTier() != 1)
+			{
+				if (AtOManager.Instance.GetTownTier() == 2)
+				{
+					num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.1f));
+					base.Hp = num;
+					base.Speed++;
+				}
+				else if (AtOManager.Instance.GetTownTier() == 3)
+				{
+					num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.15f));
+					base.Hp = num;
+					base.Speed++;
+				}
+			}
+			break;
+		case 3:
+			if (AtOManager.Instance.GetTownTier() == 0)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.05f));
+				base.Hp = num;
+				base.Speed++;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 1)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.1f));
+				base.Hp = num;
+				base.Speed++;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 2)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.15f));
+				base.Hp = num;
+				base.Speed++;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 3)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.2f));
+				base.Hp = num;
+				base.Speed++;
+			}
+			break;
+		case 4:
+			if (AtOManager.Instance.GetTownTier() == 0)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.15f));
+				base.Hp = num;
+				base.Speed++;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 1)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.25f));
+				base.Hp = num;
+				base.Speed++;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 2)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.3f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 3)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.35f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			break;
+		case 5:
+			if (AtOManager.Instance.GetTownTier() == 0)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.25f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 1)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.35f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 2)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.4f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 3)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.45f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			break;
+		case 6:
+			if (AtOManager.Instance.GetTownTier() == 0)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.3f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 1)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.45f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 2)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.5f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 3)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.55f));
+				base.Hp = num;
+				base.Speed += 3;
+			}
+			break;
+		case 7:
+			if (AtOManager.Instance.GetTownTier() == 0)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.35f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 1)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.5f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 2)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.55f));
+				base.Hp = num;
+				base.Speed += 3;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 3)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.6f));
+				base.Hp = num;
+				base.Speed += 3;
+			}
+			break;
+		case 8:
+			if (AtOManager.Instance.GetTownTier() == 0)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.4f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 1)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.55f));
+				base.Hp = num;
+				base.Speed += 3;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 2)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.6f));
+				base.Hp = num;
+				base.Speed += 3;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 3)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.65f));
+				base.Hp = num;
+				base.Speed += 3;
+			}
+			break;
+		case 9:
+			if (AtOManager.Instance.GetTownTier() == 0)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.45f));
+				base.Hp = num;
+				base.Speed += 2;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 1)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.6f));
+				base.Hp = num;
+				base.Speed += 3;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 2)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.65f));
+				base.Hp = num;
+				base.Speed += 3;
+			}
+			else if (AtOManager.Instance.GetTownTier() == 3)
+			{
+				num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.7f));
+				base.Hp = num;
+				base.Speed += 4;
+			}
+			break;
+		}
+		if (AtOManager.Instance.IsChallengeTraitActive("fastmonsters"))
+		{
+			base.Speed++;
+		}
+		if (AtOManager.Instance.IsChallengeTraitActive("slowmonsters"))
+		{
+			base.Speed--;
+		}
+		if (AtOManager.Instance.IsChallengeTraitActive("ludicrousspeed"))
+		{
+			base.Speed += 3;
+		}
+		if (AtOManager.Instance.IsChallengeTraitActive("vigorousmonsters"))
+		{
+			num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.25f));
+			base.Hp = num;
+		}
+		if (AtOManager.Instance.IsChallengeTraitActive("gargantuanmonsters"))
+		{
+			num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * 0.5f));
+			base.Hp = num;
+		}
+		if (AtOManager.Instance.IsChallengeTraitActive("punymonsters"))
+		{
+			num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp - (float)base.Hp * 0.25f));
+			base.Hp = num;
+		}
+		if (AtOManager.Instance.Sandbox_additionalMonsterHP != 0)
+		{
+			num = (base.HpCurrent = Functions.FuncRoundToInt((float)base.Hp + (float)base.Hp * ((float)AtOManager.Instance.Sandbox_additionalMonsterHP * 0.01f)));
+			base.Hp = num;
+		}
+		if (base.Hp <= 0)
+		{
+			num = (base.HpCurrent = 1);
+			base.Hp = num;
+		}
+	}
 
-  public bool IsBigModel() => (UnityEngine.Object) this.NpcData != (UnityEngine.Object) null && this.NpcData.BigModel;
+	public bool NPCIsBoss()
+	{
+		if (base.NpcData != null)
+		{
+			return base.NpcData.IsBoss;
+		}
+		return false;
+	}
 
-  private void SetInitalCards(NPCData npcData)
-  {
-    this.Cards = new List<string>();
-    bool flag = GameManager.Instance.IsSingularity();
-    int num1 = flag ? AtOManager.Instance.GetSingularityMadness() : AtOManager.Instance.GetMadnessDifficulty();
-    foreach (AICards aiCard in npcData.AICards)
-    {
-      for (int index = 0; index < aiCard.UnitsInDeck; ++index)
-      {
-        int num2 = flag ? aiCard.StartsAtSingularityMadnessLevel : aiCard.StartsAtObeliskMadnessLevel;
-        if (num1 >= num2)
-          this.Cards.Add(aiCard.Card.Id);
-      }
-    }
-  }
+	public bool IsBigModel()
+	{
+		if (base.NpcData != null)
+		{
+			return base.NpcData.BigModel;
+		}
+		return false;
+	}
 
-  private float GetCardPriorityValue(string cardName)
-  {
-    for (int index = 0; index < this.NpcData.AICards.Length; ++index)
-    {
-      if (cardName == this.NpcData.AICards[index].Card.Id)
-        return (float) this.NpcData.AICards[index].Priority + 1f / 1000f * this.NpcData.AICards[index].PercentToCast;
-    }
-    return 10000f;
-  }
+	private void SetInitalCards(NPCData npcData)
+	{
+		base.Cards = new List<string>();
+		if (npcData.AICards == null)
+		{
+			return;
+		}
+		for (int i = 0; i < npcData.AICards.Length; i++)
+		{
+			for (int j = 0; j < npcData.AICards[i].UnitsInDeck; j++)
+			{
+				base.Cards.Add(npcData.AICards[i].Card.Id);
+			}
+		}
+	}
 
-  public string GetCardPriorityText(string _cardName)
-  {
-    string str = _cardName.Split('_', StringSplitOptions.None)[0];
-    for (int index = 0; index < this.NpcData.AICards.Length; ++index)
-    {
-      if (str == this.NpcData.AICards[index].Card.Id)
-      {
-        AICards aiCard = this.NpcData.AICards[index];
-        string cardPriorityText = "";
-        if (aiCard.TargetCast == Enums.TargetCast.Back)
-        {
-          if (aiCard.Card.TargetSide != Enums.CardTargetSide.Friend || aiCard.Card.TargetPosition != Enums.CardTargetPosition.Back)
-            cardPriorityText = Texts.Instance.GetText("priorityBack");
-        }
-        else if (aiCard.TargetCast == Enums.TargetCast.Middle)
-          cardPriorityText = Texts.Instance.GetText("priorityMiddle");
-        else if (aiCard.TargetCast == Enums.TargetCast.AnyButFront)
-          cardPriorityText = Texts.Instance.GetText("priorityFront");
-        else if (aiCard.TargetCast == Enums.TargetCast.AnyButBack)
-          cardPriorityText = Texts.Instance.GetText("priorityAnyButBack");
-        else if (aiCard.TargetCast == Enums.TargetCast.LessHealthPercent)
-          cardPriorityText = Texts.Instance.GetText("priorityLessHealthPercent");
-        else if (aiCard.TargetCast == Enums.TargetCast.MoreHealthPercent)
-          cardPriorityText = Texts.Instance.GetText("priorityMoreHealthPercent");
-        else if (aiCard.TargetCast == Enums.TargetCast.LessHealthFlat)
-          cardPriorityText = Texts.Instance.GetText("priorityLessHealthFlat");
-        else if (aiCard.TargetCast == Enums.TargetCast.MoreHealthFlat)
-          cardPriorityText = Texts.Instance.GetText("priorityMoreHealthFlat");
-        else if (aiCard.TargetCast == Enums.TargetCast.LessHealthAbsolute)
-          cardPriorityText = Texts.Instance.GetText("priorityLessHealthAbsolute");
-        else if (aiCard.TargetCast == Enums.TargetCast.MoreHealthAbsolute)
-          cardPriorityText = Texts.Instance.GetText("priorityMoreHealthAbsolute");
-        else if (aiCard.TargetCast == Enums.TargetCast.LessInitiative)
-          cardPriorityText = Texts.Instance.GetText("priorityLessInitiative");
-        else if (aiCard.TargetCast == Enums.TargetCast.MoreInitiative)
-          cardPriorityText = Texts.Instance.GetText("priorityMoreInitiative");
-        return cardPriorityText;
-      }
-    }
-    return "";
-  }
+	private float GetCardPriorityValue(string cardName)
+	{
+		int currentRound = MatchManager.Instance.GetCurrentRound();
+		for (int i = 0; i < base.NpcData.AICards.Length; i++)
+		{
+			if (cardName == base.NpcData.AICards[i].Card.Id && base.NpcData.AICards[i].AddCardRound == currentRound)
+			{
+				return (float)base.NpcData.AICards[i].Priority + 0.001f * base.NpcData.AICards[i].PercentToCast;
+			}
+		}
+		priorityOffsetter++;
+		return 10000 + priorityOffsetter;
+	}
 
-  public void CheckRevealCardsCurse()
-  {
-    if (MatchManager.Instance.CountNPCHand(this.NPCIndex) < 1)
-      return;
-    int numCards = 0;
-    for (int index = 0; index < this.AuraList.Count; ++index)
-    {
-      if (this.AuraList[index] != null && (UnityEngine.Object) this.AuraList[index].ACData != (UnityEngine.Object) null && this.AuraList[index].ACData.RevealCardsPerCharge > 0)
-        numCards += this.AuraList[index].ACData.RevealCardsPerCharge * this.AuraList[index].AuraCharges;
-    }
-    if (numCards <= 0)
-      return;
-    this.RevealCards(numCards);
-  }
+	public string GetCardPriorityText(string _cardName)
+	{
+		return "";
+	}
 
-  public void RevealCards(int numCards)
-  {
-    if (this.NPCItem.cardsCI.Length == 0)
-      return;
-    int num1 = MatchManager.Instance.CountNPCHand(this.NPCIndex);
-    if (num1 < 1 || numCards < 1)
-      return;
-    if (num1 <= numCards)
-    {
-      for (int index = 0; index < this.NPCItem.cardsCI.Length; ++index)
-      {
-        if ((UnityEngine.Object) this.NPCItem.cardsCI[index] != (UnityEngine.Object) null)
-          this.NPCItem.cardsCI[index].RevealCard();
-      }
-    }
-    else
-    {
-      int num2 = 0;
-      for (int index = 0; index < this.NPCItem.cardsCI.Length; ++index)
-      {
-        if ((UnityEngine.Object) this.NPCItem.cardsCI[index] != (UnityEngine.Object) null && this.NPCItem.cardsCI[index].IsRevealed())
-          ++num2;
-      }
-      if (num2 >= numCards)
-        return;
-      for (int index = 0; index < numCards - num2; ++index)
-      {
-        bool flag = false;
-        int num3 = 0;
-        while (num3 < 50 && !flag)
-        {
-          int randomIntRange = MatchManager.Instance.GetRandomIntRange(0, this.NPCItem.cardsCI.Length);
-          if ((UnityEngine.Object) this.NPCItem.cardsCI[randomIntRange] != (UnityEngine.Object) null && !this.NPCItem.cardsCI[randomIntRange].IsRevealed())
-          {
-            this.NPCItem.cardsCI[randomIntRange].RevealCard();
-            flag = true;
-          }
-          else
-            ++num3;
-        }
-      }
-    }
-  }
+	public void CheckRevealCardsCurse()
+	{
+		if (MatchManager.Instance.CountNPCHand(base.NPCIndex) < 1)
+		{
+			return;
+		}
+		int num = 0;
+		for (int i = 0; i < base.AuraList.Count; i++)
+		{
+			if (base.AuraList[i] != null && base.AuraList[i].ACData != null && base.AuraList[i].ACData.RevealCardsPerCharge > 0)
+			{
+				num += base.AuraList[i].ACData.RevealCardsPerCharge * base.AuraList[i].AuraCharges;
+			}
+		}
+		if (num > 0)
+		{
+			RevealCards(num);
+		}
+	}
 
-  public void RedrawRevealedCards()
-  {
-    for (int index = 0; index < this.NPCItem.cardsCI.Length; ++index)
-    {
-      if ((UnityEngine.Object) this.NPCItem.cardsCI[index] != (UnityEngine.Object) null && this.NPCItem.cardsCI[index].cardrevealed)
-        this.NPCItem.cardsCI[index].RedrawDescriptionPrecalculatedNPC(this);
-    }
-  }
+	public void RevealCards(int numCards)
+	{
+		if (base.NPCItem.cardsCI.Length == 0)
+		{
+			return;
+		}
+		int num = MatchManager.Instance.CountNPCHand(base.NPCIndex);
+		if (num < 1 || numCards < 1)
+		{
+			return;
+		}
+		if (num <= numCards)
+		{
+			for (int i = 0; i < base.NPCItem.cardsCI.Length; i++)
+			{
+				if (base.NPCItem.cardsCI[i] != null)
+				{
+					base.NPCItem.cardsCI[i].RevealCard();
+				}
+			}
+			return;
+		}
+		int num2 = 0;
+		for (int j = 0; j < base.NPCItem.cardsCI.Length; j++)
+		{
+			if (base.NPCItem.cardsCI[j] != null && base.NPCItem.cardsCI[j].IsRevealed())
+			{
+				num2++;
+			}
+		}
+		if (num2 >= numCards)
+		{
+			return;
+		}
+		for (int k = 0; k < numCards - num2; k++)
+		{
+			int num3 = -1;
+			bool flag = false;
+			int num4 = 0;
+			while (num4 < 50 && !flag)
+			{
+				num3 = MatchManager.Instance.GetRandomIntRange(0, base.NPCItem.cardsCI.Length);
+				if (base.NPCItem.cardsCI[num3] != null && !base.NPCItem.cardsCI[num3].IsRevealed())
+				{
+					base.NPCItem.cardsCI[num3].RevealCard();
+					flag = true;
+				}
+				else
+				{
+					num4++;
+				}
+			}
+		}
+	}
 
-  public override void BeginTurn() => base.BeginTurn();
+	public void UnrevealAllCards()
+	{
+		if (base.NPCItem.cardsCI.Length == 0)
+		{
+			return;
+		}
+		MatchManager.Instance.CountNPCHand(base.NPCIndex);
+		for (int i = 0; i < base.NPCItem.cardsCI.Length; i++)
+		{
+			if (base.NPCItem.cardsCI[i] != null)
+			{
+				base.NPCItem.cardsCI[i].UnrevealCard();
+			}
+		}
+	}
 
-  public override void BeginTurnPerks() => base.BeginTurnPerks();
+	public void RedrawRevealedCards()
+	{
+		for (int i = 0; i < base.NPCItem.cardsCI.Length; i++)
+		{
+			if (base.NPCItem.cardsCI[i] != null && base.NPCItem.cardsCI[i].cardrevealed)
+			{
+				base.NPCItem.cardsCI[i].RedrawDescriptionPrecalculatedNPC(this);
+			}
+		}
+	}
 
-  public override void BeginRound()
-  {
-    base.BeginRound();
-    if ((UnityEngine.Object) this.NpcData != (UnityEngine.Object) null && this.NpcData.AICards != null)
-    {
-      for (int index1 = 0; index1 < this.NpcData.AICards.Length; ++index1)
-      {
-        if (this.NpcData.AICards[index1] != null && this.NpcData.AICards[index1].AddCardRound == MatchManager.Instance.GetCurrentRound())
-        {
-          for (int index2 = 0; index2 < this.NpcData.AICards[index1].UnitsInDeck; ++index2)
-            MatchManager.Instance.AddCardToNPCDeck(this.NPCIndex, this.NpcData.AICards[index1].Card.Id, this.InternalId);
-        }
-      }
-    }
-    this.CreateOverDeck(true);
-  }
+	public override void BeginTurn()
+	{
+		base.BeginTurn();
+	}
 
-  public override void CreateOverDeck(bool getCardFromDeck)
-  {
-    if ((UnityEngine.Object) this.NpcData == (UnityEngine.Object) null)
-      return;
-    int num1 = this.NpcData.CardsInHand;
-    if (num1 < 1)
-      num1 = 1;
-    List<CardItem> cardItemList = new List<CardItem>();
-    List<Transform> transformList = new List<Transform>();
-    int num2 = 0;
-    for (int position = 0; position < num1; ++position)
-    {
-      if (getCardFromDeck)
-        MatchManager.Instance.GetCardFromDeckToHandNPC(this.NPCIndex);
-      GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.NPCItem.cardsGOT);
-      gameObject.gameObject.SetActive(false);
-      gameObject.transform.localScale = Vector3.zero;
-      transformList.Add(gameObject.transform);
-      CardItem component = gameObject.GetComponent<CardItem>();
-      component.SetCard(MatchManager.Instance.CardFromNPCHand(this.NPCIndex, position), false, _theNPC: this);
-      gameObject.name = component.InternalId;
-      if ((UnityEngine.Object) component.CardData != (UnityEngine.Object) null && component.CardData.Corrupted)
-        ++num2;
-      cardItemList.Add(component);
-    }
-    if (num2 > 0)
-    {
-      for (int position = num1; position < num1 + num2; ++position)
-      {
-        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, this.NPCItem.cardsGOT);
-        gameObject.gameObject.SetActive(false);
-        gameObject.transform.localScale = Vector3.zero;
-        if (getCardFromDeck)
-          MatchManager.Instance.GetCardFromDeckToHandNPC(this.NPCIndex);
-        transformList.Add(gameObject.transform);
-        CardItem component = gameObject.GetComponent<CardItem>();
-        component.SetCard(MatchManager.Instance.CardFromNPCHand(this.NPCIndex, position), false, _theNPC: this);
-        cardItemList.Add(component);
-      }
-    }
-    for (int index = cardItemList.Count - 1; index >= 0; --index)
-    {
-      if ((UnityEngine.Object) cardItemList[index] == (UnityEngine.Object) null || (UnityEngine.Object) cardItemList[index].CardData == (UnityEngine.Object) null)
-      {
-        cardItemList.RemoveAt(index);
-        transformList.RemoveAt(index);
-      }
-    }
-    this.NPCItem.cardsCI = new CardItem[cardItemList.Count];
-    this.NPCItem.cardsT = new Transform[cardItemList.Count];
-    this.NPCItem.cardsCI = cardItemList.ToArray();
-    this.NPCItem.cardsT = transformList.ToArray();
-    SortedList<double, CardItem> sortedList = new SortedList<double, CardItem>();
-    for (int index = 0; index < this.NPCItem.cardsCI.Length; ++index)
-    {
-      if (index < this.NPCItem.cardsCI.Length && (UnityEngine.Object) this.NPCItem.cardsCI[index] != (UnityEngine.Object) null && (UnityEngine.Object) this.NPCItem.cardsCI[index].CardData != (UnityEngine.Object) null)
-      {
-        string cardName = this.NPCItem.cardsCI[index].CardData.Id.Split('_', StringSplitOptions.None)[0];
-        sortedList.Add((double) this.GetCardPriorityValue(cardName) + 1E-06 * (double) (index + 1), this.NPCItem.cardsCI[index]);
-      }
-    }
-    int num3 = 0;
-    foreach (KeyValuePair<double, CardItem> keyValuePair in sortedList)
-    {
-      CardItem cardItem = keyValuePair.Value;
-      cardItem.PositionCardInNPC(sortedList.Count - 1 - num3, sortedList.Count);
-      cardItem.DefaultElementsLayeringOrder(100 * num3);
-      cardItem.CreateColliderAdjusted();
-      cardItem.ShowBackImage(true);
-      cardItem.ShowCardNPC(num3);
-      if (cardItem.CardData.Corrupted)
-        cardItem.RevealCard();
-      ++num3;
-    }
-    MatchManager.Instance.RemoveCardsFromNPCHand(this.NPCIndex, num3);
-    this.CheckRevealCardsCurse();
-  }
+	public override void BeginTurnPerks()
+	{
+		base.BeginTurnPerks();
+	}
 
-  public void CastCardNPC(int theCard, Transform targetT)
-  {
-    if (!((UnityEngine.Object) this.NPCItem.cardsCI[theCard] != (UnityEngine.Object) null))
-      return;
-    this.currentCardItem = this.NPCItem.cardsCI[theCard];
-    this.currentCardItem.CastCardNPC(targetT);
-    this.currentCardItem.RemoveAmplifyNewCard();
-    this.NPCItem.cardsCI[theCard] = (CardItem) null;
-  }
+	public override void BeginRound()
+	{
+		base.BeginRound();
+		if (base.NpcData != null && base.NpcData.AICards != null)
+		{
+			for (int i = 0; i < base.NpcData.AICards.Length; i++)
+			{
+				if (base.NpcData.AICards[i] != null && base.NpcData.AICards[i].AddCardRound == MatchManager.Instance.GetCurrentRound())
+				{
+					for (int j = 0; j < base.NpcData.AICards[i].UnitsInDeck; j++)
+					{
+						MatchManager.Instance.AddCardToNPCDeck(base.NPCIndex, base.NpcData.AICards[i].Card.Id, base.InternalId);
+					}
+				}
+			}
+		}
+		CreateOverDeck(getCardFromDeck: true);
+	}
 
-  public void CastCardNPCEnd()
-  {
-    if (!((UnityEngine.Object) this.currentCardItem != (UnityEngine.Object) null))
-      return;
-    this.currentCardItem.DiscardCardNPC(0);
-    this.currentCardItem = (CardItem) null;
-  }
+	public override void CreateOverDeck(bool getCardFromDeck, bool maxOneCard = false)
+	{
+		priorityOffsetter = 0;
+		if (base.NpcData == null)
+		{
+			return;
+		}
+		int num = (maxOneCard ? 1 : base.NpcData.CardsInHand);
+		if (num < 1)
+		{
+			num = 1;
+		}
+		List<CardItem> list = new List<CardItem>();
+		List<Transform> list2 = new List<Transform>();
+		int num2 = 0;
+		GameObject gameObject;
+		for (int i = 0; i < num; i++)
+		{
+			if (getCardFromDeck)
+			{
+				MatchManager.Instance.GetCardFromDeckToHandNPC(base.NPCIndex);
+			}
+			gameObject = UnityEngine.Object.Instantiate(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, base.NPCItem.cardsGOT);
+			gameObject.gameObject.SetActive(value: false);
+			gameObject.transform.localScale = Vector3.zero;
+			list2.Add(gameObject.transform);
+			CardItem component = gameObject.GetComponent<CardItem>();
+			component.SetCard(MatchManager.Instance.CardFromNPCHand(base.NPCIndex, i), deckScale: false, null, this);
+			gameObject.name = component.InternalId;
+			if (component.CardData != null && component.CardData.Corrupted)
+			{
+				num2++;
+			}
+			list.Add(component);
+		}
+		if (num2 > 0)
+		{
+			for (int j = num; j < num + num2; j++)
+			{
+				gameObject = UnityEngine.Object.Instantiate(GameManager.Instance.CardPrefab, Vector3.zero, Quaternion.identity, base.NPCItem.cardsGOT);
+				gameObject.gameObject.SetActive(value: false);
+				gameObject.transform.localScale = Vector3.zero;
+				if (getCardFromDeck)
+				{
+					MatchManager.Instance.GetCardFromDeckToHandNPC(base.NPCIndex);
+				}
+				list2.Add(gameObject.transform);
+				CardItem component2 = gameObject.GetComponent<CardItem>();
+				component2.SetCard(MatchManager.Instance.CardFromNPCHand(base.NPCIndex, j), deckScale: false, null, this);
+				list.Add(component2);
+			}
+		}
+		gameObject = null;
+		for (int num3 = list.Count - 1; num3 >= 0; num3--)
+		{
+			if (list[num3] == null || list[num3].CardData == null)
+			{
+				list.RemoveAt(num3);
+				list2.RemoveAt(num3);
+			}
+		}
+		base.NPCItem.cardsCI = new CardItem[list.Count];
+		base.NPCItem.cardsT = new Transform[list.Count];
+		base.NPCItem.cardsCI = list.ToArray();
+		base.NPCItem.cardsT = list2.ToArray();
+		List<AICards> list3 = new List<AICards>();
+		for (int num4 = base.NpcData.AICards.Count() - 1; num4 >= 0; num4--)
+		{
+			if (base.NpcData.AICards[num4].AddCardRound <= MatchManager.Instance.GetCurrentRound() && !MatchManager.Instance.GetNPCDiscardDeck(base.NPCIndex).Contains(base.NpcData.AICards[num4].Card.Id))
+			{
+				list3.Add(base.NpcData.AICards[num4]);
+			}
+		}
+		if (list3.Count > 0)
+		{
+			list3 = (from card in list3
+				orderby card.AddCardRound == MatchManager.Instance.GetCurrentRound() descending, card.AddCardRound, card.Priority
+				select card).ToList();
+		}
+		SortedList<double, CardItem> sortedList = new SortedList<double, CardItem>();
+		for (int num5 = 0; num5 < base.NPCItem.cardsCI.Length; num5++)
+		{
+			if (base.NPCItem.cardsCI[num5] == null || base.NPCItem.cardsCI[num5].CardData == null)
+			{
+				continue;
+			}
+			string text = base.NPCItem.cardsCI[num5].CardData.Id.Split("_")[0];
+			for (int num6 = 0; num6 < list3.Count; num6++)
+			{
+				if (!sortedList.ContainsKey(num6 + num2) && text == list3[num6].Card.Id)
+				{
+					sortedList.Add(num6 + num2, base.NPCItem.cardsCI[num5]);
+					break;
+				}
+			}
+		}
+		if (num2 > 0)
+		{
+			int num7 = 0;
+			int j2;
+			for (j2 = 0; j2 < base.NPCItem.cardsCI.Length; j2++)
+			{
+				if (!sortedList.Any((KeyValuePair<double, CardItem> p) => p.Value.CardData.Id == base.NPCItem.cardsCI[j2].CardData.Id))
+				{
+					sortedList.Add(num7, base.NPCItem.cardsCI[j2]);
+					num7++;
+				}
+			}
+		}
+		int num8 = 0;
+		foreach (KeyValuePair<double, CardItem> item in sortedList)
+		{
+			CardItem value = item.Value;
+			value.PositionCardInNPC(sortedList.Count - 1 - num8, sortedList.Count);
+			value.DefaultElementsLayeringOrder(100 * num8);
+			value.CreateColliderAdjusted();
+			value.ShowBackImage(state: true);
+			value.ShowCardNPC(num8);
+			if (value.CardData.Corrupted)
+			{
+				value.RevealCard();
+			}
+			num8++;
+		}
+		MatchManager.Instance.RemoveCardsFromNPCHand(base.NPCIndex, num8);
+		CheckRevealCardsCurse();
+	}
 
-  public void DiscardHand()
-  {
-    if (!((UnityEngine.Object) this.NPCItem != (UnityEngine.Object) null))
-      return;
-    for (int cardPosition = 0; cardPosition < this.NPCItem.cardsCI.Length; ++cardPosition)
-    {
-      if ((UnityEngine.Object) this.NPCItem.cardsCI[cardPosition] != (UnityEngine.Object) null)
-      {
-        MatchManager.Instance.NPCDiscard(this.NPCIndex, cardPosition, false);
-        this.NPCItem.cardsCI[cardPosition].DiscardCardNPC(this.NPCItem.cardsCI.Length - 1 - cardPosition);
-      }
-    }
-    MatchManager.Instance.ResetDeckHandNPC(this.NPCIndex);
-  }
+	public void UpdateOverDeck()
+	{
+		if (base.NPCItem?.cardsCI != null)
+		{
+			CardItem[] cardsCI = base.NPCItem.cardsCI;
+			for (int i = 0; i < cardsCI.Length; i++)
+			{
+				cardsCI[i]?.IsDivineExecutionPlayable();
+			}
+		}
+	}
 
-  public bool CheckPlayableIfSpecialCard(string cardId)
-  {
-    if (!MatchManager.Instance.IsPhantomArmorSpecialCard(cardId))
-      return true;
-    if (this.IsParalyzed() || this.IsSleep())
-      return false;
-    foreach (NPC npc in MatchManager.Instance.GetTeamNPC())
-    {
-      if (npc == null || npc != null && !npc.Alive)
-        return false;
-    }
-    return true;
-  }
+	public void CastCardNPC(int theCard, Transform targetT)
+	{
+		if (base.NPCItem.cardsCI[theCard] != null)
+		{
+			currentCardItem = base.NPCItem.cardsCI[theCard];
+			currentCardItem.CastCardNPC(targetT);
+			currentCardItem.RemoveAmplifyNewCard();
+			base.NPCItem.cardsCI[theCard] = null;
+		}
+	}
+
+	public void CastCardNPCEnd()
+	{
+		if (currentCardItem != null)
+		{
+			currentCardItem.DiscardCardNPC(0);
+			currentCardItem = null;
+		}
+	}
+
+	public void DiscardHand()
+	{
+		if (!(base.NPCItem != null))
+		{
+			return;
+		}
+		for (int i = 0; i < base.NPCItem.cardsCI.Length; i++)
+		{
+			if (base.NPCItem.cardsCI[i] != null)
+			{
+				MatchManager.Instance.NPCDiscard(base.NPCIndex, i, casted: false);
+				base.NPCItem.cardsCI[i].DiscardCardNPC(base.NPCItem.cardsCI.Length - 1 - i);
+			}
+		}
+		MatchManager.Instance.ResetDeckHandNPC(base.NPCIndex);
+	}
+
+	public bool CheckPlayableIfSpecialCard(string cardId)
+	{
+		if (!MatchManager.Instance.IsPhantomArmorSpecialCard(cardId))
+		{
+			return true;
+		}
+		if (IsParalyzed() || IsSleep())
+		{
+			return false;
+		}
+		NPC[] teamNPC = MatchManager.Instance.GetTeamNPC();
+		foreach (NPC nPC in teamNPC)
+		{
+			if (nPC == null || (nPC != null && !nPC.Alive) || nPC.IsParalyzed())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 }

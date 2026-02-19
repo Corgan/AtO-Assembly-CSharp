@@ -1,222 +1,286 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: AudioManager
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-#nullable disable
 public class AudioManager : MonoBehaviour
 {
-  public AudioSource _audioSource;
-  public AudioSource _audioSourceBSO;
-  public AudioSource _audioSourceAmbience;
-  public AudioClip[] audioArray;
-  public AudioClip[] audioArrayNew;
-  public AudioClip[] ambienceArray;
-  public Dictionary<string, AudioClip> audioLibrary;
-  public Dictionary<string, AudioClip> audioLibraryNew;
-  public Dictionary<string, AudioClip> ambienceLibrary;
-  public AudioClip BSO_Game;
-  public AudioClip BSO_Combat;
-  public AudioClip BSO_Town;
-  public AudioClip BSO_Map;
-  public AudioClip BSO_Event;
-  public AudioClip BSO_Craft;
-  public AudioClip BSO_Rewards;
-  private float maxVolumeBSO = 1f;
-  private float maxVolumeAmbience = 1f;
-  private AudioClip BSO;
-  private AudioClip currentBSO;
-  private Coroutine coFadeAmbience;
-  private Coroutine coFadeBSO;
-  [Header("Custom Sounds")]
-  public AudioClip soundButtonHover;
-  public AudioClip soundButtonClick;
-  public AudioClip soundCardClick;
-  public AudioClip soundCardHover;
-  public AudioClip soundCardDrag;
-  public AudioClip soundCombatBegins;
-  public AudioClip soundCombatIsYourTurn;
-  public AudioClip walkStone;
-  public AudioClip walkGrass;
-  public AudioClip walkWater;
+	public AudioSource _audioSource;
 
-  public static AudioManager Instance { get; private set; }
+	public AudioSource _audioSourceBSO;
 
-  private void Awake()
-  {
-    if ((Object) AudioManager.Instance == (Object) null)
-      AudioManager.Instance = this;
-    else if ((Object) AudioManager.Instance != (Object) this)
-      Object.Destroy((Object) this.gameObject);
-    Object.DontDestroyOnLoad((Object) this.gameObject);
-    this.GenerateLibrary();
-  }
+	public AudioSource _audioSourceAmbience;
 
-  private void Start()
-  {
-    this._audioSourceBSO.volume = this.maxVolumeBSO;
-    this._audioSourceBSO.loop = true;
-  }
+	public AudioClip[] audioArray;
 
-  public void StartStopBSO(bool status)
-  {
-    if (!GameManager.Instance.ConfigBackgroundMute)
-      this._audioSourceBSO.mute = false;
-    else
-      this._audioSourceBSO.mute = !status;
-  }
+	public AudioClip[] audioArrayNew;
 
-  public void StartStopAmbience(bool status)
-  {
-    if (!GameManager.Instance.ConfigBackgroundMute)
-      this._audioSourceAmbience.mute = false;
-    else
-      this._audioSourceAmbience.mute = !status;
-  }
+	public AudioClip[] ambienceArray;
 
-  public void DoAmbience(string whatAmbience)
-  {
-    if (this.coFadeAmbience != null)
-      this.StopCoroutine(this.coFadeAmbience);
-    this.coFadeAmbience = this.StartCoroutine(this.FadeSound(this._audioSourceAmbience, this.ambienceLibrary[whatAmbience], this.maxVolumeAmbience));
-  }
+	public Dictionary<string, AudioClip> audioLibrary;
 
-  public void StopAmbience()
-  {
-    if (this.coFadeAmbience != null)
-      this.StopCoroutine(this.coFadeAmbience);
-    this.coFadeAmbience = this.StartCoroutine(this.FadeSound(this._audioSourceAmbience));
-  }
+	public Dictionary<string, AudioClip> audioLibraryNew;
 
-  public void DoBSO(string whatBSO = "", AudioClip acBSO = null)
-  {
-    if ((Object) acBSO != (Object) null)
-    {
-      this.BSO = acBSO;
-    }
-    else
-    {
-      switch (whatBSO)
-      {
-        case "Game":
-          this.BSO = this.BSO_Game;
-          break;
-        case "Town":
-          this.BSO = this.BSO_Town;
-          break;
-        case "Combat":
-          this.BSO = this.BSO_Combat;
-          break;
-        case "Event":
-          this.BSO = this.BSO_Event;
-          break;
-        case "Map":
-          this.BSO = this.BSO_Map;
-          break;
-        case "Craft":
-          this.BSO = this.BSO_Craft;
-          break;
-        case "Rewards":
-          this.BSO = this.BSO_Rewards;
-          break;
-        default:
-          return;
-      }
-    }
-    if ((Object) this.currentBSO == (Object) this.BSO)
-      return;
-    this.currentBSO = this.BSO;
-    if (this.coFadeBSO != null)
-      this.StopCoroutine(this.coFadeBSO);
-    this.coFadeBSO = this.StartCoroutine(this.FadeSound(this._audioSourceBSO, this.BSO, this.maxVolumeBSO));
-  }
+	public Dictionary<string, AudioClip> ambienceLibrary;
 
-  public void DoBSOAudioClip(AudioClip audioClip)
-  {
-    if (!((Object) audioClip != (Object) null))
-      return;
-    this.currentBSO = this.BSO = audioClip;
-    if (this.coFadeBSO != null)
-      this.StopCoroutine(this.coFadeBSO);
-    this.coFadeBSO = this.StartCoroutine(this.FadeSound(this._audioSourceBSO, this.BSO, this.maxVolumeBSO));
-  }
+	public AudioClip BSO_Game;
 
-  public void FadeOutBSO()
-  {
-    if (this.coFadeBSO != null)
-      this.StopCoroutine(this.coFadeBSO);
-    this.coFadeBSO = this.StartCoroutine(this.FadeSound(this._audioSourceBSO, maxVolume: this.maxVolumeBSO));
-  }
+	public AudioClip BSO_Combat;
 
-  public IEnumerator FadeSound(AudioSource audioSource, AudioClip AC = null, float maxVolume = 1f)
-  {
-    float fadeTimeOut = 0.3f;
-    float fadeTimeIn = 0.3f;
-    float startVolume = audioSource.volume;
-    while ((double) audioSource.volume > 0.0)
-    {
-      audioSource.volume -= startVolume * Time.deltaTime / fadeTimeOut;
-      yield return (object) null;
-    }
-    audioSource.Stop();
-    if ((Object) AC == (Object) null)
-    {
-      audioSource.clip = (AudioClip) null;
-    }
-    else
-    {
-      audioSource.clip = AC;
-      startVolume = 0.2f;
-      audioSource.volume = 0.0f;
-      audioSource.Play();
-      while ((double) audioSource.volume < (double) this.maxVolumeBSO)
-      {
-        audioSource.volume += startVolume * Time.deltaTime / fadeTimeIn;
-        yield return (object) null;
-      }
-      audioSource.volume = this.maxVolumeBSO;
-    }
-  }
+	public AudioClip BSO_Town;
 
-  public void StopBSO()
-  {
-    if (GameManager.Instance.GetDeveloperMode())
-      Debug.Log((object) nameof (StopBSO));
-    this.coFadeBSO = this.StartCoroutine(this.FadeSound(this._audioSourceBSO));
-  }
+	public AudioClip BSO_Map;
 
-  public void StopBSOInstant() => this._audioSourceBSO.Stop();
+	public AudioClip BSO_Event;
 
-  private void GenerateLibrary()
-  {
-    this.audioLibrary = new Dictionary<string, AudioClip>();
-    for (int index = 0; index < this.audioArray.Length; ++index)
-    {
-      if ((Object) this.audioArray[index] != (Object) null && !this.audioLibrary.ContainsKey(this.audioArray[index].name))
-        this.audioLibrary.Add(this.audioArray[index].name, this.audioArray[index]);
-    }
-    this.audioLibraryNew = new Dictionary<string, AudioClip>();
-    for (int index = 0; index < this.audioArrayNew.Length; ++index)
-    {
-      if ((Object) this.audioArrayNew[index] != (Object) null && !this.audioLibraryNew.ContainsKey(this.audioArrayNew[index].name))
-        this.audioLibraryNew.Add(this.audioArrayNew[index].name, this.audioArrayNew[index]);
-    }
-    this.ambienceLibrary = new Dictionary<string, AudioClip>();
-    for (int index = 0; index < this.ambienceArray.Length; ++index)
-    {
-      if ((Object) this.ambienceArray[index] != (Object) null && !this.ambienceLibrary.ContainsKey(this.ambienceArray[index].name))
-        this.ambienceLibrary.Add(this.ambienceArray[index].name, this.ambienceArray[index]);
-    }
-  }
+	public AudioClip BSO_Craft;
 
-  public AudioSource AudioSource
-  {
-    get => this._audioSource;
-    set => this._audioSource = value;
-  }
+	public AudioClip BSO_Rewards;
+
+	private float maxVolumeBSO = 1f;
+
+	private float maxVolumeAmbience = 1f;
+
+	private AudioClip BSO;
+
+	private AudioClip currentBSO;
+
+	private Coroutine coFadeAmbience;
+
+	private Coroutine coFadeBSO;
+
+	[Header("Custom Sounds")]
+	public AudioClip soundButtonHover;
+
+	public AudioClip soundButtonClick;
+
+	public AudioClip soundCardClick;
+
+	public AudioClip soundCardHover;
+
+	public AudioClip soundCardDrag;
+
+	public AudioClip soundCombatBegins;
+
+	public AudioClip soundCombatIsYourTurn;
+
+	public AudioClip walkStone;
+
+	public AudioClip walkGrass;
+
+	public AudioClip walkWater;
+
+	public static AudioManager Instance { get; private set; }
+
+	public AudioSource AudioSource
+	{
+		get
+		{
+			return _audioSource;
+		}
+		set
+		{
+			_audioSource = value;
+		}
+	}
+
+	private void Awake()
+	{
+		if (Instance == null)
+		{
+			Instance = this;
+		}
+		else if (Instance != this)
+		{
+			Object.Destroy(base.gameObject);
+		}
+		Object.DontDestroyOnLoad(base.gameObject);
+		GenerateLibrary();
+	}
+
+	private void Start()
+	{
+		_audioSourceBSO.volume = maxVolumeBSO;
+		_audioSourceBSO.loop = true;
+	}
+
+	public void StartStopBSO(bool status)
+	{
+		if (!GameManager.Instance.ConfigBackgroundMute)
+		{
+			_audioSourceBSO.mute = false;
+		}
+		else
+		{
+			_audioSourceBSO.mute = !status;
+		}
+	}
+
+	public void StartStopAmbience(bool status)
+	{
+		if (!GameManager.Instance.ConfigBackgroundMute)
+		{
+			_audioSourceAmbience.mute = false;
+		}
+		else
+		{
+			_audioSourceAmbience.mute = !status;
+		}
+	}
+
+	public void DoAmbience(string whatAmbience)
+	{
+		if (coFadeAmbience != null)
+		{
+			StopCoroutine(coFadeAmbience);
+		}
+		AudioClip aC = ambienceLibrary[whatAmbience];
+		coFadeAmbience = StartCoroutine(FadeSound(_audioSourceAmbience, aC, maxVolumeAmbience));
+	}
+
+	public void StopAmbience()
+	{
+		if (coFadeAmbience != null)
+		{
+			StopCoroutine(coFadeAmbience);
+		}
+		coFadeAmbience = StartCoroutine(FadeSound(_audioSourceAmbience));
+	}
+
+	public void DoBSO(string whatBSO = "", AudioClip acBSO = null)
+	{
+		if (acBSO != null)
+		{
+			BSO = acBSO;
+		}
+		else
+		{
+			switch (whatBSO)
+			{
+			default:
+				return;
+			case "Game":
+				BSO = BSO_Game;
+				break;
+			case "Town":
+				BSO = BSO_Town;
+				break;
+			case "Combat":
+				BSO = BSO_Combat;
+				break;
+			case "Event":
+				BSO = BSO_Event;
+				break;
+			case "Map":
+				BSO = BSO_Map;
+				break;
+			case "Craft":
+				BSO = BSO_Craft;
+				break;
+			case "Rewards":
+				BSO = BSO_Rewards;
+				break;
+			}
+		}
+		if (!(currentBSO == BSO))
+		{
+			currentBSO = BSO;
+			if (coFadeBSO != null)
+			{
+				StopCoroutine(coFadeBSO);
+			}
+			coFadeBSO = StartCoroutine(FadeSound(_audioSourceBSO, BSO, maxVolumeBSO));
+		}
+	}
+
+	public void DoBSOAudioClip(AudioClip audioClip)
+	{
+		if (audioClip != null)
+		{
+			currentBSO = (BSO = audioClip);
+			if (coFadeBSO != null)
+			{
+				StopCoroutine(coFadeBSO);
+			}
+			coFadeBSO = StartCoroutine(FadeSound(_audioSourceBSO, BSO, maxVolumeBSO));
+		}
+	}
+
+	public void FadeOutBSO()
+	{
+		if (coFadeBSO != null)
+		{
+			StopCoroutine(coFadeBSO);
+		}
+		coFadeBSO = StartCoroutine(FadeSound(_audioSourceBSO, null, maxVolumeBSO));
+	}
+
+	public IEnumerator FadeSound(AudioSource audioSource, AudioClip AC = null, float maxVolume = 1f)
+	{
+		float fadeTimeOut = 0.3f;
+		float fadeTimeIn = 0.3f;
+		float startVolume = audioSource.volume;
+		while (audioSource.volume > 0f)
+		{
+			audioSource.volume -= startVolume * Time.deltaTime / fadeTimeOut;
+			yield return null;
+		}
+		audioSource.Stop();
+		if (AC == null)
+		{
+			audioSource.clip = null;
+			yield break;
+		}
+		audioSource.clip = AC;
+		startVolume = 0.2f;
+		audioSource.volume = 0f;
+		audioSource.Play();
+		while (audioSource.volume < maxVolumeBSO)
+		{
+			audioSource.volume += startVolume * Time.deltaTime / fadeTimeIn;
+			yield return null;
+		}
+		audioSource.volume = maxVolumeBSO;
+	}
+
+	public void StopBSO()
+	{
+		if (GameManager.Instance.GetDeveloperMode())
+		{
+			Debug.Log("StopBSO");
+		}
+		coFadeBSO = StartCoroutine(FadeSound(_audioSourceBSO));
+	}
+
+	public void StopBSOInstant()
+	{
+		_audioSourceBSO.Stop();
+	}
+
+	private void GenerateLibrary()
+	{
+		audioLibrary = new Dictionary<string, AudioClip>();
+		for (int i = 0; i < audioArray.Length; i++)
+		{
+			if (audioArray[i] != null && !audioLibrary.ContainsKey(audioArray[i].name))
+			{
+				audioLibrary.Add(audioArray[i].name, audioArray[i]);
+			}
+		}
+		audioLibraryNew = new Dictionary<string, AudioClip>();
+		for (int j = 0; j < audioArrayNew.Length; j++)
+		{
+			if (audioArrayNew[j] != null && !audioLibraryNew.ContainsKey(audioArrayNew[j].name))
+			{
+				audioLibraryNew.Add(audioArrayNew[j].name, audioArrayNew[j]);
+			}
+		}
+		ambienceLibrary = new Dictionary<string, AudioClip>();
+		for (int k = 0; k < ambienceArray.Length; k++)
+		{
+			if (ambienceArray[k] != null && !ambienceLibrary.ContainsKey(ambienceArray[k].name))
+			{
+				ambienceLibrary.Add(ambienceArray[k].name, ambienceArray[k]);
+			}
+		}
+	}
 }

@@ -1,69 +1,110 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: ChallengeTrait
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
 using UnityEngine;
 
-#nullable disable
 [CreateAssetMenu(fileName = "Challenge Trait", menuName = "Challenge Trait", order = 64)]
 public class ChallengeTrait : ScriptableObject
 {
-  [SerializeField]
-  private string id;
-  [SerializeField]
-  private string name;
-  [SerializeField]
-  private Sprite icon;
-  [SerializeField]
-  private bool isMadnessTrait;
-  [SerializeField]
-  private int order;
-  [SerializeField]
-  private bool isSingularityTrait;
-  [SerializeField]
-  private int orderSingularity;
+	[SerializeField]
+	private string id;
 
-  public string Id
-  {
-    get => this.id;
-    set => this.id = value;
-  }
+	[SerializeField]
+	private new string name;
 
-  public string Name
-  {
-    get => this.name;
-    set => this.name = value;
-  }
+	[SerializeField]
+	private Sprite icon;
 
-  public int Order
-  {
-    get => this.order;
-    set => this.order = value;
-  }
+	[SerializeField]
+	private bool isMadnessTrait;
 
-  public bool IsMadnessTrait
-  {
-    get => this.isMadnessTrait;
-    set => this.isMadnessTrait = value;
-  }
+	[SerializeField]
+	private int order;
 
-  public Sprite Icon
-  {
-    get => this.icon;
-    set => this.icon = value;
-  }
+	[SerializeField]
+	private bool isSingularityTrait;
 
-  public bool IsSingularityTrait
-  {
-    get => this.isSingularityTrait;
-    set => this.isSingularityTrait = value;
-  }
+	[SerializeField]
+	private int orderSingularity;
 
-  public int OrderSingularity
-  {
-    get => this.orderSingularity;
-    set => this.orderSingularity = value;
-  }
+	public string Id
+	{
+		get
+		{
+			return id;
+		}
+		set
+		{
+			id = value;
+		}
+	}
+
+	public string Name
+	{
+		get
+		{
+			return name;
+		}
+		set
+		{
+			name = value;
+		}
+	}
+
+	public int Order
+	{
+		get
+		{
+			return order;
+		}
+		set
+		{
+			order = value;
+		}
+	}
+
+	public bool IsMadnessTrait
+	{
+		get
+		{
+			return isMadnessTrait;
+		}
+		set
+		{
+			isMadnessTrait = value;
+		}
+	}
+
+	public Sprite Icon
+	{
+		get
+		{
+			return icon;
+		}
+		set
+		{
+			icon = value;
+		}
+	}
+
+	public bool IsSingularityTrait
+	{
+		get
+		{
+			return isSingularityTrait;
+		}
+		set
+		{
+			isSingularityTrait = value;
+		}
+	}
+
+	public int OrderSingularity
+	{
+		get
+		{
+			return orderSingularity;
+		}
+		set
+		{
+			orderSingularity = value;
+		}
+	}
 }

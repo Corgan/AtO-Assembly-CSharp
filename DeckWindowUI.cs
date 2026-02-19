@@ -1,10 +1,3 @@
-﻿// Decompiled with JetBrains decompiler
-// Type: DeckWindowUI
-// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-// MVID: 713BD5C6-193C-41A7-907D-A952E5D7E149
-// Assembly location: D:\Steam\steamapps\common\Across the Obelisk\AcrossTheObelisk_Data\Managed\Assembly-CSharp.dll
-
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -12,273 +5,340 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-#nullable disable
 public class DeckWindowUI : MonoBehaviour
 {
-  public Transform injuryTitle;
-  public TMP_Text injuryText;
-  public Transform injuryContent;
-  public Transform deckTitle;
-  public TMP_Text deckText;
-  public Transform deckContent;
-  public Transform unlockedTitle;
-  public Transform unlockedContent;
-  public Transform upgradedTitle;
-  public Transform scrollContent;
-  private List<string> deckCards = new List<string>();
-  private List<string> injuryCards = new List<string>();
-  private int currentIndex = -1;
+	public Transform injuryTitle;
 
-  private void Start() => this.Resize();
+	public TMP_Text injuryText;
 
-  public bool IsActive() => this.gameObject.activeSelf;
+	public Transform injuryContent;
 
-  public void ShowUnlockedCards(List<string> _unlockedCards)
-  {
-    if (_unlockedCards == null || _unlockedCards.Count == 0)
-      return;
-    List<string> listCards = new List<string>();
-    for (int index = 0; index < _unlockedCards.Count; ++index)
-    {
-      CardData cardData = Globals.Instance.GetCardData(_unlockedCards[index], false);
-      if ((UnityEngine.Object) cardData != (UnityEngine.Object) null && cardData.ShowInTome)
-        listCards.Add(_unlockedCards[index]);
-    }
-    this.unlockedTitle.gameObject.SetActive(true);
-    this.upgradedTitle.gameObject.SetActive(false);
-    this.deckTitle.gameObject.SetActive(false);
-    this.injuryTitle.gameObject.SetActive(false);
-    this.injuryContent.gameObject.SetActive(false);
-    this.Show(listCards: listCards);
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(Texts.Instance.GetText("unlockedCards"));
-    stringBuilder.Append(" <color=#AAA>[<color=#888>");
-    stringBuilder.Append(listCards.Count);
-    stringBuilder.Append("</color>]</color>");
-    if (!((UnityEngine.Object) this.unlockedTitle.GetChild(0) != (UnityEngine.Object) null) || !((UnityEngine.Object) this.unlockedTitle.GetChild(0).GetComponent<TMP_Text>() != (UnityEngine.Object) null))
-      return;
-    this.unlockedTitle.GetChild(0).GetComponent<TMP_Text>().text = stringBuilder.ToString();
-  }
+	public Transform deckTitle;
 
-  public void ShowUpgradedCards(List<string> upgradedCards)
-  {
-    this.upgradedTitle.gameObject.SetActive(true);
-    this.unlockedTitle.gameObject.SetActive(false);
-    this.deckTitle.gameObject.SetActive(false);
-    this.injuryTitle.gameObject.SetActive(false);
-    this.injuryContent.gameObject.SetActive(false);
-    List<string> listCards = new List<string>();
-    for (int index = 0; index < upgradedCards.Count; ++index)
-      listCards.Add("char_" + index.ToString() + "_" + upgradedCards[index]);
-    this.Show(listCards: listCards, sort: false);
-    AtOManager.Instance.upgradedCardsList = new List<string>();
-  }
+	public TMP_Text deckText;
 
-  public void Show(int index = -1, List<string> listCards = null, bool discard = false, bool sort = true, bool isHero = true)
-  {
-    if (!(bool) (UnityEngine.Object) MatchManager.Instance)
-    {
-      if (index > -1)
-        this.SetDecks(index);
-      if (listCards == null)
-        return;
-      this.SetList(listCards, sort);
-    }
-    else if (listCards != null)
-    {
-      this.SetList(listCards, sort);
-    }
-    else
-    {
-      if (index <= -1)
-        return;
-      this.StartCoroutine(this.SetCombatDeck(index, discard));
-    }
-  }
+	public Transform deckContent;
 
-  public void DestroyDeck()
-  {
-    if ((UnityEngine.Object) this.deckContent == (UnityEngine.Object) null)
-      return;
-    foreach (Component component in this.deckContent)
-      UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
-    GameManager.Instance.CleanTempContainer();
-    PopupManager.Instance.ClosePopup();
-  }
+	public Transform unlockedTitle;
 
-  public void Hide() => this.DestroyDeck();
+	public Transform unlockedContent;
 
-  public void Resize()
-  {
-  }
+	public Transform upgradedTitle;
 
-  public void SetList(List<string> cardList, bool sort)
-  {
-    if (sort)
-      cardList.Sort();
-    foreach (Component component in this.deckContent)
-      UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
-    for (int index = 0; index < cardList.Count; ++index)
-      this.SetCard((Hero) null, 0, cardList[index]);
-  }
+	public Transform scrollContent;
 
-  private string formatNum(int num)
-  {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(" <color=#AAA>[<color=#888>");
-    stringBuilder.Append(num);
-    stringBuilder.Append("</color>]</color>");
-    return stringBuilder.ToString();
-  }
+	private List<string> deckCards = new List<string>();
 
-  public void HideInjury()
-  {
-    this.injuryTitle.gameObject.SetActive(false);
-    this.injuryContent.gameObject.SetActive(false);
-  }
+	private List<string> injuryCards = new List<string>();
 
-  public void SetTitle(string title, int num = -1)
-  {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(title);
-    if (num > -1)
-      stringBuilder.Append(this.formatNum(num));
-    this.deckText.text = stringBuilder.ToString();
-  }
+	private int currentIndex = -1;
 
-  public void SetDecks(int heroIndex)
-  {
-    this.currentIndex = heroIndex;
-    Hero hero = AtOManager.Instance.GetHero(heroIndex);
-    if (hero == null)
-      return;
-    this.deckCards.Clear();
-    this.injuryCards.Clear();
-    for (int index = 0; index < hero.Cards.Count; ++index)
-    {
-      CardData cardData = Globals.Instance.GetCardData(hero.Cards[index], false);
-      if ((UnityEngine.Object) cardData != (UnityEngine.Object) null)
-      {
-        if (cardData.CardClass != Enums.CardClass.Injury && cardData.CardClass != Enums.CardClass.Boon)
-          this.deckCards.Add(cardData.Id);
-        else
-          this.injuryCards.Add(cardData.Id);
-      }
-    }
-    this.deckCards.Sort();
-    this.injuryCards.Sort();
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.Append(Texts.Instance.GetText("heroCards").Replace("<hero>", hero.SourceName));
-    stringBuilder.Append(this.formatNum(this.deckCards.Count));
-    this.deckText.text = stringBuilder.ToString();
-    foreach (Component component in this.deckContent)
-      UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
-    for (int index = 0; index < this.deckCards.Count; ++index)
-      this.SetCard(hero, 0, this.deckCards[index]);
-    if (this.injuryCards.Count == 0)
-    {
-      this.injuryTitle.gameObject.SetActive(false);
-      this.injuryContent.gameObject.SetActive(false);
-    }
-    else
-    {
-      stringBuilder.Clear();
-      stringBuilder.Append(Texts.Instance.GetText("heroInjuriesBoons").Replace("<hero>", hero.SourceName));
-      stringBuilder.Append(this.formatNum(this.injuryCards.Count));
-      this.injuryText.text = stringBuilder.ToString();
-      this.injuryTitle.gameObject.SetActive(true);
-      this.injuryContent.gameObject.SetActive(true);
-      foreach (Component component in this.injuryContent)
-        UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
-      for (int index = 0; index < this.injuryCards.Count; ++index)
-        this.SetCard(hero, 1, this.injuryCards[index]);
-    }
-  }
+	private void Start()
+	{
+		Resize();
+	}
 
-  private void SetCard(Hero hero, int type, string cardId)
-  {
-    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, this.transform.position, Quaternion.identity, !this.unlockedTitle.gameObject.activeSelf ? (type != 0 ? this.injuryContent : this.deckContent) : this.unlockedContent);
-    gameObject.AddComponent(typeof (ContentSizeFitter));
-    CardItem component = gameObject.GetComponent<CardItem>();
-    gameObject.name = "TMP_" + type.ToString() + "_" + cardId;
-    string[] strArray = cardId.Split('_', StringSplitOptions.None);
-    if (strArray[0] == "char")
-      component.SetCard(strArray[2], _theHero: hero);
-    else
-      component.SetCard(cardId, _theHero: hero);
-    component.TopLayeringOrder("UI", 20000);
-    component.transform.localScale = Vector3.zero;
-    component.SetDestinationLocalScale(1.02f);
-    component.cardmakebig = true;
-    component.cardmakebigSize = 1.02f;
-    component.cardmakebigSizeMax = 1.2f;
-    component.active = true;
-    component.lockPosition = true;
-    component.DisableTrail();
-    component.CreateColliderAdjusted();
-  }
+	public bool IsActive()
+	{
+		return base.gameObject.activeSelf;
+	}
 
-  public IEnumerator SetCombatDeck(int heroIndex, bool discard)
-  {
-    this.currentIndex = heroIndex;
-    Hero hero = AtOManager.Instance.GetHero(heroIndex);
-    if (hero != null)
-    {
-      foreach (Component component in this.deckContent)
-        UnityEngine.Object.Destroy((UnityEngine.Object) component.gameObject);
-      this.injuryText.gameObject.SetActive(false);
-      this.injuryTitle.gameObject.SetActive(false);
-      StringBuilder stringBuilder = new StringBuilder();
-      if (!discard)
-      {
-        List<string> heroDeck = MatchManager.Instance.GetHeroDeck(this.currentIndex);
-        this.deckCards.Clear();
-        for (int index = 0; index < heroDeck.Count; ++index)
-          this.deckCards.Add(heroDeck[index]);
-        this.deckCards.Sort();
-        stringBuilder.Append(Texts.Instance.GetText("heroDrawPile").Replace("<hero>", hero.SourceName));
-      }
-      else
-      {
-        List<string> heroDiscard = MatchManager.Instance.GetHeroDiscard(this.currentIndex);
-        List<string> stringList = new List<string>();
-        for (int index = heroDiscard.Count - 1; index >= 0; --index)
-          stringList.Add(heroDiscard[index]);
-        this.deckCards.Clear();
-        for (int index = 0; index < stringList.Count; ++index)
-          this.deckCards.Add(stringList[index]);
-        stringBuilder.Append(Texts.Instance.GetText("heroDiscardPile").Replace("<hero>", hero.SourceName));
-      }
-      if (this.deckCards != null)
-      {
-        stringBuilder.Append(this.formatNum(this.deckCards.Count));
-        this.deckText.text = stringBuilder.ToString();
-        int totalCards = this.deckCards.Count;
-        for (int i = 0; i < this.deckCards.Count; ++i)
-        {
-          this.SetCombatCard(hero, this.deckCards[i], i, totalCards);
-          yield return (object) null;
-        }
-      }
-    }
-  }
+	public void ShowUnlockedCards(List<string> _unlockedCards)
+	{
+		if (_unlockedCards == null || _unlockedCards.Count == 0)
+		{
+			return;
+		}
+		List<string> list = new List<string>();
+		CardData cardData = null;
+		for (int i = 0; i < _unlockedCards.Count; i++)
+		{
+			cardData = Globals.Instance.GetCardData(_unlockedCards[i], instantiate: false);
+			if (cardData != null && cardData.ShowInTome)
+			{
+				list.Add(_unlockedCards[i]);
+			}
+		}
+		unlockedTitle.gameObject.SetActive(value: true);
+		upgradedTitle.gameObject.SetActive(value: false);
+		deckTitle.gameObject.SetActive(value: false);
+		injuryTitle.gameObject.SetActive(value: false);
+		injuryContent.gameObject.SetActive(value: false);
+		Show(-1, list);
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(Texts.Instance.GetText("unlockedCards"));
+		stringBuilder.Append(" <color=#AAA>[<color=#888>");
+		stringBuilder.Append(list.Count);
+		stringBuilder.Append("</color>]</color>");
+		if (unlockedTitle.GetChild(0) != null && unlockedTitle.GetChild(0).GetComponent<TMP_Text>() != null)
+		{
+			unlockedTitle.GetChild(0).GetComponent<TMP_Text>().text = stringBuilder.ToString();
+		}
+	}
 
-  private void SetCombatCard(Hero hero, string cardId, int position, int total)
-  {
-    GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(GameManager.Instance.CardPrefab, this.transform.position, Quaternion.identity, this.deckContent);
-    gameObject.AddComponent(typeof (ContentSizeFitter));
-    CardItem component = gameObject.GetComponent<CardItem>();
-    gameObject.name = "TMP_" + cardId;
-    component.SetCard(cardId, _theHero: hero);
-    component.TopLayeringOrder("UI", 20000);
-    component.transform.localScale = Vector3.zero;
-    component.SetDestinationLocalScale(1.02f);
-    component.cardmakebig = true;
-    component.cardmakebigSize = 1.02f;
-    component.cardmakebigSizeMax = 1.2f;
-    component.active = true;
-    component.lockPosition = true;
-    component.DisableTrail();
-    component.CreateColliderAdjusted();
-  }
+	public void ShowUpgradedCards(List<string> upgradedCards)
+	{
+		upgradedTitle.gameObject.SetActive(value: true);
+		unlockedTitle.gameObject.SetActive(value: false);
+		deckTitle.gameObject.SetActive(value: false);
+		injuryTitle.gameObject.SetActive(value: false);
+		injuryContent.gameObject.SetActive(value: false);
+		List<string> list = new List<string>();
+		for (int i = 0; i < upgradedCards.Count; i++)
+		{
+			list.Add("char_" + i + "_" + upgradedCards[i]);
+		}
+		Show(-1, list, discard: false, sort: false);
+		AtOManager.Instance.upgradedCardsList = new List<string>();
+	}
+
+	public void Show(int index = -1, List<string> listCards = null, bool discard = false, bool sort = true, bool isHero = true)
+	{
+		if (!MatchManager.Instance)
+		{
+			if (index > -1)
+			{
+				SetDecks(index);
+			}
+			if (listCards != null)
+			{
+				SetList(listCards, sort);
+			}
+		}
+		else if (listCards != null)
+		{
+			SetList(listCards, sort);
+		}
+		else if (index > -1)
+		{
+			StartCoroutine(SetCombatDeck(index, discard));
+		}
+	}
+
+	public void DestroyDeck()
+	{
+		if (deckContent == null)
+		{
+			return;
+		}
+		foreach (Transform item in deckContent)
+		{
+			Object.Destroy(item.gameObject);
+		}
+		GameManager.Instance.CleanTempContainer();
+		PopupManager.Instance.ClosePopup();
+	}
+
+	public void Hide()
+	{
+		DestroyDeck();
+	}
+
+	public void Resize()
+	{
+	}
+
+	public void SetList(List<string> cardList, bool sort)
+	{
+		if (sort)
+		{
+			cardList.Sort();
+		}
+		foreach (Transform item in deckContent)
+		{
+			Object.Destroy(item.gameObject);
+		}
+		for (int i = 0; i < cardList.Count; i++)
+		{
+			SetCard(null, 0, cardList[i]);
+		}
+	}
+
+	private string formatNum(int num)
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(" <color=#AAA>[<color=#888>");
+		stringBuilder.Append(num);
+		stringBuilder.Append("</color>]</color>");
+		return stringBuilder.ToString();
+	}
+
+	public void HideInjury()
+	{
+		injuryTitle.gameObject.SetActive(value: false);
+		injuryContent.gameObject.SetActive(value: false);
+	}
+
+	public void SetTitle(string title, int num = -1)
+	{
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(title);
+		if (num > -1)
+		{
+			stringBuilder.Append(formatNum(num));
+		}
+		deckText.text = stringBuilder.ToString();
+	}
+
+	public void SetDecks(int heroIndex)
+	{
+		currentIndex = heroIndex;
+		Hero hero = AtOManager.Instance.GetHero(heroIndex);
+		if (hero == null)
+		{
+			return;
+		}
+		deckCards.Clear();
+		injuryCards.Clear();
+		for (int i = 0; i < hero.Cards.Count; i++)
+		{
+			CardData cardData = Globals.Instance.GetCardData(hero.Cards[i], instantiate: false);
+			if (cardData != null)
+			{
+				if (cardData.CardClass != Enums.CardClass.Injury && cardData.CardClass != Enums.CardClass.Boon)
+				{
+					deckCards.Add(cardData.Id);
+				}
+				else
+				{
+					injuryCards.Add(cardData.Id);
+				}
+			}
+		}
+		deckCards.Sort();
+		injuryCards.Sort();
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.Append(Texts.Instance.GetText("heroCards").Replace("<hero>", hero.SourceName));
+		stringBuilder.Append(formatNum(deckCards.Count));
+		deckText.text = stringBuilder.ToString();
+		foreach (Transform item in deckContent)
+		{
+			Object.Destroy(item.gameObject);
+		}
+		for (int j = 0; j < deckCards.Count; j++)
+		{
+			SetCard(hero, 0, deckCards[j]);
+		}
+		if (injuryCards.Count == 0)
+		{
+			injuryTitle.gameObject.SetActive(value: false);
+			injuryContent.gameObject.SetActive(value: false);
+			return;
+		}
+		stringBuilder.Clear();
+		stringBuilder.Append(Texts.Instance.GetText("heroInjuriesBoons").Replace("<hero>", hero.SourceName));
+		stringBuilder.Append(formatNum(injuryCards.Count));
+		injuryText.text = stringBuilder.ToString();
+		injuryTitle.gameObject.SetActive(value: true);
+		injuryContent.gameObject.SetActive(value: true);
+		foreach (Transform item2 in injuryContent)
+		{
+			Object.Destroy(item2.gameObject);
+		}
+		for (int k = 0; k < injuryCards.Count; k++)
+		{
+			SetCard(hero, 1, injuryCards[k]);
+		}
+	}
+
+	private void SetCard(Hero hero, int type, string cardId)
+	{
+		Transform transform = null;
+		GameObject obj = Object.Instantiate(parent: unlockedTitle.gameObject.activeSelf ? unlockedContent : ((type != 0) ? injuryContent : deckContent), original: GameManager.Instance.CardPrefab, position: base.transform.position, rotation: Quaternion.identity);
+		obj.AddComponent(typeof(ContentSizeFitter));
+		CardItem component = obj.GetComponent<CardItem>();
+		obj.name = "TMP_" + type + "_" + cardId;
+		string[] array = cardId.Split('_');
+		if (array[0] == "char")
+		{
+			component.SetCard(array[2], deckScale: true, hero);
+		}
+		else
+		{
+			component.SetCard(cardId, deckScale: true, hero);
+		}
+		component.TopLayeringOrder("UI", 20000);
+		component.transform.localScale = Vector3.zero;
+		component.SetDestinationLocalScale(1.02f);
+		component.cardmakebig = true;
+		component.cardmakebigSize = 1.02f;
+		component.cardmakebigSizeMax = 1.2f;
+		component.active = true;
+		component.lockPosition = true;
+		component.DisableTrail();
+		component.CreateColliderAdjusted();
+	}
+
+	public IEnumerator SetCombatDeck(int heroIndex, bool discard)
+	{
+		currentIndex = heroIndex;
+		Hero hero = AtOManager.Instance.GetHero(heroIndex);
+		if (hero == null)
+		{
+			yield break;
+		}
+		foreach (Transform item in deckContent)
+		{
+			Object.Destroy(item.gameObject);
+		}
+		injuryText.gameObject.SetActive(value: false);
+		injuryTitle.gameObject.SetActive(value: false);
+		StringBuilder stringBuilder = new StringBuilder();
+		if (!discard)
+		{
+			List<string> heroDeck = MatchManager.Instance.GetHeroDeck(currentIndex);
+			deckCards.Clear();
+			for (int i = 0; i < heroDeck.Count; i++)
+			{
+				deckCards.Add(heroDeck[i]);
+			}
+			deckCards.Sort();
+			stringBuilder.Append(Texts.Instance.GetText("heroDrawPile").Replace("<hero>", hero.SourceName));
+		}
+		else
+		{
+			List<string> heroDiscard = MatchManager.Instance.GetHeroDiscard(currentIndex);
+			List<string> list = new List<string>();
+			for (int num = heroDiscard.Count - 1; num >= 0; num--)
+			{
+				list.Add(heroDiscard[num]);
+			}
+			deckCards.Clear();
+			for (int j = 0; j < list.Count; j++)
+			{
+				deckCards.Add(list[j]);
+			}
+			stringBuilder.Append(Texts.Instance.GetText("heroDiscardPile").Replace("<hero>", hero.SourceName));
+		}
+		if (deckCards != null)
+		{
+			stringBuilder.Append(formatNum(deckCards.Count));
+			deckText.text = stringBuilder.ToString();
+			int totalCards = deckCards.Count;
+			for (int k = 0; k < deckCards.Count; k++)
+			{
+				SetCombatCard(hero, deckCards[k], k, totalCards);
+				yield return null;
+			}
+		}
+	}
+
+	private void SetCombatCard(Hero hero, string cardId, int position, int total)
+	{
+		GameObject obj = Object.Instantiate(GameManager.Instance.CardPrefab, base.transform.position, Quaternion.identity, deckContent);
+		obj.AddComponent(typeof(ContentSizeFitter));
+		CardItem component = obj.GetComponent<CardItem>();
+		obj.name = "TMP_" + cardId;
+		component.SetCard(cardId, deckScale: true, hero);
+		component.TopLayeringOrder("UI", 20000);
+		component.transform.localScale = Vector3.zero;
+		component.SetDestinationLocalScale(1.02f);
+		component.cardmakebig = true;
+		component.cardmakebigSize = 1.02f;
+		component.cardmakebigSizeMax = 1.2f;
+		component.active = true;
+		component.lockPosition = true;
+		component.DisableTrail();
+		component.CreateColliderAdjusted();
+	}
 }
