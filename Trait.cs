@@ -1291,6 +1291,113 @@ public class Trait
 		}
 	}
 
+	public void revealingpresence(Enums.EventActivation theEvent, Character character, Character target, int auxInt, string auxString, CardData castedCard, string trait)
+	{
+		if (character == null || !character.Alive || !character.IsHero || castedCard.EnergyCost < 3)
+		{
+			return;
+		}
+		NPC nPC = null;
+		NPC[] teamNPC = MatchManager.Instance.GetTeamNPC();
+		foreach (NPC nPC2 in teamNPC)
+		{
+			if (nPC2 != null && nPC2.IsIllusion && !nPC2.IsIllusionExposed)
+			{
+				nPC = nPC2;
+				break;
+			}
+		}
+		if (nPC != null)
+		{
+			nPC.IsIllusionExposed = true;
+			nPC.NPCItem.ExposeIllusion(nPC);
+			GameUtils.GetCharacterItem(nPC).ScrollCombatText(Texts.Instance.GetText("traits_revealingpresence"), Enums.CombatScrollEffectType.Trait);
+		}
+	}
+
+	public void purifyingresonance(Enums.EventActivation theEvent, Character character, Character target, int auxInt, string auxString, CardData castedCard, string trait)
+	{
+		if (!(target is NPC) && target != null && target.Alive && character != null && character.Alive)
+		{
+			ItemData itemData = GameUtils.GetEnchantments(character).FirstOrDefault((ItemData i) => i.Id.StartsWith("purifyingresonance", StringComparison.OrdinalIgnoreCase));
+			if (!(itemData == null))
+			{
+				character.ActivateItem(Enums.EventActivation.Manual, target, auxInt, auxString, Enums.ActivationManual.PurifyingResonance);
+				int healQuantity = itemData.HealQuantity;
+				target.SetAuraTrait(target, itemData.AuracurseGainSelf1.Id, itemData.AuracurseGainSelfValue1 * auxInt);
+				target.SetAuraTrait(target, itemData.AuracurseGainSelf2.Id, itemData.AuracurseGainSelfValue2 * auxInt);
+				HealTarget(target, healQuantity * auxInt);
+				GameUtils.GetCharacterItem(target).ScrollCombatText(Texts.Instance.GetText("traits_purifyingresonance"), Enums.CombatScrollEffectType.Trait);
+			}
+		}
+	}
+
+	public void darkmercy(Enums.EventActivation theEvent, Character character, Character target, int auxInt, string auxString, CardData castedCard, string trait)
+	{
+		bool flag = ((target is Hero || (target != null && !target.Alive)) ? true : false);
+		if (!flag && character != null && character.Alive && auxString.Equals("dark", StringComparison.OrdinalIgnoreCase))
+		{
+			Hero lowestHealthHero = GetLowestHealthHero(theEvent, character, target, auxInt, auxString, castedCard, trait);
+			if (lowestHealthHero != null && lowestHealthHero.Alive)
+			{
+				HealTarget(lowestHealthHero, auxInt / 2);
+			}
+			GameUtils.GetCharacterItem(target).ScrollCombatText(Texts.Instance.GetText("traits_darkmercy"), Enums.CombatScrollEffectType.Trait);
+		}
+	}
+
+	public void rhythmofmagic(Enums.EventActivation theEvent, Character character, Character target, int auxInt, string auxString, CardData castedCard, string trait)
+	{
+		if (character == null || !character.Alive || !IsValidCard(castedCard) || !CanUseTrait(trait))
+		{
+			return;
+		}
+		CardData cardData = (from cardId in MatchManager.Instance.GetHeroHand(character.HeroIndex)
+			select MatchManager.Instance.GetCardData(cardId) into cardData2
+			where IsValidCard(cardData2) && cardData2.GetCardFinalCost() > 0 && cardData2.InternalId != castedCard.InternalId
+			orderby cardData2.GetCardFinalCost() descending
+			select cardData2).FirstOrDefault();
+		if (cardData != null)
+		{
+			cardData.EnergyReductionTemporal += 3;
+			MatchManager.Instance.UpdateHandCards();
+			CardItem cardFromTableByIndex = MatchManager.Instance.GetCardFromTableByIndex(cardData.InternalId);
+			if ((bool)cardFromTableByIndex)
+			{
+				cardFromTableByIndex.PlayDissolveParticle();
+				cardFromTableByIndex.ShowEnergyModification(-3);
+				IncrementTraitUsageCount(trait);
+				character.HeroItem.ScrollCombatText(Texts.Instance.GetText("traits_rhythmofmagic"), Enums.CombatScrollEffectType.Trait);
+			}
+		}
+		static bool IsValidCard(CardData card)
+		{
+			if (Enums.SpellCardTypes.Contains(card.CardType) && !card.Corrupted)
+			{
+				return !card.TempAttackSelf;
+			}
+			return false;
+		}
+	}
+
+	public void darkoverflow(Enums.EventActivation theEvent, Character character, Character target, int auxInt, string auxString, CardData castedCard, string trait)
+	{
+		if (!(target is Hero) && target != null && target.Alive && character != null && character.Alive && auxString.Equals("dark", StringComparison.OrdinalIgnoreCase))
+		{
+			int auraCharges = target.GetAuraCharges(auxString);
+			CastResolutionForCombatText cast = new CastResolutionForCombatText
+			{
+				damage = auraCharges,
+				damageType = Enums.DamageType.Shadow
+			};
+			CharacterItem characterItem = GameUtils.GetCharacterItem(target);
+			characterItem.ScrollCombatTextDamageNew(cast);
+			target.IndirectDamage(Enums.DamageType.Shadow, auraCharges, character, null, auxString);
+			characterItem.ScrollCombatText(Texts.Instance.GetText("traits_darkoverflow"), Enums.CombatScrollEffectType.Trait);
+			EffectsManager.Instance.PlayEffectAC("shadowimpactdecay", isHero: true, characterItem.CharImageT, flip: false);
+		}
+	}
+
 	public void hermit(Enums.EventActivation theEvent, Character character, Character target, int auxInt, string auxString, CardData castedCard, string trait)
 	{
 		if (character == null || !character.Alive)
@@ -1764,6 +1871,10 @@ public class Trait
 			}
 			if (num5 > 0)
 			{
+				if (teamHero[l].HpCurrent + num4 >= teamHero[l].GetMaxHP())
+				{
+					teamHero[l].SetEvent(Enums.EventActivation.Overhealed);
+				}
 				teamHero[l].ModifyHp(num5, _includeInStats: false);
 				AtOManager.Instance.combatStats[character.HeroIndex, 3] += num5;
 				AtOManager.Instance.combatStatsCurrent[character.HeroIndex, 3] += num5;
@@ -1939,6 +2050,10 @@ public class Trait
 		}
 		if (heal > 0)
 		{
+			if (target.HpCurrent + heal >= target.GetMaxHP())
+			{
+				target.SetEvent(Enums.EventActivation.Overhealed);
+			}
 			target.ModifyHp(heal);
 			CastResolutionForCombatText castResolutionForCombatText = new CastResolutionForCombatText();
 			castResolutionForCombatText.heal = heal;
@@ -2362,6 +2477,10 @@ public class Trait
 		}
 		if (num > 0)
 		{
+			if (target.HpCurrent + heal >= target.GetMaxHP())
+			{
+				target.SetEvent(Enums.EventActivation.Overhealed);
+			}
 			target.ModifyHp(num);
 			CastResolutionForCombatText castResolutionForCombatText = new CastResolutionForCombatText();
 			castResolutionForCombatText.heal = num;
@@ -2959,5 +3078,45 @@ public class Trait
 			}
 		}
 		return null;
+	}
+
+	private void HealTarget(Character character, int healValue)
+	{
+		int num = Math.Min(healValue, character.GetHpLeftForMax());
+		if (character.HpCurrent + num >= character.GetMaxHP())
+		{
+			character.SetEvent(Enums.EventActivation.Overhealed);
+		}
+		if (num > 0)
+		{
+			character.ModifyHp(num, _includeInStats: false);
+			character.SetEvent(Enums.EventActivation.Healed);
+			character.SetEvent(Enums.EventActivation.Heal, character);
+			CastResolutionForCombatText cast = new CastResolutionForCombatText
+			{
+				heal = num
+			};
+			GameUtils.GetCharacterItem(character).ScrollCombatTextDamageNew(cast);
+		}
+		EffectsManager.Instance.PlayEffectAC("healcast2", character.IsHero, GameUtils.GetCharacterItem(character).CharImageT, flip: false, 0.2f);
+	}
+
+	public bool CanUseTrait(string trait)
+	{
+		TraitData traitData = Globals.Instance.GetTraitData(trait);
+		if (MatchManager.Instance.activatedTraits.ContainsKey(trait))
+		{
+			return MatchManager.Instance.activatedTraits[trait] < traitData.TimesPerTurn;
+		}
+		return true;
+	}
+
+	public void IncrementTraitUsageCount(string trait)
+	{
+		if (!MatchManager.Instance.activatedTraits.TryAdd(trait, 1))
+		{
+			MatchManager.Instance.activatedTraits[trait]++;
+		}
+		MatchManager.Instance.SetTraitInfoText();
 	}
 }

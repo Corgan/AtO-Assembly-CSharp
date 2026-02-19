@@ -20,7 +20,16 @@ public class ItemData : ScriptableObject
 	private Enums.EventActivation activation;
 
 	[SerializeField]
+	private Enums.ActivationManual activationManual;
+
+	[SerializeField]
 	private bool activationOnlyOnHeroes;
+
+	[SerializeField]
+	private bool activateOnReceive;
+
+	[SerializeField]
+	private bool preventApplyForHeroTarget;
 
 	[SerializeField]
 	private Sprite spriteBossDrop;
@@ -80,6 +89,9 @@ public class ItemData : ScriptableObject
 	[SerializeField]
 	private bool dontTargetBoss;
 
+	[SerializeField]
+	private Enums.ItemTarget overrideTargetText = Enums.ItemTarget.None;
+
 	[Header("Pet Activation")]
 	public Enums.ActivePets PetActivation;
 
@@ -124,6 +136,12 @@ public class ItemData : ScriptableObject
 	[Header("Event")]
 	[SerializeField]
 	private bool passSingleAndCharacterRolls;
+
+	[SerializeField]
+	private Enums.DamageType convertReceivedDebuffsIntoDamage;
+
+	[SerializeField]
+	private bool convertReceivedDebuffsIntoCurse;
 
 	[Header("Corruption")]
 	[SerializeField]
@@ -490,6 +508,18 @@ public class ItemData : ScriptableObject
 		}
 	}
 
+	public Enums.ActivationManual ActivationManual
+	{
+		get
+		{
+			return activationManual;
+		}
+		set
+		{
+			activationManual = value;
+		}
+	}
+
 	public int RoundCycle
 	{
 		get
@@ -511,6 +541,18 @@ public class ItemData : ScriptableObject
 		set
 		{
 			itemTarget = value;
+		}
+	}
+
+	public Enums.ItemTarget OverrideTargetText
+	{
+		get
+		{
+			return overrideTargetText;
+		}
+		set
+		{
+			overrideTargetText = value;
 		}
 	}
 
@@ -1906,6 +1948,30 @@ public class ItemData : ScriptableObject
 		}
 	}
 
+	public Enums.DamageType ConvertReceivedDebuffsIntoDamage
+	{
+		get
+		{
+			return convertReceivedDebuffsIntoDamage;
+		}
+		set
+		{
+			convertReceivedDebuffsIntoDamage = value;
+		}
+	}
+
+	public bool ConvertReceivedDebuffsIntoCurse
+	{
+		get
+		{
+			return convertReceivedDebuffsIntoCurse;
+		}
+		set
+		{
+			convertReceivedDebuffsIntoCurse = value;
+		}
+	}
+
 	public bool DestroyEndOfTurn
 	{
 		get
@@ -1951,6 +2017,20 @@ public class ItemData : ScriptableObject
 		set
 		{
 			activationOnlyOnHeroes = value;
+		}
+	}
+
+	public bool PreventApplyForHeroTarget => preventApplyForHeroTarget;
+
+	public bool ActivateOnReceive
+	{
+		get
+		{
+			return activateOnReceive;
+		}
+		set
+		{
+			activateOnReceive = value;
 		}
 	}
 

@@ -47,7 +47,7 @@ public class Frankenstein : BossNPC
 		{
 			Debug.Log("Lightning has hit the Frankenstein.");
 			npc.HealCursesName(null, "invulnerable");
-			npc.IndirectDamage(Enums.DamageType.Lightning, 11);
+			npc.IndirectDamage(Enums.DamageType.Lightning, 11, null);
 			npc.SetAura(null, Globals.Instance.GetAuraCurseData("spark"), 3);
 			npc.NPCItem.CharacterHitted(fromHit: true);
 		}

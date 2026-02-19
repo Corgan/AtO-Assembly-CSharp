@@ -100,6 +100,8 @@ public class TomeManager : MonoBehaviour
 
 	public TomeButton[] TomeButtons;
 
+	public TomeButton monsterButton;
+
 	public Transform cardContainer;
 
 	public GameObject TomeCard;
@@ -1288,7 +1290,7 @@ public class TomeManager : MonoBehaviour
 
 	public void ShowTomeCardsButtons()
 	{
-		if (GameManager.Instance.GetDeveloperMode())
+		if (GameManager.Instance.GetDeveloperMode() || GameManager.Instance.CheatMode || GameManager.Instance.EnableButtons)
 		{
 			TomeButtons[5].transform.gameObject.SetActive(value: true);
 		}
@@ -1324,32 +1326,30 @@ public class TomeManager : MonoBehaviour
 		}
 		activeTomeCards = index;
 		List<string> list = new List<string>();
-		if (index == -1)
+		bool flag = GameManager.Instance.GetDeveloperMode() || GameManager.Instance.CheatMode || GameManager.Instance.EnableButtons;
+		switch (index)
 		{
+		case -1:
 			list = Globals.Instance.CardListNotUpgraded;
-		}
-		else if (index == 0)
-		{
+			break;
+		case 0:
 			list = Globals.Instance.CardListNotUpgradedByClass[Enums.CardClass.Warrior];
-		}
-		else if (index == 1)
-		{
+			break;
+		case 1:
 			list = Globals.Instance.CardListNotUpgradedByClass[Enums.CardClass.Mage];
-		}
-		else if (index == 2)
-		{
+			break;
+		case 2:
 			list = Globals.Instance.CardListNotUpgradedByClass[Enums.CardClass.Healer];
-		}
-		else if (index == 3)
-		{
+			break;
+		case 3:
 			list = Globals.Instance.CardListNotUpgradedByClass[Enums.CardClass.Scout];
-		}
-		else if (index == 4 && GameManager.Instance.GetDeveloperMode())
-		{
-			list = Globals.Instance.CardListNotUpgradedByClass[Enums.CardClass.Monster];
-		}
-		else
-		{
+			break;
+		default:
+			if (index == 4 && flag)
+			{
+				list = Globals.Instance.CardListNotUpgradedByClass[Enums.CardClass.Monster];
+				break;
+			}
 			switch (index)
 			{
 			case 5:
@@ -1377,7 +1377,9 @@ public class TomeManager : MonoBehaviour
 				list = Globals.Instance.CardListByType[Enums.CardType.Enchantment];
 				break;
 			}
+			break;
 		}
+		monsterButton?.transform.gameObject.SetActive(flag);
 		cardList.Clear();
 		for (int i = 0; i < list.Count; i++)
 		{

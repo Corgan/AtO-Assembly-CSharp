@@ -47,7 +47,7 @@ public class NenukilLayers : MonoBehaviour
 	{
 		for (int i = 0; i < layersToHide.Count; i++)
 		{
-			if (layersToHide[i].gameObject.activeSelf)
+			if (layersToHide[i] != null && layersToHide[i].gameObject.activeSelf)
 			{
 				layersToHide[i].gameObject.SetActive(value: false);
 			}
@@ -58,7 +58,7 @@ public class NenukilLayers : MonoBehaviour
 	{
 		for (int i = 0; i < layersGun.Count; i++)
 		{
-			if (!layersGun[i].gameObject.activeSelf)
+			if (layersGun[i] != null && !layersGun[i].gameObject.activeSelf)
 			{
 				layersGun[i].gameObject.SetActive(value: true);
 			}
@@ -69,7 +69,7 @@ public class NenukilLayers : MonoBehaviour
 	{
 		for (int i = 0; i < layersDoubleGun.Count; i++)
 		{
-			if (!layersDoubleGun[i].gameObject.activeSelf)
+			if (layersDoubleGun[i] != null && !layersDoubleGun[i].gameObject.activeSelf)
 			{
 				layersDoubleGun[i].gameObject.SetActive(value: true);
 			}
@@ -80,7 +80,7 @@ public class NenukilLayers : MonoBehaviour
 	{
 		for (int i = 0; i < layersCannon.Count; i++)
 		{
-			if (!layersCannon[i].gameObject.activeSelf)
+			if (layersCannon[i] != null && !layersCannon[i].gameObject.activeSelf)
 			{
 				layersCannon[i].gameObject.SetActive(value: true);
 			}

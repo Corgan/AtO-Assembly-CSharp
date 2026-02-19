@@ -552,6 +552,10 @@ public static class SaveManager
 
 	public static void SaveGameTurn(int slot)
 	{
+		if (GameManager.Instance.GetDeveloperMode() && GameManager.Instance.IsSaveDisabled)
+		{
+			return;
+		}
 		string path = PathSaveGameTurn(slot);
 		DESCryptoServiceProvider dESCryptoServiceProvider = new DESCryptoServiceProvider();
 		using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write);
@@ -1330,7 +1334,7 @@ public static class SaveManager
 		{
 			PlayerManager.Instance.CardbackUsed = new Dictionary<string, string>();
 		}
-		if (GameManager.Instance.GetDeveloperMode() || GameManager.Instance.UnlockMadness)
+		if (GameManager.Instance.GetDeveloperMode() || GameManager.Instance.UnlockAllExceptHeroes)
 		{
 			PlayerManager.Instance.NgLevel = 9;
 			PlayerManager.Instance.ObeliskMadnessLevel = 10;

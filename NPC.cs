@@ -384,15 +384,18 @@ public class NPC : Character
 	private void SetInitalCards(NPCData npcData)
 	{
 		base.Cards = new List<string>();
-		if (npcData.AICards == null)
+		bool flag = GameManager.Instance.IsSingularity();
+		int num = (flag ? AtOManager.Instance.GetSingularityMadness() : AtOManager.Instance.GetMadnessDifficulty());
+		AICards[] aICards = npcData.AICards;
+		foreach (AICards aICards2 in aICards)
 		{
-			return;
-		}
-		for (int i = 0; i < npcData.AICards.Length; i++)
-		{
-			for (int j = 0; j < npcData.AICards[i].UnitsInDeck; j++)
+			for (int j = 0; j < aICards2.UnitsInDeck; j++)
 			{
-				base.Cards.Add(npcData.AICards[i].Card.Id);
+				int num2 = (flag ? aICards2.StartsAtSingularityMadnessLevel : aICards2.StartsAtObeliskMadnessLevel);
+				if (num >= num2)
+				{
+					base.Cards.Add(aICards2.Card.Id);
+				}
 			}
 		}
 	}

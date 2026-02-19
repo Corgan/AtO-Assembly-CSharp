@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using Zone;
 
@@ -7,50 +9,134 @@ public static class CheatDrawer
 {
 	private class CheatDefinition
 	{
-		public string propertyName;
+		public string PropertyName { get; }
 
-		public string label;
+		public string Label { get; }
 
 		public CheatDefinition(string propertyName, string label)
 		{
-			this.propertyName = propertyName;
-			this.label = label;
+			PropertyName = propertyName;
+			Label = label;
 		}
 	}
+
+	private const string ZonesResourcesPath = "World/Zones";
+
+	private const string CombatsResourcesRoot = "World/Combats";
+
+	private const string RandomToken = "__RANDOM__";
+
+	private const string NoneLabel = "None";
 
 	private static readonly List<CheatDefinition> cheats = new List<CheatDefinition>
 	{
 		new CheatDefinition("cheatMode", "Cheat Mode (+dlc)"),
-		new CheatDefinition("winMatchOnStart", "Win match on start"),
+		new CheatDefinition("winMatchOnStart", "Win battle"),
 		new CheatDefinition("skipTutorial", "Skip Tutorial"),
-		new CheatDefinition("startFromMap", "Start from Map"),
-		new CheatDefinition("useImmortal", "Use Immortal"),
-		new CheatDefinition("useManyResources", "Use Many Resources"),
-		new CheatDefinition("unlockAllHeroes", "Unlock All Heroes"),
-		new CheatDefinition("unlockMadness", "Unlock Madness"),
+		new CheatDefinition("useImmortal", "Immortal"),
+		new CheatDefinition("useManyResources", "Many Resources"),
+		new CheatDefinition("enableButtons", "Rank, levelUp, shop.. buttons"),
+		new CheatDefinition("unlockAllExceptHeroes", "Unlock cards, pets, madness"),
+		new CheatDefinition("unlockHeroes", "Unlock heroes"),
 		new CheatDefinition("disableSave", "Disable Save"),
-		new CheatDefinition("disableSteamAuthorizationForPhoton", "Disable Steam Auth"),
-		new CheatDefinition("useTestSteamID", "Use Test Steam ID")
+		new CheatDefinition("disableSteamAuthorizationForPhoton", "Disable multiplayer auth"),
+		new CheatDefinition("useTestSteamID", "Test Steam ID")
 	};
+
+	private static string[] GetCombatNamesForZone(string zoneName)
+	{
+		if (string.IsNullOrEmpty(zoneName))
+		{
+			return Array.Empty<string>();
+		}
+		CombatData[] array = Resources.LoadAll<CombatData>("World/Combats/" + zoneName);
+		if (array == null)
+		{
+			return Array.Empty<string>();
+		}
+		return (from n in (from c in array
+				where c != null
+				select c.name).Distinct()
+			orderby n
+			select n).ToArray();
+	}
+
+	private static string[] BuildCombatDropdownOptions(string zoneName)
+	{
+		string[] combatNamesForZone = GetCombatNamesForZone(zoneName);
+		return new string[1] { "Random" }.Concat(combatNamesForZone).ToArray();
+	}
 
 	public static void DrawCheatsRuntime(GameManager gameManager, GUIStyle headerStyle, GUIStyle toggleStyle, GUIStyle buttonStyle)
 	{
 		GUILayout.Label("Cheat Flags", headerStyle);
-		gameManager.CheatMode = GUILayout.Toggle(gameManager.CheatMode, "Cheat Mode (+dlc)", toggleStyle);
-		gameManager.WinMatchOnStart = GUILayout.Toggle(gameManager.WinMatchOnStart, "Win match on start", toggleStyle);
-		gameManager.SkipTutorial = GUILayout.Toggle(gameManager.SkipTutorial, "Skip Tutorial", toggleStyle);
-		gameManager.UseImmortal = GUILayout.Toggle(gameManager.UseImmortal, "Use Immortal", toggleStyle);
-		gameManager.UseManyResources = GUILayout.Toggle(gameManager.UseManyResources, "Use Many Resources", toggleStyle);
-		gameManager.UnlockAllHeroes = GUILayout.Toggle(gameManager.UnlockAllHeroes, "Unlock All Heroes", toggleStyle);
-		gameManager.UnlockMadness = GUILayout.Toggle(gameManager.UnlockMadness, "Unlock Singularity Madness", toggleStyle);
-		gameManager.IsSaveDisabled = GUILayout.Toggle(gameManager.IsSaveDisabled, "Disable Save", toggleStyle);
-		gameManager.DisableSteamAuthorizationForPhoton = GUILayout.Toggle(gameManager.DisableSteamAuthorizationForPhoton, "Disable Steam Auth", toggleStyle);
-		gameManager.UseTestSteamID = GUILayout.Toggle(gameManager.UseTestSteamID, "Use Test Steam ID", toggleStyle);
+		GUIStyle gUIStyle = new GUIStyle(toggleStyle);
+		gUIStyle.padding.left += 10;
+		foreach (CheatDefinition cheat in cheats)
+		{
+			FieldInfo field = gameManager.GetType().GetField(cheat.PropertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+			if (!(field == null) && !(field.FieldType != typeof(bool)))
+			{
+				bool flag = (bool)field.GetValue(gameManager);
+				bool flag2 = GUILayout.Toggle(flag, cheat.Label, gUIStyle);
+				if (flag2 != flag)
+				{
+					field.SetValue(gameManager, flag2);
+				}
+			}
+		}
 		GUILayout.Space(10f);
 		GUILayout.Label("Start From Map:", toggleStyle);
 		gameManager.StartFromMap = (MapType)GUILayout.SelectionGrid((int)gameManager.StartFromMap, Enum.GetNames(typeof(MapType)), 2, buttonStyle);
+		if (gameManager.CheatMode)
+		{
+			GUILayout.Space(12f);
+			GUILayout.Label("Practice Mode Combat", headerStyle);
+			ZoneData[] array = Resources.LoadAll<ZoneData>("World/Zones");
+			if (array == null || array.Length == 0)
+			{
+				GUILayout.Label("No ZoneData found in Resources/World/Zones", toggleStyle);
+				return;
+			}
+			string[] array2 = (from n in (from z in array
+					where z != null
+					select z.name).Distinct()
+				orderby n
+				select n).ToArray();
+			string[] texts = new string[1] { "None" }.Concat(array2).ToArray();
+			int num = 0;
+			if (!string.IsNullOrEmpty(gameManager.CheatZoneName))
+			{
+				int num2 = Array.IndexOf(array2, gameManager.CheatZoneName);
+				num = ((num2 >= 0) ? (num2 + 1) : 0);
+			}
+			int num3 = GUILayout.SelectionGrid(num, texts, 2, buttonStyle);
+			if (num3 != num)
+			{
+				gameManager.CheatZoneName = ((num3 == 0) ? string.Empty : array2[num3 - 1]);
+				gameManager.CheatCombatName = "__RANDOM__";
+			}
+			if (string.IsNullOrEmpty(gameManager.CheatZoneName))
+			{
+				GUILayout.Label("Override disabled (Zone = None)", toggleStyle);
+				return;
+			}
+			string[] array3 = BuildCombatDropdownOptions(gameManager.CheatZoneName);
+			int selected = 0;
+			if (!string.IsNullOrEmpty(gameManager.CheatCombatName) && gameManager.CheatCombatName != "__RANDOM__")
+			{
+				int b = Array.IndexOf(array3, gameManager.CheatCombatName);
+				selected = Mathf.Max(0, b);
+			}
+			int num4 = GUILayout.SelectionGrid(selected, array3, 1, buttonStyle);
+			gameManager.CheatCombatName = ((num4 == 0) ? "__RANDOM__" : array3[num4]);
+			if (array3.Length <= 1)
+			{
+				GUILayout.Label("No combats in Resources/World/Combats/" + gameManager.CheatZoneName, toggleStyle);
+			}
+		}
 		GUILayout.Space(10f);
-		if (GUILayout.Button("Clean Saved Data", buttonStyle))
+		if (GUILayout.Button("DELETE ALL SAVES", buttonStyle))
 		{
 			SaveManager.CleanSavePlayerData();
 			Debug.Log("Player data cleaned.");

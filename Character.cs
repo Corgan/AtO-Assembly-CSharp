@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Cards;
 using UnityEngine;
 
 [Serializable]
@@ -1568,31 +1569,17 @@ public class Character
 		switch (theEvent)
 		{
 		default:
-			_ = 40;
+			_ = 58;
 			break;
 		case Enums.EventActivation.BeginCombat:
 			cardsPlayed.Clear();
 			break;
-		case Enums.EventActivation.BeginRound:
-			break;
 		case Enums.EventActivation.BeginTurn:
 			cardsPlayedRound.Clear();
-			break;
-		case Enums.EventActivation.EndTurn:
-			break;
-		case Enums.EventActivation.EndRound:
-			break;
-		case Enums.EventActivation.DrawCard:
 			break;
 		case Enums.EventActivation.CastCard:
 			cardsPlayed.Add(MatchManager.Instance.CardActive);
 			cardsPlayedRound.Add(MatchManager.Instance.CardActive);
-			break;
-		case Enums.EventActivation.Hit:
-			break;
-		case Enums.EventActivation.Hitted:
-			break;
-		case Enums.EventActivation.Block:
 			break;
 		case Enums.EventActivation.Damage:
 			if (target.IsHero)
@@ -1635,10 +1622,6 @@ public class Character
 				}
 			}
 			break;
-		case Enums.EventActivation.Evade:
-			break;
-		case Enums.EventActivation.Evaded:
-			break;
 		case Enums.EventActivation.Heal:
 			if (GetAuraCharges("runegreen") >= 3)
 			{
@@ -1650,8 +1633,6 @@ public class Character
 				target.SetAuraTrait(this, "vitality", 2);
 			}
 			break;
-		case Enums.EventActivation.Healed:
-			break;
 		case Enums.EventActivation.FinishCast:
 			MatchManager.Instance.RefreshStatusEffects();
 			MatchManager.Instance.ItemTraitsActivatedSinceLastCardCast.Clear();
@@ -1662,16 +1643,27 @@ public class Character
 				target.BleedRecievedByBloodMage += auxInt;
 			}
 			break;
+		case Enums.EventActivation.BeginRound:
+		case Enums.EventActivation.EndTurn:
+		case Enums.EventActivation.EndRound:
+		case Enums.EventActivation.DrawCard:
+		case Enums.EventActivation.Hit:
+		case Enums.EventActivation.Hitted:
+		case Enums.EventActivation.Block:
+		case Enums.EventActivation.Evade:
+		case Enums.EventActivation.Evaded:
+		case Enums.EventActivation.Healed:
 		case Enums.EventActivation.BeginCombatEnd:
 		case Enums.EventActivation.CharacterAssign:
 		case Enums.EventActivation.Damaged:
 		case Enums.EventActivation.PreBeginCombat:
 		case Enums.EventActivation.BeginTurnCardsDealt:
+		case Enums.EventActivation.CastFightCard:
 			break;
 		}
 	}
 
-	public void ActivateItem(Enums.EventActivation theEvent, Character target, int auxInt, string auxString, bool forceActivate = false)
+	public void ActivateItem(Enums.EventActivation theEvent, Character target, int auxInt, string auxString, Enums.ActivationManual activationManual = Enums.ActivationManual.None, bool forceActivate = false)
 	{
 		if (theEvent == Enums.EventActivation.None && auxString != "" && forceActivate && MatchManager.Instance != null)
 		{
@@ -1856,7 +1848,13 @@ public class Character
 							}
 						}
 					}
-					if (!(itemData != null) || (itemData.ActivationOnlyOnHeroes && !isHero) || (theEvent != Enums.EventActivation.CastFightCard && itemData.Activation != theEvent && (itemData.Activation != Enums.EventActivation.Damaged || theEvent != Enums.EventActivation.DamagedSecondary)))
+					if (!(itemData != null) || (itemData.PreventApplyForHeroTarget && target != null && target.isHero) || (itemData.ActivationOnlyOnHeroes && !isHero))
+					{
+						continue;
+					}
+					bool num2 = theEvent == Enums.EventActivation.CastFightCard;
+					bool flag = itemData.Activation == Enums.EventActivation.Manual && activationManual == itemData.ActivationManual;
+					if (!(num2 || flag) && itemData.Activation != theEvent && !DamagedWithDamagedSecondary(theEvent, itemData))
 					{
 						continue;
 					}
@@ -1878,8 +1876,61 @@ public class Character
 						Functions.DebugLogGD(text + " -> XXXXXX", "item");
 					}
 				}
+				if (theEvent == Enums.EventActivation.None || auxInt <= 0 || !TryGetActivateOnReceiveEnchantments(target, theEvent, out var enchantments))
+				{
+					return;
+				}
+				foreach (ItemData item in enchantments)
+				{
+					if ((!item.ActivationOnlyOnHeroes || isHero) && itemClass.DoItemOnReceive(theEvent, cardCasted, target, target, auxInt, auxString, 0, cardCasted, item))
+					{
+						num++;
+						MatchManager.Instance.DoItem(target, theEvent, cardCasted, item.name, target, auxInt, auxString, num);
+					}
+				}
 			}
 		}
+	}
+
+	private static bool DamagedWithDamagedSecondary(Enums.EventActivation theEvent, ItemData itemData)
+	{
+		if (itemData.Activation == Enums.EventActivation.Damaged)
+		{
+			return theEvent == Enums.EventActivation.DamagedSecondary;
+		}
+		return false;
+	}
+
+	private bool TryGetActivateOnReceiveEnchantments(Character target, Enums.EventActivation activationEvent, out List<ItemData> enchantments)
+	{
+		if (target != null && target.alive && this != target)
+		{
+			enchantments = (from enchant in GameUtils.GetEnchantments(target)
+				where enchant != null && enchant.ActivateOnReceive && enchant.Activation == activationEvent
+				select enchant).ToList();
+			return enchantments.Count > 0;
+		}
+		enchantments = null;
+		return false;
+	}
+
+	public bool HasTrait(TraitEnum targetTrait)
+	{
+		bool result = false;
+		if (!(this is Hero))
+		{
+			return false;
+		}
+		string[] array = Traits;
+		for (int i = 0; i < array.Length; i++)
+		{
+			if (string.Equals(array[i], targetTrait.ToString(), StringComparison.InvariantCultureIgnoreCase))
+			{
+				result = true;
+				break;
+			}
+		}
+		return result;
 	}
 
 	public void AssignEnchantmentManual(string _id, int _slot)
@@ -2281,7 +2332,7 @@ public class Character
 		hpCurrent = GetMaxHP();
 	}
 
-	public void ModifyHp(int _hp, bool _includeInStats = true, bool _refreshHP = true)
+	public void ModifyHp(int _hp, bool _includeInStats = true, bool _refreshHP = true, Character casterCharacter = null)
 	{
 		int heroActive = MatchManager.Instance.GetHeroActive();
 		int num = 0;
@@ -2308,6 +2359,7 @@ public class Character
 				AtOManager.Instance.combatStats[heroIndex, 1] += num;
 				AtOManager.Instance.combatStatsCurrent[heroIndex, 1] += num;
 			}
+			TryApplyMindCollapse(casterCharacter);
 		}
 		else if (_hp > 0)
 		{
@@ -2341,6 +2393,7 @@ public class Character
 		{
 			alive = true;
 		}
+		tryIncreaseEnergyForRevealingPresenceTrait();
 		if (_hp < 0)
 		{
 			if (_hp < -15 && MatchManager.Instance.CardActive != null && MatchManager.Instance.CardActive.TargetType != Enums.CardTargetType.Global)
@@ -2361,6 +2414,49 @@ public class Character
 			SetHP();
 			MatchManager.Instance.BossNpc?.OnCharacterDamaged(this, _hp, hpCurrent);
 		}
+	}
+
+	private bool tryIncreaseEnergyForRevealingPresenceTrait()
+	{
+		if (alive)
+		{
+			return false;
+		}
+		if (!isIllusion && !isSummon)
+		{
+			return false;
+		}
+		Hero[] teamHero = MatchManager.Instance.GetTeamHero();
+		foreach (Hero hero in teamHero)
+		{
+			if (hero.alive && hero.HasTrait(TraitEnum.RevealingPresence))
+			{
+				hero.ModifyEnergy(1, showScrollCombatText: true);
+				GameUtils.GetCharacterItem(hero).ScrollCombatText(Texts.Instance.GetText("traits_revealingpresence"), Enums.CombatScrollEffectType.Trait);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private bool TryApplyMindCollapse(Character casterCharacter)
+	{
+		if (HasTrait(TraitEnum.MindCollapse))
+		{
+			if (casterCharacter == null || casterCharacter.IsHero)
+			{
+				return false;
+			}
+			if (!alive || !casterCharacter.alive || !traitClass.CanUseTrait("mindcollapse"))
+			{
+				return false;
+			}
+			casterCharacter.SetAuraTrait(this, "sleep", 1);
+			GameUtils.GetCharacterItem(casterCharacter).ScrollCombatText(Texts.Instance.GetText("traits_mindcollapse"), Enums.CombatScrollEffectType.Trait);
+			EffectsManager.Instance.PlayEffectAC("shadowimpactdecay", isHero: false, GameUtils.GetCharacterItem(casterCharacter).CharImageT, flip: false);
+			traitClass.IncrementTraitUsageCount("mindcollapse");
+		}
+		return true;
 	}
 
 	private Character GetAliveCharacterFromTeam(Character[] charTeam)
@@ -2515,10 +2611,18 @@ public class Character
 	{
 		for (int i = 0; i < itemSlots; i++)
 		{
-			if (!(heroData != null) || i != 4)
+			if (heroData != null && i == 4)
 			{
-				ItemData itemData = GetItemDataBySlot(i, useCache: false);
-				if (itemData != null && itemData.HealPercentQuantity > 0 && itemData.Activation == Enums.EventActivation.Killed && itemData.TimesPerCombat > 0 && MatchManager.Instance.ItemExecutedInThisCombat(Id, itemData.Id) < itemData.TimesPerCombat)
+				continue;
+			}
+			ItemData itemData = GetItemDataBySlot(i, useCache: false);
+			if (itemData != null && itemData.HealPercentQuantity > 0 && itemData.Activation == Enums.EventActivation.Killed)
+			{
+				if (itemData.TimesPerCombat == 0)
+				{
+					return true;
+				}
+				if (itemData.TimesPerCombat > 0 && MatchManager.Instance.ItemExecutedInThisCombat(Id, itemData.Id) < itemData.TimesPerCombat)
 				{
 					return true;
 				}
@@ -3037,7 +3141,7 @@ public class Character
 		};
 	}
 
-	public void IndirectDamage(Enums.DamageType damageType, int damage, AudioClip sound = null, string effect = "", string sourceCharacterName = "", string sourceCharacterId = "")
+	public void IndirectDamage(Enums.DamageType damageType, int damage, Character casterCharacter, AudioClip sound = null, string effect = "")
 	{
 		CastResolutionForCombatText castResolutionForCombatText = new CastResolutionForCombatText();
 		if (heroItem != null)
@@ -3086,7 +3190,7 @@ public class Character
 					num2 = -1 * BonusResists(damageType);
 				}
 				num3 = Functions.FuncRoundToInt((float)damage + (float)damage * num2 * 0.01f);
-				num3 = MatchManager.Instance.IncreaseDamage(this, num3);
+				num3 = MatchManager.Instance.IncreaseDamage(this, casterCharacter, num3);
 			}
 		}
 		if (num3 < 0)
@@ -3126,17 +3230,18 @@ public class Character
 		}
 		if (num4 > 0)
 		{
+			string text = casterCharacter.id.Trim().ToLower();
 			if (effect.ToLower() == "spark")
 			{
-				MatchManager.Instance.DamageStatusFromCombatStats(sourceCharacterId, effect, num4);
+				MatchManager.Instance.DamageStatusFromCombatStats(text, effect, num4);
 			}
 			else if (effect.ToLower() == "thorns")
 			{
-				MatchManager.Instance.DamageStatusFromCombatStats(sourceCharacterId, effect, num4);
+				MatchManager.Instance.DamageStatusFromCombatStats(text, effect, num4);
 			}
-			else if (effect.ToLower() == "dark" && sourceCharacterId != "")
+			else if (effect.ToLower() == "dark" && text != "")
 			{
-				MatchManager.Instance.DamageStatusFromCombatStats(sourceCharacterId, effect, num4);
+				MatchManager.Instance.DamageStatusFromCombatStats(text, effect, num4);
 			}
 			else
 			{
@@ -3412,6 +3517,7 @@ public class Character
 		{
 			charges += theCaster.GetAuraCurseQuantityModification(auraCurseData.Id, CC);
 		}
+		tryApplySlowIfHasSleepImmunity(theCaster, _acData, auraCurseData);
 		string text = "";
 		if ((auraCurseData.Preventable && canBePreventable) || auraCurseData.CanBeAddedToImmunityDespiteNotBeingPreventable)
 		{
@@ -3520,16 +3626,17 @@ public class Character
 		}
 		if (auraCurseData.RemoveAuraCurse != null || auraCurseData.RemoveAuraCurse2 != null)
 		{
-			for (int num7 = auraList.Count - 1; num7 >= 0; num7--)
+			int num7 = 0;
+			for (int num8 = auraList.Count - 1; num8 >= 0; num8--)
 			{
-				if (auraList[num7] != null && auraList[num7].ACData != null && ((auraCurseData.RemoveAuraCurse != null && auraList[num7].ACData.Id == auraCurseData.RemoveAuraCurse.Id) || (auraCurseData.RemoveAuraCurse2 != null && auraList[num7].ACData.Id == auraCurseData.RemoveAuraCurse2.Id)))
+				if (auraList[num8] != null && auraList[num8].ACData != null && ((auraCurseData.RemoveAuraCurse != null && auraList[num8].ACData.Id == auraCurseData.RemoveAuraCurse.Id) || (auraCurseData.RemoveAuraCurse2 != null && auraList[num8].ACData.Id == auraCurseData.RemoveAuraCurse2.Id)))
 				{
 					StringBuilder stringBuilder5 = new StringBuilder();
 					stringBuilder5.Append("<s>");
-					stringBuilder5.Append(Functions.UppercaseFirst(auraList[num7].ACData.ACName));
+					stringBuilder5.Append(Functions.UppercaseFirst(auraList[num8].ACData.ACName));
 					stringBuilder5.Append("</s>");
 					string text2 = stringBuilder5.ToString();
-					Enums.CombatScrollEffectType type2 = ((!auraList[num7].ACData.IsAura) ? Enums.CombatScrollEffectType.Curse : Enums.CombatScrollEffectType.Aura);
+					Enums.CombatScrollEffectType type2 = ((!auraList[num8].ACData.IsAura) ? Enums.CombatScrollEffectType.Curse : Enums.CombatScrollEffectType.Aura);
 					if (heroItem != null)
 					{
 						heroItem.ScrollCombatText(text2, type2);
@@ -3538,9 +3645,17 @@ public class Character
 					{
 						npcItem.ScrollCombatText(text2, type2);
 					}
-					SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, auraList[num7].ACData.Id);
-					auraList.RemoveAt(num7);
+					if (!AuraList[num8].ACData.IsAura)
+					{
+						num7++;
+					}
+					SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, auraList[num8].ACData.Id);
+					auraList.RemoveAt(num8);
 				}
+			}
+			if (num7 > 0)
+			{
+				SetEvent(Enums.EventActivation.CurseRemoved, this, num7);
 			}
 		}
 		theCaster?.SetEvent(Enums.EventActivation.AuraCurseSet, this, charges, auraCurseData.Id);
@@ -3562,7 +3677,7 @@ public class Character
 				auraList.Add(aura);
 			}
 		}
-		int num8 = -1;
+		int num9 = -1;
 		AtOManager.Instance.GetNgPlus();
 		if ((bool)MatchManager.Instance && auraCurseData != null && theCaster != null)
 		{
@@ -3574,27 +3689,28 @@ public class Character
 			{
 				continue;
 			}
+			int num10 = 0;
 			int charges2 = auraList[j].GetCharges();
-			num8 = auraCurseData.GetMaxCharges();
-			if (num8 > 0 && num8 < charges2)
+			num9 = auraCurseData.GetMaxCharges();
+			if (num9 > 0 && num9 < charges2)
 			{
-				num8 = charges2;
+				num9 = charges2;
 			}
 			num2 = charges;
 			if (auraCurseData.GainCharges)
 			{
-				if (num8 > -1 && num2 + charges2 > num8)
+				if (num9 > -1 && num2 + charges2 > num9)
 				{
-					num2 = num8 - charges2;
+					num2 = num9 - charges2;
 				}
 				auraList[j].AddCharges(num2);
 			}
 			else if (charges2 < charges)
 			{
 				num2 = charges - charges2;
-				if (num8 > -1 && num2 + charges2 > num8)
+				if (num9 > -1 && num2 + charges2 > num9)
 				{
-					num2 = num8 - charges2;
+					num2 = num9 - charges2;
 				}
 				auraList[j].AddCharges(num2);
 			}
@@ -3637,9 +3753,9 @@ public class Character
 				}
 				if (auraCurseData.DamageSidesWhenConsumed > 0 || auraCurseData.DamageSidesWhenConsumedPerCharge > 0)
 				{
-					int num9 = 0;
-					num9 += auraCurseData.DamageSidesWhenConsumed;
-					num9 += auraCurseData.DamageSidesWhenConsumedPerCharge * charges2;
+					num10 = 0;
+					num10 += auraCurseData.DamageSidesWhenConsumed;
+					num10 += auraCurseData.DamageSidesWhenConsumedPerCharge * charges2;
 					if (heroItem != null)
 					{
 						List<Hero> heroSides = MatchManager.Instance.GetHeroSides(position);
@@ -3649,7 +3765,7 @@ public class Character
 							{
 								EffectsManager.Instance.PlayEffectAC(auraCurseData.EffectTickSides, isHero: true, heroSides[k].HeroItem.CharImageT, flip: false, 0.2f);
 							}
-							heroSides[k].IndirectDamage(auraCurseData.DamageTypeWhenConsumed, num9, null, auraCurseData.Id, gameName, id);
+							heroSides[k].IndirectDamage(auraCurseData.DamageTypeWhenConsumed, num10, theCaster, null, auraCurseData.Id);
 						}
 					}
 					else if (npcItem != null)
@@ -3661,15 +3777,19 @@ public class Character
 							{
 								EffectsManager.Instance.PlayEffectAC(auraCurseData.EffectTickSides, isHero: false, nPCSides[l].NPCItem.CharImageT, flip: false, 0.2f);
 							}
-							nPCSides[l].IndirectDamage(auraCurseData.DamageTypeWhenConsumed, num9, null, auraCurseData.Id, gameName, id);
+							nPCSides[l].IndirectDamage(auraCurseData.DamageTypeWhenConsumed, num10, theCaster, null, auraCurseData.Id);
 						}
 					}
 				}
 				if (auraCurseData.DamageWhenConsumed > 0 || auraCurseData.DamageWhenConsumedPerCharge > 0f)
 				{
-					int num10 = 0;
+					num10 = 0;
 					num10 += auraCurseData.DamageWhenConsumed;
 					int num11 = charges2;
+					if (auraCurseData.Id == "dark")
+					{
+						SetEvent(Enums.EventActivation.CurseExploded, this, num11, auraCurseData.Id, theCaster);
+					}
 					if (auraCurseData.ConsumedDamageChargesBasedOnACCharges != null)
 					{
 						num11 = GetAuraCharges(auraCurseData.ConsumedDamageChargesBasedOnACCharges.Id);
@@ -3698,7 +3818,7 @@ public class Character
 							num10 += Functions.FuncRoundToInt((float)num10 * 0.1f * (float)auraCharges);
 						}
 					}
-					IndirectDamage(auraCurseData.DamageTypeWhenConsumed, num10, null, auraCurseData.Id, gameName);
+					IndirectDamage(auraCurseData.DamageTypeWhenConsumed, num10, theCaster, null, auraCurseData.Id);
 				}
 				if (auraCurseData.HealTargetOnExplode != Enums.AuraCurseExplodeHealTarget.None)
 				{
@@ -3817,10 +3937,10 @@ public class Character
 		}
 		Aura aura2 = new Aura();
 		num2 = charges;
-		num8 = auraCurseData.GetMaxCharges();
-		if (num8 > -1 && num2 > num8)
+		num9 = auraCurseData.GetMaxCharges();
+		if (num9 > -1 && num2 > num9)
 		{
-			num2 = num8;
+			num2 = num9;
 		}
 		aura2.SetAura(auraCurseData, num2);
 		auraList.Add(aura2);
@@ -3897,6 +4017,14 @@ public class Character
 		return 1;
 	}
 
+	private void tryApplySlowIfHasSleepImmunity(Character theCaster, AuraCurseData _acData, AuraCurseData acData)
+	{
+		if (_acData.Id.Equals("sleep", StringComparison.OrdinalIgnoreCase) && AuracurseImmune.Contains(acData.Id))
+		{
+			SetAura(theCaster, Globals.Instance.GetAuraCurseData("slow"), 1);
+		}
+	}
+
 	private void HealTeam(Character[] team, int healAmount, AudioClip sound = null, string effect = "")
 	{
 		foreach (Character character in team)
@@ -3947,7 +4075,7 @@ public class Character
 			num = Functions.Random(0, teamNPC.Length, Functions.RandomString(5f));
 		}
 		while (teamNPC[num] == null || !teamNPC[num].Alive);
-		teamNPC[num].IndirectDamage(Enums.DamageType.None, damageAmount, sound, effect, gameName);
+		teamNPC[num].IndirectDamage(Enums.DamageType.None, damageAmount, this, sound, effect);
 	}
 
 	private Character[] GetCharactersToHeal(Character theCaster, Enums.AuraCurseExplodeHealTarget healTarget)
@@ -4109,15 +4237,34 @@ public class Character
 	{
 		if (auraList != null)
 		{
-			for (int i = 0; i < auraList.Count; i++)
-			{
-				if (!auraList[i].ACData.IsAura)
-				{
-					return true;
-				}
-			}
+			return auraList.Any((Aura aura) => !aura.ACData.IsAura);
 		}
 		return false;
+	}
+
+	public bool HasAuraCurse(string auraCurseId)
+	{
+		if (auraList != null)
+		{
+			return auraList.Any((Aura aura) => aura.ACData.Id.Equals(auraCurseId, StringComparison.OrdinalIgnoreCase));
+		}
+		return false;
+	}
+
+	public bool TryRemoveAuraCurse(string auraCurseId)
+	{
+		if (auraList == null || string.IsNullOrWhiteSpace(auraCurseId))
+		{
+			return false;
+		}
+		Aura aura = auraList.FirstOrDefault((Aura a) => a.ACData.Id.Equals(auraCurseId, StringComparison.OrdinalIgnoreCase));
+		if (aura == null)
+		{
+			return false;
+		}
+		auraList.Remove(aura);
+		SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, aura.ACData.Id);
+		return true;
 	}
 
 	public List<string> GetCurseList()
@@ -4208,6 +4355,7 @@ public class Character
 		}
 		StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.Append("<s>");
+		int num = 0;
 		for (int i = 0; i < numCurses; i++)
 		{
 			for (int j = 0; j < auraList.Count; j++)
@@ -4216,6 +4364,7 @@ public class Character
 				{
 					stringBuilder.Append(Functions.UppercaseFirst(auraList[j].ACData.ACName));
 					stringBuilder.Append("\n");
+					num++;
 					SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, auraList[j].ACData.Id);
 					auraList.RemoveAt(j);
 					flag = true;
@@ -4226,6 +4375,10 @@ public class Character
 			{
 				break;
 			}
+		}
+		if (num > 0)
+		{
+			SetEvent(Enums.EventActivation.CurseRemoved, this, num);
 		}
 		if (flag)
 		{
@@ -4244,15 +4397,24 @@ public class Character
 
 	public void HealAuraCurse(AuraCurseData AC)
 	{
-		for (int num = auraList.Count - 1; num >= 0; num--)
+		int num = 0;
+		for (int num2 = auraList.Count - 1; num2 >= 0; num2--)
 		{
-			if (auraList[num] != null && auraList[num].ACData != null && auraList[num].ACData.Id == AC.Id)
+			if (auraList[num2] != null && auraList[num2].ACData != null && auraList[num2].ACData.Id == AC.Id)
 			{
-				SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, auraList[num].ACData.Id);
-				auraList.RemoveAt(num);
+				SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, auraList[num2].ACData.Id);
+				if (!AuraList[num2].ACData.IsAura)
+				{
+					num++;
+				}
+				auraList.RemoveAt(num2);
 				UpdateAuraCurseFunctions();
-				break;
+				return;
 			}
+		}
+		if (num > 0)
+		{
+			SetEvent(Enums.EventActivation.CurseRemoved, this, num);
 		}
 	}
 
@@ -4264,13 +4426,14 @@ public class Character
 			curseList = new List<string>();
 			curseList.Add(singleCurse);
 		}
-		for (int num = auraList.Count - 1; num >= 0; num--)
+		int num = 0;
+		for (int num2 = auraList.Count - 1; num2 >= 0; num2--)
 		{
-			if (auraList[num] != null && auraList[num].ACData != null && curseList.Contains(auraList[num].ACData.Id))
+			if (auraList[num2] != null && auraList[num2].ACData != null && curseList.Contains(auraList[num2].ACData.Id))
 			{
 				StringBuilder stringBuilder = new StringBuilder();
 				stringBuilder.Append("<s>");
-				stringBuilder.Append(Functions.UppercaseFirst(auraList[num].ACData.ACName));
+				stringBuilder.Append(Functions.UppercaseFirst(auraList[num2].ACData.ACName));
 				stringBuilder.Append("</s>");
 				if (heroItem != null)
 				{
@@ -4280,14 +4443,22 @@ public class Character
 				{
 					npcItem.ScrollCombatText(stringBuilder.ToString(), Enums.CombatScrollEffectType.Curse);
 				}
-				SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, auraList[num].ACData.Id);
-				if (AuraList[num].ACData.Id == "block")
+				SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, auraList[num2].ACData.Id);
+				if (AuraList[num2].ACData.Id == "block")
 				{
 					SetEvent(Enums.EventActivation.BlockReachedZero);
 				}
-				auraList.RemoveAt(num);
+				if (!AuraList[num2].ACData.IsAura)
+				{
+					num++;
+				}
+				auraList.RemoveAt(num2);
 				flag = true;
 			}
+		}
+		if (num > 0)
+		{
+			SetEvent(Enums.EventActivation.CurseRemoved, this, num);
 		}
 		if (flag)
 		{
@@ -4304,6 +4475,7 @@ public class Character
 		}
 		StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.Append("<s>");
+		int num = 0;
 		for (int i = 0; i < numAuras; i++)
 		{
 			for (int j = 0; j < auraList.Count; j++)
@@ -4312,6 +4484,10 @@ public class Character
 				{
 					stringBuilder.Append(Functions.UppercaseFirst(auraList[j].ACData.ACName));
 					stringBuilder.Append("\n");
+					if (!AuraList[j].ACData.IsAura)
+					{
+						num++;
+					}
 					SetEvent(Enums.EventActivation.AuraCurseRemoved, this, 0, auraList[j].ACData.Id);
 					auraList.RemoveAt(j);
 					flag = true;
@@ -4322,6 +4498,10 @@ public class Character
 			{
 				break;
 			}
+		}
+		if (num > 0)
+		{
+			SetEvent(Enums.EventActivation.CurseRemoved, this, num);
 		}
 		if (flag)
 		{
@@ -4388,7 +4568,7 @@ public class Character
 				int num = aCData.DamageReflectedMultiplier * auraList[i].AuraCharges;
 				if (theCasterHero != null)
 				{
-					theCasterHero.IndirectDamage(aCData.DamageReflectedType, num, null, aCData.Id, gameName, id);
+					theCasterHero.IndirectDamage(aCData.DamageReflectedType, num, theCasterHero, null, aCData.Id);
 				}
 				else if (theCasterNPC != null)
 				{
@@ -4397,7 +4577,7 @@ public class Character
 						float num2 = 1f + (float)theCasterNPC.GetAuraCharges("rust") * 0.05f;
 						num = Functions.FuncRoundToInt((float)num * num2);
 					}
-					theCasterNPC.IndirectDamage(aCData.DamageReflectedType, num, null, aCData.Id, gameName, id);
+					theCasterNPC.IndirectDamage(aCData.DamageReflectedType, num, theCasterNPC, null, aCData.Id);
 				}
 				break;
 			}
@@ -4405,22 +4585,22 @@ public class Character
 				damageAmount *= aCData.DamageReflectedMultiplier;
 				if (theCasterHero != null)
 				{
-					theCasterHero.IndirectDamage(aCData.DamageReflectedType, damageAmount, null, aCData.Id, gameName, id);
+					theCasterHero.IndirectDamage(aCData.DamageReflectedType, damageAmount, theCasterHero, null, aCData.Id);
 				}
 				else
 				{
-					theCasterNPC?.IndirectDamage(aCData.DamageReflectedType, damageAmount, null, aCData.Id, gameName, id);
+					theCasterNPC?.IndirectDamage(aCData.DamageReflectedType, damageAmount, theCasterNPC, null, aCData.Id);
 				}
 				break;
 			case Enums.RefectedDamageModifierType.DamagePerDamageBlocked:
 				blockedAmount *= aCData.DamageReflectedMultiplier;
 				if (theCasterHero != null)
 				{
-					theCasterHero.IndirectDamage(aCData.DamageReflectedType, blockedAmount, null, aCData.Id, gameName, id);
+					theCasterHero.IndirectDamage(aCData.DamageReflectedType, blockedAmount, theCasterHero, null, aCData.Id);
 				}
 				else
 				{
-					theCasterNPC?.IndirectDamage(aCData.DamageReflectedType, blockedAmount, null, aCData.Id, gameName, id);
+					theCasterNPC?.IndirectDamage(aCData.DamageReflectedType, blockedAmount, theCasterNPC, null, aCData.Id);
 				}
 				break;
 			}

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
+using UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using WebSocketSharp;
@@ -202,6 +203,9 @@ public class CharPopup : MonoBehaviour
 	public PerkColumn[] perkColumns;
 
 	public BotonSkin[] botonSkinBase;
+
+	[SerializeField]
+	private RectTransform progressionRowsContainer;
 
 	public ProgressionRow[] progressionRows;
 
@@ -831,8 +835,15 @@ public class CharPopup : MonoBehaviour
 			}
 			else if (SCD.SubClassName.ToLower() == "engineer")
 			{
-				heroAnimated.transform.localScale = new Vector3(0.95f, 0.95f, 1f);
-				heroAnimated.transform.localPosition = new Vector3(-0.125f, -0.1f, 0f);
+				float num3 = 0.95f;
+				float y = -0.1f;
+				if (gameObject.TryGetComponent<UICharacterScale>(out var component))
+				{
+					num3 = component.uiCharacterScale;
+					y = 0f;
+				}
+				heroAnimated.transform.localScale = new Vector3(num3, num3, 1f);
+				heroAnimated.transform.localPosition = new Vector3(-0.125f, y, 0f);
 			}
 			else if (SCD.SubClassName.ToLower() == "minstrel")
 			{
@@ -885,14 +896,14 @@ public class CharPopup : MonoBehaviour
 			animatedSprites = new List<SpriteRenderer>();
 			animatedSpritesOutOfCharacter = new List<SetSpriteLayerFromBase>();
 			GetSpritesFromAnimated(heroAnimated);
-			int num3 = 2000;
+			int num4 = 2000;
 			if (animatedSprites != null)
 			{
 				for (int i = 0; i < animatedSprites.Count; i++)
 				{
 					if (animatedSprites[i] != null)
 					{
-						animatedSprites[i].sortingOrder = num3 - i;
+						animatedSprites[i].sortingOrder = num4 - i;
 						animatedSprites[i].sortingLayerName = "UI";
 					}
 				}
@@ -1432,7 +1443,7 @@ public class CharPopup : MonoBehaviour
 			}
 			useSupplyDisclaimer.gameObject.SetActive(value: false);
 		}
-		if (GameManager.Instance.GetDeveloperMode())
+		if (GameManager.Instance.GetDeveloperMode() || (GameManager.Instance.CheatMode && GameManager.Instance.EnableButtons))
 		{
 			useSuppliesButton.Enable();
 		}

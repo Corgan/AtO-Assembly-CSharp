@@ -10,6 +10,9 @@ public class CardbackData : ScriptableObject
 	private string cardbackName;
 
 	[SerializeField]
+	private bool hideInGame;
+
+	[SerializeField]
 	private SubClassData cardbackSubclass;
 
 	[SerializeField]
@@ -83,6 +86,18 @@ public class CardbackData : ScriptableObject
 		set
 		{
 			cardbackName = value;
+		}
+	}
+
+	public bool HideInGame
+	{
+		get
+		{
+			return hideInGame;
+		}
+		set
+		{
+			hideInGame = value;
 		}
 	}
 

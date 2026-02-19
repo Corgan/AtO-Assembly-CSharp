@@ -21,7 +21,8 @@ public class ButtonCombatTest : MonoBehaviour
 			return;
 		}
 		AtOManager.Instance.IsCombatTool = true;
-		PlayerManager.Instance.UnlockAll();
+		PlayerManager.Instance.UnlockAllExceptHeroes();
+		PlayerManager.Instance.UnlockHeroes();
 		CombatToolManager.Instance.LoadCombatToolConfig();
 		SandboxManager.Instance.SbReset();
 		SandboxManager.Instance.SaveValuesToAtOManager();

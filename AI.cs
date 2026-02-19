@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Cards;
 using UnityEngine;
 
 public static class AI
@@ -113,68 +114,22 @@ public static class AI
 				{
 					foreach (Hero hero3 in _teamHero)
 					{
-						if (hero3 == null || !hero3.Alive || hero3.HasEffect("stealth") || (aICards4.Card.TargetPosition == Enums.CardTargetPosition.Front && !MatchManager.Instance.PositionIsFront(isHero: true, hero3.Position)) || (aICards4.Card.TargetPosition == Enums.CardTargetPosition.Back && !MatchManager.Instance.PositionIsBack(hero3)) || (aICards4.Card.TargetPosition == Enums.CardTargetPosition.Middle && !MatchManager.Instance.PositionIsMiddle(hero3)))
+						if (hero3 != null && hero3.Alive && !hero3.HasEffect("stealth") && (aICards4.Card.TargetPosition != Enums.CardTargetPosition.Front || MatchManager.Instance.PositionIsFront(isHero: true, hero3.Position)) && (aICards4.Card.TargetPosition != Enums.CardTargetPosition.Back || MatchManager.Instance.PositionIsBack(hero3)) && (aICards4.Card.TargetPosition != Enums.CardTargetPosition.Middle || MatchManager.Instance.PositionIsMiddle(hero3)))
 						{
-							continue;
-						}
-						bool flag3 = false;
-						if (aICards4.OnlyCastIf == Enums.OnlyCastIf.Always)
-						{
-							flag3 = true;
-						}
-						else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TeamNpcAllAlive)
-						{
-							if (MatchManager.Instance.NumNPCsAlive() == 4)
+							bool addTarget = true;
+							if (!CheckCondition(aICards4.OnlyCastIf, aICards4.ValueCastIf, aICards4.AuracurseCastIf?.Id, hero3, null))
 							{
-								flag3 = true;
+								addTarget = false;
 							}
-						}
-						else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetLifeLessThanPercent)
-						{
-							float valueCastIf = aICards4.ValueCastIf;
-							if (hero3.GetHpPercent() <= valueCastIf)
+							Character anotherTarget = tryGetSpecialTarget(_teamHero, aICards4.SpecialSecondTargetID);
+							if (!CheckCondition(aICards4.SecondOnlyCastIf, aICards4.SecondValueCastIf, aICards4.AuracurseCastIf?.Id, hero3, anotherTarget))
 							{
-								flag3 = true;
+								addTarget = false;
 							}
-						}
-						else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetHasNotAuraCurse)
-						{
-							string id = aICards4.AuracurseCastIf.Id;
-							if (!hero3.HasEffect(id))
+							if (CanUseNightmareImageCard(aICards4, addTarget, hero3))
 							{
-								flag3 = true;
+								list3.Add(hero3);
 							}
-						}
-						else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetLifeHigherThanPercent)
-						{
-							float valueCastIf2 = aICards4.ValueCastIf;
-							if (hero3.GetHpPercent() >= valueCastIf2)
-							{
-								flag3 = true;
-							}
-						}
-						else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetHasAuraCurse)
-						{
-							string id2 = aICards4.AuracurseCastIf.Id;
-							if (hero3.HasEffect(id2))
-							{
-								flag3 = true;
-							}
-						}
-						else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetHasAnyAura)
-						{
-							if (hero3.HasAnyAura())
-							{
-								flag3 = true;
-							}
-						}
-						else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetHasAnyCurse && hero3.HasAnyCurse())
-						{
-							flag3 = true;
-						}
-						if (flag3)
-						{
-							list3.Add(hero3);
 						}
 					}
 				}
@@ -187,77 +142,31 @@ public static class AI
 					{
 						continue;
 					}
-					bool flag4 = true;
+					bool flag3 = true;
 					if (aICards4.Card.TargetSide == Enums.CardTargetSide.Self && _npc.Id != nPC2.Id)
 					{
-						flag4 = false;
+						flag3 = false;
 					}
 					else if (aICards4.Card.TargetSide == Enums.CardTargetSide.FriendNotSelf && _npc.Id == nPC2.Id)
 					{
-						flag4 = false;
+						flag3 = false;
 					}
-					if (!flag4 || !nPC2.Alive || (nPC2.Position > 0 && aICards4.Card.TargetPosition == Enums.CardTargetPosition.Front))
+					if (flag3 && nPC2.Alive && (nPC2.Position <= 0 || aICards4.Card.TargetPosition != Enums.CardTargetPosition.Front))
 					{
-						continue;
-					}
-					bool flag5 = false;
-					if (aICards4.OnlyCastIf == Enums.OnlyCastIf.Always)
-					{
-						flag5 = true;
-					}
-					else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TeamNpcAllAlive)
-					{
-						if (MatchManager.Instance.NumNPCsAlive() == 4)
+						bool addTarget2 = true;
+						Character anotherTarget2 = tryGetSpecialTarget(_teamNPC, aICards4.SpecialSecondTargetID);
+						if (!CheckCondition(aICards4.OnlyCastIf, aICards4.ValueCastIf, aICards4.AuracurseCastIf?.Id, nPC2, anotherTarget2))
 						{
-							flag5 = true;
+							addTarget2 = false;
 						}
-					}
-					else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetLifeLessThanPercent)
-					{
-						float valueCastIf3 = aICards4.ValueCastIf;
-						if (nPC2.GetHpPercent() <= valueCastIf3)
+						if (!CheckCondition(aICards4.SecondOnlyCastIf, aICards4.SecondValueCastIf, aICards4.AuracurseCastIf?.Id, nPC2, anotherTarget2))
 						{
-							flag5 = true;
+							addTarget2 = false;
 						}
-					}
-					else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetHasNotAuraCurse)
-					{
-						string id3 = aICards4.AuracurseCastIf.Id;
-						if (!nPC2.HasEffect(id3))
+						if (CanUseNightmareImageCard(aICards4, addTarget2, nPC2))
 						{
-							flag5 = true;
+							list4.Add(nPC2);
 						}
-					}
-					else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetLifeHigherThanPercent)
-					{
-						float valueCastIf4 = aICards4.ValueCastIf;
-						if (nPC2.GetHpPercent() >= valueCastIf4)
-						{
-							flag5 = true;
-						}
-					}
-					else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetHasAuraCurse)
-					{
-						string id4 = aICards4.AuracurseCastIf.Id;
-						if (nPC2.HasEffect(id4))
-						{
-							flag5 = true;
-						}
-					}
-					else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetHasAnyAura)
-					{
-						if (nPC2.HasAnyAura())
-						{
-							flag5 = true;
-						}
-					}
-					else if (aICards4.OnlyCastIf == Enums.OnlyCastIf.TargetHasAnyCurse && nPC2.HasAnyCurse())
-					{
-						flag5 = true;
-					}
-					if (flag5)
-					{
-						list4.Add(nPC2);
 					}
 				}
 			}
@@ -760,5 +669,45 @@ public static class AI
 			return false;
 		}
 		return false;
+	}
+
+	private static bool CanUseNightmareImageCard(AICards theAICard, bool addTarget, Character character)
+	{
+		if (theAICard.Card.SpecialCardEnum != SpecialCardEnum.NightmareImage)
+		{
+			return addTarget;
+		}
+		return MatchManager.Instance.GetNPCAvailablePosition((!character.NpcData.BigModel) ? 1 : 2) != -1;
+	}
+
+	private static bool CheckCondition(Enums.OnlyCastIf onlyCastIf, float valueCastIf, string auraCurseId, Character target, Character anotherTarget)
+	{
+		return onlyCastIf switch
+		{
+			Enums.OnlyCastIf.Always => true, 
+			Enums.OnlyCastIf.TargetLifeLessThanPercent => target.GetHpPercent() <= valueCastIf, 
+			Enums.OnlyCastIf.TargetLifeHigherThanPercent => target.GetHpPercent() >= valueCastIf, 
+			Enums.OnlyCastIf.TargetHasAuraCurse => target.HasEffect(auraCurseId), 
+			Enums.OnlyCastIf.TargetHasNotAuraCurse => !target.HasEffect(auraCurseId), 
+			Enums.OnlyCastIf.TargetHasAnyAura => target.HasAnyAura(), 
+			Enums.OnlyCastIf.TargetHasAnyCurse => target.HasAnyCurse(), 
+			Enums.OnlyCastIf.LifeInMainTargetHigherThanInSpecialTarget => anotherTarget != null && target.GetHp() > anotherTarget.GetHp(), 
+			Enums.OnlyCastIf.LifeInMainTargetLessThanInSpecialTarget => anotherTarget != null && target.GetHp() < anotherTarget.GetHp(), 
+			Enums.OnlyCastIf.TargetNotIllusion => !target.IsIllusion, 
+			Enums.OnlyCastIf.TeamNpcAllAlive => MatchManager.Instance.NumNPCsAlive() == 4, 
+			_ => false, 
+		};
+	}
+
+	private static Character tryGetSpecialTarget(IEnumerable<Character> characterCollection, string targetID)
+	{
+		foreach (Character item in characterCollection)
+		{
+			if (item != null && item.Alive && !item.IsIllusion && !string.IsNullOrEmpty(targetID) && item.GameName.Contains(targetID))
+			{
+				return item;
+			}
+		}
+		return null;
 	}
 }

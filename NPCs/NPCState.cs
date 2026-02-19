@@ -12,4 +12,6 @@ public class NPCState
 	public bool IsIllusionExposed;
 
 	public string IllusionCharacterId;
+
+	public bool IsSummon;
 }

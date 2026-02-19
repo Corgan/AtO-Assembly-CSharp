@@ -84,6 +84,12 @@ public class Telemetry
 				case "3875470":
 					list.Add("Project Necropolis");
 					break;
+				case "4013430":
+					list.Add("Myths of the Nine Realms");
+					break;
+				case "4013420":
+					list.Add("Golden Season Pack");
+					break;
 				default:
 					list.Add(Globals.Instance.SkuAvailable[i]);
 					break;

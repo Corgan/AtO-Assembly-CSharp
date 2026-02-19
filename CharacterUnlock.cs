@@ -24,6 +24,10 @@ public class CharacterUnlock : MonoBehaviour
 		{
 			characterSPR.transform.localPosition = new Vector3(-0.5f, 0f, 0f);
 		}
+		else if (_scd.CharacterName.ToLower() == "nyrada")
+		{
+			characterSPR.transform.localPosition = new Vector3(-0.15f, 0f, 0f);
+		}
 		else if (_scd.CharacterName.ToLower() == "malukah")
 		{
 			characterSPR.transform.localPosition = new Vector3(-0.75f, 0f, 0f);

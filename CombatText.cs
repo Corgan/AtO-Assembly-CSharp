@@ -35,9 +35,17 @@ public class CombatText : MonoBehaviour
 	{
 	}
 
+	private void OnDisable()
+	{
+		StopAllCoroutines();
+	}
+
 	private void SetTimer()
 	{
-		StartCoroutine(TimerCo());
+		if ((bool)this)
+		{
+			StartCoroutine(TimerCo());
+		}
 	}
 
 	private IEnumerator TimerCo()
@@ -75,7 +83,7 @@ public class CombatText : MonoBehaviour
 
 	private void LaunchInstance(CastResolutionForCombatText _cast)
 	{
-		if (this != null && base.transform != null && characterItem != null)
+		if ((bool)this && (bool)characterItem && (bool)MatchManager.Instance && (bool)MatchManager.Instance.combattextTransform && (bool)CTI_Prefab)
 		{
 			GameObject obj = UnityEngine.Object.Instantiate(CTI_Prefab, new Vector3(base.transform.position.x, 1.5f, 0f), Quaternion.identity, MatchManager.Instance.combattextTransform);
 			CombatTextInstance component = obj.GetComponent<CombatTextInstance>();

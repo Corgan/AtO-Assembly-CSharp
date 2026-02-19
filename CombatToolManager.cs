@@ -372,6 +372,10 @@ public class CombatToolManager : MonoBehaviour
 		}
 		bool flag = false;
 		int num = 0;
+		if (TryLaunchCheatCombat())
+		{
+			return;
+		}
 		while (!flag && num < 50)
 		{
 			num++;
@@ -394,6 +398,36 @@ public class CombatToolManager : MonoBehaviour
 		{
 			Debug.LogError("Failed to find any combat after multiple attempts!");
 		}
+	}
+
+	private bool TryLaunchCheatCombat()
+	{
+		if (!GameManager.Instance.CheatMode || string.IsNullOrEmpty(GameManager.Instance.CheatZoneName))
+		{
+			return false;
+		}
+		string cheatZoneName = GameManager.Instance.CheatZoneName;
+		CombatData[] array = Resources.LoadAll<CombatData>("World/Combats/" + cheatZoneName);
+		if (array == null || array.Length == 0)
+		{
+			return false;
+		}
+		string combatName = GameManager.Instance.CheatCombatName;
+		CombatData combatData;
+		if (string.IsNullOrEmpty(combatName) || combatName == "__RANDOM__")
+		{
+			combatData = array[UnityEngine.Random.Range(0, array.Length)];
+		}
+		else
+		{
+			combatData = array.FirstOrDefault((CombatData c) => c != null && c.name == combatName);
+			if (combatData == null)
+			{
+				combatData = array[UnityEngine.Random.Range(0, array.Length)];
+			}
+		}
+		AtOManager.Instance.LaunchCombat(combatData);
+		return true;
 	}
 
 	private void LaunchRandomCombat1()

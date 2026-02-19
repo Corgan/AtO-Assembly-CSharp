@@ -28,6 +28,9 @@ public class TraitData : ScriptableObject
 	private int timesPerTurn;
 
 	[SerializeField]
+	private bool hideTimesPerTurnText;
+
+	[SerializeField]
 	private int timesPerRound;
 
 	[Header("Card reward")]
@@ -687,6 +690,18 @@ public class TraitData : ScriptableObject
 		set
 		{
 			maxBleedDamagePerTurn = value;
+		}
+	}
+
+	public bool HideTimesPerTurnText
+	{
+		get
+		{
+			return hideTimesPerTurnText;
+		}
+		set
+		{
+			hideTimesPerTurnText = value;
 		}
 	}
 

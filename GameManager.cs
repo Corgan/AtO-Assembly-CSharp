@@ -134,16 +134,25 @@ public class GameManager : MonoBehaviour
 	private MapType startFromMap;
 
 	[SerializeField]
+	private string cheatZoneName;
+
+	[SerializeField]
+	private string cheatCombatName;
+
+	[SerializeField]
 	private bool useImmortal;
+
+	[SerializeField]
+	private bool enableButtons;
 
 	[SerializeField]
 	private bool useManyResources;
 
 	[SerializeField]
-	private bool unlockAllHeroes;
+	private bool unlockAllExceptHeroes;
 
 	[SerializeField]
-	private bool unlockMadness;
+	private bool unlockHeroes;
 
 	[SerializeField]
 	private bool disableSave;
@@ -198,41 +207,35 @@ public class GameManager : MonoBehaviour
 
 	public static GameManager Instance { get; private set; }
 
-	public bool CheatMode
+	public bool CheatMode => cheatMode;
+
+	public string CheatZoneName
 	{
 		get
 		{
-			return cheatMode;
+			return cheatZoneName;
 		}
 		set
 		{
-			cheatMode = value;
+			cheatZoneName = value;
 		}
 	}
 
-	public bool WinMatchOnStart
+	public string CheatCombatName
 	{
 		get
 		{
-			return winMatchOnStart;
+			return cheatCombatName;
 		}
 		set
 		{
-			winMatchOnStart = value;
+			cheatCombatName = value;
 		}
 	}
 
-	public bool SkipTutorial
-	{
-		get
-		{
-			return skipTutorial;
-		}
-		set
-		{
-			skipTutorial = value;
-		}
-	}
+	public bool WinMatchOnStart => winMatchOnStart;
+
+	public bool SkipTutorial => skipTutorial;
 
 	public MapType StartFromMap
 	{
@@ -246,89 +249,21 @@ public class GameManager : MonoBehaviour
 		}
 	}
 
-	public bool IsSaveDisabled
-	{
-		get
-		{
-			return disableSave;
-		}
-		set
-		{
-			disableSave = value;
-		}
-	}
+	public bool IsSaveDisabled => disableSave;
 
-	public bool UseTestSteamID
-	{
-		get
-		{
-			return useTestSteamID;
-		}
-		set
-		{
-			useTestSteamID = value;
-		}
-	}
+	public bool UseTestSteamID => useTestSteamID;
 
-	public bool UseImmortal
-	{
-		get
-		{
-			return useImmortal;
-		}
-		set
-		{
-			useImmortal = value;
-		}
-	}
+	public bool UseImmortal => useImmortal;
 
-	public bool UseManyResources
-	{
-		get
-		{
-			return useManyResources;
-		}
-		set
-		{
-			useManyResources = value;
-		}
-	}
+	public bool EnableButtons => enableButtons;
 
-	public bool UnlockAllHeroes
-	{
-		get
-		{
-			return unlockAllHeroes;
-		}
-		set
-		{
-			unlockAllHeroes = value;
-		}
-	}
+	public bool UseManyResources => useManyResources;
 
-	public bool UnlockMadness
-	{
-		get
-		{
-			return unlockMadness;
-		}
-		set
-		{
-			unlockMadness = value;
-		}
-	}
+	public bool UnlockAllExceptHeroes => unlockAllExceptHeroes;
 
-	public bool DisableSteamAuthorizationForPhoton
-	{
-		get
-		{
-			return disableSteamAuthorizationForPhoton;
-		}
-		set
-		{
-			disableSteamAuthorizationForPhoton = value;
-		}
-	}
+	public bool UnlockHeroes => unlockHeroes;
+
+	public bool DisableSteamAuthorizationForPhoton => disableSteamAuthorizationForPhoton;
 
 	public Dictionary<string, Hero> GameHeroes
 	{
@@ -1434,6 +1369,11 @@ public class GameManager : MonoBehaviour
 		if (value != null)
 		{
 			gameHeroes.Add("bloodmage", value);
+		}
+		value = CreateHero("exile");
+		if (value != null)
+		{
+			gameHeroes.Add("exile", value);
 		}
 	}
 

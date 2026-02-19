@@ -528,57 +528,118 @@ public class ChallengeSelectionManager : MonoBehaviour
 		}
 	}
 
+	private static string GetIconKey(PerkData perkData)
+	{
+		if (perkData == null)
+		{
+			return null;
+		}
+		if (perkData.Icon != null && !string.IsNullOrEmpty(perkData.Icon.name))
+		{
+			return perkData.Icon.name.Trim().ToLowerInvariant();
+		}
+		if (!string.IsNullOrEmpty(perkData.Id))
+		{
+			return ("perk:" + perkData.Id).Trim().ToLowerInvariant();
+		}
+		return null;
+	}
+
 	private void AssignPerkButtons()
 	{
-		Enums.CardClass cardClass = (Enums.CardClass)Enum.Parse(typeof(Enums.CardClass), Enum.GetName(typeof(Enums.HeroClass), theTeam[currentHeroIndex].HeroData.HeroClass));
-		if (theTeam[currentHeroIndex].HeroData.HeroSubClass.Id == Globals.Instance.GetSubClassData("engineer").Id)
+		Hero hero = theTeam[currentHeroIndex];
+		if (hero == null || hero.HeroData == null || hero.HeroData.HeroSubClass == null)
 		{
-			cardClass = Enums.CardClass.Warrior;
+			return;
 		}
-		List<PerkData> perkDataClass = Globals.Instance.GetPerkDataClass(cardClass);
-		int num = 0;
-		int num2 = 0;
-		SortedDictionary<int, PerkData> sortedDictionary = new SortedDictionary<int, PerkData>();
-		for (int i = 0; i < perkDataClass.Count; i++)
+		SubClassData heroSubClass = hero.HeroData.HeroSubClass;
+		Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof(Enums.HeroClass), heroSubClass.HeroClass), out var result);
+		if (heroSubClass.Id == Globals.Instance.GetSubClassData("engineer").Id)
 		{
-			if (perkDataClass[i].ObeliskPerk && !sortedDictionary.ContainsKey(perkDataClass[i].Level))
-			{
-				sortedDictionary.Add(perkDataClass[i].Level, perkDataClass[i]);
-			}
+			result = Enums.CardClass.Warrior;
 		}
+		Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof(Enums.HeroClass), heroSubClass.HeroClassSecondary), out var result2);
+		SortedDictionary<int, PerkData> sortedDictionary = BuildPerkList(result);
+		SortedDictionary<int, PerkData> sortedDictionary2 = ((result2 != Enums.CardClass.None) ? BuildPerkList(result2) : null);
+		HashSet<string> hashSet = new HashSet<string>();
+		int i = 0;
 		foreach (KeyValuePair<int, PerkData> item in sortedDictionary)
 		{
-			PerkChallengeItem perkChallengeItem = perkChallengeItems[num];
-			perkChallengeItem.SetPerk(currentHeroIndex, num, item.Value.Id);
-			if (perkDrafted.ContainsKey(currentHeroIndex) && perkDrafted[currentHeroIndex].Contains(num))
+			if (i > 20 || i >= perkChallengeItems.Length)
 			{
-				perkChallengeItem.SetActive(state: true);
-				num2++;
+				break;
 			}
-			else
+			PerkData value = item.Value;
+			string iconKey = GetIconKey(value);
+			if (string.IsNullOrEmpty(iconKey) || !hashSet.Contains(iconKey))
 			{
-				perkChallengeItem.SetActive(state: false);
-			}
-			num++;
-		}
-		Enums.CardClass result = Enums.CardClass.None;
-		Enum.TryParse<Enums.CardClass>(Enum.GetName(typeof(Enums.HeroClass), theTeam[currentHeroIndex].HeroData.HeroSubClass.HeroClassSecondary), out result);
-		for (int j = 0; j < perkChallengeItems.Length; j++)
-		{
-			if (j > 20)
-			{
-				if (result != Enums.CardClass.None)
+				if (!string.IsNullOrEmpty(iconKey))
 				{
-					perkChallengeItems[j].gameObject.SetActive(value: true);
+					hashSet.Add(iconKey);
 				}
-				else
+				PerkChallengeItem obj = perkChallengeItems[i];
+				obj.gameObject.SetActive(value: true);
+				obj.SetPerk(currentHeroIndex, i, value.Id);
+				bool active = perkDrafted.ContainsKey(currentHeroIndex) && perkDrafted[currentHeroIndex].Contains(i);
+				obj.SetActive(active);
+				i++;
+			}
+		}
+		for (; i <= 20 && i < perkChallengeItems.Length; i++)
+		{
+			perkChallengeItems[i].gameObject.SetActive(value: false);
+		}
+		int num = 21;
+		for (int j = num; j < perkChallengeItems.Length; j++)
+		{
+			perkChallengeItems[j].gameObject.SetActive(value: false);
+		}
+		if (sortedDictionary2 != null)
+		{
+			int num2 = num;
+			foreach (KeyValuePair<int, PerkData> item2 in sortedDictionary2)
+			{
+				if (num2 >= perkChallengeItems.Length)
 				{
-					perkChallengeItems[j].gameObject.SetActive(value: false);
+					break;
+				}
+				PerkData value2 = item2.Value;
+				string iconKey2 = GetIconKey(value2);
+				if (string.IsNullOrEmpty(iconKey2) || !hashSet.Contains(iconKey2))
+				{
+					if (!string.IsNullOrEmpty(iconKey2))
+					{
+						hashSet.Add(iconKey2);
+					}
+					PerkChallengeItem obj2 = perkChallengeItems[num2];
+					obj2.gameObject.SetActive(value: true);
+					obj2.SetPerk(currentHeroIndex, num2, value2.Id);
+					bool active2 = perkDrafted.ContainsKey(currentHeroIndex) && perkDrafted[currentHeroIndex].Contains(num2);
+					obj2.SetActive(active2);
+					num2++;
 				}
 			}
 		}
 		WriteSelectedPerks(currentHeroIndex);
 		FinishDraw();
+	}
+
+	private SortedDictionary<int, PerkData> BuildPerkList(Enums.CardClass cardClass)
+	{
+		List<PerkData> perkDataClass = Globals.Instance.GetPerkDataClass(cardClass);
+		SortedDictionary<int, PerkData> sortedDictionary = new SortedDictionary<int, PerkData>();
+		if (perkDataClass == null)
+		{
+			return sortedDictionary;
+		}
+		foreach (PerkData item in perkDataClass)
+		{
+			if (!(item == null) && item.ObeliskPerk)
+			{
+				sortedDictionary.TryAdd(item.Level, item);
+			}
+		}
+		return sortedDictionary;
 	}
 
 	public void AssignPerk(int _heroId, int _perkIndex, bool fromMP = false)

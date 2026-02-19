@@ -2410,7 +2410,7 @@ public class CardCraftManager : MonoBehaviour
 		maxPetNumber.gameObject.SetActive(value: false);
 		if ((bool)TownManager.Instance)
 		{
-			if (PlayerManager.Instance.PlayerHaveSupply("townUpgrade_6_2") || GameManager.Instance.IsSingularity() || AtOManager.Instance.IsCombatTool)
+			if (PlayerManager.Instance.PlayerHaveSupply("townUpgrade_6_2") || GameManager.Instance.IsSingularity() || AtOManager.Instance.IsCombatTool || (GameManager.Instance.CheatMode && GameManager.Instance.EnableButtons))
 			{
 				petShopButton.gameObject.SetActive(value: true);
 				itemShopButton.gameObject.SetActive(value: true);
@@ -2431,7 +2431,7 @@ public class CardCraftManager : MonoBehaviour
 		rerollButtonWarning.gameObject.SetActive(value: false);
 		if (!isPetShop)
 		{
-			if (AtOManager.Instance.CharInTown() && PlayerManager.Instance.PlayerHaveSupply("townUpgrade_5_1"))
+			if ((AtOManager.Instance.CharInTown() && PlayerManager.Instance.PlayerHaveSupply("townUpgrade_5_1")) || (GameManager.Instance.CheatMode && GameManager.Instance.EnableButtons))
 			{
 				if (AtOManager.Instance.IsCombatTool)
 				{

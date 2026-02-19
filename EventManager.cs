@@ -631,6 +631,7 @@ public class EventManager : MonoBehaviour
 		replysInvalid = 0;
 		int totalPlayersGold = AtOManager.Instance.GetTotalPlayersGold();
 		int totalPlayersDust = AtOManager.Instance.GetTotalPlayersDust();
+		Hero[] team = AtOManager.Instance.GetTeam();
 		for (int i = 0; i < numReplys; i++)
 		{
 			if (optionSelected > -1)
@@ -638,6 +639,10 @@ public class EventManager : MonoBehaviour
 				break;
 			}
 			EventReplyData eventReplyData = currentEvent.Replys[i];
+			if (i < team.Length && eventReplyData.ChooseReplacementHero)
+			{
+				currentEvent.Replys[i].RequiredClass = Globals.Instance.GetSubClassData(team[i].SubclassName);
+			}
 			bool flag = true;
 			if (!GameManager.Instance.IsMultiplayer() && eventReplyData.RequirementMultiplayer)
 			{
@@ -651,9 +656,16 @@ public class EventManager : MonoBehaviour
 			{
 				flag = false;
 			}
-			if (flag && eventReplyData.RequirementBlocked != null && AtOManager.Instance.PlayerHasRequirement(eventReplyData.RequirementBlocked))
+			if (flag)
 			{
-				flag = false;
+				if (eventReplyData.RequirementBlocked != null && AtOManager.Instance.PlayerHasRequirement(eventReplyData.RequirementBlocked))
+				{
+					flag = false;
+				}
+				if (eventReplyData.RequiredClassForBlocked != null && AtOManager.Instance.PlayerHasRequirementClass(eventReplyData.RequiredClassForBlocked.Id))
+				{
+					flag = false;
+				}
 			}
 			if (flag && eventReplyData.RequirementItems != null && eventReplyData.RequirementItems.Count > 0)
 			{

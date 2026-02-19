@@ -94,6 +94,11 @@ public class IntroNewGameManager : MonoBehaviour
 		bgSahti.gameObject.SetActive(value: false);
 		bgDreadnought.gameObject.SetActive(value: false);
 		bgSunken.gameObject.SetActive(value: false);
+		if (GameManager.Instance.CheatMode && GameManager.Instance.StartFromMap != MapType.None)
+		{
+			text = MapUtils.GetNodeName(GameManager.Instance.StartFromMap);
+			AtOManager.Instance.currentMapNode = text;
+		}
 		bgWoods.gameObject.SetActive(value: false);
 		if (GameManager.Instance.CheatMode && GameManager.Instance.StartFromMap != MapType.None)
 		{

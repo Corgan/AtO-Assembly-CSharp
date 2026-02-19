@@ -1066,7 +1066,9 @@ public static class Functions
 
 	public static string FormatStringCard(string text)
 	{
-		string input = new StringBuilder(text).Replace("<gl>", "<color=#5E3016>").Replace("</gl>", "</color>").Replace("<bl>", "<color=#263ABC>")
+		string input = new StringBuilder(text).Replace("<gr>", "<color=#444>").Replace("</gr>", "</color>").Replace("<gl>", "<color=#5E3016>")
+			.Replace("</gl>", "</color>")
+			.Replace("<bl>", "<color=#263ABC>")
 			.Replace("</bl>", "</color>")
 			.Replace("<rd>", "<color=#720070>")
 			.Replace("</rd>", "</color>")
@@ -2198,5 +2200,33 @@ public static class Functions
 			return text.ToLower();
 		}
 		return text;
+	}
+
+	public static List<string> ParseCompressedCodeList(string code)
+	{
+		if (string.IsNullOrEmpty(code))
+		{
+			return new List<string>();
+		}
+		try
+		{
+			string text = DecompressString(OnlyAscii(code).Trim());
+			if (string.IsNullOrEmpty(text))
+			{
+				return new List<string>();
+			}
+			string[] array = text.Split('_');
+			if (array.Length != 2)
+			{
+				return null;
+			}
+			List<string> list = new List<string>();
+			list.AddRange(array[1].Split('-', StringSplitOptions.RemoveEmptyEntries));
+			return list;
+		}
+		catch
+		{
+			return null;
+		}
 	}
 }

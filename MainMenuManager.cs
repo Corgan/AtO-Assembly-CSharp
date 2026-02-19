@@ -237,6 +237,12 @@ public class MainMenuManager : MonoBehaviour
 
 	public Transform DLCAsianSkinsLineKo;
 
+	public Button DLCNordicSkins;
+
+	public Transform DLCNordicSkinsLineOk;
+
+	public Transform DLCNordicSkinsLineKo;
+
 	public Button DLCNecropolis;
 
 	public Transform DLCNecropolisOk;
@@ -268,6 +274,8 @@ public class MainMenuManager : MonoBehaviour
 	public Transform DLCpopupImageTemple;
 
 	public Transform DLCpopupImageSpider;
+
+	public Transform DLCpopupImageNordicSkins;
 
 	public Transform DLCpopupImageAsianSkins;
 
@@ -445,13 +453,13 @@ public class MainMenuManager : MonoBehaviour
 			{
 				AtOManager.Instance.UseManyResources();
 			}
-			if (GameManager.Instance.UnlockAllHeroes)
+			if (GameManager.Instance.UnlockAllExceptHeroes)
 			{
-				AtOManager.Instance.UnlockAllHeroes();
+				PlayerManager.Instance.UnlockAllExceptHeroes();
 			}
-			if (GameManager.Instance.UnlockMadness)
+			if (GameManager.Instance.UnlockHeroes)
 			{
-				PlayerManager.Instance.SingularityMadnessLevel = 10;
+				PlayerManager.Instance.UnlockHeroes();
 			}
 		}
 		GameManager.Instance.SceneLoaded();
@@ -690,6 +698,7 @@ public class MainMenuManager : MonoBehaviour
 		DLCpopupImageBernard.gameObject.SetActive(value: false);
 		DLCpopupImageTemple.gameObject.SetActive(value: false);
 		DLCpopupImageSpider.gameObject.SetActive(value: false);
+		DLCpopupImageNordicSkins.gameObject.SetActive(value: false);
 		DLCpopupImageAsianSkins.gameObject.SetActive(value: false);
 		DLCpopupImageNecropolis.gameObject.SetActive(value: false);
 		try
@@ -775,6 +784,11 @@ public class MainMenuManager : MonoBehaviour
 			DLCpopupDescription.text = Texts.Instance.GetText("howToDLCNecro");
 			DLCpopupImageNecropolis.gameObject.SetActive(value: true);
 		}
+		else if (activePopup == 13)
+		{
+			DLCpopupDescription.text = Texts.Instance.GetText("howToDLCSkin");
+			DLCpopupImageNordicSkins.gameObject.SetActive(value: true);
+		}
 	}
 
 	public void HideDLCPopup()
@@ -841,7 +855,7 @@ public class MainMenuManager : MonoBehaviour
 		{
 			challengeLocked = (weeklyLocked = false);
 		}
-		if ((!GameManager.Instance.CheatMode && GameManager.Instance.UnlockMadness) || PlayerManager.Instance.GetHighestCharacterRank() < 3)
+		if ((!GameManager.Instance.CheatMode && GameManager.Instance.UnlockAllExceptHeroes) || PlayerManager.Instance.GetHighestCharacterRank() < 3)
 		{
 			singularityLocked = true;
 		}

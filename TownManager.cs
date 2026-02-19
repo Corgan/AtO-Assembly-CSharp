@@ -224,6 +224,7 @@ public class TownManager : MonoBehaviour
 		if (AtOManager.Instance.IsCombatTool)
 		{
 			buildingCart.DisableThis();
+			buildingCart.transform.gameObject.SetActive(value: false);
 		}
 		AtOManager.Instance.NodeScore();
 		GameManager.Instance.SceneLoaded();

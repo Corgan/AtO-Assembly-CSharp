@@ -651,37 +651,13 @@ public class TeamManagement : MonoBehaviour
 
 	private List<string> ImportPerkTree(string code)
 	{
-		List<string> list = new List<string>();
-		if (string.IsNullOrEmpty(code))
-		{
-			return list;
-		}
-		try
-		{
-			string text = Functions.DecompressString(Functions.OnlyAscii(code).Trim());
-			if (text != "")
-			{
-				string[] array = text.Split('_');
-				if (array.Length == 2)
-				{
-					string[] array2 = array[1].Split('-');
-					for (int i = 0; i < array2.Length; i++)
-					{
-						list.Add(array2[i]);
-					}
-				}
-				else
-				{
-					Debug.LogError("Invalid Perk Tree Code");
-				}
-			}
-			return list;
-		}
-		catch
+		List<string> list = Functions.ParseCompressedCodeList(code);
+		if (list == null)
 		{
 			Debug.LogError("Invalid Perk Tree Code");
-			return list;
+			return new List<string>();
 		}
+		return list;
 	}
 
 	public void OnExportButtonClickEvent()

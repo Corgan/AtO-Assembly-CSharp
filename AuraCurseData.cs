@@ -65,7 +65,7 @@ public class AuraCurseData : ScriptableObject
 	private bool isAura;
 
 	[SerializeField]
-	private bool ignoreUseInEndTurnIfMissingOnBegin;
+	private bool skipEndTurnRemovalIfNoBegin;
 
 	[SerializeField]
 	private int maxCharges = -1;
@@ -2297,7 +2297,7 @@ public class AuraCurseData : ScriptableObject
 		}
 	}
 
-	public bool IgnoreUseInEndTurnIfMissingOnBegin => ignoreUseInEndTurnIfMissingOnBegin;
+	public bool SkipEndTurnRemovalIfNoBegin => skipEndTurnRemovalIfNoBegin;
 
 	public void Init()
 	{

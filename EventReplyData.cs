@@ -27,6 +27,9 @@ public class EventReplyData
 	private SubClassData requiredClass;
 
 	[SerializeField]
+	private SubClassData requiredClassForBlocked;
+
+	[SerializeField]
 	private int indexForAnswerTranslation;
 
 	[SerializeField]
@@ -236,6 +239,9 @@ public class EventReplyData
 
 	[SerializeField]
 	private int ssCharacterReplacementPosition;
+
+	[SerializeField]
+	private bool chooseReplacementHero;
 
 	[Header("Fail")]
 	[SerializeField]
@@ -600,6 +606,18 @@ public class EventReplyData
 		set
 		{
 			requiredClass = value;
+		}
+	}
+
+	public SubClassData RequiredClassForBlocked
+	{
+		get
+		{
+			return requiredClassForBlocked;
+		}
+		set
+		{
+			requiredClassForBlocked = value;
 		}
 	}
 
@@ -2858,6 +2876,8 @@ public class EventReplyData
 			repeatForAllHealers = value;
 		}
 	}
+
+	public bool ChooseReplacementHero => chooseReplacementHero;
 
 	public EventReplyData ShallowCopy()
 	{

@@ -29,6 +29,9 @@ public class NodeData : ScriptableObject
 	[SerializeField]
 	private string existsSku = "";
 
+	[SerializeField]
+	private SubClassData heroToDisableNodeWhenUnlocked;
+
 	[Header("It's a destination for a zone/portal travel")]
 	[SerializeField]
 	private bool travelDestination;
@@ -262,6 +265,10 @@ public class NodeData : ScriptableObject
 	{
 		get
 		{
+			if (heroToDisableNodeWhenUnlocked != null && PlayerManager.Instance.IsHeroUnlocked(heroToDisableNodeWhenUnlocked.SubClassName))
+			{
+				return 0;
+			}
 			return existsPercent;
 		}
 		set

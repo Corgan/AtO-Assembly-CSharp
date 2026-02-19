@@ -166,6 +166,17 @@ public class SubClassData : ScriptableObject
 	[SerializeField]
 	private HeroCards[] cards;
 
+	[Header("Replace character data")]
+	[SerializeField]
+	private HeroCards[] cardsOnReplaceCharacter;
+
+	[Tooltip("Perks import string")]
+	[SerializeField]
+	private string perksOnReplace;
+
+	[SerializeField]
+	private bool useXpFromOriginal;
+
 	[Header("Traits")]
 	[SerializeField]
 	private List<TraitData> traits;
@@ -527,6 +538,12 @@ public class SubClassData : ScriptableObject
 			cards = value;
 		}
 	}
+
+	public HeroCards[] CardsOnReplaceCharacter => cardsOnReplaceCharacter;
+
+	public string PerksOnReplace => perksOnReplace;
+
+	public bool UseXpFromOriginal => useXpFromOriginal;
 
 	public CardData[] CardsSingularity
 	{

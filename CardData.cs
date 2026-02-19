@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Cards;
@@ -459,6 +460,9 @@ public class CardData : ScriptableObject
 
 	[SerializeField]
 	private bool selfHealthLossSpecialValue2;
+
+	[SerializeField]
+	private bool convertAllDebuffsIntoCurse;
 
 	private int damagePreCalculatedCombined;
 
@@ -939,7 +943,7 @@ public class CardData : ScriptableObject
 		},
 		{
 			"$SpecialValueModifierGlobal",
-			(CardData data) => data.specialValueModifierGlobal.ToString("F0")
+			(CardData data) => data.specialValueModifierGlobal.ToString(CultureInfo.InvariantCulture)
 		}
 	};
 
@@ -2963,6 +2967,18 @@ public class CardData : ScriptableObject
 		}
 	}
 
+	public bool ConvertAllDebuffsIntoCurse
+	{
+		get
+		{
+			return convertAllDebuffsIntoCurse;
+		}
+		set
+		{
+			convertAllDebuffsIntoCurse = value;
+		}
+	}
+
 	public float FluffPercent
 	{
 		get
@@ -4401,14 +4417,14 @@ public class CardData : ScriptableObject
 			else if ((item == null && itemEnchantment == null) || useDescriptionFromCard)
 			{
 				AppendCardDescription(character, stringBuilder, aux, grColor, endColor, br, goldColor);
+				if (!string.IsNullOrEmpty(postDescriptionId))
+				{
+					AddFormattedDescription(stringBuilder, postDescriptionId, postDescriptionArgs);
+				}
 			}
 			else
 			{
 				AppendItemDescription(character, stringBuilder, aux, grColor, endColor, goldColor);
-			}
-			if (!string.IsNullOrEmpty(postDescriptionId))
-			{
-				AddFormattedDescription(stringBuilder, postDescriptionId, postDescriptionArgs);
 			}
 			stringBuilder.Replace("<c>", "<color=#5E3016>");
 			stringBuilder.Replace("</c>", "</color>");
@@ -4459,7 +4475,7 @@ public class CardData : ScriptableObject
 				Debug.LogError("Argument \"" + text + "\" not recognized in the description arguments dictionary.");
 			}
 			string text3 = Texts.Instance.GetText(descriptionId);
-			int num = CardUtils.GetMaxPlaceholderFormattedStringIndex(text3) + 1;
+			int num = GameUtils.GetMaxPlaceholderFormattedStringIndex(text3) + 1;
 			if (list.Count == num)
 			{
 				string text4 = string.Format(text3, list.ToArray());
@@ -4857,6 +4873,10 @@ public class CardData : ScriptableObject
 			{
 				stringBuilder5.Append(Texts.Instance.GetText("itemWhenHealed"));
 			}
+			else if (theItem.Activation == Enums.EventActivation.Overhealed)
+			{
+				stringBuilder5.Append(Texts.Instance.GetText("itemWhenOverhealed"));
+			}
 			else if (theItem.Activation == Enums.EventActivation.Evaded)
 			{
 				stringBuilder5.Append(Texts.Instance.GetText("itemWhenEvaded"));
@@ -4988,20 +5008,19 @@ public class CardData : ScriptableObject
 			}
 			if (!theItem.IsEnchantment && (theItem.Activation == Enums.EventActivation.PreFinishCast || theItem.Activation == Enums.EventActivation.FinishCast || theItem.Activation == Enums.EventActivation.FinishFinishCast) && !theItem.EmptyHand)
 			{
-				StringBuilder stringBuilder6 = new StringBuilder();
+				builder.Append("<size=-.15>");
+				builder.Append("<color=#444>[");
+				builder.Append(string.Format(Texts.Instance.GetText("itemWhenYouPlay"), aux.ToString()));
 				if (theItem.CastedCardType != Enums.CardType.None)
 				{
-					stringBuilder6.Append("<color=#5E3016>");
-					stringBuilder6.Append(Texts.Instance.GetText(Enum.GetName(typeof(Enums.CardType), theItem.CastedCardType)));
-					stringBuilder6.Append("</color>");
+					builder.Append("<color=#5E3016>");
+					builder.Append(Texts.Instance.GetText(Enum.GetName(typeof(Enums.CardType), theItem.CastedCardType)));
+					builder.Append("</color>");
 				}
 				else
 				{
-					stringBuilder6.Append(" <sprite name=cards>");
+					builder.Append(" <sprite name=cards>");
 				}
-				builder.Append("<size=-.15>");
-				builder.Append("<color=#444>[");
-				builder.Append(string.Format(Texts.Instance.GetText("itemWhenYouPlay"), stringBuilder6.ToString()));
 				builder.Append("]</color>");
 				builder.Append("</size><br>");
 			}
@@ -5018,11 +5037,11 @@ public class CardData : ScriptableObject
 			if (theItem.HealQuantitySpecialValue.Use)
 			{
 				aux.Append("<color=#111111>X</color>");
-				if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+				if ((theItem.ItemTarget == Enums.ItemTarget.AllHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllHero)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverHeroes"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.Self)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.Self && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.Self)
 				{
 					if (theItem.Activation == Enums.EventActivation.Killed)
 					{
@@ -5033,7 +5052,7 @@ public class CardData : ScriptableObject
 						builder.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), aux.ToString()));
 					}
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.AllEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllEnemy)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverMonsters"), aux.ToString()));
 				}
@@ -5045,11 +5064,11 @@ public class CardData : ScriptableObject
 				aux.Append("<color=#111111>");
 				aux.Append(NumFormatItem(theItem.HealQuantity, plus: true));
 				aux.Append("</color>");
-				if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+				if ((theItem.ItemTarget == Enums.ItemTarget.AllHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllHero)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverHeroes"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.Self)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.Self && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.Self)
 				{
 					if (theItem.Activation == Enums.EventActivation.Killed)
 					{
@@ -5060,9 +5079,13 @@ public class CardData : ScriptableObject
 						builder.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), aux.ToString()));
 					}
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.AllEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllEnemy)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverMonsters"), aux.ToString()));
+				}
+				else if (theItem.ItemTarget == Enums.ItemTarget.None && theItem.Activation == Enums.EventActivation.Manual)
+				{
+					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), aux.ToString()));
 				}
 				builder.Append("<br>");
 				aux.Clear();
@@ -5078,7 +5101,7 @@ public class CardData : ScriptableObject
 			}
 			if (theItem.EnergyQuantity > 0)
 			{
-				if (theItem.ItemTarget == Enums.ItemTarget.Self)
+				if ((theItem.ItemTarget == Enums.ItemTarget.Self && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.Self)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("cardsGain"), ColorTextArray("system", NumFormat(theItem.EnergyQuantity), SpriteText("energy"))));
 				}
@@ -5089,11 +5112,11 @@ public class CardData : ScriptableObject
 				aux.Append("<color=#111111>");
 				aux.Append(NumFormatItem(theItem.HealPercentQuantity, plus: true, percent: true));
 				aux.Append("</color>");
-				if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+				if ((theItem.ItemTarget == Enums.ItemTarget.AllHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllHero)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverHeroes"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.Self)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.Self && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.Self)
 				{
 					if (theItem.Activation == Enums.EventActivation.Killed)
 					{
@@ -5104,23 +5127,23 @@ public class CardData : ScriptableObject
 						builder.Append(string.Format(Texts.Instance.GetText("itemRecoverSelf"), aux.ToString()));
 					}
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.LowestFlatHpEnemy)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverLowestHPMonster"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpHero)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.LowestFlatHpHero)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverLowestHPHero"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.AllEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllEnemy)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverMonsters"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.RandomHero)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.RandomHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.RandomHero)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverRandomHPHero"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.RandomEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.RandomEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.RandomEnemy)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemRecoverRandomHPMonster"), aux.ToString()));
 				}
@@ -5134,18 +5157,18 @@ public class CardData : ScriptableObject
 			}
 			if (theItem.HealBasedOnAuraCurse > 0)
 			{
-				StringBuilder stringBuilder7 = new StringBuilder();
-				stringBuilder7.Append("Heal ");
-				stringBuilder7.Append(ColorTextArray("heal", "X", SpriteText("heal")));
-				stringBuilder7.Append("\n");
-				stringBuilder7.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYour"), SpriteText(theItem.AuraCurseSetted.ACName), " charges"));
-				builder.Append(stringBuilder7);
+				StringBuilder stringBuilder6 = new StringBuilder();
+				stringBuilder6.Append("Heal ");
+				stringBuilder6.Append(ColorTextArray("heal", "X", SpriteText("heal")));
+				stringBuilder6.Append("\n");
+				stringBuilder6.Append(string.Format(Texts.Instance.GetText("cardsXEqualsYour"), SpriteText(theItem.AuraCurseSetted.ACName), " charges"));
+				builder.Append(stringBuilder6);
 				builder.Append("<br>");
 			}
 			if (theItem.healSelfPerDamageDonePercent > 0f)
 			{
 				string text2 = "cardsHealSelfPerDamage";
-				if (theItem.ItemTarget == Enums.ItemTarget.AllHero || theItem.healSelfTeamPerDamageDonePercent)
+				if ((theItem.ItemTarget == Enums.ItemTarget.AllHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllHero || theItem.healSelfTeamPerDamageDonePercent)
 				{
 					text2 = "cardHealAllHeroesPerDamage";
 				}
@@ -5245,21 +5268,21 @@ public class CardData : ScriptableObject
 			}
 			if (num > 0)
 			{
-				if (theItem.ItemTarget == Enums.ItemTarget.Self || theItem.ItemTarget == Enums.ItemTarget.SelfEnemy)
+				if (((theItem.ItemTarget == Enums.ItemTarget.Self || theItem.ItemTarget == Enums.ItemTarget.SelfEnemy) && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.Self)
 				{
 					if (theItem.HealQuantity > 0 || theItem.EnergyQuantity > 0 || theItem.HealPercentQuantity > 0)
 					{
-						StringBuilder stringBuilder8 = new StringBuilder();
+						StringBuilder stringBuilder7 = new StringBuilder();
 						if (flag)
 						{
-							stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsAnd"), builder.ToString(), string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), aux.ToString())));
+							stringBuilder7.Append(string.Format(Texts.Instance.GetText("cardsAnd"), builder.ToString(), string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), aux.ToString())));
 						}
 						else
 						{
-							stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsAnd"), builder.ToString(), string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), aux.ToString())));
+							stringBuilder7.Append(string.Format(Texts.Instance.GetText("cardsAnd"), builder.ToString(), string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), aux.ToString())));
 						}
 						builder.Clear();
-						builder.Append(stringBuilder8.ToString());
+						builder.Append(stringBuilder7.ToString());
 					}
 					else
 					{
@@ -5304,11 +5327,11 @@ public class CardData : ScriptableObject
 						}
 					}
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.AllEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.AllEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllEnemy)
 				{
 					builder.Append(string.Format(Texts.Instance.GetText("itemApplyEnemies"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.AllHero)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.AllHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.AllHero)
 				{
 					if (cardClass == Enums.CardClass.Monster)
 					{
@@ -5319,7 +5342,7 @@ public class CardData : ScriptableObject
 						builder.Append(string.Format(Texts.Instance.GetText("itemApplyHeroes"), aux.ToString()));
 					}
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.RandomHero)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.RandomHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.RandomHero)
 				{
 					if (theItem.AuraCurseSetted != null && theItem.AuraCurseNumForOneEvent > 0)
 					{
@@ -5336,7 +5359,7 @@ public class CardData : ScriptableObject
 					}
 					builder.Append(string.Format(Texts.Instance.GetText("itemApplyRandomHero"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.RandomEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.RandomEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.RandomEnemy)
 				{
 					if (theItem.AuraCurseSetted != null && theItem.AuraCurseNumForOneEvent > 0)
 					{
@@ -5353,7 +5376,7 @@ public class CardData : ScriptableObject
 					}
 					builder.Append(string.Format(Texts.Instance.GetText("itemApplyRandomEnemy"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.HighestFlatHpEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.HighestFlatHpEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.HighestFlatHpEnemy)
 				{
 					if (theItem.AuraCurseSetted != null && theItem.AuraCurseNumForOneEvent > 0)
 					{
@@ -5370,7 +5393,7 @@ public class CardData : ScriptableObject
 					}
 					builder.Append(string.Format(Texts.Instance.GetText("itemApplyHighestFlatHpEnemy"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpEnemy)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.LowestFlatHpEnemy)
 				{
 					if (theItem.AuraCurseSetted != null && theItem.AuraCurseNumForOneEvent > 0)
 					{
@@ -5387,7 +5410,7 @@ public class CardData : ScriptableObject
 					}
 					builder.Append(string.Format(Texts.Instance.GetText("itemApplyLowestFlatHpEnemy"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.HighestFlatHpHero)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.HighestFlatHpHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.HighestFlatHpHero)
 				{
 					if (theItem.AuraCurseSetted != null && theItem.AuraCurseNumForOneEvent > 0)
 					{
@@ -5404,7 +5427,7 @@ public class CardData : ScriptableObject
 					}
 					builder.Append(string.Format(Texts.Instance.GetText("itemApplyHighestFlatHpHero"), aux.ToString()));
 				}
-				else if (theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpHero)
+				else if ((theItem.ItemTarget == Enums.ItemTarget.LowestFlatHpHero && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.LowestFlatHpHero)
 				{
 					if (theItem.AuraCurseSetted != null && theItem.AuraCurseNumForOneEvent > 0)
 					{
@@ -5421,7 +5444,7 @@ public class CardData : ScriptableObject
 					}
 					builder.Append(string.Format(Texts.Instance.GetText("itemApplyLowestFlatHpHero"), aux.ToString()));
 				}
-				else if (targetSide == Enums.CardTargetSide.Enemy || theItem.ItemTarget == Enums.ItemTarget.CurrentTarget)
+				else if ((targetSide == Enums.CardTargetSide.Enemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || (theItem.ItemTarget == Enums.ItemTarget.CurrentTarget && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.CurrentTarget)
 				{
 					if (theItem.AuraCurseSetted != null && theItem.AuraCurseNumForOneEvent > 0)
 					{
@@ -5436,7 +5459,7 @@ public class CardData : ScriptableObject
 						}
 						builder.Append(string.Format(Texts.Instance.GetText("itemApplyForEvery"), ColorTextArray("curse", (theItem.AuraCurseNumForOneEvent > 1) ? theItem.AuraCurseNumForOneEvent.ToString() : "", text13), aux.ToString()));
 					}
-					else if (theItem.ItemTarget == Enums.ItemTarget.Random)
+					else if ((theItem.ItemTarget == Enums.ItemTarget.Random && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.Random)
 					{
 						builder.Append(string.Format(Texts.Instance.GetText("itemApplyRandom"), aux.ToString()));
 					}
@@ -5493,18 +5516,18 @@ public class CardData : ScriptableObject
 			{
 				if (theItem.HealQuantity > 0 || theItem.EnergyQuantity > 0 || theItem.HealPercentQuantity > 0)
 				{
-					StringBuilder stringBuilder9 = new StringBuilder();
+					StringBuilder stringBuilder8 = new StringBuilder();
 					if (flag)
 					{
-						stringBuilder9.Append(string.Format(Texts.Instance.GetText("cardsAnd"), builder.ToString(), string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), aux.ToString())));
+						stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsAnd"), builder.ToString(), string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsGain")), aux.ToString())));
 					}
 					else
 					{
-						stringBuilder9.Append(string.Format(Texts.Instance.GetText("cardsAnd"), builder.ToString(), string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), aux.ToString())));
+						stringBuilder8.Append(string.Format(Texts.Instance.GetText("cardsAnd"), builder.ToString(), string.Format(Functions.LowercaseFirst(Texts.Instance.GetText("cardsSuffer")), aux.ToString())));
 					}
 					builder.Clear();
-					builder.Append(stringBuilder9.ToString());
-					stringBuilder9 = null;
+					builder.Append(stringBuilder8.ToString());
+					stringBuilder8 = null;
 				}
 				else if (flag)
 				{
@@ -5523,7 +5546,15 @@ public class CardData : ScriptableObject
 				}
 				else
 				{
-					builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), aux.ToString()));
+					Enums.ItemTarget overrideTargetText = theItem.OverrideTargetText;
+					if (overrideTargetText == Enums.ItemTarget.None || overrideTargetText == Enums.ItemTarget.Self)
+					{
+						builder.Append(string.Format(Texts.Instance.GetText("cardsSuffer"), aux.ToString()));
+					}
+					else if (theItem.OverrideTargetText != Enums.ItemTarget.None)
+					{
+						builder.Append(string.Format(Texts.Instance.GetText("cardsApply"), aux.ToString()));
+					}
 				}
 				builder.Append("\n");
 				aux.Clear();
@@ -5684,11 +5715,11 @@ public class CardData : ScriptableObject
 			}
 			if (theItem.CardsReduced > 0)
 			{
-				StringBuilder stringBuilder10 = new StringBuilder();
-				stringBuilder10.Append("<color=#5E3016>");
-				stringBuilder10.Append(theItem.CardsReduced);
-				stringBuilder10.Append("</color>");
-				string text17 = stringBuilder10.ToString();
+				StringBuilder stringBuilder9 = new StringBuilder();
+				stringBuilder9.Append("<color=#5E3016>");
+				stringBuilder9.Append(theItem.CardsReduced);
+				stringBuilder9.Append("</color>");
+				string text17 = stringBuilder9.ToString();
 				string text18;
 				if (theItem.CardToReduceType == Enums.CardType.None)
 				{
@@ -5696,17 +5727,17 @@ public class CardData : ScriptableObject
 				}
 				else
 				{
-					stringBuilder10.Clear();
-					stringBuilder10.Append("<color=#5E3016>");
-					stringBuilder10.Append(Texts.Instance.GetText(Enum.GetName(typeof(Enums.CardType), theItem.CardToReduceType)));
-					stringBuilder10.Append("</color>");
-					text18 = stringBuilder10.ToString();
+					stringBuilder9.Clear();
+					stringBuilder9.Append("<color=#5E3016>");
+					stringBuilder9.Append(Texts.Instance.GetText(Enum.GetName(typeof(Enums.CardType), theItem.CardToReduceType)));
+					stringBuilder9.Append("</color>");
+					text18 = stringBuilder9.ToString();
 				}
-				stringBuilder10.Clear();
-				stringBuilder10.Append("<color=#111111>");
-				stringBuilder10.Append(Mathf.Abs(theItem.CostReduceReduction));
-				stringBuilder10.Append("</color>");
-				string text19 = stringBuilder10.ToString();
+				stringBuilder9.Clear();
+				stringBuilder9.Append("<color=#111111>");
+				stringBuilder9.Append(Mathf.Abs(theItem.CostReduceReduction));
+				stringBuilder9.Append("</color>");
+				string text19 = stringBuilder9.ToString();
 				string text20 = ((theItem.CostReduceEnergyRequirement <= 0) ? "<space=-.2>" : ("<color=#444><size=-.2>" + string.Format(Texts.Instance.GetText("itemReduceCost"), theItem.CostReduceEnergyRequirement) + "</size></color>"));
 				if (theItem.CostReducePermanent && theItem.ReduceHighestCost)
 				{
@@ -5806,6 +5837,10 @@ public class CardData : ScriptableObject
 			builder.Append(Texts.Instance.GetText("itemDestroyStartTurn"));
 			builder.Append(" -</color></size>");
 		}
+		if (!string.IsNullOrEmpty(postDescriptionId))
+		{
+			AddFormattedDescription(builder, postDescriptionId, postDescriptionArgs);
+		}
 		if (theItem.DestroyAfterUses > 0 && !theItem.UseTheNextInsteadWhenYouPlay)
 		{
 			builder.Append("<nobr><size=-.05><color=#1A505A>- ");
@@ -5839,7 +5874,7 @@ public class CardData : ScriptableObject
 		if (theItem.StealAuras > 0)
 		{
 			string text21 = "cardsStealAuras";
-			if (theItem.ItemTarget == Enums.ItemTarget.RandomEnemy)
+			if ((theItem.ItemTarget == Enums.ItemTarget.RandomEnemy && theItem.OverrideTargetText == Enums.ItemTarget.None) || theItem.OverrideTargetText == Enums.ItemTarget.RandomEnemy)
 			{
 				text21 = "cardsStealAurasFromRandomEnemy";
 			}

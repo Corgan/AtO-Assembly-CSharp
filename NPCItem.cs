@@ -1,3 +1,4 @@
+using MaterialSettings;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,6 +20,12 @@ public class NPCItem : CharacterItem
 	public Transform[] cardsT;
 
 	public CardItem[] cardsCI;
+
+	private GameObject normalModelGO;
+
+	private GameObject altModelGO;
+
+	private bool isUsingAltModel;
 
 	public NPCData NpcData
 	{
@@ -145,6 +152,11 @@ public class NPCItem : CharacterItem
 		{
 			animatedTransform.gameObject.SetActive(value: false);
 		}
+	}
+
+	public void ExposeIllusion(NPC npc)
+	{
+		npc.NPCItem.CharImageT.GetComponent<IllusionMaterialSettings>()?.EnableExposeIllusionMaterial();
 	}
 
 	public void RemoveAllCards()

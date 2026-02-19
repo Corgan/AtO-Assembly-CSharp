@@ -1052,7 +1052,7 @@ public class Globals : MonoBehaviour
 		_RankLevel.Add(36);
 		_RankLevel.Add(40);
 		_RankLevel.Add(44);
-		_SkuAvailable = new List<string>(13);
+		_SkuAvailable = new List<string>();
 		_SkuAvailable.Add("2168960");
 		_SkuAvailable.Add("2325780");
 		_SkuAvailable.Add("2511580");
@@ -1558,13 +1558,19 @@ public class Globals : MonoBehaviour
 		_SkinDataSource = new Dictionary<string, SkinData>();
 		for (int num19 = 0; num19 < array17.Length; num19++)
 		{
-			_SkinDataSource.Add(array17[num19].SkinId.ToLower(), UnityEngine.Object.Instantiate(array17[num19]));
+			if (!array17[num19].HideInGame)
+			{
+				_SkinDataSource.Add(array17[num19].SkinId.ToLower(), UnityEngine.Object.Instantiate(array17[num19]));
+			}
 		}
 		CardbackData[] array18 = Resources.LoadAll<CardbackData>("Cardbacks");
 		_CardbackDataSource = new Dictionary<string, CardbackData>();
 		for (int num20 = 0; num20 < array18.Length; num20++)
 		{
-			_CardbackDataSource.Add(array18[num20].CardbackId.ToLower(), UnityEngine.Object.Instantiate(array18[num20]));
+			if (!array18[num20].HideInGame)
+			{
+				_CardbackDataSource.Add(array18[num20].CardbackId.ToLower(), UnityEngine.Object.Instantiate(array18[num20]));
+			}
 		}
 		CorruptionPackData[] array19 = Resources.LoadAll<CorruptionPackData>("CorruptionRewards");
 		_CorruptionPackDataSource = new Dictionary<string, CorruptionPackData>();
@@ -2160,16 +2166,16 @@ public class Globals : MonoBehaviour
 
 	public TraitData GetTraitData(string id)
 	{
-		if (id != null && id != "")
+		if (!string.IsNullOrEmpty(id))
 		{
 			id = Functions.Sanitize(id);
 			if (id == "engineer")
 			{
 				id = "inventor";
 			}
-			if (_Traits != null && _Traits.ContainsKey(id))
+			if (_Traits != null && _Traits.TryGetValue(id, out var value))
 			{
-				return _Traits[id];
+				return value;
 			}
 		}
 		return null;

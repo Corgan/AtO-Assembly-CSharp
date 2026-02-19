@@ -41,7 +41,11 @@ public class Item
 			int num = 0;
 			Enums.EventActivation theEvent = _theEvent;
 			num = _auxInt;
-			ItemData itemData = ((!(_cardData.Item != null)) ? _cardData.ItemEnchantment : _cardData.Item);
+			ItemData itemData = ((!(_cardData?.Item != null)) ? _cardData?.ItemEnchantment : _cardData.Item);
+			if (itemData == null)
+			{
+				return false;
+			}
 			string cardName = _cardData.CardName;
 			string itemType = Enum.GetName(typeof(Enums.CardType), _cardData.CardType).ToLower();
 			if ((_theEvent == Enums.EventActivation.PreFinishCast || _theEvent == Enums.EventActivation.FinishCast || _theEvent == Enums.EventActivation.FinishFinishCast) && MatchManager.Instance != null && MatchManager.Instance.IsBeginTournPhase)
@@ -235,6 +239,10 @@ public class Item
 				}
 				return false;
 			}
+			if (itemData.ConvertReceivedDebuffsIntoDamage != Enums.DamageType.None)
+			{
+				GameUtils.ConvertReceivedCursesToDamage(itemData, num);
+			}
 			if (onlyCheckItemActivation)
 			{
 				return true;
@@ -253,6 +261,20 @@ public class Item
 			return true;
 		}
 		}
+	}
+
+	public bool DoItemOnReceive(Enums.EventActivation theEvent, CardData cardData, Character character, Character target, int auxInt, string auxString, int order, CardData castedCard, ItemData itemData)
+	{
+		if (itemData.ConvertReceivedDebuffsIntoDamage != Enums.DamageType.None)
+		{
+			GameUtils.ConvertReceivedCursesToDamage(itemData, auxInt);
+		}
+		if (itemData.ConvertReceivedDebuffsIntoCurse)
+		{
+			GameUtils.ConvertReceivedDebuffsIntoCurseForEnchant(itemData, auxInt);
+		}
+		DoItemData(target, itemData.name, auxInt, cardData, "Enchantment".ToLower(), itemData, character, order, castedCard, theEvent);
+		return true;
 	}
 
 	private void DoItemData(Character target, string itemName, int auxInt, CardData cardItem, string itemType, ItemData itemData, Character character, int order, CardData castedCard = null, Enums.EventActivation theEvent = Enums.EventActivation.None)
@@ -440,7 +462,7 @@ public class Item
 					{
 						int num5 = character2.IncreasedCursedDamagePerStack(itemData.DamageToTargetType1);
 						num4 += num5;
-						character2.IndirectDamage(itemData.DamageToTargetType1, num4);
+						character2.IndirectDamage(itemData.DamageToTargetType1, num4, character);
 					}
 				}
 			}
@@ -468,7 +490,7 @@ public class Item
 					{
 						int num8 = character3.IncreasedCursedDamagePerStack(itemData.DamageToTargetType2);
 						num7 += num8;
-						character3.IndirectDamage(itemData.DamageToTargetType2, num7);
+						character3.IndirectDamage(itemData.DamageToTargetType2, num7, character);
 					}
 				}
 			}
@@ -566,6 +588,8 @@ public class Item
 			{
 				target2 = character;
 			}
+			bool flag4;
+			bool flag5;
 			if (itemData.AuracurseGain1 != null)
 			{
 				num9 = ((itemData.AuraCurseNumForOneEvent <= 0) ? itemData.GetModifiedValue(itemData.AuracurseGainValue1, itemData.AuracurseGain1SpecialValue, itemData, target2) : (Functions.FuncRoundToInt(auxInt / itemData.AuraCurseNumForOneEvent) * itemData.GetModifiedValue(itemData.AuracurseGainValue1, itemData.AuracurseGain1SpecialValue, itemData, target2)));
@@ -576,18 +600,32 @@ public class Item
 				if (itemType == "corruption")
 				{
 					character6.SetAuraTrait(null, itemData.AuracurseGain1.Id, num9);
+					goto IL_0a68;
 				}
-				else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
+				flag4 = character.IsHero;
+				if (flag4)
 				{
-					character6.SetAuraTrait(null, itemData.AuracurseGain1.Id, num9);
+					Enums.CardClass? cardClass = cardItem?.CardClass;
+					if (cardClass.HasValue)
+					{
+						Enums.CardClass valueOrDefault = cardClass.GetValueOrDefault();
+						if ((uint)(valueOrDefault - 5) <= 2u)
+						{
+							flag5 = true;
+							goto IL_0a31;
+						}
+					}
+					flag5 = false;
+					goto IL_0a31;
 				}
-				else
-				{
-					character6.SetAuraTrait(character, itemData.AuracurseGain1.Id, num9);
-				}
-				flag2 = true;
-				flag = true;
+				goto IL_0a35;
 			}
+			goto IL_0a6d;
+			IL_0a68:
+			flag2 = true;
+			flag = true;
+			goto IL_0a6d;
+			IL_0a6d:
 			if (itemData.AuracurseGain2 != null)
 			{
 				num9 = ((itemData.AuraCurseNumForOneEvent <= 0) ? itemData.GetModifiedValue(itemData.AuracurseGainValue2, itemData.AuracurseGain2SpecialValue, itemData, target2) : (Functions.FuncRoundToInt(auxInt / itemData.AuraCurseNumForOneEvent) * itemData.GetModifiedValue(itemData.AuracurseGainValue2, itemData.AuracurseGain2SpecialValue, itemData, target2)));
@@ -598,18 +636,55 @@ public class Item
 				if (itemType == "corruption")
 				{
 					character6.SetAuraTrait(null, itemData.AuracurseGain2.Id, num9);
+					goto IL_0b95;
 				}
-				else if (character.IsHero && (cardItem.CardClass == Enums.CardClass.Monster || cardItem.CardClass == Enums.CardClass.Injury || cardItem.CardClass == Enums.CardClass.Boon))
+				flag4 = character.IsHero;
+				if (flag4)
 				{
-					character6.SetAuraTrait(null, itemData.AuracurseGain2.Id, num9);
+					Enums.CardClass? cardClass = cardItem?.CardClass;
+					if (cardClass.HasValue)
+					{
+						Enums.CardClass valueOrDefault = cardClass.GetValueOrDefault();
+						if ((uint)(valueOrDefault - 5) <= 2u)
+						{
+							flag5 = true;
+							goto IL_0b5e;
+						}
+					}
+					flag5 = false;
+					goto IL_0b5e;
 				}
-				else
-				{
-					character6.SetAuraTrait(character, itemData.AuracurseGain2.Id, num9);
-				}
-				flag2 = true;
-				flag = true;
+				goto IL_0b62;
 			}
+			goto IL_0b9a;
+			IL_0b5e:
+			flag4 = flag5;
+			goto IL_0b62;
+			IL_0b62:
+			if (flag4)
+			{
+				character6.SetAuraTrait(null, itemData.AuracurseGain2.Id, num9);
+			}
+			else
+			{
+				character6.SetAuraTrait(character, itemData.AuracurseGain2.Id, num9);
+			}
+			goto IL_0b95;
+			IL_0b95:
+			flag2 = true;
+			flag = true;
+			goto IL_0b9a;
+			IL_0a35:
+			if (flag4)
+			{
+				character6.SetAuraTrait(null, itemData.AuracurseGain1.Id, num9);
+			}
+			else
+			{
+				character6.SetAuraTrait(character, itemData.AuracurseGain1.Id, num9);
+			}
+			goto IL_0a68;
+			IL_0b9a:
 			if (itemData.AuracurseGain3 != null)
 			{
 				num9 = ((itemData.AuraCurseNumForOneEvent <= 0) ? itemData.GetModifiedValue(itemData.AuracurseGainValue3, itemData.AuracurseGain3SpecialValue, itemData, target2) : (Functions.FuncRoundToInt(auxInt / itemData.AuraCurseNumForOneEvent) * itemData.GetModifiedValue(itemData.AuracurseGainValue3, itemData.AuracurseGain3SpecialValue, itemData, target2)));
@@ -722,6 +797,10 @@ public class Item
 				character6.ModifyEnergy(num15, showScrollCombatText: true);
 				flag = true;
 			}
+			continue;
+			IL_0a31:
+			flag4 = flag5;
+			goto IL_0a35;
 		}
 		if (!itemData.ChooseOneACToGain)
 		{
@@ -900,14 +979,14 @@ public class Item
 				}
 				else
 				{
-					bool flag4 = false;
-					while (!flag4)
+					bool flag6 = false;
+					while (!flag6)
 					{
 						int randomIntRange = MatchManager.Instance.GetRandomIntRange(0, itemData.CardToGainList.Count, "item");
 						if (itemData.CardToGainList[randomIntRange] != null)
 						{
 							id = itemData.CardToGainList[randomIntRange].Id;
-							flag4 = true;
+							flag6 = true;
 						}
 					}
 				}
@@ -981,9 +1060,9 @@ public class Item
 				List<string> list7 = new List<string>();
 				for (int num22 = 0; num22 < num21; num22++)
 				{
-					bool flag5 = false;
+					bool flag7 = false;
 					int num23 = 0;
-					while (!flag5 && num23 < 100)
+					while (!flag7 && num23 < 100)
 					{
 						int num24 = 0;
 						if (itemData.ReduceHighestCost)
@@ -1042,7 +1121,7 @@ public class Item
 							cardFromTableByIndex.ShowEnergyModification(-costReduceReduction);
 							list7.Add(cardData2.Id);
 							MatchManager.Instance.CreateLogCardModification(cardData2.InternalId, MatchManager.Instance.GetHero(character.HeroIndex));
-							flag5 = true;
+							flag7 = true;
 						}
 						num23++;
 					}
@@ -1173,14 +1252,14 @@ public class Item
 			{
 				if (hero3 != null && hero3.Alive)
 				{
-					hero3.ActivateItem(Enums.EventActivation.None, null, 0, hero3.Pet, forceActivate: true);
+					hero3.ActivateItem(Enums.EventActivation.None, null, 0, hero3.Pet, Enums.ActivationManual.None, forceActivate: true);
 					AtOManager.Instance.RaisePetActivationEvent(character, hero3, hero3.Pet, 0, fromPlayerCard: true);
 				}
 			}
 		}
 		if (itemData.PetActivation == Enums.ActivePets.Self)
 		{
-			character.ActivateItem(Enums.EventActivation.None, null, 0, character.Pet, forceActivate: true);
+			character.ActivateItem(Enums.EventActivation.None, null, 0, character.Pet, Enums.ActivationManual.None, forceActivate: true);
 			AtOManager.Instance.RaisePetActivationEvent(character, character, character.Pet, 0, fromPlayerCard: true);
 		}
 		if (itemData.IncreaseAurasSelf <= 0)
@@ -1198,17 +1277,17 @@ public class Item
 		}
 		List<string> list10 = new List<string>();
 		List<int> list11 = new List<int>();
-		bool flag6 = false;
+		bool flag8 = false;
 		for (int num31 = 0; num31 < character10.AuraList.Count; num31++)
 		{
 			if (character10.AuraList[num31] != null && character10.AuraList[num31].ACData != null && character10.AuraList[num31].GetCharges() > 0 && !(character10.AuraList[num31].ACData.Id == "furnace") && !(character10.AuraList[num31].ACData.Id == "spellsword") && !character10.AuraList[num31].ACData.Id.StartsWith("rune"))
 			{
-				flag6 = false;
+				flag8 = false;
 				if (character10.AuraList[num31].ACData.IsAura)
 				{
-					flag6 = true;
+					flag8 = true;
 				}
-				if (flag6)
+				if (flag8)
 				{
 					list10.Add(character10.AuraList[num31].ACData.Id);
 					list11.Add(character10.AuraList[num31].GetCharges());

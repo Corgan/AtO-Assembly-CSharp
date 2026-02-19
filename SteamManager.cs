@@ -356,11 +356,17 @@ public class SteamManager : MonoBehaviour
 		case 2879680u:
 			item = "nenukil_the_engineer";
 			break;
+		case 4013420u:
+			item = "asian_skins";
+			break;
 		case 3875470u:
 			item = "necropolis";
 			break;
-		case 4013420u:
-			item = "asian_skins";
+		default:
+			if (_appId == 4013420)
+			{
+				item = "asian_skins";
+			}
 			break;
 		}
 		if (GameManager.Instance.DisabledDLCs.Contains(item))

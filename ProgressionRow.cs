@@ -8,6 +8,12 @@ public class ProgressionRow : MonoBehaviour
 
 	public TMP_Text description;
 
+	private int rank;
+
+	private bool isIgnored;
+
+	public int Rank => rank;
+
 	private void Awake()
 	{
 		Enable(_state: false);
@@ -15,21 +21,24 @@ public class ProgressionRow : MonoBehaviour
 
 	public void Enable(bool _state)
 	{
-		if (_state)
+		if (!isIgnored)
 		{
-			title.color = Functions.HexToColor("#F1D2A9");
-			description.color = Functions.HexToColor("#F1D2A9");
-			TMP_Text tMP_Text = title;
-			FontStyles fontStyle = (description.fontStyle = FontStyles.Bold);
-			tMP_Text.fontStyle = fontStyle;
-		}
-		else
-		{
-			title.color = Functions.HexToColor("#A0A0A0");
-			description.color = Functions.HexToColor("#A0A0A0");
-			TMP_Text tMP_Text2 = title;
-			FontStyles fontStyle = (description.fontStyle = FontStyles.Normal);
-			tMP_Text2.fontStyle = fontStyle;
+			if (_state)
+			{
+				title.color = Functions.HexToColor("#F1D2A9");
+				description.color = Functions.HexToColor("#F1D2A9");
+				TMP_Text tMP_Text = title;
+				FontStyles fontStyle = (description.fontStyle = FontStyles.Bold);
+				tMP_Text.fontStyle = fontStyle;
+			}
+			else
+			{
+				title.color = Functions.HexToColor("#A0A0A0");
+				description.color = Functions.HexToColor("#A0A0A0");
+				TMP_Text tMP_Text2 = title;
+				FontStyles fontStyle = (description.fontStyle = FontStyles.Normal);
+				tMP_Text2.fontStyle = fontStyle;
+			}
 		}
 	}
 

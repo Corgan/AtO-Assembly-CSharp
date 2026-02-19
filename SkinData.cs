@@ -10,6 +10,9 @@ public class SkinData : ScriptableObject
 	private string skinName;
 
 	[SerializeField]
+	private bool hideInGame;
+
+	[SerializeField]
 	private SubClassData skinSubclass;
 
 	[Header("Base skins for characters")]
@@ -81,6 +84,18 @@ public class SkinData : ScriptableObject
 		set
 		{
 			skinName = value;
+		}
+	}
+
+	public bool HideInGame
+	{
+		get
+		{
+			return hideInGame;
+		}
+		set
+		{
+			hideInGame = value;
 		}
 	}
 

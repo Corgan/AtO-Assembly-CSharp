@@ -1322,7 +1322,7 @@ public class PlayerManager : MonoBehaviour
 		{
 			return false;
 		}
-		if (!unlockedHeroes.Contains(subclass))
+		if (!unlockedHeroes.Contains(subclass.ToLower()))
 		{
 			return false;
 		}
@@ -1371,10 +1371,10 @@ public class PlayerManager : MonoBehaviour
 		}
 	}
 
-	public void UnlockAll()
+	public void UnlockAllExceptHeroes()
 	{
-		UnlockHeroes(save: false);
 		UnlockCards(save: false);
+		SingularityMadnessLevel = 10;
 	}
 
 	public void CardUnlock(string cardId, bool save = false, CardItem cardItem = null)

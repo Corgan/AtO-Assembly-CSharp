@@ -228,6 +228,11 @@ public class EffectsManager : MonoBehaviour
 
 	private IEnumerator PlayEffectTrailCo(CardData card, bool isHero, Transform from, Transform to, int distance)
 	{
+		if (!from || !to)
+		{
+			MatchManager.Instance.waitingTrail = false;
+			yield break;
+		}
 		if (!GameManager.Instance.IsMultiplayer() && GameManager.Instance.configGameSpeed == Enums.ConfigSpeed.Ultrafast)
 		{
 			MatchManager.Instance.waitingTrail = false;
@@ -236,12 +241,14 @@ public class EffectsManager : MonoBehaviour
 		GameObject effectGO = GetEffect();
 		if (effectGO == null)
 		{
+			MatchManager.Instance.waitingTrail = false;
 			yield break;
 		}
 		Effects effects = effectGO.GetComponent<Effects>();
 		if (effects == null)
 		{
 			Debug.LogError("Effects is null");
+			MatchManager.Instance.waitingTrail = false;
 			yield break;
 		}
 		if (!effectGO.gameObject.activeSelf)

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 public class Enums
 {
 	public enum Platform
@@ -320,54 +322,65 @@ public class Enums
 
 	public enum EventActivation
 	{
-		None,
-		BeginCombat,
-		BeginRound,
-		BeginTurn,
-		EndTurn,
-		EndRound,
-		DrawCard,
-		CastCard,
-		Hit,
-		Hitted,
-		Block,
-		Blocked,
-		Evade,
-		Evaded,
-		Heal,
-		Healed,
-		FinishCast,
-		BeginCombatEnd,
-		CharacterAssign,
-		Damage,
-		Damaged,
-		PreBeginCombat,
-		BeginTurnCardsDealt,
-		AuraCurseSet,
-		BeginTurnAboutToDealCards,
-		Killed,
-		DestroyItem,
-		CorruptionCombatStart,
-		CorruptionBeginRound,
-		DamagedSecondary,
-		FinishFinishCast,
-		PreFinishCast,
-		Resurrect,
-		ItemActivation,
-		TraitActivation,
-		CharacterKilled,
-		FinishFinishCastCorruption,
-		DamagedDueToACConsumption,
-		BlockReachedZero,
-		AfterDealCards,
-		CastFightCard,
-		OnLeechExplosion,
-		AuraCurseRemoved,
-		EnemyBeginTurnDelay,
-		ResetDeck,
-		PetActivatedByCard,
-		PetActivatedAuto,
-		CardMoved
+		None = 0,
+		BeginCombat = 1,
+		BeginRound = 2,
+		BeginTurn = 3,
+		EndTurn = 4,
+		EndRound = 5,
+		DrawCard = 6,
+		CastCard = 7,
+		Hit = 8,
+		Hitted = 9,
+		Block = 10,
+		Blocked = 11,
+		Evade = 12,
+		Evaded = 13,
+		Heal = 14,
+		Healed = 15,
+		FinishCast = 16,
+		BeginCombatEnd = 17,
+		CharacterAssign = 18,
+		Damage = 19,
+		Damaged = 20,
+		PreBeginCombat = 21,
+		BeginTurnCardsDealt = 22,
+		AuraCurseSet = 23,
+		BeginTurnAboutToDealCards = 24,
+		Killed = 25,
+		DestroyItem = 26,
+		CorruptionCombatStart = 27,
+		CorruptionBeginRound = 28,
+		DamagedSecondary = 29,
+		FinishFinishCast = 30,
+		PreFinishCast = 31,
+		Resurrect = 32,
+		ItemActivation = 33,
+		TraitActivation = 34,
+		CharacterKilled = 35,
+		FinishFinishCastCorruption = 36,
+		DamagedDueToACConsumption = 37,
+		BlockReachedZero = 38,
+		AfterDealCards = 39,
+		CastFightCard = 40,
+		OnLeechExplosion = 41,
+		AuraCurseRemoved = 42,
+		EnemyBeginTurnDelay = 43,
+		ResetDeck = 44,
+		PetActivatedByCard = 45,
+		PetActivatedAuto = 46,
+		CardMoved = 47,
+		CurseExploded = 55,
+		Manual = 56,
+		CurseRemoved = 57,
+		Overhealed = 58
+	}
+
+	public enum ActivationManual
+	{
+		None = 0,
+		DarkSpike = 2,
+		PurifyingResonance = 3
 	}
 
 	public enum Zone
@@ -687,4 +700,17 @@ public class Enums
 		Self,
 		CurrentTarget
 	}
+
+	public static HashSet<CardType> SpellCardTypes = new HashSet<CardType>
+	{
+		CardType.Spell,
+		CardType.Cold_Spell,
+		CardType.Curse_Spell,
+		CardType.Fire_Spell,
+		CardType.Healing_Spell,
+		CardType.Holy_Spell,
+		CardType.Lightning_Spell,
+		CardType.Mind_Spell,
+		CardType.Shadow_Spell
+	};
 }

@@ -156,9 +156,29 @@ public class UnlockedBar : MonoBehaviour
 				{
 					try
 					{
-						if (item2.Key != "tutorial_0" && item2.Key != "tutorial_1" && item2.Key != "tutorial_2" && (item2.Value.NodeZone.ZoneId == "Aquarfall" || item2.Value.NodeZone.ZoneId == "Sectarium" || item2.Value.NodeZone.ZoneId == "Senenthia" || item2.Value.NodeZone.ZoneId == "Spiderlair" || item2.Value.NodeZone.ZoneId == "Velkarath" || item2.Value.NodeZone.ZoneId == "Voidhigh" || item2.Value.NodeZone.ZoneId == "Voidlow" || item2.Value.NodeZone.ZoneId == "Faeborg" || item2.Value.NodeZone.ZoneId == "Frozensewers" || item2.Value.NodeZone.ZoneId == "Blackforge" || item2.Value.NodeZone.ZoneId == "Ulminin" || item2.Value.NodeZone.ZoneId == "Pyramid") && !item2.Value.GoToTown && !item2.Value.TravelDestination)
+						if (!(item2.Key != "tutorial_0") || !(item2.Key != "tutorial_1") || !(item2.Key != "tutorial_2"))
 						{
-							list.Add(item2.Key);
+							continue;
+						}
+						switch (item2.Value.NodeZone.ZoneId)
+						{
+						case "Aquarfall":
+						case "Sectarium":
+						case "Senenthia":
+						case "Spiderlair":
+						case "Velkarath":
+						case "Voidhigh":
+						case "Voidlow":
+						case "Faeborg":
+						case "Frozensewers":
+						case "Blackforge":
+						case "Ulminin":
+						case "Pyramid":
+							if (!item2.Value.GoToTown && !item2.Value.TravelDestination)
+							{
+								list.Add(item2.Key);
+							}
+							break;
 						}
 					}
 					catch (Exception)

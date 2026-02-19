@@ -114,7 +114,7 @@ public class CharacterWindowUI : MonoBehaviour
 	{
 		Resize();
 		botLevelupCharacter.SetActive(value: false);
-		if (GameManager.Instance.GetDeveloperMode() || AtOManager.Instance.IsCombatTool)
+		if (GameManager.Instance.GetDeveloperMode() || AtOManager.Instance.IsCombatTool || (GameManager.Instance.CheatMode && GameManager.Instance.EnableButtons))
 		{
 			botLevelupCharacter.SetActive(value: true);
 		}
@@ -402,7 +402,7 @@ public class CharacterWindowUI : MonoBehaviour
 
 	private void UpdateLevelUpButtonState()
 	{
-		if ((GameManager.Instance.GetDeveloperMode() || AtOManager.Instance.IsCombatTool) && currentHero != null)
+		if ((GameManager.Instance.GetDeveloperMode() || (GameManager.Instance.CheatMode && GameManager.Instance.EnableButtons) || AtOManager.Instance.IsCombatTool) && currentHero != null)
 		{
 			botLevelupCharacter.SetActive(currentHero.Level != 5);
 		}

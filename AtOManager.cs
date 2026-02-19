@@ -953,7 +953,7 @@ public class AtOManager : MonoBehaviour
 			NPC[] teamNPC = MatchManager.Instance.GetTeamNPC();
 			foreach (NPC nPC in teamNPC)
 			{
-				if (nPC != null && !nPC.Alive && nPC.NpcData.FinishCombatOnDead)
+				if (nPC != null && !nPC.Alive && nPC.NpcData != null && nPC.NpcData.FinishCombatOnDead)
 				{
 					return;
 				}
@@ -1493,16 +1493,64 @@ public class AtOManager : MonoBehaviour
 		}
 	}
 
-	public void SwapCharacter(SubClassData _scd, int _position)
+	public void SwapCharacter(SubClassData subClassData, int position)
 	{
-		for (int i = 0; i < 4; i++)
+		if (position < 0 || position >= 4)
 		{
-			if (i == _position && teamAtO[i] != null)
+			return;
+		}
+		Hero hero = teamAtO[position];
+		if (hero != null)
+		{
+			string owner = hero.Owner;
+			int experience = hero.Experience;
+			Hero hero2 = GameManager.Instance.CreateHero(subClassData.SubClassName);
+			AssignZeroTrait(hero2);
+			hero2.Owner = owner;
+			teamAtO[position] = hero2;
+			HeroCards[] cardsOnReplaceCharacter = subClassData.CardsOnReplaceCharacter;
+			if (cardsOnReplaceCharacter != null && cardsOnReplaceCharacter.Length != 0)
 			{
-				string owner = teamAtO[i].Owner;
-				teamAtO[i] = GameManager.Instance.CreateHero(_scd.SubClassName);
-				teamAtO[i].Owner = owner;
-				break;
+				ReplaceHeroCards(subClassData, position);
+			}
+			string perksOnReplace = subClassData.PerksOnReplace;
+			if (perksOnReplace != null && perksOnReplace.Length > 0)
+			{
+				ReplaceHeroPerks(subClassData, position);
+			}
+			if (subClassData.UseXpFromOriginal)
+			{
+				hero2.Experience = experience;
+			}
+		}
+	}
+
+	private void ReplaceHeroPerks(SubClassData subClassData, int heroIndex)
+	{
+		List<string> list = Functions.ParseCompressedCodeList(subClassData.PerksOnReplace);
+		if (list == null)
+		{
+			return;
+		}
+		foreach (string item in list)
+		{
+			AddPerkToHero(heroIndex, item);
+		}
+	}
+
+	private void ReplaceHeroCards(SubClassData subClassData, int heroIndex)
+	{
+		RemoveAllCardsInDeck(heroIndex);
+		HeroCards[] cardsOnReplaceCharacter = subClassData.CardsOnReplaceCharacter;
+		foreach (HeroCards heroCards in cardsOnReplaceCharacter)
+		{
+			if (GameManager.Instance.IsMultiplayer())
+			{
+				AddCardToHeroMP(heroIndex, heroCards.Card.Id, heroCards.UnitsInDeck);
+			}
+			else
+			{
+				AddCardToHero(heroIndex, heroCards.Card.Id, heroCards.UnitsInDeck);
 			}
 		}
 	}
@@ -1616,6 +1664,8 @@ public class AtOManager : MonoBehaviour
 			case "tutorial_1":
 			case "tutorial_2":
 				return 1;
+			case "dream_0":
+				return townTier + 1;
 			case "sunken_0":
 				return 2;
 			}
@@ -2074,6 +2124,10 @@ public class AtOManager : MonoBehaviour
 
 	public bool IsFirstGame()
 	{
+		if (GameManager.Instance.CheatMode && GameManager.Instance.SkipTutorial)
+		{
+			return false;
+		}
 		if (IsCombatTool)
 		{
 			return false;
@@ -2707,23 +2761,39 @@ public class AtOManager : MonoBehaviour
 		return false;
 	}
 
-	public bool TeamHavePerk(string _id)
+	public bool TeamHavePerk(string perkId)
 	{
-		if (teamAtO != null)
+		return HavePerk(null, perkId);
+	}
+
+	public bool CharacterHavePerk(Character character, string perkId)
+	{
+		return HavePerk(character, perkId);
+	}
+
+	private bool HavePerk(Character onlyThisCharacter, string perkId)
+	{
+		if (teamAtO == null || string.IsNullOrWhiteSpace(perkId))
 		{
-			_id = _id.ToLower();
-			for (int i = 0; i < teamAtO.Length; i++)
+			return false;
+		}
+		Hero[] array = teamAtO;
+		foreach (Hero hero in array)
+		{
+			if (hero == null || (onlyThisCharacter != null && hero != onlyThisCharacter))
 			{
-				if (teamAtO[i].PerkList == null)
+				continue;
+			}
+			List<string> perkList = hero.PerkList;
+			if (perkList == null)
+			{
+				continue;
+			}
+			foreach (string item in perkList)
+			{
+				if (string.Equals(item, perkId, StringComparison.OrdinalIgnoreCase))
 				{
-					continue;
-				}
-				for (int j = 0; j < teamAtO[i].PerkList.Count; j++)
-				{
-					if (teamAtO[i].PerkList[j] == _id)
-					{
-						return true;
-					}
+					return true;
 				}
 			}
 		}
@@ -4722,6 +4792,14 @@ public class AtOManager : MonoBehaviour
 		}
 	}
 
+	public void RemoveAllCardsInDeck(int heroIndex)
+	{
+		for (int num = teamAtO[heroIndex].Cards.Count - 1; num >= 0; num--)
+		{
+			RemoveCardInDeck(heroIndex, num);
+		}
+	}
+
 	[PunRPC]
 	private void NET_RemoveCardInDeck(int heroIndex, int cardIndex)
 	{
@@ -5137,54 +5215,57 @@ public class AtOManager : MonoBehaviour
 		}
 	}
 
-	public void AddCardToHero(int _heroIndex, string _cardName)
+	public void AddCardToHero(int _heroIndex, string _cardName, int count = 1)
 	{
-		CardData cardData = Globals.Instance.GetCardData(_cardName, instantiate: false);
-		if (cardData != null && cardData.CardClass == Enums.CardClass.Injury && ngPlus > 0 && IsZoneAffectedByMadness())
+		for (int i = 0; i < count; i++)
 		{
-			if (ngPlus >= 3 && ngPlus <= 5 && cardData.UpgradesTo1 != "")
+			CardData cardData = Globals.Instance.GetCardData(_cardName, instantiate: false);
+			if (cardData != null && cardData.CardClass == Enums.CardClass.Injury && ngPlus > 0 && IsZoneAffectedByMadness())
 			{
-				_cardName = cardData.UpgradesTo1;
-			}
-			else if (ngPlus >= 6 && cardData.UpgradesTo2 != "")
-			{
-				_cardName = cardData.UpgradesTo2;
-			}
-		}
-		if (cardData != null && cardData.CardType == Enums.CardType.Pet)
-		{
-			teamAtO[_heroIndex].Pet = _cardName;
-		}
-		else
-		{
-			if (GameManager.Instance.IsSingularity())
-			{
-				CardData cardDataFromCardData = Functions.GetCardDataFromCardData(cardData, "");
-				for (int i = 0; i < teamAtO[_heroIndex].Cards.Count; i++)
+				if (ngPlus >= 3 && ngPlus <= 5 && cardData.UpgradesTo1 != "")
 				{
-					if (Functions.GetCardDataFromCardData(Globals.Instance.GetCardData(teamAtO[_heroIndex].Cards[i], instantiate: false), "").Id == cardDataFromCardData.Id)
-					{
-						teamAtO[_heroIndex].Cards.RemoveAt(i);
-						break;
-					}
+					_cardName = cardData.UpgradesTo1;
+				}
+				else if (ngPlus >= 6 && cardData.UpgradesTo2 != "")
+				{
+					_cardName = cardData.UpgradesTo2;
 				}
 			}
-			teamAtO[_heroIndex].Cards.Add(_cardName);
-		}
-		if (cardData != null)
-		{
-			if (cardData.CardClass == Enums.CardClass.Boon && IsChallengeTraitActive("doubleboons"))
+			if (cardData != null && cardData.CardType == Enums.CardType.Pet)
 			{
+				teamAtO[_heroIndex].Pet = _cardName;
+			}
+			else
+			{
+				if (GameManager.Instance.IsSingularity())
+				{
+					CardData cardDataFromCardData = Functions.GetCardDataFromCardData(cardData, "");
+					for (int j = 0; j < teamAtO[_heroIndex].Cards.Count; j++)
+					{
+						if (Functions.GetCardDataFromCardData(Globals.Instance.GetCardData(teamAtO[_heroIndex].Cards[j], instantiate: false), "").Id == cardDataFromCardData.Id)
+						{
+							teamAtO[_heroIndex].Cards.RemoveAt(j);
+							break;
+						}
+					}
+				}
 				teamAtO[_heroIndex].Cards.Add(_cardName);
 			}
-			if (cardData.CardClass == Enums.CardClass.Injury && IsChallengeTraitActive("doubleinjuries"))
+			if (cardData != null)
 			{
-				teamAtO[_heroIndex].Cards.Add(_cardName);
+				if (cardData.CardClass == Enums.CardClass.Boon && IsChallengeTraitActive("doubleboons"))
+				{
+					teamAtO[_heroIndex].Cards.Add(_cardName);
+				}
+				if (cardData.CardClass == Enums.CardClass.Injury && IsChallengeTraitActive("doubleinjuries"))
+				{
+					teamAtO[_heroIndex].Cards.Add(_cardName);
+				}
 			}
-		}
-		if (cardData.CardClass == Enums.CardClass.Boon)
-		{
-			PlayerManager.Instance.CardUnlock(_cardName, save: true);
+			if (cardData.CardClass == Enums.CardClass.Boon)
+			{
+				PlayerManager.Instance.CardUnlock(_cardName, save: true);
+			}
 		}
 	}
 
@@ -5203,9 +5284,12 @@ public class AtOManager : MonoBehaviour
 		SideBarRefreshCards(_heroIndex);
 	}
 
-	public void AddCardToHeroMP(int _heroIndex, string _cardName)
+	public void AddCardToHeroMP(int _heroIndex, string _cardName, int count = 1)
 	{
-		photonView.RPC("NET_AddCardToHeroMP", RpcTarget.MasterClient, _heroIndex, _cardName);
+		for (int i = 0; i < count; i++)
+		{
+			photonView.RPC("NET_AddCardToHeroMP", RpcTarget.MasterClient, _heroIndex, _cardName);
+		}
 	}
 
 	[PunRPC]
@@ -5485,6 +5569,19 @@ public class AtOManager : MonoBehaviour
 				{
 					continue;
 				}
+				for (int j = 0; j < _node.nodeData.NodeEvent[i].Replys.Length; j++)
+				{
+					EventReplyData eventReplyData = _node.nodeData.NodeEvent[i].Replys[j];
+					if (eventReplyData.ChooseReplacementHero)
+					{
+						Hero[] team = GetTeam();
+						if (j < team.Length)
+						{
+							SubClassData subClassData = Globals.Instance.GetSubClassData(team[j].SubclassName);
+							eventReplyData.RequiredClass = subClassData;
+						}
+					}
+				}
 				bool flag3 = true;
 				if (_node.nodeData.NodeEvent[i].Requirement != null && !PlayerHasRequirement(_node.nodeData.NodeEvent[i].Requirement))
 				{
@@ -5747,10 +5844,7 @@ public class AtOManager : MonoBehaviour
 					teamAtO[k].PerkList = heroPerks[array[k]];
 				}
 				teamAtO[k].Cards = dictionary[k];
-				if (teamAtO[k] != null && teamAtO[k].HeroData != null && teamAtO[k].HeroData.HeroSubClass != null)
-				{
-					teamAtO[k].AssignTrait(teamAtO[k].HeroData.HeroSubClass.Trait0.Id);
-				}
+				AssignZeroTrait(teamAtO[k]);
 			}
 		}
 		string text = "challenge_start";
@@ -5763,6 +5857,14 @@ public class AtOManager : MonoBehaviour
 			}
 		}
 		DoLoot(text);
+	}
+
+	private void AssignZeroTrait(Hero hero)
+	{
+		if (hero != null && !(hero.HeroData == null) && !(hero.HeroData.HeroSubClass == null) && !(hero.HeroData.HeroSubClass.Trait0 == null))
+		{
+			hero.AssignTrait(hero.HeroData.HeroSubClass.Trait0.Id);
+		}
 	}
 
 	public void SetObeliskLootReroll()
@@ -7960,7 +8062,7 @@ public class AtOManager : MonoBehaviour
 		int num6 = num5 * 13;
 		int num7 = 0;
 		int num8 = 0;
-		if (teamAtO != null && Globals.Instance.GetNodeData(currentMapNode) != null && Globals.Instance.GetNodeData(currentMapNode).NodeZone != null && !Globals.Instance.GetNodeData(currentMapNode).NodeZone.DisableExperienceOnThisZone)
+		if (teamAtO != null)
 		{
 			for (int j = 0; j < teamAtO.Length; j++)
 			{
